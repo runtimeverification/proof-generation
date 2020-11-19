@@ -114,8 +114,8 @@ class RewriteProofGenerator(ProofGenerator):
                 subpattern.arguments[0],
                 self.env.get_theorem("kore-dup-and").apply(
                     x=self.env.get_theorem("x-element-var").as_proof(),
-                    ph1=encoded_sort,
-                    ph2=encoded_pattern,
+                    ph0=encoded_sort,
+                    ph1=encoded_pattern,
                 ),
             )
         else:
@@ -173,7 +173,7 @@ class RewriteProofGenerator(ProofGenerator):
         if requires.construct == kore.MLPattern.TOP and \
            ensures.construct == kore.MLPattern.TOP:
             top_valid_proof = self.env.get_theorem("kore-top-valid").apply(
-                ph1=self.env.encode_pattern(instantiated_axiom_pattern.sorts[0]),
+                ph0=self.env.encode_pattern(instantiated_axiom_pattern.sorts[0]),
             )
             
             step_proof = self.env.get_theorem("kore-rewrites-conditional").apply(

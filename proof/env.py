@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO
 
+import re
+
 from .kore import ast as kore
 from .kore.utils import KoreUtils
 
@@ -35,7 +37,6 @@ class ProofEnvironment:
         self.rewrite_axioms = {} # unique id -> (kore axiom, theorem)
         self.substitution_axioms = {} # constant symbol (in metamath) -> theorem
 
-        self.metavars = {} # var -> typecode
         self.domain_values = set() # set of (sort, string literal)
 
         self.composer = Composer()
@@ -76,37 +77,46 @@ class ProofEnvironment:
 
     """
     Load metavariables into the composer
-
     metavar_map: map from metavariable name to typecode
-
-    NOTE: this does not check duplication
     """
     def load_metavariables(self, metavar_map: Mapping[str, str]):
-        metavar_map = { k: v for k, v in metavar_map.items() if k not in self.metavars }
-        if len(metavar_map) == 0: return
+        # filter out existing metavariables and
+        # check duplication (different typecode for the same variable)
+        new_metavars = {}
+        for var, typecode in metavar_map.items():
+            found_typecode = self.find_metavariable(var)
 
-        self.load_metamath_statement(mm.Comment(f"adding {len(metavar_map)} new metavariable(s)"))
+            if found_typecode is None:
+                new_metavars[var] = typecode
+            else:
+                assert found_typecode == typecode, \
+                       "inconsistent metavariable typecode: both {} and {} for variable {}".format(found_typecode, typecode, var)
 
-        var_stmt = mm.RawStatement(mm.Statement.VARIABLE, list(metavar_map.keys()))
+        if not new_metavars: return
+
+        self.load_metamath_statement(mm.Comment(f"adding {len(new_metavars)} new metavariable(s)"))
+
+        var_stmt = mm.RawStatement(mm.Statement.VARIABLE, list(new_metavars.keys()))
         self.load_metamath_statement(var_stmt)
 
-        for i, (var, typecode) in enumerate(metavar_map.items()):
+        for var, typecode in new_metavars.items():
+            # metamath does not allow some characters in the label
+            sanitized_var = re.sub(r"[^a-zA-Z0-9_\-.]", "", var)
+
             floating_stmt = mm.StructuredStatement(mm.Statement.FLOATING, [
                 mm.Application(typecode),
                 mm.Metavariable(var),
-            ], label=f"variable-{i + len(self.metavars)}-type")
+            ], label=f"{sanitized_var}-{typecode.replace('#', '').lower()}")
 
             self.load_metamath_statement(floating_stmt)
-
-        self.metavars.update(metavar_map)
 
         # if we have added any #ElementVariable
         # and the total number of element variables
         # is > 1, then generate a new disjoint statement
-        if "#ElementVariable" in set(metavar_map.values()):
-            element_vars = [ mm.Metavariable(k) for k, v in self.metavars.items() if v == "#ElementVariable" ]
+        if "#ElementVariable" in set(new_metavars.values()):
+            element_vars = self.composer.find_metavariables_of_typecode("#ElementVariable")
             if len(element_vars) > 1:
-                disjoint_stmt = mm.StructuredStatement(mm.Statement.DISJOINT, element_vars)
+                disjoint_stmt = mm.StructuredStatement(mm.Statement.DISJOINT, list(map(mm.Metavariable, element_vars)))
                 self.load_metamath_statement(disjoint_stmt)
 
     def encode_pattern(self, pattern: Union[kore.Axiom, kore.Pattern]) -> mm.Term:
@@ -182,17 +192,17 @@ class ProofEnvironment:
                 ],
             )
 
-            functional_stmt = mm.StructuredStatement(mm.Statement.AXIOM, [
+            functional_stmt = mm.StructuredStatement(mm.Statement.PROVABLE, [
                 mm.Application("|-"),
                 mm.Application(
-                    KorePatternEncoder.FORALL,
+                    KorePatternEncoder.FORALL_SORT,
                     [
-                        mm.Application(KorePatternEncoder.SORT),
                         mm.Metavariable(sort_var),
                         mm.Application(
                             KorePatternEncoder.EXISTS,
                             [
                                 sort_encoded,
+                                mm.Metavariable(sort_var),
                                 mm.Metavariable(functional_var),
                                 equality,
                             ],
@@ -216,7 +226,7 @@ class ProofEnvironment:
         self.load_metamath_statement(mm.RawStatement(mm.Statement.CONSTANT, [ symbol ]))
 
         # declare #Pattern syntax
-        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
+        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.PROVABLE, [
             mm.Application("#Pattern"),
             mm.Application(symbol, [ mm.Metavariable(v) for v in subpattern_vars[:arity] ]),
         ], label=label + "-pattern"))
@@ -236,7 +246,7 @@ class ProofEnvironment:
                 mm.Metavariable(var),
             ], label=f"{substitution_rule_name}.{i}"))
 
-        conclusion = mm.StructuredStatement(mm.Statement.AXIOM, [
+        conclusion = mm.StructuredStatement(mm.Statement.PROVABLE, [
             mm.Application("#Substitution"),
             mm.Application(symbol, list(map(mm.Metavariable, subpattern_vars[:arity]))),
             mm.Application(symbol, list(map(mm.Metavariable, subpattern_vars[arity:]))),
@@ -250,21 +260,28 @@ class ProofEnvironment:
         self.substitution_axioms[symbol] = self.composer.theorems[substitution_rule_name]
 
     """
+    Get the name for the nth metavariable of the given typecode
+    """
+    def get_metavariable_name(self, typecode: str, n: int) -> str:
+        if typecode == "#ElementVariable":
+            return { 0: "x", 1: "y", 2: "z", 3: "w" }.get(n, f"x{n}")
+        elif typecode == "#Variable":
+            return { 0: "xX", 1: "yY", 2: "zZ", 3: "wW" }.get(n, f"xX{n}")
+        elif typecode == "#Pattern":
+            return f"ph{n}"
+        else:
+            return f"var-{typecode.replace('#', '').lower()}"
+
+    def find_metavariable(self, var: str) -> str:
+        return self.composer.find_metavariable(var)
+
+    """
     Generate n metavariables
     and add the new ones to the composer
     """
     def gen_metavariables(self, typecode: str, n: int) -> List[str]:
-        metavars = [ "var-{}-{}".format(typecode.replace("#", "").lower(), i) for i in range(n) ]
-        new_metavars = {}
-
-        for var in metavars:
-            if var not in self.metavars:
-                new_metavars[var] = typecode
-            else:
-                assert self.metavars[var] == typecode
-
-        self.load_metavariables(new_metavars)
-
+        metavars = [ self.get_metavariable_name(typecode, i) for i in range(n) ]
+        self.load_metavariables({ var: typecode for var in metavars })
         return metavars
 
     """

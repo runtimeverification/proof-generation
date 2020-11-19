@@ -213,6 +213,9 @@ class StructuredStatement(Statement):
             for label in self.proof:
                 stream.write(" ")
                 stream.write(label)
+        elif self.statement_type == Statement.PROVABLE:
+            # the statement is marked provable but no proof is given
+            stream.write(" $= ?")
         
         stream.write(" $.")
 

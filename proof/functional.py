@@ -10,10 +10,10 @@ from .env import ProofGenerator
 from .substitution import SingleSubstitutionProofGenerator
 
 
-"""
+r"""
 Given a pattern phi, generate a proof for the statement in the form
 
-|- ( \\kore-forall \\sort R ( \\kore-exists Sort1 x ( \kore-equals Sort1 R x phi ) ) )
+|- ( \kore-forall \sort R ( \kore-exists Sort1 x ( \kore-equals Sort1 R x phi ) ) )
 
 that is, phi is a functional pattern that has a unique singleton interpretation in the domain of Sort1
 

@@ -174,13 +174,25 @@ class Context:
     def add_essential(self, stmt: StructuredStatement):
         self.active_essentials.append(stmt)
 
-    # return a fraction of self.metavariables according to the given set
+    """
+    return a fraction of self.metavariables according to the given set
+    """
     def find_floatings(self, metavariables: Set[str]) -> List[Tuple[str, str]]:
         fraction = [ (typecode, var) for typecode, var in self.active_floatings if var in metavariables]
         if self.prev is not None:
             return self.prev.find_floatings(metavariables) + fraction
         else:
             return fraction
+
+    """
+    return all metavariables of the given typecode
+    """
+    def find_floatings_of_typecode(self, expected_typcode: str) -> List[str]:
+        current = [ var for typecode, var in self.active_floatings if typecode == expected_typcode ]
+        if self.prev is not None:
+            return self.find_floatings_of_typecode(expected_typcode) + current
+        else:
+            return current
 
     def get_all_essentials(self) -> List[StructuredStatement]:
         if self.prev is not None:
@@ -220,6 +232,21 @@ class Composer(MetamathVisitor):
         for stmt in self.statements:
             stmt.encode(stream)
             stream.write("\n")
+
+    """
+    look up a metavariable, if found, return the typecode,
+    otherwise, return None
+    """
+    def find_metavariable(self, var: str) -> Optional[str]:
+        found = self.context.find_floatings({ var })
+        if not found: return None
+        return found[0][0]
+
+    """
+    find metavariables of the given typecode
+    """
+    def find_metavariables_of_typecode(self, typecode: str) -> List[str]:
+        return self.context.find_floatings_of_typecode(typecode)
 
     ####################################
     # Composer as a metamath AST visitor

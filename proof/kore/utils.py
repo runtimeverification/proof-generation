@@ -201,14 +201,15 @@ class KoreUtils:
         for axiom in module.axioms:
             free_vars = axiom.pattern.visit(FreePatternVariableVisitor())
             body = axiom.pattern
+            body_sort = KoreUtils.get_sort(module, body)
 
             for free_var in free_vars:
                 # TODO: fix the output sort here
-                body = MLPattern(MLPattern.FORALL, [], [ free_var, body ])
+                body = MLPattern(MLPattern.FORALL, [body_sort], [ free_var, body ])
 
             axiom.pattern = body
 
-    """
+    r"""
     Syntactical unification modulo some axioms
 
     NOTE: this does not unify the sorts

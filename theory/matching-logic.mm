@@ -8,11 +8,12 @@ $c #SetVariable $.
 $c #Variable $.
 $c ( ) $.
 
-$v ph1 ph2 ph3 ph4 ph5 ph6 ph7 ph8 ph9 $.
+$v ph0 ph1 ph2 ph3 ph4 ph5 ph6 ph7 ph8 $.
 $v x y z w $.
 $v X Y Z W $.
 $v xX yY $.
 
+ph0-pattern $f #Pattern ph0 $.
 ph1-pattern $f #Pattern ph1 $.
 ph2-pattern $f #Pattern ph2 $.
 ph3-pattern $f #Pattern ph3 $.
@@ -21,7 +22,6 @@ ph5-pattern $f #Pattern ph5 $.
 ph6-pattern $f #Pattern ph6 $.
 ph7-pattern $f #Pattern ph7 $.
 ph8-pattern $f #Pattern ph8 $.
-ph9-pattern $f #Pattern ph9 $.
 
 x-element-var $f #ElementVariable x $.
 y-element-var $f #ElementVariable y $.
@@ -43,10 +43,10 @@ var-is-pattern $a #Pattern xX $.
 $( Substitution $)
 $c #Substitution $.
 
-substitution-var $a #Substitution ph1 xX ph1 xX $.
+substitution-var $a #Substitution ph0 xX ph0 xX $.
 ${
     $d xX yY $.
-    substitution-distinct-var $a #Substitution yY yY ph1 xX $.
+    substitution-distinct-var $a #Substitution yY yY ph0 xX $.
 $}
 
 $( Provability $)

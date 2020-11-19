@@ -29,24 +29,25 @@ class KorePatternEncoder(KoreVisitor):
 
     FORALL = "\\kore-forall"
     EXISTS = "\\kore-exists"
+    FORALL_SORT = "\\kore-forall-sort"
 
     @staticmethod
     def encode_symbol(symbol: Union[kore.SymbolInstance, str]) -> str:
         if type(symbol) is str:
-            return symbol
+            return r"\kore-symbol-" + symbol
         elif type(symbol.definition) is str:
-            return symbol.definition
+            return r"\kore-symbol-" + symbol.definition
         else:
-            return symbol.definition.symbol
+            return r"\kore-symbol-" + symbol.definition.symbol
 
     @staticmethod
     def encode_sort(sort: Union[kore.SortInstance, str]) -> str:
         if type(sort) is str:
-            return sort
+            return r"\kore-sort-" + sort
         elif type(sort.definition) is str:
-            return sort.definition
+            return r"\kore-sort-" + sort.definition
         else:
-            return sort.definition.sort_id
+            return r"\kore-sort-" + sort.definition.sort_id
 
     @staticmethod
     def encode_string_literal(literal: kore.StringLiteral) -> str:
@@ -73,11 +74,11 @@ class KorePatternEncoder(KoreVisitor):
 
     @staticmethod
     def encode_variable(var: kore.Variable) -> str:
-        return var.name
+        return "kore-element-var-" + var.name
 
     @staticmethod
     def encode_sort_variable(var: kore.SortVariable) -> str:
-        return var.name
+        return "kore-sort-var-" + var.name
 
     def __init__(self):
         self.metavariables = {} # var -> typecode
@@ -89,7 +90,7 @@ class KorePatternEncoder(KoreVisitor):
 
         for var in axiom.sort_variables[::-1]:
             var_term = var.visit(self)
-            term = mm.Application(KorePatternEncoder.FORALL, [ mm.Application(KorePatternEncoder.SORT), var_term, term ])
+            term = mm.Application(KorePatternEncoder.FORALL_SORT, [ var_term, term ])
 
         return term
 
@@ -133,7 +134,7 @@ class KorePatternEncoder(KoreVisitor):
 
             return mm.Application(
                 encoded_construct,
-                [ var.sort.visit(self), var.visit(self), ml_pattern.arguments[1].visit(self) ],
+                [ var.sort.visit(self), ml_pattern.sorts[0].visit(self), var.visit(self), ml_pattern.arguments[1].visit(self) ],
             )
 
         else:

@@ -51,20 +51,20 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         assert sort_variable.name != self.var.name
         return self.env.get_theorem("substitution-distinct-var").apply(
             yY=self.env.encode_pattern(sort_variable),
-            ph1=self.pattern_encoded,
+            ph0=self.pattern_encoded,
             xX=self.var_encoded,
         )
 
     def postvisit_variable(self, var: kore.Variable) -> Proof:
         if var == self.var:
             return self.env.get_theorem("substitution-var").apply(
-                ph1=self.pattern_encoded,
+                ph0=self.pattern_encoded,
                 xX=self.var_encoded
             )
         else:
             return self.env.get_theorem("substitution-distinct-var").apply(
                 yY=self.env.encode_pattern(var),
-                ph1=self.pattern_encoded,
+                ph0=self.pattern_encoded,
                 xX=self.var_encoded,
             )
 
@@ -101,27 +101,32 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         elif ml_pattern.construct in { kore.MLPattern.FORALL, kore.MLPattern.EXISTS }:
             binding_var = ml_pattern.get_binding_variable()
             body = ml_pattern.arguments[1]
+            body_sort = ml_pattern.sorts[0]
 
             if binding_var == self.var:
                 theorem_name = "kore-forall-substitution-shadowed" if ml_pattern.construct == kore.MLPattern.FORALL else \
                                "kore-exists-substitution-shadowed"
 
-                sort_subproof = self.visit(binding_var.sort)
+                var_sort_subproof = self.visit(binding_var.sort)
+                body_sort_subproof = self.visit(body_sort)
 
                 # shadowed
                 return self.env.get_theorem(theorem_name).apply(
-                    sort_subproof,
+                    var_sort_subproof,
+                    body_sort_subproof,
                     ph2=self.env.encode_pattern(body),
                 )
             else:
                 theorem_name = "kore-forall-substitution" if ml_pattern.construct == kore.MLPattern.FORALL else \
                                "kore-exists-substitution"
 
-                sort_subproof = self.visit(binding_var.sort)
+                var_sort_subproof = self.visit(binding_var.sort)
+                body_sort_subproof = self.visit(body_sort)
                 body_subproof = self.visit(body)
 
                 return self.env.get_theorem(theorem_name).apply(
-                    sort_subproof,
+                    var_sort_subproof,
+                    body_sort_subproof,
                     body_subproof,
                     y=self.env.encode_pattern(binding_var), # still need to specify the binding variable
                 )
