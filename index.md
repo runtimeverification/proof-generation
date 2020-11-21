@@ -4,3 +4,5 @@
 
 layout: home
 ---
+
+Welcome to matching logic proof checker!
