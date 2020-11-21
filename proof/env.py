@@ -199,13 +199,19 @@ class ProofEnvironment:
                     [
                         mm.Metavariable(sort_var),
                         mm.Application(
-                            KorePatternEncoder.EXISTS,
+                            KorePatternEncoder.VALID,
                             [
-                                sort_encoded,
                                 mm.Metavariable(sort_var),
-                                mm.Metavariable(functional_var),
-                                equality,
-                            ],
+                                mm.Application(
+                                    KorePatternEncoder.EXISTS,
+                                    [
+                                        sort_encoded,
+                                        mm.Metavariable(sort_var),
+                                        mm.Metavariable(functional_var),
+                                        equality,
+                                    ],
+                                ),
+                            ]
                         ),
                     ],
                 ),

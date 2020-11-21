@@ -10,10 +10,12 @@ $c \kore-mu \kore-nu $.
 $c \kore-ceil \kore-floor \kore-equals \kore-in $.
 $c \kore-next \kore-rewrites $.
 $c \kore-dv $.
+$c \kore-valid $.
 
 kore-exists-pattern $a #Pattern ( \kore-exists ph0 ph1 x ph2 ) $.
 kore-forall-pattern $a #Pattern ( \kore-forall ph0 ph1 x ph2 ) $.
 kore-forall-sort-pattern $a #Pattern ( \kore-forall-sort x ph0 ) $.
+kore-valid $a #Pattern ( \kore-valid ph0 ph1 ) $.
 
 kore-bottom-pattern $a #Pattern ( \kore-bottom ph0 ) $.
 kore-top-pattern $a #Pattern ( \kore-top ph0 ) $.
@@ -35,6 +37,7 @@ $)
 
 ${
     $d xX y $.
+    $d y ph6 $. $( this assumption is too strong for symbolic terms, it only needs to not occur free $)
     kore-exists-substitution.0 $e #Substitution ph0 ph3 ph6 xX $.
     kore-exists-substitution.1 $e #Substitution ph1 ph4 ph6 xX $.
     kore-exists-substitution.2 $e #Substitution ph2 ph5 ph6 xX $.
@@ -49,6 +52,7 @@ $}
 
 ${
     $d xX y $.
+    $d y ph6 $.
     kore-forall-substitution.0 $e #Substitution ph0 ph3 ph6 xX $.
     kore-forall-substitution.1 $e #Substitution ph1 ph4 ph6 xX $.
     kore-forall-substitution.2 $e #Substitution ph2 ph5 ph6 xX $.
@@ -63,6 +67,7 @@ $}
 
 ${
     $d xX y $.
+    $d x ph2 $.
     kore-forall-sort-substitution.0 $e #Substitution ph0 ph1 ph2 xX $.
     kore-forall-sort-substitution $a #Substitution ( \kore-forall-sort x ph0 ) ( \kore-forall-sort x ph1 ) ph2 xX $.
 $}
@@ -155,7 +160,7 @@ $(
     Kore lemmas
 $)
 
-kore-top-valid $p |- ( \kore-top ph0 ) $= ? $.
+kore-top-valid $p |- ( \kore-valid ph0 ( \kore-top ph0 ) ) $= ? $.
 
 ${
     $(
@@ -165,10 +170,10 @@ ${
         ph3: `ensures` clause
         ph4: RHS
     $)
-    kore-rewrites-conditional.0 $e |- ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph3 ph4 ) ) $.
-    kore-rewrites-conditional.1 $e |- ph1 $.
-    kore-rewrites-conditional.2 $e |- ph3 $.
-    kore-rewrites-conditional $p |- ( \kore-rewrites ph0 ph2 ph4 ) $= ? $.
+    kore-rewrites-conditional.0 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph3 ph4 ) ) ) $.
+    kore-rewrites-conditional.1 $e |- ( \kore-valid ph0 ph1 ) $.
+    kore-rewrites-conditional.2 $e |- ( \kore-valid ph0 ph3 ) $.
+    kore-rewrites-conditional $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph2 ph4 ) ) $= ? $.
 $}
 
 ${
@@ -177,11 +182,11 @@ ${
     $d y ph3 $.
     $d z ph0 $.
     $d z ph3 $.
-    kore-forall-elim.0 $e |- ( \kore-forall ph0 ph1 x ph2 ) $.
+    kore-forall-elim.0 $e |- ( \kore-valid ph1 ( \kore-forall ph0 ph1 x ph2 ) ) $.
     $( ph3 is functional and has sort ph0 $)
-    kore-forall-elim.1 $e |- ( \kore-forall-sort z ( \kore-exists ph0 z y ( \kore-equals ph0 z y ph3 ) ) ) $.
+    kore-forall-elim.1 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-exists ph0 z y ( \kore-equals ph0 z y ph3 ) ) ) ) $.
     kore-forall-elim.2 $e #Substitution ph4 ph2 ph3 x $.
-    kore-forall-elim $p |- ph4 $= ? $.
+    kore-forall-elim $p |- ( \kore-valid ph1 ph4 ) $= ? $.
 $}
 
 $( a variant of the quantifier elimination above, more convenient for proving functional properties $)
@@ -197,35 +202,35 @@ ${
     $d z ph2 $.
     $d w ph2 $.
 
-    kore-forall-elim-variant.0 $e |- ( \kore-forall-sort x ( \kore-forall ph0 x y ph1 ) ) $.
+    kore-forall-elim-variant.0 $e |- ( \kore-forall-sort x ( \kore-valid x ( \kore-forall ph0 x y ph1 ) ) ) $.
     $( ph2 is functional and has sort ph0 $)
-    kore-forall-elim-variant.1 $e |- ( \kore-forall-sort z ( \kore-exists ph0 z w ( \kore-equals ph0 z w ph2 ) ) ) $.
+    kore-forall-elim-variant.1 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-exists ph0 z w ( \kore-equals ph0 z w ph2 ) ) ) ) $.
     kore-forall-elim-variant.2 $e #Substitution ph3 ph1 ph2 y $.
-    kore-forall-elim-variant $p |- ( \kore-forall-sort x ph3 ) $= ? $.
+    kore-forall-elim-variant $p |- ( \kore-forall-sort x ( \kore-valid x ph3 ) ) $= ? $.
 $}
 
 $( replace a subpattern with an equal one $)
 ${
     $d z ph0 $.
-    kore-equality.0 $e |- ( \kore-forall-sort z ( \kore-equals ph0 z ph1 ph2 ) ) $.
-    kore-equality.1 $e |- ph3 $.
+    kore-equality.0 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-equals ph0 z ph1 ph2 ) ) ) $.
+    kore-equality.1 $e |- ( \kore-valid ph6 ph3 ) $.
     kore-equality.2 $e #Substitution ph3 ph4 ph1 x $.
     kore-equality.3 $e #Substitution ph5 ph4 ph2 x $.
-    kore-equality $p |- ph5 $= ? $.
+    kore-equality $p |- ( \kore-valid ph6 ph5 ) $= ? $.
 $}
 
-kore-equals-reflexivity $p |- ( \kore-forall-sort x ( \kore-equals ph0 x ph1 ph1 ) ) $= ? $.
+kore-equals-reflexivity $p |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ph1 ph1 ) ) ) $= ? $.
 
 ${
-    kore-equals-symmetry.0 $e |- ( \kore-forall-sort x ( \kore-equals ph0 x ph1 ph2 ) ) $.
-    kore-equals-symmetry $p |- ( \kore-forall-sort x ( \kore-equals ph0 x ph2 ph1 ) ) $= ? $.
+    kore-equals-symmetry.0 $e |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ph1 ph2 ) ) ) $.
+    kore-equals-symmetry $p |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ph2 ph1 ) ) ) $= ? $.
 $}
 
 $( ph /\ ph = ph $)
-kore-dup-and $p |- ( \kore-forall-sort x ( \kore-equals ph0 x ( \kore-and ph0 ph1 ph1 ) ph1 ) ) $= ? $.
+kore-dup-and $p |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ( \kore-and ph0 ph1 ph1 ) ph1 ) ) ) $= ? $.
 
 ${
-    kore-rewrites-trans.0 $e |- ( \kore-rewrites ph0 ph1 ph2 ) $.
-    kore-rewrites-trans.1 $e |- ( \kore-rewrites ph0 ph2 ph3 ) $.
-    kore-rewrites-trans $p |- ( \kore-rewrites ph0 ph1 ph3 ) $= ? $.
+    kore-rewrites-trans.0 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph2 ) ) $.
+    kore-rewrites-trans.1 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph2 ph3 ) ) $.
+    kore-rewrites-trans $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) $= ? $.
 $}

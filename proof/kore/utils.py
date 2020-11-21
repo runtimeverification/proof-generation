@@ -194,20 +194,26 @@ class KoreUtils:
             module.remove_sentence(alias_def)
 
     """
+    Quantify all free (pattern) variables in the given axiom
+    """
+    @staticmethod
+    def quantify_all_free_variables_in_axiom(module: Module, axiom: Axiom):
+        free_vars = axiom.pattern.visit(FreePatternVariableVisitor())
+        body = axiom.pattern
+        body_sort = KoreUtils.get_sort(module, body)
+
+        for free_var in free_vars:
+            body = MLPattern(MLPattern.FORALL, [body_sort], [ free_var, body ])
+
+        axiom.pattern = body
+
+    """
     Quantify all free (pattern) variables in the axioms
     """
     @staticmethod
     def quantify_all_free_variables(module: Module):
         for axiom in module.axioms:
-            free_vars = axiom.pattern.visit(FreePatternVariableVisitor())
-            body = axiom.pattern
-            body_sort = KoreUtils.get_sort(module, body)
-
-            for free_var in free_vars:
-                # TODO: fix the output sort here
-                body = MLPattern(MLPattern.FORALL, [body_sort], [ free_var, body ])
-
-            axiom.pattern = body
+            KoreUtils.quantify_all_free_variables_in_axiom(module, axiom)
 
     r"""
     Syntactical unification modulo some axioms

@@ -4,6 +4,7 @@ from urllib.parse import quote_plus
 
 from .kore import ast as kore
 from .kore.ast import KoreVisitor
+from .kore.utils import KoreUtils
 
 from .metamath import ast as mm
 
@@ -30,6 +31,7 @@ class KorePatternEncoder(KoreVisitor):
     FORALL = "\\kore-forall"
     EXISTS = "\\kore-exists"
     FORALL_SORT = "\\kore-forall-sort"
+    VALID = "\\kore-valid"
 
     @staticmethod
     def encode_symbol(symbol: Union[kore.SymbolInstance, str]) -> str:
@@ -87,6 +89,9 @@ class KorePatternEncoder(KoreVisitor):
 
     def postvisit_axiom(self, axiom: kore.Axiom) -> mm.Term:
         term = axiom.pattern.visit(self)
+        sort = KoreUtils.get_sort(axiom.get_parent(), axiom.pattern)
+
+        term = mm.Application(KorePatternEncoder.VALID, [ sort.visit(self), term ])
 
         for var in axiom.sort_variables[::-1]:
             var_term = var.visit(self)

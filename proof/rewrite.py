@@ -6,6 +6,8 @@ from .kore.utils import KoreUtils, PatternPath, UnificationResult
 from .metamath import ast as mm
 from .metamath.composer import Proof
 
+from .encoder import KorePatternEncoder
+
 from .env import ProofGenerator
 from .substitution import SingleSubstitutionProofGenerator
 from .equality import EqualityProofGenerator
@@ -198,7 +200,9 @@ class RewriteProofGenerator(ProofGenerator):
                 step_proof = self.apply_unification_equation_to_lhs(concrete_rewrite_pattern, step_proof, lhs_path, eqn_id)
 
             # check that the proven statement is actually what we want
-            _, lhs_concrete, rhs_concrete = step_proof.statement.terms[1].subterms
+            # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )
+            assert step_proof.statement.terms[1].symbol == KorePatternEncoder.VALID
+            _, lhs_concrete, rhs_concrete = step_proof.statement.terms[1].subterms[1].subterms
 
             assert lhs_concrete == from_pattern_encoded, \
                    "LHS is not we expected: {} vs {}".format(lhs_concrete, from_pattern_encoded)

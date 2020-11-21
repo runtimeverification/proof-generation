@@ -257,6 +257,26 @@ pattern_parser = Lark(
 )
 
 
+# parser for an individual axiom
+axiom_parser = Lark(
+    syntax,
+    start="axiom",
+    parser="lalr",
+    lexer="standard",
+    propagate_positions=True,
+)
+
+
+# parser for an individual module
+module_parser = Lark(
+    syntax,
+    start="module",
+    parser="lalr",
+    lexer="standard",
+    propagate_positions=True,
+)
+
+
 def parse_definition(src: str) -> Definition:
     tree = definition_parser.parse(src)
     return ASTTransformer().transform(tree)
@@ -264,4 +284,14 @@ def parse_definition(src: str) -> Definition:
 
 def parse_pattern(src: str) -> Pattern:
     tree = pattern_parser.parse(src)
+    return ASTTransformer().transform(tree)
+
+
+def parse_axiom(src: str) -> Axiom:
+    tree = axiom_parser.parse(src)
+    return ASTTransformer().transform(tree)
+
+
+def parse_module(src: str) -> Axiom:
+    tree = module_parser.parse(src)
     return ASTTransformer().transform(tree)
