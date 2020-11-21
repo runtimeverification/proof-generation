@@ -8,12 +8,12 @@ layout: home
 Welcome to matching logic proof checker!
 The goal of this project is to define a rigorous
 proof system of [matching logic](http://www.matching-logic.org/index.php/Matching_Logic)
-in a suitable tool (we are currently using metamath),
+in a suitable tool (we are currently using [Metamath](http://us.metamath.org/)),
 so that we can have a minimal trust base for all the
-tools we build around matching logic and K.
+tools we build around matching logic and [K](https://kframework.org/).
 
 Right now, we are building a proof generator
-and checker for [Kore](https://github.com/kframework/kore),
+and checker for [Kore](https://github.com/kframework/kore) (the core calculus of K),
 which is able to take a Kore definition and
 a trace for the execution of a program, and
 generate a proof for the correctness of the
@@ -22,7 +22,6 @@ configuration indeed rewrites to the final
 configuration.
 
 For instance, suppose we have the following K definition:
-
 ```
 module FOO
     imports DOMAINS
@@ -36,12 +35,12 @@ module FOO
 endmodule
 ```
 
-When we execute the following program
+When we execute this simple program:
 ```
 bar(id(foo(13)), id(foo(12)))
 ```
 
-It should rewrite to `foo(13)` through the following trace
+It should rewrite to `foo(13)` through the trace:
 ```
    bar(id(foo(13)), id(foo(12)))
 => id(foo(13))
@@ -49,7 +48,7 @@ It should rewrite to `foo(13)` through the following trace
 ```
 
 And given these pieces of information, our generator
-would generate a metamath file that contains proofs
+would generate a Metamath file that contains proofs
 for the rewriting steps
 
 ```
@@ -64,3 +63,5 @@ step-2 $p |- <id(foo(13))> => <foo(13)> $= ... $.
 
 goal $p |- <bar(id(foo(13)), id(foo(12)))> => <id(foo(13))> $= ... $.
 ```
+
+which is automatically checkable using Metamath.
