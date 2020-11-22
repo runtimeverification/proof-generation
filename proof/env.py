@@ -11,6 +11,7 @@ from .metamath import ast as mm
 from .metamath.composer import Composer, Theorem, Proof
 
 from .encoder import KorePatternEncoder
+from .subsorting import SubsortRelation
 
 
 class ProofGenerator:
@@ -28,6 +29,7 @@ type of proof one wants to build
 class ProofEnvironment:
     def __init__(self, module: kore.Module, prelude: mm.Database=None):
         self.module = module
+        self.loaded_modules = {}
 
         #################################
         # theorems sorted into categories
@@ -36,6 +38,10 @@ class ProofEnvironment:
         self.domain_value_functional_axioms = {} # (sort, string literal) -> theorem
         self.rewrite_axioms = {} # unique id -> (kore axiom, theorem)
         self.substitution_axioms = {} # constant symbol (in metamath) -> theorem
+
+        self.sort_injection_symbol = None
+        self.sort_injection_axiom = None
+        self.subsort_relation = SubsortRelation()
 
         self.domain_values = set() # set of (sort, string literal)
 
@@ -74,6 +80,15 @@ class ProofEnvironment:
     def init_module(self):
         self.preprocess_module(self.module)
         self.load_module_sentences(self.module)
+
+        # load INJ module for the sort injection axiom
+        if "INJ" in self.loaded_modules:
+            inj_module = self.loaded_modules["INJ"]
+            assert "inj" in inj_module.symbol_map, "cannot find sort injection function symbol"
+            self.sort_injection_symbol = inj_module.symbol_map["inj"]
+
+            assert len(inj_module.axioms) == 1, "unexpected INJ module content"
+            self.sort_injection_axiom = self.load_axiom(inj_module.axioms[0], "kore-inj-axiom")
 
     """
     Load metavariables into the composer
@@ -321,6 +336,16 @@ class ProofEnvironment:
         equation = rhs.arguments[0]
         return isinstance(equation, kore.MLPattern) and equation.construct == kore.MLPattern.EQUALS
 
+    def is_subsort_axiom(self, axiom: kore.Axiom) -> Optional[Tuple[kore.SortInstance, kore.SortInstance]]:
+        attribute = axiom.get_attribute_by_symbol("subsort")
+        if attribute is None: return None
+
+        sort1, sort2 = attribute.symbol.sort_arguments
+        sort1.resolve(axiom.get_parent())
+        sort2.resolve(axiom.get_parent())
+
+        return sort1, sort2
+
     """
     Get the content of the attribute UNIQUE'Unds'ID{}(...)
     """
@@ -357,6 +382,11 @@ class ProofEnvironment:
     Load all relavent sentences
     """
     def load_module_sentences(self, module: kore.Module):
+        if module.name in self.loaded_modules:
+            return
+
+        self.loaded_modules[module.name] = module
+
         # visit all imported modules
         for import_stmt in module.imports:
             self.load_module_sentences(import_stmt.module)
@@ -371,8 +401,9 @@ class ProofEnvironment:
             is_functional = self.is_functional_axiom(axiom)
             is_rewrite = self.is_rewrite_axiom(axiom)
             is_equational = self.is_equational_axiom(axiom)
+            subsort_tuple = self.is_subsort_axiom(axiom)
 
-            if is_functional or is_rewrite or is_equational:
+            if is_functional or is_rewrite or is_equational or subsort_tuple is not None:
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
 
                 # record these statements for later use
@@ -382,3 +413,7 @@ class ProofEnvironment:
                 elif is_rewrite:
                     uid = self.get_axiom_unique_id(axiom)
                     self.rewrite_axioms[uid] = axiom, theorem
+                
+                if subsort_tuple is not None:
+                    sort1, sort2 = subsort_tuple
+                    self.subsort_relation.add_subsort(sort1, sort2, theorem)
