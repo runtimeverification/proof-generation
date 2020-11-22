@@ -11,6 +11,7 @@ $c \kore-ceil \kore-floor \kore-equals \kore-in $.
 $c \kore-next \kore-rewrites $.
 $c \kore-dv $.
 $c \kore-valid $.
+$c \kore-is-sort $.
 
 kore-exists-pattern $a #Pattern ( \kore-exists ph0 ph1 x ph2 ) $.
 kore-forall-pattern $a #Pattern ( \kore-forall ph0 ph1 x ph2 ) $.
@@ -72,8 +73,12 @@ ${
     kore-forall-sort-substitution $a #Substitution ( \kore-forall-sort x ph0 ) ( \kore-forall-sort x ph1 ) ph2 xX $.
 $}
 
+kore-forall-sort-substitution-shadowed $a #Substitution ( \kore-forall-sort x ph0 ) ( \kore-forall-sort x ph0 ) ph1 x $.
+
 ${
-    kore-forall-sort-substitution-shadowed $a #Substitution ( \kore-forall-sort x ph0 ) ( \kore-forall x ph0 ) ph1 x $.
+    kore-valid-substitution.0 $e #Substitution ph0 ph2 ph4 xX $.
+    kore-valid-substitution.1 $e #Substitution ph1 ph3 ph4 xX $.
+    kore-valid-substitution $a #Substitution ( \kore-valid ph0 ph1 ) ( \kore-valid ph2 ph3 ) ph4 xX $.
 $}
 
 ${
@@ -209,14 +214,21 @@ ${
     kore-forall-elim-variant $p |- ( \kore-forall-sort x ( \kore-valid x ph3 ) ) $= ? $.
 $}
 
+${
+    kore-forall-sort-elim.0 $e |- ( \kore-forall-sort x ph0 ) $.
+    kore-forall-sort-elim.1 $e |- ( \kore-is-sort ph1 ) $.
+    kore-forall-sort-elim.2 $e #Substitution ph2 ph0 ph1 x $.
+    kore-forall-sort-elim $p |- ph2 $= ? $.
+$}
+
 $( replace a subpattern with an equal one $)
 ${
     $d z ph0 $.
     kore-equality.0 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-equals ph0 z ph1 ph2 ) ) ) $.
-    kore-equality.1 $e |- ( \kore-valid ph6 ph3 ) $.
+    kore-equality.1 $e |- ph3 $.
     kore-equality.2 $e #Substitution ph3 ph4 ph1 x $.
     kore-equality.3 $e #Substitution ph5 ph4 ph2 x $.
-    kore-equality $p |- ( \kore-valid ph6 ph5 ) $= ? $.
+    kore-equality $p |- ph5 $= ? $.
 $}
 
 kore-equals-reflexivity $p |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ph1 ph1 ) ) ) $= ? $.

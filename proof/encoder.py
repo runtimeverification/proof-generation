@@ -25,7 +25,7 @@ class KorePatternEncoder(KoreVisitor):
     IN = "\\kore-in"
     REWRITES = "\\kore-rewrites"
     DV = "\\kore-dv"
-    SORT = "\\kore-sort"
+    IS_SORT = "\\kore-is-sort"
     STRING = "\\kore-string"
 
     FORALL = "\\kore-forall"

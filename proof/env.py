@@ -11,12 +11,60 @@ from .metamath import ast as mm
 from .metamath.composer import Composer, Theorem, Proof
 
 from .encoder import KorePatternEncoder
-from .subsorting import SubsortRelation
 
 
 class ProofGenerator:
     def __init__(self, env: ProofEnvironment):
         self.env = env
+
+
+"""
+A data structure that stores the subsort
+relation (a strict partial order)
+"""
+class SubsortRelation:
+    def __init__(self):
+        self.adj_list: \
+            Mapping[kore.SortInstance, List[Tuple[kore.SortInstance, Theorem]]] = {}
+        # SortInstance -> [ ( supersort, subsorting lemma ) ... ]
+
+    """
+    Return a chain of immediate subsorting: sort1 < A < B < ... < sort2,
+    if sort1 < sort2; otherwise return None
+    """
+    def get_subsort_chain(self, sort1: kore.SortInstance, sort2: kore.SortInstance) -> Optional[List[kore.SortInstance]]:
+        if sort1 == sort2: return None
+        if sort1 not in self.adj_list: return None
+
+        for intermediate, _ in self.adj_list[sort1]:
+            if intermediate == sort2:
+                return [ sort1, sort2 ]
+
+            chain = self.get_subsort_chain(intermediate, sort2)
+            if chain is not None:
+                return [ sort1 ] + chain
+
+                # raise NotImplementedError("non-immediate subsorting not supported")
+                # TODO: use injection lemma to chain subsorts
+
+        return None
+
+    """
+    Add sort1 < sort2
+    """
+    def add_subsort(self, sort1: kore.SortInstance, sort2: kore.SortInstance, subsort_axiom: Theorem):
+        assert sort1 != sort2, f"subsort relation should be irreflexive: {sort1} </ {sort2}"
+        assert self.get_subsort_chain(sort2, sort1) is None, f"cyclic subsorting: {sort1} ? {sort2}"
+
+        if sort1 not in self.adj_list:
+            self.adj_list[sort1] = []
+        self.adj_list[sort1].append((sort2, subsort_axiom))
+
+    def __str__(self):
+        return "\n".join([
+            "{} < {}".format(sort, ", ".join([ str(supersort) for supersort, _ in supersorts ]))
+            for sort, supersorts in self.adj_list.items()
+        ])
 
 
 """
@@ -38,9 +86,12 @@ class ProofEnvironment:
         self.domain_value_functional_axioms = {} # (sort, string literal) -> theorem
         self.rewrite_axioms = {} # unique id -> (kore axiom, theorem)
         self.substitution_axioms = {} # constant symbol (in metamath) -> theorem
+        self.sort_axioms = {} # constant symbol (in metamath) -> theorem
 
         self.sort_injection_symbol = None
+        self.sort_injection_axiom_element_var = None # the only element variable in the axiom
         self.sort_injection_axiom = None
+        self.sort_injection_theorem = None
         self.subsort_relation = SubsortRelation()
 
         self.domain_values = set() # set of (sort, string literal)
@@ -88,7 +139,9 @@ class ProofEnvironment:
             self.sort_injection_symbol = inj_module.symbol_map["inj"]
 
             assert len(inj_module.axioms) == 1, "unexpected INJ module content"
-            self.sort_injection_axiom = self.load_axiom(inj_module.axioms[0], "kore-inj-axiom")
+            self.sort_injection_axiom = inj_module.axioms[0]
+            self.sort_injection_axiom_element_var = inj_module.axioms[0].pattern.get_binding_variable()
+            self.sort_injection_theorem = self.load_axiom(inj_module.axioms[0], "kore-inj-axiom")
 
     """
     Load metavariables into the composer
@@ -134,7 +187,7 @@ class ProofEnvironment:
                 disjoint_stmt = mm.StructuredStatement(mm.Statement.DISJOINT, list(map(mm.Metavariable, element_vars)))
                 self.load_metamath_statement(disjoint_stmt)
 
-    def encode_pattern(self, pattern: Union[kore.Axiom, kore.Pattern]) -> mm.Term:
+    def encode_pattern(self, pattern: Union[kore.Axiom, kore.Pattern, kore.Sort]) -> mm.Term:
         encoder = KorePatternEncoder()
         term = encoder.visit(pattern)
         self.load_metavariables(encoder.metavariables)
@@ -171,8 +224,19 @@ class ProofEnvironment:
         encoded_sort = KorePatternEncoder.encode_sort(sort_definition.sort_id)
         arity = len(sort_definition.sort_variables)
 
+        assert arity == 0, "parametric sort not supported"
+
         self.load_metamath_statement(mm.Comment(str(sort_definition)))
         self.load_constant(encoded_sort, arity, label)
+
+        self.sort_axioms[encoded_sort] = self.load_metamath_statement(mm.StructuredStatement(
+            mm.Statement.AXIOM,
+            [
+                mm.Application("|-"),
+                mm.Application(KorePatternEncoder.IS_SORT, [ mm.Application(encoded_sort) ]),
+            ],
+            label=f"{label}-sort",
+        ))
 
     """
     Load a domain value and generate the corresponding functional axiom

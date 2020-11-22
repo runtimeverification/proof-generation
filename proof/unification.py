@@ -71,7 +71,7 @@ class Equation:
     apply the equation to the subpattern to get an equivalent patten phi'
     and return phi' and the proof of it
     """
-    def prove_validity(self, pattern: kore.Pattern, pattern_proof: Proof, path: PatternPath) -> Tuple[kore.Pattern, Proof]:
+    def prove_validity(self, axiom: kore.Axiom, axiom_proof: Proof, path: PatternPath) -> Tuple[kore.Pattern, Proof]:
         raise NotImplementedError()
 
 
@@ -79,8 +79,8 @@ r"""
 phi /\ phi = phi
 """
 class DuplicateConjunction(Equation):
-    def prove_validity(self, pattern: kore.Pattern, pattern_proof: Proof, path: PatternPath) -> Tuple[kore.Pattern, Proof]:
-        subpattern = KoreUtils.get_subpattern_by_path(pattern, path)
+    def prove_validity(self, axiom: kore.Axiom, axiom_proof: Proof, path: PatternPath) -> Tuple[kore.Pattern, Proof]:
+        subpattern = KoreUtils.get_subpattern_by_path(axiom, path)
 
         assert isinstance(subpattern, kore.MLPattern) and subpattern.construct == kore.MLPattern.AND
         assert subpattern.arguments[0] == subpattern.arguments[1]
@@ -90,8 +90,8 @@ class DuplicateConjunction(Equation):
 
         equal_gen = EqualityProofGenerator(self.env)
         return equal_gen.prove_validity(
-            pattern,
-            pattern_proof,
+            axiom,
+            axiom_proof,
             path,
             subpattern.arguments[0],
             self.env.get_theorem("kore-dup-and").apply(

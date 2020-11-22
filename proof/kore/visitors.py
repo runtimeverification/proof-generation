@@ -337,6 +337,10 @@ class SortSubstitutionVisitor(KoreVisitor, PatternAndSortVisitorStructure):
         super().__init__()
         self.substitution = substitution
 
+    def postvisit_axiom(self, axiom: Axiom, *args) -> Axiom:
+        # an axiom is assumed to have no free sort variables
+        return axiom
+
     def postvisit_sort_instance(self, sort_instance: SortInstance, arguments: List[Sort]) -> SortInstance:
         sort_instance.arguments = arguments
         return sort_instance

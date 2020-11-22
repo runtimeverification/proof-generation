@@ -71,11 +71,8 @@ class RewriteProofGenerator(ProofGenerator):
             current_axiom_pattern = current_axiom_pattern.arguments[1]
 
             # prove the substitution
-            subst_subproof = SingleSubstitutionProofGenerator(self.env, var, term).visit(current_axiom_pattern)
-
-            # and actually do the substitution so that the current pattern
-            # stays consistent with the instance
-            current_axiom_pattern = KoreUtils.copy_and_substitute_pattern(self.env.module, current_axiom_pattern, { var: term })
+            subst_subproof, current_axiom_pattern = \
+                SingleSubstitutionProofGenerator(self.env, var, term).visit_and_substitute(current_axiom_pattern)
 
             current_proof = self.env.get_theorem(elim_axiom).apply(
                 current_proof,
@@ -155,17 +152,18 @@ class RewriteProofGenerator(ProofGenerator):
 
             # reconstruct the rewrite pattern in kore
             # NOTE: this should be the "same" as step_proof.statement
-            concrete_rewrite_pattern = kore.MLPattern(
-                kore.MLPattern.REWRITES,
-                [ instantiated_axiom_pattern.sorts[0] ],
-                [ lhs, rhs ],
+            concrete_rewrite_axiom = kore.Axiom(
+                [],
+                kore.MLPattern(
+                    kore.MLPattern.REWRITES,
+                    [ instantiated_axiom_pattern.sorts[0] ],
+                    [ lhs, rhs ],
+                ),
+                [],
             )
 
             for equation, path in unification_result.applied_equations:
-                concrete_rewrite_pattern, step_proof = equation.prove_validity(concrete_rewrite_pattern, step_proof, [0] + path)
-
-            # for lhs_path, eqn_id in unification.left_applied_equations:
-            #     step_proof = self.apply_unification_equation_to_lhs(concrete_rewrite_pattern, step_proof, lhs_path, eqn_id)
+                concrete_rewrite_axiom, step_proof = equation.prove_validity(concrete_rewrite_axiom, step_proof, [0, 0] + path)
 
             # check that the proven statement is actually what we want
             # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )

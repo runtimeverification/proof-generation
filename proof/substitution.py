@@ -1,4 +1,7 @@
+from typing import Union, Tuple
+
 from .kore import ast as kore
+from .kore.utils import KoreUtils
 
 from .metamath import ast as mm
 from .metamath.composer import Proof, Theorem
@@ -15,16 +18,18 @@ Given a kore pattern phi, pattern psi, and variable x, generate a proof for
 
 where phi[psi/x] is the actual pattern with x substituted with phi,
 with the assumption that distinct meta #Variable varible are disjoint
+
+This also support substituting sort variables
 """
 class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
-    def __init__(self, env: ProofEnvironment, var: kore.Variable, pattern: kore.Pattern):
+    def __init__(self, env: ProofEnvironment, var: Union[kore.Variable, kore.SortVariable], substitute: Union[kore.Pattern, kore.Sort]):
         super().__init__(env)
 
         self.var = var
-        self.pattern = pattern
+        self.substitute = substitute
 
         self.var_encoded = self.env.encode_pattern(var)
-        self.pattern_encoded = self.env.encode_pattern(pattern)
+        self.substitute_encoded = self.env.encode_pattern(substitute)
 
         # get a "template" for the target statement
         # for convenience
@@ -35,10 +40,71 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
                 mm.Application("#Substitution"),
                 mm.Metavariable(tmp1),
                 mm.Metavariable(tmp2),
-                self.pattern_encoded,
+                self.substitute_encoded,
                 self.var_encoded,
             ]
         )
+
+    """
+    Additional to proof, also return a actual substituted pattern/sort
+    """
+    def visit_and_substitute(self, pattern_or_sort: Union[kore.Pattern, kore.Sort]) -> Tuple[Proof, Union[kore.Pattern, kore.Sort]]:
+        proof = super().visit(pattern_or_sort)
+        if isinstance(pattern_or_sort, kore.Pattern):
+            substituted = KoreUtils.copy_and_substitute_pattern(self.env.module, pattern_or_sort, { self.var: self.substitute })
+        else:
+            substituted = KoreUtils.copy_and_substitute_sort(self.env.module, pattern_or_sort, { self.var: self.substitute })
+        return proof, substituted
+
+    def postvisit_axiom(self, axiom: kore.Axiom) -> Proof:
+        # prove substitution of the term
+        # \kore-forall-sort S1 ... \kore-forall-sort Sn \kore-valid ph0 ph1
+
+        pattern_sort = KoreUtils.get_sort(self.env.module, axiom.pattern)
+        pattern_subst_proof = self.visit(axiom.pattern)
+        sort_subst_proof = self.visit(pattern_sort)
+
+        proof = self.env.get_theorem("kore-valid-substitution").apply(
+            sort_subst_proof,
+            pattern_subst_proof,
+        )
+
+        shadowed_index = len(axiom.sort_variables)
+        if isinstance(self.var, kore.SortVariable):
+            # try to locate the position of the quantifer
+            # which coincides with the substitution variables
+            for i, sort_var in enumerate(axiom.sort_variables):
+                if sort_var == self.var:
+                    shadowed_index = i
+                    break
+
+            if shadowed_index < len(axiom.sort_variables):
+                body = proof.statement.terms[1]
+                for sort_var in axiom.sort_variables[shadowed_index + 1:][::-1]:
+                    encoded_sort_var = KorePatternEncoder.encode_sort_variable(sort_var)
+                    body = mm.Application(
+                        KorePatternEncoder.FORALL_SORT,
+                        [
+                            mm.Metavariable(encoded_sort_var),
+                            body,
+                        ],
+                    )
+
+                proof = self.env.get_theorem("kore-forall-sort-substitution-shadowed").apply(
+                    x=self.var_encoded,
+                    ph0=body,
+                    ph1=self.substitute_encoded,
+                )
+
+        # wrap the rest of forall-sort quantifiers
+        for sort_var in axiom.sort_variables[:shadowed_index][::-1]:
+            encoded_sort_var = KorePatternEncoder.encode_sort_variable(sort_var)
+            proof = self.env.get_theorem("kore-forall-sort-substitution").apply(
+                proof,
+                x=mm.Metavariable(encoded_sort_var)
+            )
+
+        return proof
 
     def postvisit_sort_instance(self, sort_instance: kore.SortInstance) -> Proof:
         symbol = KorePatternEncoder.encode_sort(sort_instance)
@@ -48,23 +114,28 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         )
 
     def postvisit_sort_variable(self, sort_variable: kore.SortVariable) -> Proof:
-        assert sort_variable.name != self.var.name
-        return self.env.get_theorem("substitution-distinct-var").apply(
-            yY=self.env.encode_pattern(sort_variable),
-            ph0=self.pattern_encoded,
-            xX=self.var_encoded,
-        )
+        if sort_variable.name == self.var.name:
+            return self.env.get_theorem("substitution-var").apply(
+                ph0=self.substitute_encoded,
+                xX=self.var_encoded
+            )
+        else:
+            return self.env.get_theorem("substitution-distinct-var").apply(
+                yY=self.env.encode_pattern(sort_variable),
+                ph0=self.substitute_encoded,
+                xX=self.var_encoded,
+            )
 
     def postvisit_variable(self, var: kore.Variable) -> Proof:
-        if var == self.var:
+        if var.name == self.var.name:
             return self.env.get_theorem("substitution-var").apply(
-                ph0=self.pattern_encoded,
+                ph0=self.substitute_encoded,
                 xX=self.var_encoded
             )
         else:
             return self.env.get_theorem("substitution-distinct-var").apply(
                 yY=self.env.encode_pattern(var),
-                ph0=self.pattern_encoded,
+                ph0=self.substitute_encoded,
                 xX=self.var_encoded,
             )
 

@@ -1,13 +1,16 @@
 from typing import List, Tuple
 
 from .kore import ast as kore
-from .kore.utils import KoreUtils
+from .kore.visitors import PatternVariableVisitor
 
 from .metamath import ast as mm
 from .metamath.composer import Proof
 
 from .env import ProofGenerator
 from .substitution import SingleSubstitutionProofGenerator
+from .sort import SortProofGenerator
+from .encoder import KorePatternEncoder
+from .equality import EqualityProofGenerator
 
 
 r"""
@@ -57,9 +60,157 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
 
         return [ (var, term) for _, var, term in ordered_variable_to_term ]
 
-    def postvisit_application(self, application: kore.Application) -> Proof:
-        assert application.symbol in self.env.functional_axioms, \
-               "cannot find a functional axiom for symbol instance {}".format(application.symbol)
+    """
+    Specical case: when A is not an immediate subsort of B,
+    we don't have the functional axiom of inj{A, B},
+    in which case we need to stitch the chain of subsorting
+    A < A1 < ... < B together to get a functional pattern
+    and then use the inj axiom to reduce that back to
+    a single injection.
+    """
+    def prove_non_immediate_injection(self, application: kore.Application) -> Proof:
+        assert application.symbol.definition == self.env.sort_injection_symbol
+
+        sort1, sort2 = application.symbol.sort_arguments
+        chain = self.env.subsort_relation.get_subsort_chain(sort1, sort2)
+        assert chain is not None, f"{sort1} is not a subsort of {sort2}, unable to prove that it's functional"
+        assert len(chain) > 2, f"{sort1} is an immediate subsort of {sort2}"
+
+        argument, = application.arguments
+
+        # suppose the chain is S1 < S2 < ... < Sn
+        # first recursively prove the functionality of
+        # inj{Sn-1, Sn}(inj{S1, Sn-1}(<argument>))
+        reduced_injection = kore.Application(
+            kore.SymbolInstance(self.env.sort_injection_symbol, [ sort1, chain[-2] ]),
+            [ argument ],
+        )
+
+        reduced_injection = kore.Application(
+            kore.SymbolInstance(self.env.sort_injection_symbol, [ chain[-2], chain[-1] ]),
+            [ reduced_injection ],
+        )
+
+        reduced_injection_is_functional = self.visit(reduced_injection)
+
+        # TODO: hack
+        sort_var = kore.SortVariable("R")
+        elem_var = kore.Variable("Val", sort2)
+
+        # kore pattern format of the statement above
+        # so that we can do substitution:
+        # axiom{R} \exists{R}(X:<sort2>, \equals{<sort2>, R}(<reduce form>, X:<sort2>))
+        reduced_injection_axiom = kore.Axiom(
+            [ sort_var ],
+            kore.MLPattern(
+                kore.MLPattern.EXISTS,
+                [ sort_var ],
+                [
+                    elem_var,
+                    kore.MLPattern(
+                        kore.MLPattern.EQUALS,
+                        [ sort2, sort_var ],
+                        [ elem_var, reduced_injection ],
+                    ),
+                ],
+            ),
+            [],
+        )
+
+        inj_theorem_instance, inj_axiom_instance = SortProofGenerator(self.env).get_inj_instance(sort1, chain[-2], chain[-1])
+
+        current_argument = reduced_injection.arguments[0].arguments[0]
+        current_argument_is_functional = self.visit(current_argument)
+
+        # inj_axiom_instance is of the form
+        # \forall{...}(X:<sort1>, ... = ...)
+        # we need to substitute current_argument for X in the equation
+        subst_proof, _ = \
+            SingleSubstitutionProofGenerator(self.env, self.env.sort_injection_axiom_element_var, current_argument) \
+            .visit_and_substitute(inj_axiom_instance.pattern.arguments[1])
+
+        # get the concrete form of the inj axiom (substitute the actual subpattern for X)
+        concrete_inj_theorem_instance = self.env.get_theorem("kore-forall-elim-variant").apply(
+            inj_theorem_instance,
+            current_argument_is_functional,
+            subst_proof,
+        )
+
+        _, proof = EqualityProofGenerator(self.env).prove_validity(
+            reduced_injection_axiom,
+            reduced_injection_is_functional,
+            [ 0, 1, 1 ], # this is the path of the LHS of the equation in reduced_injection_axiom
+
+            # the final injection pattern: inj{S1, S2}(<argument>)
+            kore.Application(
+                kore.SymbolInstance(self.env.sort_injection_symbol, [ sort1, sort2 ]),
+                [ argument ],
+            ),
+            concrete_inj_theorem_instance,
+        )
+
+        return proof
+
+        # zip_interval = lambda lst: zip(lst[:-1], lst[1:])
+
+        # # suppose the chain is S1 < ... < Sn
+        # # first prove the functionality of the expanded form
+        # # inj{Sn-1, Sn}( ... inj{S1, S2}(<argument>) ... )
+        # expanded_form = argument
+
+        # for s1, s2 in zip_interval(chain):
+        #     expanded_form = kore.Application(
+        #         kore.SymbolInstance(self.env.sort_injection_symbol, [ s1, s2 ]),
+        #         [ expanded_form ],
+        #     )
+        #     expanded_form.resolve(self.env.module)
+
+        # # this should be of the form
+        # # |- ( \forall-sort R ( \kore-valid R ( \exists Sn R X ( \equals Sn R inj{Sn-1, Sn}(...) = X ) ) ) )
+        # expanded_form_is_functional = self.visit(expanded_form)
+
+        
+
+        # then use the injection axiom (equality)
+        # to reduce it back to the original form
+
+        # sort_gen = SortProofGenerator(self.env)
+
+        # # since A is NOT an immediate subsort of B
+        # # the expanded form has to have at least two
+        # # layers of injections
+        # current_argument = expanded_form.arguments[0].arguments[0]
+
+        # for (s1, s2), (_, s3) in enumerate(zip_interval(zip_interval(chain))):
+        #     # reduce inj{s2, s3}(inj{s1, s2}(X)) to inj{s1, s3}(X)
+        #     inj_axiom_instance = sort_gen.get_inj_axiom_instance(s1, s2, s3)
+
+        #     current_argument_is_functional = self.visit(current_argument)
+
+        #     subst_proof, _ = \
+        #         SingleSubstitutionProofGenerator(self.env, self.env.sort_injection_axiom_element_var, current_argument) \
+        #         .visit_and_substitute(inj_axiom_instance)
+
+        #     # get the concrete form of the inj axiom (substitute the actual subpattern for X)
+        #     concrete_inj_axiom_instance = self.env.get_theorem("kore-forall-elim-variant").apply(
+        #         inj_axiom_instance,
+        #         current_argument_is_functional,
+        #         subst_proof,
+        #     )
+
+        #     EqualityProofGenerator(self.env).prove_validity(
+        #         expanded_form_axiom,
+        #         expanded_form_is_functional,
+        #         [ 0, 1, 0 ], # this is the path of the LHS of the equation in expanded_form_axiom
+                
+        #     )
+
+    def postvisit_application(self, application: kore.Application) -> Tuple[Proof, kore.Axiom]:
+        if application.symbol not in self.env.functional_axioms:
+            if application.symbol.definition == self.env.sort_injection_symbol:
+                return self.prove_non_immediate_injection(application)
+            else:
+                assert False, "cannot find a functional axiom for symbol instance {}".format(application.symbol)
         
         axiom, theorem = self.env.functional_axioms[application.symbol]
         ordered_substitution = self.get_order_of_substitution(axiom, application)
@@ -73,9 +224,9 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
 
             assert current_pattern.get_binding_variable() == var
             current_pattern = current_pattern.arguments[1]
-            subst_subproof = SingleSubstitutionProofGenerator(self.env, var, term).visit(current_pattern)
-
-            current_pattern = KoreUtils.copy_and_substitute_pattern(self.env.module, current_pattern, { var: term })
+            
+            subst_subproof, current_pattern = \
+                SingleSubstitutionProofGenerator(self.env, var, term).visit_and_substitute(current_pattern)
 
             # these info should be enough for the composer to infer all variables
             proof = self.env.get_theorem("kore-forall-elim-variant").apply(

@@ -6,6 +6,9 @@ from .ast import *
 from .visitors import PatternSubstitutionVisitor, SortSubstitutionVisitor, CopyVisitor, FreePatternVariableVisitor
 
 
+"""
+Path to a subpattern of a pattern or an axiom
+"""
 PatternPath = NewType("PatternPath", List[int])
 
 
@@ -14,19 +17,24 @@ Utility functions on KORE AST
 """
 class KoreUtils:
     @staticmethod
-    def get_subpattern_by_path(pattern: Pattern, path: PatternPath) -> Pattern:
-        if len(path) == 0: return pattern
-
-        assert isinstance(pattern, Application) or isinstance(pattern, MLPattern), \
-               "path {} does not exists in pattern {}".format(path, pattern)
+    def get_subpattern_by_path(ast: Union[Pattern, Axiom], path: PatternPath) -> Union[Pattern, Axiom]:
+        if len(path) == 0: return ast
 
         first, *rest = path
-        assert first < len(pattern.arguments), "path {} does not exists in pattern {}".format(path, pattern)
+
+        if isinstance(ast, Axiom):
+            assert first == 0, f"axiom {ast} only have one immediate subpattern"
+            return KoreUtils.get_subpattern_by_path(ast.pattern, rest)
+
+        assert isinstance(ast, Application) or isinstance(ast, MLPattern), \
+               "path {} does not exists in pattern {}".format(path, ast)
+
+        assert first < len(ast.arguments), f"path {path} does not exists in pattern {ast}"
 
         if len(rest):
-            return KoreUtils.get_subpattern_by_path(pattern.arguments[first], rest)
+            return KoreUtils.get_subpattern_by_path(ast.arguments[first], rest)
         else:
-            return pattern.arguments[first]
+            return ast.arguments[first]
 
     """
     path: path to a subpattern
@@ -34,50 +42,55 @@ class KoreUtils:
     phi would have the path [ 1, 0 ]
     """
     @staticmethod
-    def replace_path_by_pattern(pattern: Pattern, path: PatternPath, replacement: Pattern):
+    def replace_path_by_pattern(ast: Union[Pattern, Axiom], path: PatternPath, replacement: Pattern):
         assert len(path), "empty path"
-        assert isinstance(pattern, Application) or isinstance(pattern, MLPattern), \
-               "path {} does not exists in pattern {}".format(path, pattern)
 
         first, *rest = path
 
+        if isinstance(ast, Axiom):
+            assert first == 0, f"axiom {ast} only have one immediate subpattern"
+
+            if len(rest):
+                KoreUtils.replace_path_by_pattern(ast.pattern, rest, replacement)
+            else:
+                # TODO: check for free sort variables
+                ast.pattern = replacement
+            return
+
+        assert isinstance(ast, Application) or isinstance(ast, MLPattern), \
+               "path {} does not exists in pattern {}".format(path, ast)
+
         # Application and MLPattern all use .arguments for the list of arguments
 
-        assert first < len(pattern.arguments), "path {} does not exists in pattern {}".format(path, pattern)
+        assert first < len(ast.arguments), "path {} does not exists in pattern {}".format(path, ast)
 
         if len(rest):
-            KoreUtils.replace_path_by_pattern(pattern.arguments[first], rest, replacement)
+            KoreUtils.replace_path_by_pattern(ast.arguments[first], rest, replacement)
         else:
             # do the actual replacement
-            pattern.arguments[first] = replacement
+            ast.arguments[first] = replacement
 
     @staticmethod
-    def copy_and_replace_path_by_pattern(module: Module, pattern: Pattern, path: PatternPath, replacement: Pattern) -> Pattern:
-        copied = KoreUtils.copy_pattern(module, pattern)
+    def copy_and_replace_path_by_pattern(module: Module, ast: Union[Pattern, Axiom], path: PatternPath, replacement: Pattern) -> Union[Pattern, Axiom]:
+        copied = KoreUtils.copy_ast(module, ast)
         KoreUtils.replace_path_by_pattern(copied, path, replacement)
         return copied
 
     @staticmethod
-    def copy_pattern(module: Module, pattern: Pattern) -> Pattern:
-        copied_pattern = pattern.visit(CopyVisitor())
-        copied_pattern.resolve(module)
-        return copied_pattern
+    def copy_ast(module: Module, ast: BaseAST) -> BaseAST:
+        copy_ast = ast.visit(CopyVisitor())
+        copy_ast.resolve(module)
+        return copy_ast
 
     @staticmethod
-    def copy_and_substitute_pattern(module: Module, pattern: Pattern, substitution: Mapping[Variable, Pattern]) -> Pattern:
-        copied = KoreUtils.copy_pattern(module, pattern)
-        return copied.visit(PatternSubstitutionVisitor(substitution))
+    def copy_and_substitute_pattern(module: Module, ast: Union[Pattern, Axiom], substitution: Mapping[Variable, Pattern]) -> Union[Pattern, Axiom]:
+        copied = KoreUtils.copy_ast(module, ast)
+        return PatternSubstitutionVisitor(substitution).visit(copied)
 
     @staticmethod
-    def copy_sort(module: Module, sort: Sort) -> Sort:
-        copied_sort = sort.visit(CopyVisitor())
-        copied_sort.resolve(module)
-        return copied_sort
-
-    @staticmethod
-    def copy_and_substitute_sort(module: Module, sort: Pattern, substitution: Mapping[SortVariable, Sort]) -> Sort:
-        copied = KoreUtils.copy_sort(module, sort)
-        return copied.visit(SortSubstitutionVisitor(substitution))
+    def copy_and_substitute_sort(module: Module, ast: Union[Pattern, Axiom, Sort], substitution: Mapping[SortVariable, Sort]) -> Union[Pattern, Axiom, Sort]:
+        copied = KoreUtils.copy_ast(module, ast)
+        return SortSubstitutionVisitor(substitution).visit(copied)
 
     """
     Expand one pattern that uses an alias definition
@@ -95,7 +108,7 @@ class KoreUtils:
         assignment = { var: arg for var, arg in zip(variables, application.arguments) }
         assignment_visitor = PatternSubstitutionVisitor(assignment)
         
-        copied_rhs = KoreUtils.copy_pattern(alias_def.get_parent(), alias_def.rhs)
+        copied_rhs = KoreUtils.copy_ast(alias_def.get_parent(), alias_def.rhs)
         copied_rhs.visit(assignment_visitor)
 
         return copied_rhs
@@ -202,8 +215,8 @@ class KoreUtils:
             return KoreUtils.copy_and_substitute_sort(module, symbol_def.output_sort, substitution)
 
         if isinstance(pattern, MLPattern):
-            # NOTE: as a convention, the first sort in the sort arguments is the output sort
-            return pattern.sorts[0]
+            # NOTE: as a convention, the last sort in the sort arguments is the output sort
+            return pattern.sorts[-1]
 
         assert False, "unable to get the sort of pattern `{}`".format(pattern)
 
