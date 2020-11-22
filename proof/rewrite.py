@@ -1,7 +1,7 @@
 from typing import Optional, List, Tuple, Mapping
 
 from .kore import ast as kore
-from .kore.utils import KoreUtils, PatternPath, UnificationResult
+from .kore.utils import KoreUtils, PatternPath
 
 from .metamath import ast as mm
 from .metamath.composer import Proof
@@ -12,6 +12,7 @@ from .env import ProofGenerator
 from .substitution import SingleSubstitutionProofGenerator
 from .equality import EqualityProofGenerator
 from .functional import FunctionalProofGenerator
+from .unification import UnificationProofGenerator
 
 
 """
@@ -84,45 +85,6 @@ class RewriteProofGenerator(ProofGenerator):
 
         return current_axiom_pattern, current_proof
 
-    """
-    Apply the specified equation to the LHS of the
-    proved rewrite pattern, and return a proof for
-    the same rewrite pattern with the equation
-    applied to the specified path.
-    """
-    def apply_unification_equation_to_lhs(
-        self,
-        rewrite_pattern: kore.Pattern,
-        rewrite_pattern_proof: Proof, # proof for the pattern above
-        lhs_path: PatternPath,
-        eqn_id, # equation to apply (e.g. UnificationResult.MODULO_DUP_CONJUNCTION)
-    ) -> Proof:
-        assert isinstance(rewrite_pattern, kore.MLPattern) and rewrite_pattern.construct == kore.MLPattern.REWRITES
-        lhs, _ = rewrite_pattern.arguments
-
-        if eqn_id == UnificationResult.MODULO_DUP_CONJUNCTION:
-            subpattern = KoreUtils.get_subpattern_by_path(lhs, lhs_path)
-            assert isinstance(subpattern, kore.MLPattern) and subpattern.construct == kore.MLPattern.AND
-            assert subpattern.arguments[0] == subpattern.arguments[1]
-
-            encoded_sort = self.env.encode_pattern(subpattern.sorts[0])
-            encoded_pattern = self.env.encode_pattern(subpattern.arguments[0])
-
-            equal_gen = EqualityProofGenerator(self.env)
-            return equal_gen.prove_validity(
-                rewrite_pattern,
-                rewrite_pattern_proof,
-                [0] + lhs_path, # same as lhs path but one level deeper due to the outer layer rewrite
-                subpattern.arguments[0],
-                self.env.get_theorem("kore-dup-and").apply(
-                    x=self.env.get_theorem("x-element-var").as_proof(),
-                    ph0=encoded_sort,
-                    ph1=encoded_pattern,
-                ),
-            )
-        else:
-            raise Exception(f"unsupport equation `{eqn_id}`")
-
     def prove_rewrite_step(
         self,
         from_pattern: kore.Pattern,
@@ -137,6 +99,8 @@ class RewriteProofGenerator(ProofGenerator):
         from_pattern_encoded = self.env.encode_pattern(from_pattern)
         to_pattern_encoded = self.env.encode_pattern(to_pattern)
 
+        unification_gen = UnificationProofGenerator(self.env)
+
         if axiom_id is not None:
             # lookup the selected axiom if given
             assert axiom_id in self.env.rewrite_axioms, \
@@ -146,15 +110,14 @@ class RewriteProofGenerator(ProofGenerator):
 
             # unify `from_pattern` with the lhs of the selected axiom
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.pattern)
-            unification = KoreUtils.unify_patterns_as_instance(lhs, from_pattern)
-            assert unification is not None, \
-                "`{}` is not an instance of the RHS `{}`".format(from_pattern, lhs)
+            unification_result = unification_gen.unify_patterns(lhs, from_pattern)
+            assert unification_result is not None, "unable to unify `{}` and `{}`".format(from_pattern, lhs)
         else:
             # if no axiom given, try to find one by brute force
             for _, (rewrite_axiom, rewrite_axiom_in_mm) in self.env.rewrite_axioms.items():
                 lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.pattern)
-                unification = KoreUtils.unify_patterns_as_instance(lhs, from_pattern)
-                if unification is not None:
+                unification_result = unification_gen.unify_patterns(lhs, from_pattern)
+                if unification_result is not None:
                     break
             else:
                 assert False, "unable to find axiom to rewrite `{}`".format(from_pattern)
@@ -164,7 +127,9 @@ class RewriteProofGenerator(ProofGenerator):
         # are all concrete so that iterative substitution is equivalent
         # to a one-time simultaneous substitution
 
-        substitution = unification.check_consistency()
+        substitution = unification_result.get_lhs_substitution_as_instance()
+
+        assert substitution is not None, "`{}` is not an instance of `{}`".format(from_pattern, lhs)
 
         instantiated_axiom_pattern, instantiated_proof = \
             self.apply_forall_elim(rewrite_axiom, rewrite_axiom_in_mm.as_proof(), substitution)
@@ -196,8 +161,11 @@ class RewriteProofGenerator(ProofGenerator):
                 [ lhs, rhs ],
             )
 
-            for lhs_path, eqn_id in unification.left_applied_equations:
-                step_proof = self.apply_unification_equation_to_lhs(concrete_rewrite_pattern, step_proof, lhs_path, eqn_id)
+            for equation, path in unification_result.applied_equations:
+                concrete_rewrite_pattern, step_proof = equation.prove_validity(concrete_rewrite_pattern, step_proof, [0] + path)
+
+            # for lhs_path, eqn_id in unification.left_applied_equations:
+            #     step_proof = self.apply_unification_equation_to_lhs(concrete_rewrite_pattern, step_proof, lhs_path, eqn_id)
 
             # check that the proven statement is actually what we want
             # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )

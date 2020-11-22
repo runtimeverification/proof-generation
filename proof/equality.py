@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from .kore import ast as kore
 from .kore.visitors import PatternVariableVisitor
 from .kore.utils import KoreUtils, PatternPath
@@ -25,10 +27,10 @@ class EqualityProofGenerator(ProofGenerator):
     - an unconditional equation in the form
         forall sort R. equals { S, R } ( psi, psi' )
 
-    Returns a proof using (primarily) `kore-equality`
-    for phi with psi replaced by psi'
+    Returns phi with psi replaced by psi',
+    and a proof for it using (primarily) `kore-equality`
     """
-    def prove_validity(self, pattern: kore.Pattern, pattern_proof: Proof, path: PatternPath, replacement: kore.Pattern, equation_proof: Proof):
+    def prove_validity(self, pattern: kore.Pattern, pattern_proof: Proof, path: PatternPath, replacement: kore.Pattern, equation_proof: Proof) -> Tuple[kore.Pattern, Proof]:
         assert len(path)
         original = KoreUtils.get_subpattern_by_path(pattern, path)
 
@@ -42,36 +44,16 @@ class EqualityProofGenerator(ProofGenerator):
 
         var = kore.Variable(fresh_var, sort)
         template_pattern = KoreUtils.copy_and_replace_path_by_pattern(self.env.module, pattern, path, var)
+        final_pattern = KoreUtils.copy_and_replace_path_by_pattern(self.env.module, pattern, path, replacement)
 
         subst_proof1 = SingleSubstitutionProofGenerator(self.env, var, original).visit(template_pattern)
         subst_proof2 = SingleSubstitutionProofGenerator(self.env, var, replacement).visit(template_pattern)
 
-        return self.env.get_theorem("kore-equality").apply(
+        final_pattern_proof = self.env.get_theorem("kore-equality").apply(
             equation_proof,
             pattern_proof,
             subst_proof1,
             subst_proof2,
         )
 
-    # """
-    # Prove an equality of the original pattern
-    # and the pattern after substituting a equal
-    # subpattern
-    # """
-    # def prove_equality(self, pattern: kore.Pattern, path: PatternPath, replacement: kore.Pattern, equation_proof: Proof):
-    #     sort = KoreUtils.get_sort(self.gen.module, pattern)
-
-    #     equality_in_kore = kore.MLPattern(kore.MLPattern.FORALL, kore.MLPattern)
-
-    #     encoded_sort = self.gen.encode_kore_pattern(sort)
-    #     encoded_pattern = self.gen.encode_kore_pattern(pattern)
-
-    #     refl_equality = self.env.get_theorem("kore-equals-reflexivity").apply(
-    #         ph1=encoded_sort,
-    #         ph2=encoded_pattern,
-    #     )
-
-    #     # the equality is of the form
-    #     # ( \kore-forall \kore-sort z ( \kore-equals ph1 z ph2 ph2 ) )
-    #     # so we need to add a prefix to the path to reach ph2[path]
-    #     return self.prove_validity(pattern, [ 1, 0 ] + path, replacement, refl_equality, equation_proof)
+        return final_pattern, final_pattern_proof
