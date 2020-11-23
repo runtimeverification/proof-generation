@@ -34,7 +34,7 @@ class KoreUtils:
 
     @staticmethod
     def get_subpattern_by_path(ast: Union[Pattern, Axiom], path: PatternPath) -> Union[Pattern, Axiom]:
-        if len(path) == 0: return ast
+        if not path: return ast
 
         first, *rest = path
 
@@ -46,11 +46,7 @@ class KoreUtils:
                "path {} does not exists in pattern {}".format(path, ast)
 
         assert first < len(ast.arguments), f"path {path} does not exists in pattern {ast}"
-
-        if len(rest):
-            return KoreUtils.get_subpattern_by_path(ast.arguments[first], rest)
-        else:
-            return ast.arguments[first]
+        return KoreUtils.get_subpattern_by_path(ast.arguments[first], rest)
 
     """
     path: path to a subpattern
@@ -58,39 +54,30 @@ class KoreUtils:
     phi would have the path [ 1, 0 ]
     """
     @staticmethod
-    def replace_path_by_pattern(ast: Union[Pattern, Axiom], path: PatternPath, replacement: Pattern):
-        assert len(path), "empty path"
+    def replace_path_by_pattern(ast: Union[Pattern, Axiom], path: PatternPath, replacement: Pattern) -> Union[Pattern, Axiom]:
+        if not path:
+            assert isinstance(ast, Pattern)
+            return replacement
 
         first, *rest = path
 
         if isinstance(ast, Axiom):
             assert first == 0, f"axiom {ast} only have one immediate subpattern"
-
-            if len(rest):
-                KoreUtils.replace_path_by_pattern(ast.pattern, rest, replacement)
-            else:
-                # TODO: check for free sort variables
-                ast.pattern = replacement
-            return
+            ast.pattern = KoreUtils.replace_path_by_pattern(ast.pattern, rest, replacement)
+            return ast
 
         assert isinstance(ast, Application) or isinstance(ast, MLPattern), \
                "path {} does not exists in pattern {}".format(path, ast)
 
         # Application and MLPattern all use .arguments for the list of arguments
-
         assert first < len(ast.arguments), "path {} does not exists in pattern {}".format(path, ast)
-
-        if len(rest):
-            KoreUtils.replace_path_by_pattern(ast.arguments[first], rest, replacement)
-        else:
-            # do the actual replacement
-            ast.arguments[first] = replacement
+        ast.arguments[first] = KoreUtils.replace_path_by_pattern(ast.arguments[first], rest, replacement)
+        return ast
 
     @staticmethod
     def copy_and_replace_path_by_pattern(ast: Union[Pattern, Axiom], path: PatternPath, replacement: Pattern) -> Union[Pattern, Axiom]:
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
-        KoreUtils.replace_path_by_pattern(copied, path, replacement)
-        return copied
+        return KoreUtils.replace_path_by_pattern(copied, path, replacement)
 
     """
     Expand one pattern that uses an alias definition

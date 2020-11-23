@@ -10,6 +10,8 @@ from .metamath.composer import Proof
 
 from .env import ProofGenerator, ProofEnvironment, ProvableClaim
 from .equality import EqualityProofGenerator
+from .sort import SortProofGenerator
+from .quantifier import QuantifierProofGenerator
 
 
 class UnificationResult:
@@ -27,8 +29,8 @@ class UnificationResult:
     def prepend_path(self, prefix: int) -> UnificationResult:
         return UnificationResult(self.substitution, [ (eqn, [ prefix ] + path) for eqn, path in self.applied_equations ])
 
-    def prepend_equation(self, equation: Equation, path: PatternPath) -> UnificationResult:
-        return UnificationResult(self.substitution, [ (equation, path) ] + self.applied_equations)
+    def append_equation(self, equation: Equation, path: PatternPath) -> UnificationResult:
+        return UnificationResult(self.substitution, self.applied_equations + [ (equation, path) ])
 
     """
     Check consistency and check if in the original
@@ -101,6 +103,36 @@ class DuplicateConjunction(Equation):
         )
 
 
+r"""
+If A < B < C
+inj{B, C}(inj{A, B}(X)) === inj{A, C}(X)
+"""
+class InjectionCombine(Equation):
+    def prove_validity(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
+        subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
+        assert isinstance(subpattern, kore.Application) and \
+               subpattern.symbol.definition == self.env.sort_injection_symbol
+
+        sort_b, sort_c = subpattern.symbol.sort_arguments
+
+        subsubpattern = subpattern.arguments[0]
+        assert isinstance(subsubpattern, kore.Application) and \
+               subsubpattern.symbol.definition == self.env.sort_injection_symbol
+
+        sort_a, sort_b1 = subsubpattern.symbol.sort_arguments
+        assert sort_b1 == sort_b, f"ill-sorted injection {subpattern}"
+
+        # sort_a < sort_b < sort_c
+        inj_axiom_instance = SortProofGenerator(self.env).get_inj_instance(sort_a, sort_b, sort_c)
+        inj_axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim_single(inj_axiom_instance, subsubpattern.arguments[0])
+        
+        return EqualityProofGenerator(self.env).prove_validity(
+            provable, path,
+            inj_axiom_instance.claim.pattern.arguments[1], # RHS of the inj axiom
+            inj_axiom_instance.proof,
+        )
+
+
 """
 Unify two patterns modulo certain equations
 """
@@ -115,6 +147,7 @@ class UnificationProofGenerator(ProofGenerator):
             self.unify_ml_patterns,
             self.unify_string_literals,
             self.unify_left_duplicate_conjunction,
+            self.unify_right_splittable_inj,
         ]
 
         for algo in algorithms:
@@ -219,6 +252,43 @@ class UnificationProofGenerator(ProofGenerator):
             result1 = self.unify_patterns(pattern1.arguments[0], pattern2)
             result2 = self.unify_patterns(pattern1.arguments[1], pattern2)
             if result1 is not None and result2 is not None:
-                return result1.prepend_path(0).merge(result2.prepend_path(1)).prepend_equation(DuplicateConjunction(self.env), [])
+                return result1.prepend_path(0).merge(result2.prepend_path(1)).append_equation(DuplicateConjunction(self.env), [])
         
+        return None
+
+    r"""
+    If left pattern is inj{A, C}(X) and
+    the right pattern is inj{B, C}(X)
+    such that B < A, we can split the
+    right pattern to inj{A, C}(inj{B, A}(X))
+    and keep unifying
+    """
+    def unify_right_splittable_inj(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        if isinstance(pattern1, kore.Application) and \
+           isinstance(pattern2, kore.Application) and \
+           pattern1.symbol.definition == self.env.sort_injection_symbol and \
+           pattern2.symbol.definition == self.env.sort_injection_symbol:
+
+            sort_a = pattern1.symbol.sort_arguments[0]
+            sort_b = pattern2.symbol.sort_arguments[0]
+            sort_c1 = pattern1.symbol.sort_arguments[1]
+            sort_c2 = pattern2.symbol.sort_arguments[1]
+
+            if sort_c1 == sort_c2 and sort_a != sort_b and \
+               self.env.subsort_relation.get_subsort_chain(sort_b, sort_a) is not None:
+
+                split_right_inj = kore.Application(
+                    kore.SymbolInstance(
+                        self.env.sort_injection_symbol,
+                        [ sort_b, sort_a ],
+                    ),
+                    [ pattern2.arguments[0] ]
+                )
+                split_right_inj.resolve(self.env.module)
+
+                result = self.unify_patterns(pattern1.arguments[0], split_right_inj)
+                if result is None: return None
+
+                return result.prepend_path(0).append_equation(InjectionCombine(self.env), [])
+
         return None

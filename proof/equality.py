@@ -37,8 +37,6 @@ class EqualityProofGenerator(ProofGenerator):
         replacement: kore.Pattern,
         equation_proof: Proof,
     ) -> ProvableClaim:
-        assert len(path), "empty path"
-
         original = KoreUtils.get_subpattern_by_path(provable.claim, path)
 
         # TODO: we are generating a mm fresh variable for a kore variable

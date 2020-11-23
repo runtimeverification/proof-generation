@@ -4,7 +4,7 @@ from .kore import ast as kore
 from .kore.utils import KoreUtils, PatternPath
 
 from .metamath import ast as mm
-from .metamath.composer import Proof
+from .metamath.composer import Proof, Theorem
 
 from .encoder import KorePatternEncoder
 
@@ -120,6 +120,7 @@ class RewriteProofGenerator(ProofGenerator):
             provable = ProvableClaim(concrete_rewrite, step_proof)
 
             for equation, path in unification_result.applied_equations:
+                print("> applying equation", equation)
                 provable = equation.prove_validity(provable, [0, 0] + path)
 
             # check that the proven statement is actually what we want
@@ -128,9 +129,9 @@ class RewriteProofGenerator(ProofGenerator):
             _, lhs_concrete, rhs_concrete = provable.proof.statement.terms[1].subterms[1].subterms
 
             assert lhs_concrete == from_pattern_encoded, \
-                   "LHS is not we expected: {} vs {}".format(lhs_concrete, from_pattern_encoded)
+                   "LHS is not what we expected: {} vs {}".format(lhs_concrete, from_pattern_encoded)
             assert rhs_concrete == to_pattern_encoded, \
-                   "RHS is not we expected: {} vs {}".format(rhs_concrete, to_pattern_encoded)
+                   "RHS is not what we expected: {} vs {}".format(rhs_concrete, to_pattern_encoded)
 
             return provable.proof
         else:
@@ -140,11 +141,11 @@ class RewriteProofGenerator(ProofGenerator):
     Use transitivity of rewrite
     to chain a list of rewrite steps
     """
-    def chain_rewrite_steps(self, step_proofs: List[Proof]) -> Proof:
-        assert len(step_proofs)
+    def chain_rewrite_steps(self, step_theorems: List[Theorem]) -> Proof:
+        assert len(step_theorems)
 
-        current_proof = step_proofs[0]
-        for next_step in step_proofs[1:]:
-            current_proof = self.env.get_theorem("kore-rewrites-trans").apply(current_proof, next_step)
+        current_proof = step_theorems[0].as_proof()
+        for next_step in step_theorems[1:]:
+            current_proof = self.env.get_theorem("kore-rewrites-trans").apply(current_proof, next_step.as_proof())
         
         return current_proof

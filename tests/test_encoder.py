@@ -31,7 +31,7 @@ class TestKorePatternEncoder(unittest.TestCase):
         axiom = parse_axiom(kore_text)
         axiom.resolve(module)
         axiom.set_parent(module)
-        KoreUtils.quantify_all_free_variables_in_axiom(module, axiom)
+        KoreUtils.quantify_all_free_variables_in_axiom(axiom)
         self.assertEncodingEqual(axiom, encoding)
 
     def test_element_var_encoding(self):
