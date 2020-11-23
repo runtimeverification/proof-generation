@@ -181,6 +181,7 @@ ${
     kore-rewrites-conditional $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph2 ph4 ) ) $= ? $.
 $}
 
+$( forall elimination with no sort variables $)
 ${
     $d y z $.
     $d y ph0 $.
@@ -194,7 +195,7 @@ ${
     kore-forall-elim $p |- ( \kore-valid ph1 ph4 ) $= ? $.
 $}
 
-$( a variant of the quantifier elimination above, more convenient for proving functional properties $)
+$( forall elimination with 1 sort variable $)
 ${
     $d x y $.
     $d z w $.
@@ -207,11 +208,11 @@ ${
     $d z ph2 $.
     $d w ph2 $.
 
-    kore-forall-elim-variant.0 $e |- ( \kore-forall-sort x ( \kore-valid x ( \kore-forall ph0 x y ph1 ) ) ) $.
+    kore-forall-elim-v1.0 $e |- ( \kore-forall-sort x ( \kore-valid ph4 ( \kore-forall ph0 ph4 y ph1 ) ) ) $.
     $( ph2 is functional and has sort ph0 $)
-    kore-forall-elim-variant.1 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-exists ph0 z w ( \kore-equals ph0 z w ph2 ) ) ) ) $.
-    kore-forall-elim-variant.2 $e #Substitution ph3 ph1 ph2 y $.
-    kore-forall-elim-variant $p |- ( \kore-forall-sort x ( \kore-valid x ph3 ) ) $= ? $.
+    kore-forall-elim-v1.1 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-exists ph0 z w ( \kore-equals ph0 z w ph2 ) ) ) ) $.
+    kore-forall-elim-v1.2 $e #Substitution ph3 ph1 ph2 y $.
+    kore-forall-elim-v1 $p |- ( \kore-forall-sort x ( \kore-valid ph4 ph3 ) ) $= ? $.
 $}
 
 ${

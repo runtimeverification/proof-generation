@@ -17,6 +17,22 @@ Utility functions on KORE AST
 """
 class KoreUtils:
     @staticmethod
+    def copy_ast(module: Module, ast: BaseAST) -> BaseAST:
+        copy_ast = ast.visit(CopyVisitor())
+        copy_ast.resolve(module)
+        return copy_ast
+
+    @staticmethod
+    def copy_and_substitute_pattern(ast: Union[Pattern, Axiom], substitution: Mapping[Variable, Pattern]) -> Union[Pattern, Axiom]:
+        copied = KoreUtils.copy_ast(ast.get_module(), ast)
+        return PatternSubstitutionVisitor(substitution).visit(copied)
+
+    @staticmethod
+    def copy_and_substitute_sort(ast: Union[Pattern, Axiom, Sort], substitution: Mapping[SortVariable, Sort]) -> Union[Pattern, Axiom, Sort]:
+        copied = KoreUtils.copy_ast(ast.get_module(), ast)
+        return SortSubstitutionVisitor(substitution).visit(copied)
+
+    @staticmethod
     def get_subpattern_by_path(ast: Union[Pattern, Axiom], path: PatternPath) -> Union[Pattern, Axiom]:
         if len(path) == 0: return ast
 
@@ -71,26 +87,10 @@ class KoreUtils:
             ast.arguments[first] = replacement
 
     @staticmethod
-    def copy_and_replace_path_by_pattern(module: Module, ast: Union[Pattern, Axiom], path: PatternPath, replacement: Pattern) -> Union[Pattern, Axiom]:
-        copied = KoreUtils.copy_ast(module, ast)
+    def copy_and_replace_path_by_pattern(ast: Union[Pattern, Axiom], path: PatternPath, replacement: Pattern) -> Union[Pattern, Axiom]:
+        copied = KoreUtils.copy_ast(ast.get_module(), ast)
         KoreUtils.replace_path_by_pattern(copied, path, replacement)
         return copied
-
-    @staticmethod
-    def copy_ast(module: Module, ast: BaseAST) -> BaseAST:
-        copy_ast = ast.visit(CopyVisitor())
-        copy_ast.resolve(module)
-        return copy_ast
-
-    @staticmethod
-    def copy_and_substitute_pattern(module: Module, ast: Union[Pattern, Axiom], substitution: Mapping[Variable, Pattern]) -> Union[Pattern, Axiom]:
-        copied = KoreUtils.copy_ast(module, ast)
-        return PatternSubstitutionVisitor(substitution).visit(copied)
-
-    @staticmethod
-    def copy_and_substitute_sort(module: Module, ast: Union[Pattern, Axiom, Sort], substitution: Mapping[SortVariable, Sort]) -> Union[Pattern, Axiom, Sort]:
-        copied = KoreUtils.copy_ast(module, ast)
-        return SortSubstitutionVisitor(substitution).visit(copied)
 
     """
     Expand one pattern that uses an alias definition
@@ -108,7 +108,7 @@ class KoreUtils:
         assignment = { var: arg for var, arg in zip(variables, application.arguments) }
         assignment_visitor = PatternSubstitutionVisitor(assignment)
         
-        copied_rhs = KoreUtils.copy_ast(alias_def.get_parent(), alias_def.rhs)
+        copied_rhs = KoreUtils.copy_ast(alias_def.get_module(), alias_def.rhs)
         copied_rhs.visit(assignment_visitor)
 
         return copied_rhs
@@ -150,15 +150,16 @@ class KoreUtils:
     Quantify all free (pattern) variables in the given axiom
     """
     @staticmethod
-    def quantify_all_free_variables_in_axiom(module: Module, axiom: Axiom):
+    def quantify_all_free_variables_in_axiom(axiom: Axiom):
         free_vars = axiom.pattern.visit(FreePatternVariableVisitor())
         body = axiom.pattern
-        body_sort = KoreUtils.get_sort(module, body)
+        body_sort = KoreUtils.infer_sort(body)
 
         for free_var in free_vars:
             body = MLPattern(MLPattern.FORALL, [body_sort], [ free_var, body ])
 
         axiom.pattern = body
+        axiom.resolve(axiom.get_module())
 
     """
     Quantify all free (pattern) variables in the axioms
@@ -166,7 +167,7 @@ class KoreUtils:
     @staticmethod
     def quantify_all_free_variables(module: Module):
         for axiom in module.axioms:
-            KoreUtils.quantify_all_free_variables_in_axiom(module, axiom)
+            KoreUtils.quantify_all_free_variables_in_axiom(axiom)
 
     @staticmethod
     def unify_sorts(sort1: Sort, sort2: Sort) -> Optional[Mapping[SortVariable, Sort]]:
@@ -201,7 +202,7 @@ class KoreUtils:
         return substitution
 
     @staticmethod
-    def get_sort(module: Module, pattern: Pattern) -> Sort:
+    def infer_sort(pattern: Pattern) -> Sort:
         if isinstance(pattern, Variable):
             return pattern.sort
 
@@ -212,7 +213,7 @@ class KoreUtils:
             assert len(sort_arguments) == len(symbol_def.sort_variables)
 
             substitution = { var: arg for var, arg in zip(symbol_def.sort_variables, sort_arguments) }
-            return KoreUtils.copy_and_substitute_sort(module, symbol_def.output_sort, substitution)
+            return KoreUtils.copy_and_substitute_sort(symbol_def.output_sort, substitution)
 
         if isinstance(pattern, MLPattern):
             # NOTE: as a convention, the last sort in the sort arguments is the output sort

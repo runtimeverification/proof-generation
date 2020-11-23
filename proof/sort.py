@@ -5,22 +5,22 @@ from .kore.utils import KoreUtils
 
 from .metamath.composer import Theorem, Proof
 
-from .env import ProofGenerator
+from .env import ProofGenerator, ProvableClaim
 from .encoder import KorePatternEncoder
 from .substitution import SingleSubstitutionProofGenerator
 
 
 class SortProofGenerator(ProofGenerator):
     """
-    Return a proof for `forall x. inj{sort2, sort3}(inj{sort1, sort2}(x)) = inj{sort1, sort3}(x)`
-    and the corresponding kore axiom object
+    Return a provable claim of the form
+    `forall x. inj{sort2, sort3}(inj{sort1, sort2}(x)) = inj{sort1, sort3}(x)`
     """
     def get_inj_instance(
         self,
         sort1: kore.Sort,
         sort2: kore.Sort,
         sort3: kore.Sort,
-    ) -> Tuple[Proof, kore.Axiom]:
+    ) -> ProvableClaim:
         # NOTE: this depends on the order in which the parametric sort variables
         # are generated
 
@@ -29,7 +29,7 @@ class SortProofGenerator(ProofGenerator):
                isinstance(sort3, kore.SortInstance) and len(sort3.arguments) == 0, \
                "parametric sort not supported"
 
-        sort_var1, sort_var2, sort_var3, _ = self.env.sort_injection_axiom.sort_variables
+        sort_var1, sort_var2, sort_var3, _ = self.env.sort_injection_axiom.claim.sort_variables
 
         encoded_sort1 = KorePatternEncoder.encode_sort(sort1)
         encoded_sort2 = KorePatternEncoder.encode_sort(sort2)
@@ -39,7 +39,7 @@ class SortProofGenerator(ProofGenerator):
         sort2_is_sort = self.env.sort_axioms[encoded_sort2].as_proof()
         sort3_is_sort = self.env.sort_axioms[encoded_sort3].as_proof()
 
-        copied_injection_axiom = KoreUtils.copy_ast(self.env.module, self.env.sort_injection_axiom)
+        copied_injection_axiom = KoreUtils.copy_ast(self.env.module, self.env.sort_injection_axiom.claim)
         copied_injection_axiom.sort_variables = copied_injection_axiom.sort_variables[1:]
         subst_proof1, substituted1 = \
             SingleSubstitutionProofGenerator(self.env, sort_var1, sort1).visit_and_substitute(copied_injection_axiom)
@@ -53,7 +53,7 @@ class SortProofGenerator(ProofGenerator):
             SingleSubstitutionProofGenerator(self.env, sort_var3, sort3).visit_and_substitute(substituted2)
 
         proof1 = self.env.get_theorem("kore-forall-sort-elim").apply(
-            self.env.sort_injection_theorem.as_proof(),
+            self.env.sort_injection_axiom.proof,
             sort1_is_sort,
             subst_proof1,
         )
@@ -70,4 +70,4 @@ class SortProofGenerator(ProofGenerator):
             subst_proof3,
         )
 
-        return proof3, substituted3
+        return ProvableClaim(substituted3, proof3)

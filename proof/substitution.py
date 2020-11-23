@@ -51,16 +51,16 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
     def visit_and_substitute(self, pattern_or_sort: Union[kore.Pattern, kore.Sort]) -> Tuple[Proof, Union[kore.Pattern, kore.Sort]]:
         proof = super().visit(pattern_or_sort)
         if isinstance(pattern_or_sort, kore.Pattern):
-            substituted = KoreUtils.copy_and_substitute_pattern(self.env.module, pattern_or_sort, { self.var: self.substitute })
+            substituted = KoreUtils.copy_and_substitute_pattern(pattern_or_sort, { self.var: self.substitute })
         else:
-            substituted = KoreUtils.copy_and_substitute_sort(self.env.module, pattern_or_sort, { self.var: self.substitute })
+            substituted = KoreUtils.copy_and_substitute_sort(pattern_or_sort, { self.var: self.substitute })
         return proof, substituted
 
     def postvisit_axiom(self, axiom: kore.Axiom) -> Proof:
-        # prove substitution of the term
+        # prove substitution of the pattern
         # \kore-forall-sort S1 ... \kore-forall-sort Sn \kore-valid ph0 ph1
 
-        pattern_sort = KoreUtils.get_sort(self.env.module, axiom.pattern)
+        pattern_sort = KoreUtils.infer_sort(axiom.pattern)
         pattern_subst_proof = self.visit(axiom.pattern)
         sort_subst_proof = self.visit(pattern_sort)
 

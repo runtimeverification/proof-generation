@@ -9,7 +9,7 @@ from .metamath.composer import Proof
 
 from .encoder import KorePatternEncoder
 
-from .env import ProofGenerator
+from .env import ProofGenerator, ProvableClaim
 from .substitution import SingleSubstitutionProofGenerator
 
 
@@ -22,7 +22,7 @@ class EqualityProofGenerator(ProofGenerator):
     after substituting a subpattern using equality
 
     Given the following data:
-    - a pattern phi (and a proof for it)
+    - a provable claim (a kore claim and a proof of its encoding)
     - a path pointing to a subpattern psi of phi
     - an unconditional equation in the form
         forall sort R. equals { S, R } ( psi, psi' )
@@ -32,35 +32,35 @@ class EqualityProofGenerator(ProofGenerator):
     """
     def prove_validity(
         self,
-        pattern_or_axiom: Union[kore.Pattern, kore.Axiom],
-        pattern_or_axiom_proof: Proof,
+        provable: ProvableClaim,
         path: PatternPath, 
         replacement: kore.Pattern,
         equation_proof: Proof,
-    ) -> Tuple[Union[kore.Pattern, kore.Axiom], Proof]:
-        assert len(path)
-        original = KoreUtils.get_subpattern_by_path(pattern_or_axiom, path)
+    ) -> ProvableClaim:
+        assert len(path), "empty path"
+
+        original = KoreUtils.get_subpattern_by_path(provable.claim, path)
 
         # TODO: we are generating a mm fresh variable for a kore variable
         # this might cause some problems in the future
-        all_metavars = { KorePatternEncoder.encode_variable(var) for var in PatternVariableVisitor().visit(pattern_or_axiom) }
+        all_metavars = { KorePatternEncoder.encode_variable(var) for var in PatternVariableVisitor().visit(provable.claim) }
         fresh_var, = self.env.gen_fresh_metavariables("#ElementVariable", 1, all_metavars)
 
-        sort = KoreUtils.get_sort(self.env.module, original)
-        assert sort == KoreUtils.get_sort(self.env.module, replacement)
+        sort = KoreUtils.infer_sort(original)
+        assert sort == KoreUtils.infer_sort(replacement)
 
         var = kore.Variable(fresh_var, sort)
-        template_pattern = KoreUtils.copy_and_replace_path_by_pattern(self.env.module, pattern_or_axiom, path, var)
-        final_pattern_or_axiom = KoreUtils.copy_and_replace_path_by_pattern(self.env.module, pattern_or_axiom, path, replacement)
+        template_pattern = KoreUtils.copy_and_replace_path_by_pattern(provable.claim, path, var)
+        final_axiom = KoreUtils.copy_and_replace_path_by_pattern(provable.claim, path, replacement)
 
         subst_proof1 = SingleSubstitutionProofGenerator(self.env, var, original).visit(template_pattern)
         subst_proof2 = SingleSubstitutionProofGenerator(self.env, var, replacement).visit(template_pattern)
 
         final_proof = self.env.get_theorem("kore-equality").apply(
             equation_proof,
-            pattern_or_axiom_proof,
+            provable.proof,
             subst_proof1,
             subst_proof2,
         )
 
-        return final_pattern_or_axiom, final_proof
+        return ProvableClaim(final_axiom, final_proof)

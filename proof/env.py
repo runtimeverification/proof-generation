@@ -19,6 +19,21 @@ class ProofGenerator:
 
 
 """
+A claim sigma in kore and a metamath proof of its encoding
+This pair comes up often because we need to
+reuse some operations and information on the Kore ast
+"""
+class ProvableClaim:
+    def __init__(self, claim: kore.Claim, proof: Proof):
+        encoded_claim = KorePatternEncoder().visit(claim)
+        assert isinstance(proof, Proof)
+        assert encoded_claim == proof.statement.terms[1], \
+               f"provable claim invariant failed: {encoded_claim} != {proof.statement.terms[1]}"
+        self.claim = claim
+        self.proof = proof
+
+
+"""
 A data structure that stores the subsort
 relation (a strict partial order)
 """
@@ -82,16 +97,14 @@ class ProofEnvironment:
         #################################
         # theorems sorted into categories
         #################################
-        self.functional_axioms = {} # symbol instance -> (kore axiom, theorem)
-        self.domain_value_functional_axioms = {} # (sort, string literal) -> theorem
-        self.rewrite_axioms = {} # unique id -> (kore axiom, theorem)
+        self.functional_axioms = {} # symbol instance -> provable claim
+        self.domain_value_functional_axioms = {} # (sort, string literal) -> provable claim
+        self.rewrite_axioms = {} # unique id -> provable claim
         self.substitution_axioms = {} # constant symbol (in metamath) -> theorem
         self.sort_axioms = {} # constant symbol (in metamath) -> theorem
 
         self.sort_injection_symbol = None
-        self.sort_injection_axiom_element_var = None # the only element variable in the axiom
         self.sort_injection_axiom = None
-        self.sort_injection_theorem = None
         self.subsort_relation = SubsortRelation()
 
         self.domain_values = set() # set of (sort, string literal)
@@ -139,9 +152,10 @@ class ProofEnvironment:
             self.sort_injection_symbol = inj_module.symbol_map["inj"]
 
             assert len(inj_module.axioms) == 1, "unexpected INJ module content"
-            self.sort_injection_axiom = inj_module.axioms[0]
-            self.sort_injection_axiom_element_var = inj_module.axioms[0].pattern.get_binding_variable()
-            self.sort_injection_theorem = self.load_axiom(inj_module.axioms[0], "kore-inj-axiom")
+            self.sort_injection_axiom = ProvableClaim(
+                inj_module.axioms[0],
+                self.load_axiom(inj_module.axioms[0], "kore-inj-axiom").as_proof(),
+            )
 
     """
     Load metavariables into the composer
@@ -258,45 +272,34 @@ class ProofEnvironment:
             # TODO: check the literal is actually correct
 
             sort_var, functional_var = self.gen_metavariables("#ElementVariable", 2)
-            sort_encoded = self.encode_pattern(sort)
 
-            # <functional_var> = ( \kore-dv ... )
-            equality = mm.Application(
-                KorePatternEncoder.EQUALS,
-                [
-                    sort_encoded,
-                    mm.Metavariable(sort_var),
-                    mm.Metavariable(functional_var),
-                    self.encode_pattern(kore.MLPattern(kore.MLPattern.DV, [sort], [literal])),
-                ],
-            )
-
-            functional_stmt = mm.StructuredStatement(mm.Statement.PROVABLE, [
-                mm.Application("|-"),
-                mm.Application(
-                    KorePatternEncoder.FORALL_SORT,
+            functional_axiom = kore.Axiom(
+                [ kore.SortVariable(sort_var) ],
+                kore.MLPattern(
+                    kore.MLPattern.EXISTS,
+                    [ kore.SortVariable(sort_var) ],
                     [
-                        mm.Metavariable(sort_var),
-                        mm.Application(
-                            KorePatternEncoder.VALID,
+                        kore.Variable(functional_var, sort),
+                        kore.MLPattern(
+                            kore.MLPattern.EQUALS,
+                            [ sort, kore.SortVariable(sort_var) ],
                             [
-                                mm.Metavariable(sort_var),
-                                mm.Application(
-                                    KorePatternEncoder.EXISTS,
-                                    [
-                                        sort_encoded,
-                                        mm.Metavariable(sort_var),
-                                        mm.Metavariable(functional_var),
-                                        equality,
-                                    ],
+                                kore.Variable(functional_var, sort),
+                                kore.MLPattern(
+                                    kore.MLPattern.DV,
+                                    [ sort ], [ literal ],
                                 ),
-                            ]
+                            ],
                         ),
                     ],
                 ),
-            ], label=functional_rule_name)
+                []
+            )
+            
+            functional_axiom.resolve(self.module)
 
-            self.domain_value_functional_axioms[sort, literal] = self.load_metamath_statement(functional_stmt)
+            theorem = self.load_axiom(functional_axiom, functional_rule_name)
+            self.domain_value_functional_axioms[sort, literal] = ProvableClaim(functional_axiom, theorem.as_proof())
 
     """
     Load a constant symbol into the composer
@@ -473,10 +476,10 @@ class ProofEnvironment:
                 # record these statements for later use
                 if is_functional:
                     symbol = self.get_functional_axiom_symbol(axiom)
-                    self.functional_axioms[symbol] = axiom, theorem
+                    self.functional_axioms[symbol] = ProvableClaim(axiom, theorem.as_proof())
                 elif is_rewrite:
                     uid = self.get_axiom_unique_id(axiom)
-                    self.rewrite_axioms[uid] = axiom, theorem
+                    self.rewrite_axioms[uid] = ProvableClaim(axiom, theorem.as_proof())
                 
                 if subsort_tuple is not None:
                     sort1, sort2 = subsort_tuple

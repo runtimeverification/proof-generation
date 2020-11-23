@@ -88,13 +88,13 @@ class KorePatternEncoder(KoreVisitor):
         self.domain_values = set() # set of (sort, string literal)
 
     def postvisit_axiom(self, axiom: kore.Axiom) -> mm.Term:
-        term = axiom.pattern.visit(self)
-        sort = KoreUtils.get_sort(axiom.get_parent(), axiom.pattern)
+        term = self.visit(axiom.pattern)
+        sort = KoreUtils.infer_sort(axiom.pattern)
 
-        term = mm.Application(KorePatternEncoder.VALID, [ sort.visit(self), term ])
+        term = mm.Application(KorePatternEncoder.VALID, [ self.visit(sort), term ])
 
         for var in axiom.sort_variables[::-1]:
-            var_term = var.visit(self)
+            var_term = self.visit(var)
             term = mm.Application(KorePatternEncoder.FORALL_SORT, [ var_term, term ])
 
         return term
@@ -102,7 +102,7 @@ class KorePatternEncoder(KoreVisitor):
     def postvisit_sort_instance(self, sort_instance: kore.SortInstance) -> mm.Term:
         encoded = KorePatternEncoder.encode_sort(sort_instance)
         self.constant_symbols[encoded] = len(sort_instance.arguments)
-        return mm.Application(encoded, [ arg.visit(self) for arg in sort_instance.arguments ])
+        return mm.Application(encoded, [ self.visit(arg) for arg in sort_instance.arguments ])
 
     def postvisit_sort_variable(self, sort_variable: kore.SortVariable) -> mm.Term:
         encoded_var = KorePatternEncoder.encode_sort_variable(sort_variable)
@@ -125,8 +125,8 @@ class KorePatternEncoder(KoreVisitor):
         self.constant_symbols[constant_symbol] = len(application.symbol.sort_arguments) + len(application.arguments)
         return mm.Application(
             constant_symbol,
-            [ sort_arg.visit(self) for sort_arg in application.symbol.sort_arguments ] +
-            [ arg.visit(self) for arg in application.arguments ],
+            [ self.visit(sort_arg) for sort_arg in application.symbol.sort_arguments ] +
+            [ self.visit(arg) for arg in application.arguments ],
         )
 
     def postvisit_ml_pattern(self, ml_pattern: kore.MLPattern) -> mm.Term:
@@ -139,7 +139,7 @@ class KorePatternEncoder(KoreVisitor):
 
             return mm.Application(
                 encoded_construct,
-                [ var.sort.visit(self), ml_pattern.sorts[0].visit(self), var.visit(self), ml_pattern.arguments[1].visit(self) ],
+                [ self.visit(var.sort), self.visit(ml_pattern.sorts[0]), self.visit(var), self.visit(ml_pattern.arguments[1]) ],
             )
 
         else:
@@ -150,6 +150,6 @@ class KorePatternEncoder(KoreVisitor):
 
             return mm.Application(
                 encoded_construct,
-                [ sort.visit(self) for sort in ml_pattern.sorts ] +
-                [ arg.visit(self) for arg in ml_pattern.arguments ],
+                [ self.visit(sort) for sort in ml_pattern.sorts ] +
+                [ self.visit(arg) for arg in ml_pattern.arguments ],
             )
