@@ -158,6 +158,10 @@ class ProofEnvironment:
                 self.load_axiom(inj_module.axioms[0], "kore-inj-axiom").as_proof(),
             )
 
+    def sanitize_label_name(self, label):
+        # metamath does not allow some characters in the label
+        return re.sub(r"[^a-zA-Z0-9_\-.]", "", label)
+
     """
     Load metavariables into the composer
     metavar_map: map from metavariable name to typecode
@@ -183,13 +187,10 @@ class ProofEnvironment:
         self.load_metamath_statement(var_stmt)
 
         for var, typecode in new_metavars.items():
-            # metamath does not allow some characters in the label
-            sanitized_var = re.sub(r"[^a-zA-Z0-9_\-.]", "", var)
-
             floating_stmt = mm.StructuredStatement(mm.Statement.FLOATING, [
                 mm.Application(typecode),
                 mm.Metavariable(var),
-            ], label=f"{sanitized_var}-{typecode.replace('#', '').lower()}")
+            ], label=f"{self.sanitize_label_name(var)}-{typecode.replace('#', '').lower()}")
 
             self.load_metamath_statement(floating_stmt)
 

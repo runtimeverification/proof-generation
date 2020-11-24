@@ -9,7 +9,7 @@ from .metamath.composer import Proof, Theorem
 
 from .encoder import KorePatternEncoder
 
-from .env import ProofGenerator, ProvableClaim
+from .env import ProofEnvironment, ProofGenerator, ProvableClaim
 from .substitution import SingleSubstitutionProofGenerator
 from .equality import EqualityProofGenerator
 from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
@@ -20,6 +20,12 @@ from .unification import UnificationProofGenerator
 Generate proofs for one or multiple rewrite steps
 """
 class RewriteProofGenerator(ProofGenerator):
+    def __init__(self, env: ProofEnvironment):
+        super().__init__(env)
+        self.hooked_symbol_evaluators = {
+            "Lbl'UndsPlus'Int'Unds'": IntegerAdditionEvaluator(env),
+        }
+
     """
     Strip call outermost injection calls
     """
@@ -130,7 +136,7 @@ class RewriteProofGenerator(ProofGenerator):
             provable = ProvableClaim(concrete_rewrite, step_proof)
 
             for equation, path in unification_result.applied_equations:
-                print("> applying equation", equation)
+                print("> applying unification equation", equation)
                 provable = equation.prove_validity(provable, [ 0, 0 ] + path)
 
             provable = self.resolve_functions(provable, [ 0, 1 ])
@@ -183,6 +189,69 @@ class RewriteProofGenerator(ProofGenerator):
         return lhs, requires, rhs, ensures
 
     """
+    Find and instantiate a anywhere/function axiom for the given (function) pattern
+    """
+    def find_anywhere_axiom_for_pattern(self, pattern: kore.Pattern) -> ProvableClaim:
+        # find an anywhere/function rule to rewrite
+        for anywhere_axiom in self.env.anywhere_axioms.values():
+            lhs, _, _, _ = self.decompose_anywhere_axiom(anywhere_axiom.claim.pattern)
+            unification_result = UnificationProofGenerator(self.env).unify_patterns(lhs, pattern)
+
+            if unification_result is not None:
+                break
+        else:
+            raise Exception(f"unable to find anywhere/function rule to rewrite term {pattern}")
+
+        substitution = unification_result.get_lhs_substitution_as_instance()
+        assert substitution is not None, "`{}` is not an instance of `{}`".format(pattern, lhs)
+
+        # eliminate all universal quantifiers
+        instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(anywhere_axiom, substitution)
+
+        lhs, requires, _, ensures = self.decompose_anywhere_axiom(instantiated_axiom.claim.pattern)
+
+        assert isinstance(requires, kore.MLPattern) and \
+            requires.construct == kore.MLPattern.TOP and \
+            isinstance(ensures, kore.MLPattern) and \
+            ensures.construct == kore.MLPattern.TOP, \
+            f"unsupported requires/ensures clause: {requires}, {ensures}"
+
+        # from \implies{R}(top, \and{R}(<equation>, top))
+        # we can get \and{R}(<equation>, top)
+        free_sort_var = instantiated_axiom.claim.sort_variables[0]
+        encoded_free_sort_var = self.env.encode_pattern(free_sort_var)
+
+        top_proof = self.env.get_theorem("kore-top-valid-v1").apply(x=encoded_free_sort_var)
+        removed_requires = self.env.get_theorem("kore-mp-v1").apply(
+            top_proof,
+            instantiated_axiom.proof,
+        )
+        instantiated_axiom_claim = kore.Claim(
+            instantiated_axiom.claim.sort_variables,
+            instantiated_axiom.claim.pattern.arguments[1],
+            [],
+        )
+        instantiated_axiom_claim.resolve(self.env.module)
+        instantiated_axiom = ProvableClaim(instantiated_axiom_claim, removed_requires)
+
+        # now we have a conjunction and{R}(<equation>, <ensures>)
+        # since we assumed ensures is top, we can remove it as well
+        # that is, from \and{R}(<equation>, top)
+        # we can get <equation>
+        and_eliminated = self.env.get_theorem("kore-and-elim-left-v1").apply(
+            instantiated_axiom.proof,
+        )
+        instantiated_axiom_claim = kore.Claim(
+            instantiated_axiom.claim.sort_variables,
+            instantiated_axiom.claim.pattern.arguments[0],
+            [],
+        )
+        instantiated_axiom_claim.resolve(self.env.module)
+        instantiated_axiom = ProvableClaim(instantiated_axiom_claim, and_eliminated)
+
+        return instantiated_axiom
+
+    """
     Attempt to resolve all function patterns
     in the subpattern indicated by the path
     """
@@ -194,68 +263,17 @@ class RewriteProofGenerator(ProofGenerator):
                 break
 
             function_subpattern = KoreUtils.get_subpattern_by_path(subpattern, function_path)
-
-            # find an anywhere/function rule to rewrite
-            for anywhere_axiom in self.env.anywhere_axioms.values():
-                lhs, _, _, _ = self.decompose_anywhere_axiom(anywhere_axiom.claim.pattern)
-                unification_result = UnificationProofGenerator(self.env).unify_patterns(lhs, function_subpattern)
-
-                if unification_result is not None:
-                    break
-            else:
-                raise Exception(f"unable to find anywhere/function rule to rewrite term {function_subpattern}")
-
-            substitution = unification_result.get_lhs_substitution_as_instance()
-            assert substitution is not None, "`{}` is not an instance of `{}`".format(function_subpattern, lhs)
-
             print(f"> rewriting anywhere/function {function_subpattern.symbol}")
 
-            # eliminate all universal quantifiers
-            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(anywhere_axiom, substitution)
-
-            lhs, requires, rhs, ensures = self.decompose_anywhere_axiom(instantiated_axiom.claim.pattern)
-
-            assert isinstance(requires, kore.MLPattern) and \
-                   requires.construct == kore.MLPattern.TOP and \
-                   isinstance(ensures, kore.MLPattern) and \
-                   ensures.construct == kore.MLPattern.TOP, \
-                   f"unsupported requires/ensures clause: {requires}, {ensures}"
-
-            # from \implies{R}(top, \and{R}(<equation>, top))
-            # we can get \and{R}(<equation>, top)
-            free_sort_var = instantiated_axiom.claim.sort_variables[0]
-            encoded_free_sort_var = self.env.encode_pattern(free_sort_var)
-
-            top_proof = self.env.get_theorem("kore-top-valid-v1").apply(x=encoded_free_sort_var)
-            removed_requires = self.env.get_theorem("kore-mp-v1").apply(
-                top_proof,
-                instantiated_axiom.proof,
-            )
-            instantiated_axiom_claim = kore.Claim(
-                instantiated_axiom.claim.sort_variables,
-                instantiated_axiom.claim.pattern.arguments[1],
-                [],
-            )
-            instantiated_axiom_claim.resolve(self.env.module)
-            instantiated_axiom = ProvableClaim(instantiated_axiom_claim, removed_requires)
-
-            # now we have a conjunction and{R}(<equation>, <ensures>)
-            # since we assumed ensures is top, we can remove it as well
-            # that is, from \and{R}(<equation>, top)
-            # we can get <equation>
-            and_eliminated = self.env.get_theorem("kore-and-elim-left-v1").apply(
-                instantiated_axiom.proof,
-            )
-            instantiated_axiom_claim = kore.Claim(
-                instantiated_axiom.claim.sort_variables,
-                instantiated_axiom.claim.pattern.arguments[0],
-                [],
-            )
-            instantiated_axiom_claim.resolve(self.env.module)
-            instantiated_axiom = ProvableClaim(instantiated_axiom_claim, and_eliminated)
+            # if the symbol is bulitin, try the builtin evaluator
+            symbol_string = function_subpattern.symbol.definition.symbol
+            if symbol_string in self.hooked_symbol_evaluators:
+                axiom = self.hooked_symbol_evaluators[symbol_string].prove_evaluation(function_subpattern)
+            else:
+                axiom = self.find_anywhere_axiom_for_pattern(function_subpattern)
 
             # finish up the rewriting by substituting in the rhs
-            provable = EqualityProofGenerator(self.env).prove_validity(provable, path + function_path, rhs, instantiated_axiom.proof)
+            provable = EqualityProofGenerator(self.env).prove_validity_with_equation(provable, path + function_path, axiom)
 
         return provable
 
@@ -290,3 +308,60 @@ class InnermostFunctionPathVisitor(KoreVisitor):
                 return [ i ] + path
 
         return None
+
+
+class HookedFunctionEvaluator(ProofGenerator):
+    """
+    The evaluator should return a provable claim of the form
+
+    """
+    def prove_evaluation(self, pattern: kore.Pattern) -> ProvableClaim:
+        raise NotImplementedError()
+
+
+"""
+Common base class for evaluator of the builtin sort SortInt{}
+"""
+class IntegerEvaluator(HookedFunctionEvaluator):
+    def __init__(self, env: ProofEnvironment):
+        super().__init__(env)
+        self.axiom_counter = 0
+
+    def parse_int(self, value: kore.Pattern) -> int:
+        assert isinstance(value, kore.MLPattern) and \
+               value.construct == kore.MLPattern.DV
+        assert value.sorts[0].definition.sort_id == "SortInt"
+        assert isinstance(value.arguments[0], kore.StringLiteral)
+        return int(value.arguments[0].content)
+
+    def build_equation(self, pattern: kore.Pattern, result: int) -> ProvableClaim:
+        output_sort = pattern.symbol.definition.output_sort
+        sort_var = kore.SortVariable("R")
+
+        domain_value = kore.MLPattern(kore.MLPattern.DV, [ output_sort ], [ kore.StringLiteral(str(result)) ])
+
+        claim = kore.Claim(
+            [ sort_var ],
+            kore.MLPattern(
+                kore.MLPattern.EQUALS,
+                [ output_sort, sort_var ],
+                [ pattern, domain_value ],
+            ),
+            [],
+        )
+
+        claim.resolve(self.env.module)
+
+        # TODO: we need to generate a proof obligation for
+        # this arithmetic fact
+        thm = self.env.load_axiom(claim, f"{self.env.sanitize_label_name(pattern.symbol.definition.symbol)}-domain-fact-{self.axiom_counter}")
+
+        print(f"> bulitin symbol proof obligation: {claim}")
+
+        return ProvableClaim(claim, thm.as_proof())
+
+
+class IntegerAdditionEvaluator(IntegerEvaluator):
+    def prove_evaluation(self, pattern: kore.Pattern) -> ProvableClaim:
+        a, b = pattern.arguments
+        return self.build_equation(pattern, self.parse_int(a) + self.parse_int(b))

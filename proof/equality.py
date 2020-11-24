@@ -33,7 +33,7 @@ class EqualityProofGenerator(ProofGenerator):
     def prove_validity(
         self,
         provable: ProvableClaim,
-        path: PatternPath, 
+        path: PatternPath,
         replacement: kore.Pattern,
         equation_proof: Proof,
     ) -> ProvableClaim:
@@ -62,3 +62,18 @@ class EqualityProofGenerator(ProofGenerator):
         )
 
         return ProvableClaim(final_axiom, final_proof)
+
+    """
+    Same as above but using a provable claim,
+    so that we can extract the replacement automatically
+    """
+    def prove_validity_with_equation(
+        self,
+        provable: ProvableClaim,
+        path: PatternPath,
+        equation: ProvableClaim,
+    ) -> ProvableClaim:
+        assert isinstance(equation.claim.pattern, kore.MLPattern) and \
+               equation.claim.pattern.construct == kore.MLPattern.EQUALS
+        rhs = equation.claim.pattern.arguments[1]
+        return self.prove_validity(provable, path, rhs, equation.proof)
