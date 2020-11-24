@@ -196,6 +196,59 @@ ${
     application-context-app-right   $a #ApplicationContext xX ( \app ph0 ph1 ) $.
 $}
 
-$c #Equals $.
-$( Provability $)
+$( Matching Logic Proof System $)
+$(
+   Part 1 (7 rules). FOL Reasoning
+   Part 2 (8 rules). Frame Reasoning
+   Part 3 (2 rules). Fixpoint Reasoning
+   Part 4 (3 rules). Misc
+   Total (20 rules).
+$)
+
 $c |- $.
+
+$( Proof System Part 1 (7 rules) $)
+
+proof-rule-prop-1 $a |- ( \imp ph0 ( \imp ph1 ph0 ) ) $.
+proof-rule-prop-2 $a |- ( \imp ( \imp ph0 ( \imp ph1 ph2 ) ) ( \imp ( \imp ph0 ph1 ) ( \imp ph0 ph2 ) ) ) $.
+proof-rule-prop-3 $a |- ( \imp ( \imp ( ph0 \bot ) \bot ) ph0 ) $.
+${
+    proof-rule-mp.0 $e |- ( \imp ph0 ph1 ) $.
+    proof-rule-mp.1 $e |- ph0 $.
+    proof-rule-mp   $a |- ph1 $.
+$}
+${
+    proof-rule-exists.0 $e #Substitution ph0 ph1 y x $.
+    proof-rule-exists   $a |- ( \imp ph0 ( \exists x ph1 ) ) $.
+$}
+${
+    proof-rule-gen.0 $e |- ( \imp ph0 ph1 ) $.
+    proof-rule-gen   $a |- ( \imp ( \exists x ph0 ) ph1 ) $.
+$}
+
+$( Proof System Part 1 (8 rules) $)
+
+proof-rule-propagation-bot-left  $a |- ( \imp ( \app \bot ph0 ) \bot ) $.
+proof-rule-propagation-bot-right $a |- ( \imp ( \app ph0 \bot ) \bot ) $.
+$( proof-rule-propagation-or-left  $)
+$( proof-rule-propagation-or-right $)
+${
+    proof-rule-propagation-exists-left.0 $e #Fresh x ph1 $.
+    proof-rule-propagation-exists-left   $a |- ( \imp ( ( \app ( \exists x ph0 ) ph1 ) ) 
+                                                      ( \exists x ( \app ph0 ph1 ) ) ) $.
+$}
+${
+    proof-rule-propagation-exists-right.0 $e #Fresh x ph0 $.
+    proof-rule-propagation-exists-right   $a |- ( \imp ( ( \app ph0 ( \exists x ph1 ) ) ) 
+                                                       ( \exists x ( \app ph0 ph1 ) ) ) $.
+$}
+${
+    proof-rule-frame-left.0 $e |- ( \imp ph0 ph1 ) $.
+    proof-rule-frame-left   $a |- ( \imp ( \app ph0 ph2 ) ( \app ph1 ph2 ) ) $.
+$}
+${
+    proof-rule-frame-right.0 $e |- ( \imp ph1 ph2 ) $.
+    proof-rule-frame-right   $a |- ( \imp ( \app ph0 ph1 ) ( \app ph0 ph2 ) ) $.
+$}
+
+
