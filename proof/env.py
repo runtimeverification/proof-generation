@@ -115,11 +115,11 @@ class ProofEnvironment:
         # load all theorems in the prelude
         if prelude is not None:
             self.load_metamath_statement(prelude)
-            self.load_metamath_statement(mm.Comment(f"---------------- end of prelude ----------------"))
+            self.load_comment(f"---------------- end of prelude ----------------")
 
-        self.load_metamath_statement(mm.Comment(f"---------------- start of module {self.module.name} ----------------"))
+        self.load_comment(f"---------------- start of module {self.module.name} ----------------")
         self.init_module()
-        self.load_metamath_statement(mm.Comment(f"---------------- end of module {self.module.name} ----------------"))
+        self.load_comment(f"---------------- end of module {self.module.name} ----------------")
 
     """
     Encode and dump the entire metamath database into the stream
@@ -181,7 +181,7 @@ class ProofEnvironment:
 
         if not new_metavars: return
 
-        self.load_metamath_statement(mm.Comment(f"adding {len(new_metavars)} new metavariable(s)"))
+        self.load_comment(f"adding {len(new_metavars)} new metavariable(s)")
 
         var_stmt = mm.RawStatement(mm.Statement.VARIABLE, list(new_metavars.keys()))
         self.load_metamath_statement(var_stmt)
@@ -216,14 +216,18 @@ class ProofEnvironment:
     def load_metamath_statement(self, statement: mm.Statement) -> Optional[Theorem]:
         return self.composer.load(statement)
 
+    def load_comment(self, comment: str):
+        return self.load_metamath_statement(mm.Comment(comment))
+
     """
     Encode and load a Kore axiom into the generator
     and return the corresponding theorem object
     """
-    def load_axiom(self, axiom: kore.Axiom, label: str) -> Theorem:
+    def load_axiom(self, axiom: kore.Axiom, label: str, comment=True) -> Theorem:
         term = self.encode_pattern(axiom)
 
-        self.load_metamath_statement(mm.Comment(str(axiom)))
+        if comment:
+            self.load_comment(str(axiom))
 
         # <label> $a |- <axiom> $.
         stmt = mm.StructuredStatement(mm.Statement.AXIOM, [ mm.Application("|-"), term ], label=label)
@@ -233,7 +237,7 @@ class ProofEnvironment:
         encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
         arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
 
-        self.load_metamath_statement(mm.Comment(str(symbol_definition)))
+        self.load_comment(str(symbol_definition))
         self.load_constant(encoded_symbol, arity, label)
 
     def load_sort_definition(self, sort_definition: kore.SortDefinition, label: str):
@@ -242,7 +246,7 @@ class ProofEnvironment:
 
         assert arity == 0, "parametric sort not supported"
 
-        self.load_metamath_statement(mm.Comment(str(sort_definition)))
+        self.load_comment(str(sort_definition))
         self.load_constant(encoded_sort, arity, label)
 
         self.sort_axioms[encoded_sort] = self.load_metamath_statement(mm.StructuredStatement(
@@ -265,7 +269,7 @@ class ProofEnvironment:
         for index, (sort, literal) in enumerate(new_domain_values):
             index += offset
 
-            self.load_metamath_statement(mm.Comment(f"domain value {literal} of sort {sort}"))
+            self.load_comment(f"domain value {literal} of sort {sort}")
 
             self.load_constant(KorePatternEncoder.encode_string_literal(literal), 0, f"domain-value-{index}")
 

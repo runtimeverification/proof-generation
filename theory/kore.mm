@@ -233,12 +233,8 @@ ${
     kore-equality $p |- ph5 $= ? $.
 $}
 
-kore-equals-reflexivity $p |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ph1 ph1 ) ) ) $= ? $.
-
-${
-    kore-equals-symmetry.0 $e |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ph1 ph2 ) ) ) $.
-    kore-equals-symmetry $p |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ph2 ph1 ) ) ) $= ? $.
-$}
+kore-equals-reflexivity $p |- ( \kore-valid ph0 ( \kore-equals ph1 ph0 ph2 ph2 ) ) $= ? $.
+kore-equals-reflexivity-v1 $p |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ph1 ph1 ) ) ) $= ? $.
 
 $( ph /\ ph = ph $)
 kore-dup-and $p |- ( \kore-forall-sort x ( \kore-valid x ( \kore-equals ph0 x ( \kore-and ph0 ph1 ph1 ) ph1 ) ) ) $= ? $.

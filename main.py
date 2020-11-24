@@ -11,7 +11,7 @@ from proof.kore.ast import StringLiteral, MLPattern
 from proof.kore.utils import KoreUtils
 
 from proof.metamath.parser import load_database
-from proof.metamath.ast import Statement, StructuredStatement, Comment
+from proof.metamath.ast import Statement, StructuredStatement
 
 from proof.env import ProofEnvironment
 from proof.rewrite import RewriteProofGenerator
@@ -77,16 +77,18 @@ if __name__ == "__main__":
             print("==================")
             print("proving rewriting step {}".format(step))
             # search for the axiom to use and try to get a proof
-            env.load_metamath_statement(Comment(f"\nrewriting step {step}:\n{from_pattern}\n=>\n{to_pattern}\n"))
             proof = gen.prove_rewrite_step(from_pattern, to_pattern)
             proof.statement.label = f"step-{step}"
+            
+            env.load_comment(f"\nrewriting step {step}:\n{from_pattern}\n=>\n{to_pattern}\n")
             step_theorems.append(env.load_metamath_statement(proof.statement))
 
         print("==================")
         print("chaining steps to prove the final goal")
-        env.load_metamath_statement(Comment(f"\nfinal goal:\n{snapshots[0]}\n=>\n{snapshots[-1]}\n"))
         multiple_steps_proof = gen.chain_rewrite_steps(step_theorems)
         multiple_steps_proof.statement.label = "goal"
+
+        env.load_comment(f"\nfinal goal:\n{snapshots[0]}\n=>\n{snapshots[-1]}\n")
         env.load_metamath_statement(multiple_steps_proof.statement)
 
     print("dumping everything to {}".format(args.output))

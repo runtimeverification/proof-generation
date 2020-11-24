@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Mapping
+from typing import Optional, List, Tuple, Mapping, Union
 
 from .kore import ast as kore
 from .kore.utils import KoreUtils, PatternPath
@@ -24,6 +24,9 @@ class RewriteProofGenerator(ProofGenerator):
         super().__init__(env)
         self.hooked_symbol_evaluators = {
             "Lbl'UndsPlus'Int'Unds'": IntegerAdditionEvaluator(env),
+            "Lbl'Unds'-Int'Unds'": IntegerSubtractionEvaluator(env),
+            "Lbl'UndsStar'Int'Unds'": IntegerMultiplicationEvaluator(env),
+            "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(env),
         }
 
     """
@@ -58,70 +61,43 @@ class RewriteProofGenerator(ProofGenerator):
 
         return lhs_body, lhs_requires, rhs_body, rhs_ensures
 
-    def prove_rewrite_step(
-        self,
-        from_pattern: kore.Pattern,
-        to_pattern: kore.Pattern,
-        axiom_id: Optional[str]=None,
-    ) -> Proof:
-        # strip the outermost inj
-        # TODO: re-add these in the end
-        from_pattern = self.strip_inj(from_pattern)
-        to_pattern = self.strip_inj(to_pattern)
-
-        from_pattern_encoded = self.env.encode_pattern(from_pattern)
-        to_pattern_encoded = self.env.encode_pattern(to_pattern)
-
+    """
+    Find and instantiate a rewrite axiom for the given pattern,
+    and then resolve all the functions in the RHS
+    """
+    def find_rewrite_axiom_for_pattern(self, pattern: kore.Pattern) -> ProvableClaim:
         unification_gen = UnificationProofGenerator(self.env)
 
-        if axiom_id is not None:
-            # lookup the selected axiom if given
-            assert axiom_id in self.env.rewrite_axioms, \
-                "unable to find rewrite axiom {}".format(axiom_id)
-
-            rewrite_axiom = self.env.rewrite_axioms[axiom_id]
-
-            # unify `from_pattern` with the lhs of the selected axiom
+        for _, rewrite_axiom in self.env.rewrite_axioms.items():
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
-            unification_result = unification_gen.unify_patterns(lhs, from_pattern)
-            assert unification_result is not None, "unable to unify `{}` and `{}`".format(from_pattern, lhs)
-        else:
-            # if no axiom given, try to find one by brute force
-            for _, rewrite_axiom in self.env.rewrite_axioms.items():
-                lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
-                unification_result = unification_gen.unify_patterns(lhs, from_pattern)
-                if unification_result is not None:
-                    break
-            else:
-                assert False, "unable to find axiom to rewrite `{}`".format(from_pattern)
+            unification_result = unification_gen.unify_patterns(lhs, pattern)
+            if unification_result is None: continue
 
-        substitution = unification_result.get_lhs_substitution_as_instance()
-        assert substitution is not None, "`{}` is not an instance of `{}`".format(from_pattern, lhs)
+            substitution = unification_result.get_lhs_substitution_as_instance()
+            if substitution is None: continue
 
-        # eliminate all universal quantifiers
-        instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(rewrite_axiom, substitution)
+            # eliminate all universal quantifiers
+            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(rewrite_axiom, substitution)
+            lhs, requires, rhs, ensures = self.decompose_rewrite_axiom(instantiated_axiom.claim.pattern)
 
-        # get rid of valid conditionals
-        lhs, requires, rhs, ensures = self.decompose_rewrite_axiom(instantiated_axiom.claim.pattern)
+            assert ensures.construct == kore.MLPattern.TOP, f"non-top ensures clause is not supported: {ensures}"
 
-        if requires.construct == kore.MLPattern.TOP and \
-           ensures.construct == kore.MLPattern.TOP:
+            # trying to prove the requires clause
+            # if failed, continue searching for an axiom
+            requires_proof = self.prove_requires_clause(requires)
+            if requires_proof is None: continue
+
             top_valid_proof = self.env.get_theorem("kore-top-valid").apply(
                 ph0=self.env.encode_pattern(instantiated_axiom.claim.pattern.sorts[0]),
             )
             
-            step_proof = self.env.get_theorem("kore-rewrites-conditional").apply(
+            concrete_rewrite_proof = self.env.get_theorem("kore-rewrites-conditional").apply(
                 instantiated_axiom.proof,
-                top_valid_proof,
+                requires_proof,
                 top_valid_proof,
             )
 
-            # during unification, there may be some equations applied to the pattern
-            # we need to re-apply those equations so that the snapshot
-            # and the lhs of the rewrite rule would be syntactically the same
-
             # reconstruct the rewrite pattern in kore
-            # NOTE: this should be the "same" as step_proof.statement
             concrete_rewrite = kore.Axiom(
                 [],
                 kore.MLPattern(
@@ -133,27 +109,47 @@ class RewriteProofGenerator(ProofGenerator):
             )
             concrete_rewrite.resolve(self.env.module)
 
-            provable = ProvableClaim(concrete_rewrite, step_proof)
+            concrete_rewrite_claim = ProvableClaim(concrete_rewrite, concrete_rewrite_proof)
 
+            # during unification, we applied some equations
+            # here we resolve these equations so that we would
+            # get a correct left hand side
             for equation, path in unification_result.applied_equations:
                 print("> applying unification equation", equation)
-                provable = equation.prove_validity(provable, [ 0, 0 ] + path)
+                concrete_rewrite_claim = equation.prove_validity(concrete_rewrite_claim, [ 0, 0 ] + path)
 
-            provable = self.resolve_functions(provable, [ 0, 1 ])
+            concrete_rewrite_claim = self.resolve_functions(concrete_rewrite_claim, [ 0, 1 ])
 
-            # check that the proven statement is actually what we want
-            # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )
-            assert provable.proof.statement.terms[1].symbol == KorePatternEncoder.VALID
-            _, lhs_concrete, rhs_concrete = provable.proof.statement.terms[1].subterms[1].subterms
+            return concrete_rewrite_claim
+        
+        assert False, "unable to find axiom to rewrite `{}`".format(pattern)
 
-            assert lhs_concrete == from_pattern_encoded, \
-                   "LHS is not what we expected: {} vs {}".format(lhs_concrete, from_pattern_encoded)
-            assert rhs_concrete == to_pattern_encoded, \
-                   "RHS is not what we expected: {} vs {}".format(rhs_concrete, to_pattern_encoded)
+    def prove_rewrite_step(
+        self,
+        from_pattern: kore.Pattern,
+        to_pattern: kore.Pattern,
+    ) -> Proof:
+        # strip the outermost inj
+        # TODO: re-add these in the end
+        from_pattern = self.strip_inj(from_pattern)
+        to_pattern = self.strip_inj(to_pattern)
 
-            return provable.proof
-        else:
-            raise Exception("unable to prove requires {} and/or ensures {}".format(requires, ensures))
+        from_pattern_encoded = self.env.encode_pattern(from_pattern)
+        to_pattern_encoded = self.env.encode_pattern(to_pattern)
+
+        concrete_rewrite_claim = self.find_rewrite_axiom_for_pattern(from_pattern)
+
+        # check that the proven statement is actually what we want
+        # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )
+        assert concrete_rewrite_claim.proof.statement.terms[1].symbol == KorePatternEncoder.VALID
+        _, lhs_concrete, rhs_concrete = concrete_rewrite_claim.proof.statement.terms[1].subterms[1].subterms
+
+        assert lhs_concrete == from_pattern_encoded, \
+                "LHS is not what we expected: {} vs {}".format(lhs_concrete, from_pattern_encoded)
+        assert rhs_concrete == to_pattern_encoded, \
+                "RHS is not what we expected: {} vs {}".format(rhs_concrete, to_pattern_encoded)
+
+        return concrete_rewrite_claim.proof
 
     """
     Use transitivity of rewrite
@@ -188,6 +184,76 @@ class RewriteProofGenerator(ProofGenerator):
 
         return lhs, requires, rhs, ensures
 
+    r"""
+    Prove a pattern of the form
+    - top{S{}}(), or
+    - \equals{...}(..., ...)
+
+    For \equals, it can have either a concrete sort
+    or a sort variable as the output sort
+    """
+    def prove_requires_clause(self, pattern: kore.Pattern) -> Optional[Proof]:
+        assert isinstance(pattern, kore.MLPattern)
+
+        # if the pattern is top, then it's trivially true
+        if pattern.construct == kore.MLPattern.TOP:
+            sort = pattern.sorts[0]
+            encoded_sort = self.env.encode_pattern(sort)
+            if isinstance(sort, kore.SortInstance):
+                return self.env.get_theorem("kore-top-valid").apply(ph0=encoded_sort)
+            else:
+                assert isinstance(sort, kore.SortVariable)
+                return self.env.get_theorem("kore-top-valid-v1").apply(x=encoded_sort)
+
+        assert pattern.construct == kore.MLPattern.EQUALS, \
+               f"unable to prove the requires clause {pattern}"
+
+        input_sort, output_sort = pattern.sorts
+        encoded_input_sort = self.env.encode_pattern(input_sort)
+        encoded_output_sort = self.env.encode_pattern(output_sort)
+
+        lhs, rhs = pattern.arguments
+        encoded_lhs = self.env.encode_pattern(lhs)
+
+        # we only support two cases right now:
+        # either the equals pattern depends on one
+        # free sort variable, or none
+        if isinstance(output_sort, kore.SortInstance):
+            proof = self.env.get_theorem("kore-equals-reflexivity").apply(ph0=encoded_output_sort, ph1=encoded_input_sort, ph2=encoded_lhs)
+            claim = kore.Claim(
+                [],
+                kore.MLPattern(
+                    kore.MLPattern.EQUALS,
+                    [ input_sort, output_sort, ],
+                    [ lhs, lhs ],
+                ),
+                [],
+            )
+            claim.resolve(self.env.module)
+            provable = ProvableClaim(claim, proof)
+        else:
+            assert isinstance(output_sort, kore.SortVariable)
+            proof = self.env.get_theorem("kore-equals-reflexivity-v1").apply(x=encoded_output_sort, ph0=encoded_input_sort, ph1=encoded_lhs)
+            claim = kore.Claim(
+                [ output_sort ],
+                kore.MLPattern(
+                    kore.MLPattern.EQUALS,
+                    [ input_sort, output_sort, ],
+                    [ lhs, lhs ],
+                ),
+                [],
+            )
+            claim.resolve(self.env.module)
+            provable = ProvableClaim(claim, proof)
+
+        provable = self.resolve_functions(provable, [ 0, 1 ])
+
+        # failed to prove the condition
+        if provable.claim.pattern.arguments[1] != rhs:
+            return None
+
+        return provable.proof
+
     """
     Find and instantiate a anywhere/function axiom for the given (function) pattern
     """
@@ -196,60 +262,56 @@ class RewriteProofGenerator(ProofGenerator):
         for anywhere_axiom in self.env.anywhere_axioms.values():
             lhs, _, _, _ = self.decompose_anywhere_axiom(anywhere_axiom.claim.pattern)
             unification_result = UnificationProofGenerator(self.env).unify_patterns(lhs, pattern)
+            if unification_result is None: continue
 
-            if unification_result is not None:
-                break
-        else:
-            raise Exception(f"unable to find anywhere/function rule to rewrite term {pattern}")
+            substitution = unification_result.get_lhs_substitution_as_instance()
+            if substitution is None: continue
 
-        substitution = unification_result.get_lhs_substitution_as_instance()
-        assert substitution is not None, "`{}` is not an instance of `{}`".format(pattern, lhs)
+            # eliminate all universal quantifiers
+            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(anywhere_axiom, substitution)
 
-        # eliminate all universal quantifiers
-        instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(anywhere_axiom, substitution)
+            lhs, requires, _, ensures = self.decompose_anywhere_axiom(instantiated_axiom.claim.pattern)
 
-        lhs, requires, _, ensures = self.decompose_anywhere_axiom(instantiated_axiom.claim.pattern)
+            assert isinstance(ensures, kore.MLPattern) and \
+                   ensures.construct == kore.MLPattern.TOP, \
+                   f"unsupported ensures clause {ensures}"        
 
-        assert isinstance(requires, kore.MLPattern) and \
-            requires.construct == kore.MLPattern.TOP and \
-            isinstance(ensures, kore.MLPattern) and \
-            ensures.construct == kore.MLPattern.TOP, \
-            f"unsupported requires/ensures clause: {requires}, {ensures}"
+            # from \implies{R}(<requires>, \and{R}(<equation>, top))
+            # if we can prove the requires clause
+            # we can get \and{R}(<equation>, top)
+            requires_proof = self.prove_requires_clause(requires)
+            if requires_proof is None: continue
 
-        # from \implies{R}(top, \and{R}(<equation>, top))
-        # we can get \and{R}(<equation>, top)
-        free_sort_var = instantiated_axiom.claim.sort_variables[0]
-        encoded_free_sort_var = self.env.encode_pattern(free_sort_var)
+            removed_requires = self.env.get_theorem("kore-mp-v1").apply(
+                requires_proof,
+                instantiated_axiom.proof,
+            )
+            instantiated_axiom_claim = kore.Claim(
+                instantiated_axiom.claim.sort_variables,
+                instantiated_axiom.claim.pattern.arguments[1],
+                [],
+            )
+            instantiated_axiom_claim.resolve(self.env.module)
+            instantiated_axiom = ProvableClaim(instantiated_axiom_claim, removed_requires)
 
-        top_proof = self.env.get_theorem("kore-top-valid-v1").apply(x=encoded_free_sort_var)
-        removed_requires = self.env.get_theorem("kore-mp-v1").apply(
-            top_proof,
-            instantiated_axiom.proof,
-        )
-        instantiated_axiom_claim = kore.Claim(
-            instantiated_axiom.claim.sort_variables,
-            instantiated_axiom.claim.pattern.arguments[1],
-            [],
-        )
-        instantiated_axiom_claim.resolve(self.env.module)
-        instantiated_axiom = ProvableClaim(instantiated_axiom_claim, removed_requires)
+            # now we have a conjunction and{R}(<equation>, <ensures>)
+            # since we assumed ensures is top, we can remove it as well
+            # that is, from \and{R}(<equation>, top)
+            # we can get <equation>
+            and_eliminated = self.env.get_theorem("kore-and-elim-left-v1").apply(
+                instantiated_axiom.proof,
+            )
+            instantiated_axiom_claim = kore.Claim(
+                instantiated_axiom.claim.sort_variables,
+                instantiated_axiom.claim.pattern.arguments[0],
+                [],
+            )
+            instantiated_axiom_claim.resolve(self.env.module)
+            instantiated_axiom = ProvableClaim(instantiated_axiom_claim, and_eliminated)
 
-        # now we have a conjunction and{R}(<equation>, <ensures>)
-        # since we assumed ensures is top, we can remove it as well
-        # that is, from \and{R}(<equation>, top)
-        # we can get <equation>
-        and_eliminated = self.env.get_theorem("kore-and-elim-left-v1").apply(
-            instantiated_axiom.proof,
-        )
-        instantiated_axiom_claim = kore.Claim(
-            instantiated_axiom.claim.sort_variables,
-            instantiated_axiom.claim.pattern.arguments[0],
-            [],
-        )
-        instantiated_axiom_claim.resolve(self.env.module)
-        instantiated_axiom = ProvableClaim(instantiated_axiom_claim, and_eliminated)
-
-        return instantiated_axiom
+            return instantiated_axiom
+        
+        raise Exception(f"unable to find anywhere/function rule to rewrite term {pattern}")
 
     """
     Attempt to resolve all function patterns
@@ -310,19 +372,10 @@ class InnermostFunctionPathVisitor(KoreVisitor):
         return None
 
 
-class HookedFunctionEvaluator(ProofGenerator):
-    """
-    The evaluator should return a provable claim of the form
-
-    """
-    def prove_evaluation(self, pattern: kore.Pattern) -> ProvableClaim:
-        raise NotImplementedError()
-
-
 """
 Common base class for evaluator of the builtin sort SortInt{}
 """
-class IntegerEvaluator(HookedFunctionEvaluator):
+class BuiltinFunctionEvaluator(ProofGenerator):
     def __init__(self, env: ProofEnvironment):
         super().__init__(env)
         self.axiom_counter = 0
@@ -334,11 +387,30 @@ class IntegerEvaluator(HookedFunctionEvaluator):
         assert isinstance(value.arguments[0], kore.StringLiteral)
         return int(value.arguments[0].content)
 
-    def build_equation(self, pattern: kore.Pattern, result: int) -> ProvableClaim:
+    def parse_bool(self, value: kore.Pattern) -> bool:
+        assert isinstance(value, kore.MLPattern) and \
+               value.construct == kore.MLPattern.DV
+        assert value.sorts[0].definition.sort_id == "SortBool"
+        assert isinstance(value.arguments[0], kore.StringLiteral)
+        return { "true": True, "false": False }[value.arguments[0].content]
+
+    """
+    Build an axiom that says the given pattern
+    is equal to the result, which is either an integer
+    or a boolean
+
+    Then we will potentially discharge a proof obligation to some domain value reasoning tool
+    """
+    def build_arithmetic_equation(self, pattern: kore.Pattern, result: Union[int, bool]) -> ProvableClaim:
         output_sort = pattern.symbol.definition.output_sort
         sort_var = kore.SortVariable("R")
 
-        domain_value = kore.MLPattern(kore.MLPattern.DV, [ output_sort ], [ kore.StringLiteral(str(result)) ])
+        if type(result) is bool:
+            result_literal = "true" if result else "false"
+        else:
+            result_literal = str(result)
+
+        domain_value = kore.MLPattern(kore.MLPattern.DV, [ output_sort ], [ kore.StringLiteral(result_literal) ])
 
         claim = kore.Claim(
             [ sort_var ],
@@ -354,14 +426,35 @@ class IntegerEvaluator(HookedFunctionEvaluator):
 
         # TODO: we need to generate a proof obligation for
         # this arithmetic fact
-        thm = self.env.load_axiom(claim, f"{self.env.sanitize_label_name(pattern.symbol.definition.symbol)}-domain-fact-{self.axiom_counter}")
+        self.env.load_comment("NOTE: domain value reasoning checked by external tool")
+        thm = self.env.load_axiom(claim, f"{self.env.sanitize_label_name(pattern.symbol.definition.symbol)}-domain-fact-{self.axiom_counter}", comment=False)
 
         print(f"> bulitin symbol proof obligation: {claim}")
+
+        self.axiom_counter += 1
 
         return ProvableClaim(claim, thm.as_proof())
 
 
-class IntegerAdditionEvaluator(IntegerEvaluator):
+class IntegerAdditionEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, pattern: kore.Pattern) -> ProvableClaim:
         a, b = pattern.arguments
-        return self.build_equation(pattern, self.parse_int(a) + self.parse_int(b))
+        return self.build_arithmetic_equation(pattern, self.parse_int(a) + self.parse_int(b))
+
+
+class IntegerSubtractionEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, pattern: kore.Pattern) -> ProvableClaim:
+        a, b = pattern.arguments
+        return self.build_arithmetic_equation(pattern, self.parse_int(a) - self.parse_int(b))
+
+
+class IntegerMultiplicationEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, pattern: kore.Pattern) -> ProvableClaim:
+        a, b = pattern.arguments
+        return self.build_arithmetic_equation(pattern, self.parse_int(a) * self.parse_int(b))
+
+
+class IntegerGreaterThanOrEqualToEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, pattern: kore.Pattern) -> ProvableClaim:
+        a, b = pattern.arguments
+        return self.build_arithmetic_equation(pattern, self.parse_int(a) >= self.parse_int(b))
