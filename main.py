@@ -74,6 +74,7 @@ if __name__ == "__main__":
         step_theorems = []
 
         for step, (from_pattern, to_pattern) in enumerate(zip(snapshots[:-1], snapshots[1:])):
+            print("==================")
             print("proving rewriting step {}".format(step))
             # search for the axiom to use and try to get a proof
             env.load_metamath_statement(Comment(f"\nrewriting step {step}:\n{from_pattern}\n=>\n{to_pattern}\n"))
@@ -81,6 +82,7 @@ if __name__ == "__main__":
             proof.statement.label = f"step-{step}"
             step_theorems.append(env.load_metamath_statement(proof.statement))
 
+        print("==================")
         print("chaining steps to prove the final goal")
         env.load_metamath_statement(Comment(f"\nfinal goal:\n{snapshots[0]}\n=>\n{snapshots[-1]}\n"))
         multiple_steps_proof = gen.chain_rewrite_steps(step_theorems)

@@ -163,6 +163,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
             kore.MLPattern.IN: "kore-in-substitution",
             kore.MLPattern.REWRITES: "kore-rewrites-substitution",
             kore.MLPattern.DV: "kore-dv-substitution",
+            kore.MLPattern.IMPLIES: "kore-implies-substitution",
         }
 
         if ml_pattern.construct in substitution_axiom_map:

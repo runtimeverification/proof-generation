@@ -100,6 +100,7 @@ class ProofEnvironment:
         self.functional_axioms = {} # symbol instance -> provable claim
         self.domain_value_functional_axioms = {} # (sort, string literal) -> provable claim
         self.rewrite_axioms = {} # unique id -> provable claim
+        self.anywhere_axioms = {} # unique id -> provable claim
         self.substitution_axioms = {} # constant symbol (in metamath) -> theorem
         self.sort_axioms = {} # constant symbol (in metamath) -> theorem
 
@@ -387,6 +388,15 @@ class ProofEnvironment:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
         return isinstance(inner_pattern, kore.MLPattern) and inner_pattern.construct == kore.MLPattern.REWRITES
 
+    def is_anywhere_rule_axiom(self, axiom: kore.Axiom) -> bool:
+        inner_pattern = KoreUtils.strip_forall(axiom.pattern)
+        return isinstance(inner_pattern, kore.MLPattern) and \
+               inner_pattern.construct == kore.MLPattern.IMPLIES and \
+               isinstance(inner_pattern.arguments[1], kore.MLPattern) and \
+               inner_pattern.arguments[1].construct == kore.MLPattern.AND and \
+               isinstance(inner_pattern.arguments[1].arguments[0], kore.Pattern) and \
+               inner_pattern.arguments[1].arguments[0].construct == kore.MLPattern.EQUALS
+
     def is_functional_axiom(self, axiom: kore.Axiom) -> bool:
         return axiom.get_attribute_by_symbol("functional") is not None or \
                axiom.get_attribute_by_symbol("subsort") is not None
@@ -467,10 +477,11 @@ class ProofEnvironment:
         for index, axiom in enumerate(module.axioms):
             is_functional = self.is_functional_axiom(axiom)
             is_rewrite = self.is_rewrite_axiom(axiom)
+            is_anywhere = self.is_anywhere_rule_axiom(axiom)
             is_equational = self.is_equational_axiom(axiom)
             subsort_tuple = self.is_subsort_axiom(axiom)
 
-            if is_functional or is_rewrite or is_equational or subsort_tuple is not None:
+            if is_functional or is_rewrite or is_anywhere or is_equational or subsort_tuple is not None:
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
 
                 # record these statements for later use
@@ -480,7 +491,10 @@ class ProofEnvironment:
                 elif is_rewrite:
                     uid = self.get_axiom_unique_id(axiom)
                     self.rewrite_axioms[uid] = ProvableClaim(axiom, theorem.as_proof())
-                
+                elif is_anywhere:
+                    uid = self.get_axiom_unique_id(axiom)
+                    self.anywhere_axioms[uid] = ProvableClaim(axiom, theorem.as_proof())
+
                 if subsort_tuple is not None:
                     sort1, sort2 = subsort_tuple
                     self.subsort_relation.add_subsort(sort1, sort2, theorem)
