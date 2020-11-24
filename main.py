@@ -79,7 +79,7 @@ if __name__ == "__main__":
             # search for the axiom to use and try to get a proof
             proof = gen.prove_rewrite_step(from_pattern, to_pattern)
             proof.statement.label = f"step-{step}"
-            
+
             env.load_comment(f"\nrewriting step {step}:\n{from_pattern}\n=>\n{to_pattern}\n")
             step_theorems.append(env.load_metamath_statement(proof.statement))
 

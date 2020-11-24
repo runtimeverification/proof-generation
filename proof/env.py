@@ -100,7 +100,7 @@ class ProofEnvironment:
         self.functional_axioms = {} # symbol instance -> provable claim
         self.domain_value_functional_axioms = {} # (sort, string literal) -> provable claim
         self.rewrite_axioms = {} # unique id -> provable claim
-        self.anywhere_axioms = {} # unique id -> provable claim
+        self.anywhere_axioms = [] # provable claims
         self.substitution_axioms = {} # constant symbol (in metamath) -> theorem
         self.sort_axioms = {} # constant symbol (in metamath) -> theorem
 
@@ -497,8 +497,7 @@ class ProofEnvironment:
                     uid = self.get_axiom_unique_id(axiom)
                     self.rewrite_axioms[uid] = ProvableClaim(axiom, theorem.as_proof())
                 elif is_anywhere:
-                    uid = self.get_axiom_unique_id(axiom)
-                    self.anywhere_axioms[uid] = ProvableClaim(axiom, theorem.as_proof())
+                    self.anywhere_axioms.append(ProvableClaim(axiom, theorem.as_proof()))
 
                 if subsort_tuple is not None:
                     sort1, sort2 = subsort_tuple

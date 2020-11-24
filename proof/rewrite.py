@@ -27,6 +27,7 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'Unds'-Int'Unds'": IntegerSubtractionEvaluator(env),
             "Lbl'UndsStar'Int'Unds'": IntegerMultiplicationEvaluator(env),
             "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(env),
+            "Lbl'Unds'andBool'Unds'": BooleanAndEvaluator(env),
         }
 
     """
@@ -205,8 +206,10 @@ class RewriteProofGenerator(ProofGenerator):
                 assert isinstance(sort, kore.SortVariable)
                 return self.env.get_theorem("kore-top-valid-v1").apply(x=encoded_sort)
 
-        assert pattern.construct == kore.MLPattern.EQUALS, \
-               f"unable to prove the requires clause {pattern}"
+        # assert pattern.construct == kore.MLPattern.EQUALS, \
+        #        f"unable to prove the requires clause {pattern}"
+        if pattern.construct != kore.MLPattern.EQUALS:
+            return None
 
         input_sort, output_sort = pattern.sorts
         encoded_input_sort = self.env.encode_pattern(input_sort)
@@ -259,9 +262,10 @@ class RewriteProofGenerator(ProofGenerator):
     """
     def find_anywhere_axiom_for_pattern(self, pattern: kore.Pattern) -> ProvableClaim:
         # find an anywhere/function rule to rewrite
-        for anywhere_axiom in self.env.anywhere_axioms.values():
+        for anywhere_axiom in self.env.anywhere_axioms:
             lhs, _, _, _ = self.decompose_anywhere_axiom(anywhere_axiom.claim.pattern)
             unification_result = UnificationProofGenerator(self.env).unify_patterns(lhs, pattern)
+
             if unification_result is None: continue
 
             substitution = unification_result.get_lhs_substitution_as_instance()
@@ -272,9 +276,12 @@ class RewriteProofGenerator(ProofGenerator):
 
             lhs, requires, _, ensures = self.decompose_anywhere_axiom(instantiated_axiom.claim.pattern)
 
-            assert isinstance(ensures, kore.MLPattern) and \
-                   ensures.construct == kore.MLPattern.TOP, \
-                   f"unsupported ensures clause {ensures}"        
+            # assert isinstance(ensures, kore.MLPattern) and \
+            #        ensures.construct == kore.MLPattern.TOP, \
+            #        f"unsupported ensures clause {ensures}"
+            if not (isinstance(ensures, kore.MLPattern) and
+                    ensures.construct == kore.MLPattern.TOP):
+                continue
 
             # from \implies{R}(<requires>, \and{R}(<equation>, top))
             # if we can prove the requires clause
@@ -308,6 +315,9 @@ class RewriteProofGenerator(ProofGenerator):
             )
             instantiated_axiom_claim.resolve(self.env.module)
             instantiated_axiom = ProvableClaim(instantiated_axiom_claim, and_eliminated)
+
+            for equation, path in unification_result.applied_equations:
+                instantiated_axiom = equation.prove_validity(instantiated_axiom, [ 0, 0 ] + path)
 
             return instantiated_axiom
         
@@ -458,3 +468,9 @@ class IntegerGreaterThanOrEqualToEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, pattern: kore.Pattern) -> ProvableClaim:
         a, b = pattern.arguments
         return self.build_arithmetic_equation(pattern, self.parse_int(a) >= self.parse_int(b))
+
+
+class BooleanAndEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, pattern: kore.Pattern) -> ProvableClaim:
+        a, b = pattern.arguments
+        return self.build_arithmetic_equation(pattern, self.parse_bool(a) and self.parse_bool(b))
