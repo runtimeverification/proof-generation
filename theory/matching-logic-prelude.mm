@@ -29,3 +29,30 @@ ${
     nu-is-sugar.0 $e #Substitution ph0 ph1 ( \not X ) X $.
     nu-is-sugar   $a #Equal ( \nu X ph1 ) ( \not ( \mu X ( \not ph0 ) ) ) $.
 $}
+
+$( Part 2. Definedness $)
+
+$c \definedness $.
+definedness-is-symbol $a #Symbol \definedness $.
+
+$c \ceil $.
+ceil-is-pattern $a #Pattern ( \ceil ph0 ) $.
+ceil-is-sugar   $a #Equal ( \ceil ph0 ) ( \app \definedness ph0 ) $.
+
+axiom-definedness $a |- ( \ceil x ) $.
+
+$c \floor $.
+floor-is-pattern $a #Pattern ( \floor ph0 ) $.
+floor-is-sugar   $a #Equal ( \floor ph0 ) ( \not ( \ceil ( \not ph0 ) ) ) $.
+
+$c \in $.
+in-is-pattern $a #Pattern ( \in x ph0 ) $.
+in-is-sugar   $a #Equal ( \in x ph0 ) ( \ceil ( \and x ph0 ) ) $.
+
+$c \included $.
+included-is-pattern $a #Pattern ( \included ph0 ph1 ) $.
+included-is-sugar   $a #Equal ( \included ph0 ph1 ) ( \floor ( \imp ph0 ph1 ) ) $.
+
+$c \eq $.
+eq-is-pattern $a #Pattern ( \eq ph0 ph1 ) $.
+eq-is-sugar   $a #Equal ( \eq ph0 ph1 ) ( \floor ( \iff ph0 ph1 ) ) $.
