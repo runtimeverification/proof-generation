@@ -50,7 +50,7 @@ $c #Negative $.
 $c #Fresh $.
 $c #ApplicationContext $.
 $c #Substitution $.
-$c #Equals $.
+$c #Equal $.
 $c |- $.
 
 $c \bot    $.
@@ -146,7 +146,7 @@ $}
 fresh-in-mu-shadowed $a #Fresh X ( \mu X ph0 ) $.
 
 $( Substitution $)
-$( #Substitution ph0 ph1 ph2 Xx means ph0 === ph1[ph2/xX] $)
+$( #Substitution ph0 ph1 ph2 xX means ph0 === ph1[ph2/xX] $)
 
 substitution-var-same $a #Substitution ph0 xX ph0 xX $.
 ${
@@ -196,6 +196,67 @@ ${
     application-context-app-right   $a #ApplicationContext xX ( \app ph0 ph1 ) $.
 $}
 
+$( Meta-Level Equality for Defining Syntactic Sugar $)
+$( #Equal is a congruence. $)
+
+equal-reflexivity $a #Equal ph0 ph0 $.
+${
+    equal-commutativity.0 $e #Equal ph0 ph1 $.
+    equal-commutativity   $a #Equal ph1 ph0 $.
+$}
+${
+    equal-transitivity.0 $e #Equal ph0 ph1 $.
+    equal-transitivity.1 $e #Equal ph1 ph2 $.
+    equal-transitivity   $a #Equal ph0 ph2 $.
+$}
+${
+    equal-positive.0 $e #Positive xX ph0 $.
+    equal-positive.1 $e #Equal ph0 ph1 $.
+    equal-positive   $a #Positive xX ph1 $.
+$}
+${
+    equal-negative.0 $e #Negative xX ph0 $.
+    equal-negative.1 $e #Equal ph0 ph1 $.
+    equal-negative   $a #Negative xX ph1 $.
+$}
+${
+    equal-fresh.0 $e #Fresh xX ph0 $.
+    equal-fresh.1 $e #Equal ph0 ph1 $.
+    equal-fresh   $a #Fresh xX ph1 $.
+$}
+${
+    equal-substitution.0 $e #Substitution ph0 ph1 ph2 xX $.
+    equal-substitution.1 $e #Equal ph0 ph3 $.
+    equal-substitution.2 $e #Equal ph1 ph4 $.
+    equal-substitution.3 $e #Equal ph2 ph5 $.
+    equal-substitution   $a #Substitution ph3 ph4 ph5 xX $.
+$}
+${
+    equal-application-context.0 $e #ApplicationContext xX ph0 $.
+    equal-application-context.1 $e #Equal ph0 ph1 $.
+    equal-application-context   $a #ApplicationContext xX ph1 $.
+$}
+${
+    equal-proof.0 $e |- ph0 $.
+    equal-proof.1 $e #Equal ph0 ph1 $.
+    equal-proof   $a |- ph1 $.
+$}
+
+$( Defining Very Basic Syntactic Sugar $)
+$( It is used in the proof system. $)
+
+$c \not $.
+not-is-pattern $a #Pattern ( \not ph0 ) $.
+not-is-sugar   $a #Equal ( \not ph0 ) ( \imp ph0 \bot ) $.
+
+$c \or $.
+or-is-pattern $a #Pattern ( \or ph0 ph1 ) $.
+or-is-sugar   $a #Equal ( \or ph0 ph1 ) ( \imp ( \not ph0 ) ph1 ) $.
+
+$c \and $.
+and-is-pattern $a #Pattern ( \and ph0 ph1 ) $.
+and-is-sugar   $a #Equal ( \and ph0 ph1 ) ( \not ( \or ( \not ph0 ) ( \not ph1 ) ) ) $.
+
 $( Matching Logic Proof System $)
 $(
    Part 1 (7 rules). FOL Reasoning
@@ -205,9 +266,8 @@ $(
    Total (20 rules).
 $)
 
-$c |- $.
-
 $( Proof System Part 1 (7 rules) $)
+$( FOL Reasoning $)
 
 proof-rule-prop-1 $a |- ( \imp ph0 ( \imp ph1 ph0 ) ) $.
 proof-rule-prop-2 $a |- ( \imp ( \imp ph0 ( \imp ph1 ph2 ) ) ( \imp ( \imp ph0 ph1 ) ( \imp ph0 ph2 ) ) ) $.
@@ -226,7 +286,8 @@ ${
     proof-rule-gen   $a |- ( \imp ( \exists x ph0 ) ph1 ) $.
 $}
 
-$( Proof System Part 1 (8 rules) $)
+$( Proof System Part 2 (8 rules) $)
+$( Frame Reasoning $)
 
 proof-rule-propagation-bot-left  $a |- ( \imp ( \app \bot ph0 ) \bot ) $.
 proof-rule-propagation-bot-right $a |- ( \imp ( \app ph0 \bot ) \bot ) $.
@@ -250,5 +311,28 @@ ${
     proof-rule-frame-right.0 $e |- ( \imp ph1 ph2 ) $.
     proof-rule-frame-right   $a |- ( \imp ( \app ph0 ph1 ) ( \app ph0 ph2 ) ) $.
 $}
+
+$( Proof System Part 3 (2 rules) $)
+$( Fixpoint Reasoning $)
+${
+    proof-rule-prefixpoint.0 $e #Substitution ph0 ph1 ( \mu X ph1 ) X $.
+    proof-rule-prefixpoint   $a |- ( \imp ph0 ( \mu X ph1 ) ) $.
+$}
+${
+    proof-rule-kt.0 $e #Substitution ph0 ph1 ph2 X $.
+    proof-rule-kt.1 $e |- ( \imp ph0 ph2 ) $.
+    proof-rule-kt   $a |- ( \imp ( \mu X ph1 ) ph2 ) $.
+$}
+
+$( Proof System Part 4 (3 rules) $)
+$( Misc $)
+${
+    proof-rule-set-var-substitution.0 $e #Substitution ph0 ph1 ph2 X $.
+    proof-rule-set-var-substitution.1 $e |- ph1 $.
+    proof-rule-set-var-substitution   $a |- ph0 $.
+$}
+proof-rule-existence $e |- ( \exists x x ) $.
+
+
 
 
