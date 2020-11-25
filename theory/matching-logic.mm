@@ -291,8 +291,10 @@ $( Frame Reasoning $)
 
 proof-rule-propagation-bot-left  $a |- ( \imp ( \app \bot ph0 ) \bot ) $.
 proof-rule-propagation-bot-right $a |- ( \imp ( \app ph0 \bot ) \bot ) $.
-$( proof-rule-propagation-or-left  $)
-$( proof-rule-propagation-or-right $)
+proof-rule-propagation-or-left  $a |- ( \imp ( \app ( \or ph0 ph1 ) ph2 ) 
+                                             ( \or ( \app ph0 ph1 ) ( \app ph1 ph2 ) ) ) $.
+proof-rule-propagation-or-right $a |- ( \imp ( \app ph0 ( \or ph1 ph2 ) ) 
+                                             ( \or ( \app ph0 ph1 ) ( \app ph0 ph2 ) ) ) $.
 ${
     proof-rule-propagation-exists-left.0 $e #Fresh x ph1 $.
     proof-rule-propagation-exists-left   $a |- ( \imp ( ( \app ( \exists x ph0 ) ph1 ) ) 
@@ -332,7 +334,12 @@ ${
     proof-rule-set-var-substitution   $a |- ph0 $.
 $}
 proof-rule-existence $e |- ( \exists x x ) $.
-
+${
+    proof-rule-singleton.0 $e #ApplicationContext xX ph0 $.
+    proof-rule-singleton.1 $e #Substitution ph2 ph0 ( \and yY ph1 ) xX $.
+    proof-rule-singleton.2 $e #Substitution ph3 ph0 ( \and yY ( \not ph1 ) ) xX $.
+    proof-rule-singleton $a |- ( \not ( \and ph2 ph3 ) ) $.    
+$}
 
 
 
