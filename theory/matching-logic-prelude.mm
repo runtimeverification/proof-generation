@@ -8,7 +8,9 @@ $(
     Part 3. Sorts and Inhabitants
     Part 4. Special Patterns (Singletons, Top, Bottom, Predicates)
     Part 5. Constant, Unary, and Binary Functions (internal use only)
-    Part 6. Pairs.
+    Part 6. Pairs
+    Part 7. Tuples
+    Part 8. Functions
 $)
 
 $( Part 0. More Metavariables $)
@@ -94,11 +96,11 @@ in-sort-is-sugar   $a #Equal ( \in-sort ph0 ph1 ) ( \included ph0 ( \inh ph1 ) )
 
 $c \sorted-forall $.
 sorted-forall-is-pattern $a #Pattern ( \sorted-forall x ph0 ph1 ) $.
-sorted-forall-is-sugar   $a #Equal ( \sorted-forall x ph0 ph1 ) ( \forall x ( \imp ( \in-sort x ph0 ) ph1 ) $. 
+sorted-forall-is-sugar   $a #Equal ( \sorted-forall x ph0 ph1 ) ( \forall x ( \imp ( \in-sort x ph0 ) ph1 ) ) $. 
 
 $c \sorted-exists $.
 sorted-exists-is-pattern $a #Pattern ( \sorted-exists x ph0 ph1 ) $.
-sorted-exists-is-sugar   $a #Equal ( \sorted-exists x ph0 ph1 ) ( \exists x ( \and ( \in-sort x ph0 ) ph1 ) $.
+sorted-exists-is-sugar   $a #Equal ( \sorted-exists x ph0 ph1 ) ( \exists x ( \and ( \in-sort x ph0 ) ph1 ) ) $.
 
 $c \forall-sort $.
 forall-sort-is-pattern $a #Pattern ( \forall-sort s0 ph0 ) $.
@@ -177,7 +179,7 @@ axiom-pair-sort-is-sort $a |- ( \is-binary-function \pair-sort-symbol \sort \sor
 
 $c \pair-sort $.
 pair-sort-is-pattern $a #Pattern ( \pair-sort ph0 ph1 ) $.
-pair-sort-is-sugar   $a #Equal ( \pair-sort ph0 ph1 ) ( \app \pair-sort-symbol ph0 ph1 ) $.
+pair-sort-is-sugar   $a #Equal ( \pair-sort ph0 ph1 ) ( \app ( \app \pair-sort-symbol ph0 ) ph1 ) $.
 
 $c \pair-symbol $.
 pair-symbol-is-symbol $a #Symbol \pair-symbol $.
@@ -187,7 +189,7 @@ axiom-pair-symbol-is-binary-function
 
 $c \pair $.
 pair-is-pattern $a #Pattern ( \pair ph0 ph1 ) $.
-pair-is-sugar   $a #Equal ( \pair ph0 ph1 ) ( \app \pair-symbol ph0 ph1 ) $.
+pair-is-sugar   $a #Equal ( \pair ph0 ph1 ) ( \app ( \app \pair-symbol ph0 ) ph1 ) $.
 
 $c \pair-fst-symbol $.
 pair-fst-symbol-is-symbol $a #Symbol \pair-fst-symbol $.

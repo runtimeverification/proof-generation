@@ -94,7 +94,7 @@ class Theorem:
 
         assert len(essential_proofs) == len(self.essentials), \
                "unmatched number of subproofs for " \
-               "essential statements, expecting {}, {} given".format(len(essential_proofs), len(self.essentials))
+               "essential statements, expecting {}, {} given".format(len(self.essentials), len(essential_proofs))
 
         # TODO: check proofs for essential statements
         for essential, essential_proof in zip(self.essentials, essential_proofs):
@@ -223,10 +223,13 @@ class Composer(MetamathVisitor):
             self.statements.append(database_or_statement)
 
             # return the corresponding theorem
-            if isinstance(database_or_statement, StructuredStatement) and \
-               database_or_statement.statement_type in { Statement.AXIOM, Statement.FLOATING, Statement.PROVABLE }:
-                assert database_or_statement.label in self.theorems
-                return self.theorems[database_or_statement.label]
+            if isinstance(database_or_statement, StructuredStatement):
+                if database_or_statement.statement_type in { Statement.AXIOM, Statement.FLOATING, Statement.PROVABLE }:
+                    assert database_or_statement.label in self.theorems
+                    return self.theorems[database_or_statement.label]
+
+                if database_or_statement.statement_type == Statement.ESSENTITAL:
+                    return Theorem(self, database_or_statement, [], [])
 
     def encode(self, stream: TextIO):
         for stmt in self.statements:
@@ -283,7 +286,7 @@ class Composer(MetamathVisitor):
             assert len(floatings) == len(metavariables), \
                    "some metavariables not found in {}, only found {}".format(metavariables, floatings)
 
-            self.theorems[stmt.label] = Theorem(self, stmt, floatings, essentials)
+            self.theorems[stmt.label] = Theorem(self, stmt, floatings.copy(), essentials.copy())
 
     ####################################################
     # Utilities to generate proofs for simple statements
@@ -327,18 +330,24 @@ class Composer(MetamathVisitor):
 
         return solution
 
+    def unify_terms_as_instance(self, term1: Term, term2: Term) -> Optional[Mapping[str, Term]]:
+        solution = self.unify_terms(term1, term2)
+        if solution is None: return None
+        return self.get_substitution_from_unification(solution)
+
     """
     Check if stmt2 is an instance of stmt1, that is, if
     they are unifiable and the solution is a map from Metavariables to terms (instead of terms to metavariables)
     """
     def unify_statements_as_instance(self, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[Mapping[str, Term]]:
         solution = self.unify_statements(stmt1, stmt2)
-        if solution is None:
-            return None
+        if solution is None: return None
+        return self.get_substitution_from_unification(solution)
 
+    def get_substitution_from_unification(self, unification: List[Tuple[Term, Term]]) -> Optional[Mapping[str, Term]]:
         substitution = {}
 
-        for lhs, rhs in solution:
+        for lhs, rhs in unification:
             if not isinstance(lhs, Metavariable):
                 return None
 

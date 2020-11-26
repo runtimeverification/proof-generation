@@ -44,6 +44,7 @@ sg4-is-symbol $f #Symbol sg4 $.
 element-var-is-var $a #Variable x $.
 set-var-is-var     $a #Variable X $.
 var-is-pattern     $a #Pattern xX $.
+symbol-is-pattern  $a #Pattern sg0 $.
 
 $c #Positive $.
 $c #Negative $.
@@ -201,8 +202,8 @@ $( #Equal is a congruence. $)
 
 equal-reflexivity $a #Equal ph0 ph0 $.
 ${
-    equal-commutativity.0 $e #Equal ph0 ph1 $.
-    equal-commutativity   $a #Equal ph1 ph0 $.
+    equal-symmetry.0 $e #Equal ph0 ph1 $.
+    equal-symmetry   $a #Equal ph1 ph0 $.
 $}
 ${
     equal-transitivity.0 $e #Equal ph0 ph1 $.
@@ -226,9 +227,9 @@ ${
 $}
 ${
     equal-substitution.0 $e #Substitution ph0 ph1 ph2 xX $.
-    equal-substitution.1 $e #Equal ph0 ph3 $.
-    equal-substitution.2 $e #Equal ph1 ph4 $.
-    equal-substitution.3 $e #Equal ph2 ph5 $.
+    equal-substitution.1 $e #Equal ph3 ph0 $.
+    equal-substitution.2 $e #Equal ph4 ph1 $.
+    equal-substitution.3 $e #Equal ph5 ph2 $.
     equal-substitution   $a #Substitution ph3 ph4 ph5 xX $.
 $}
 ${
@@ -333,13 +334,12 @@ ${
     proof-rule-set-var-substitution.1 $e |- ph1 $.
     proof-rule-set-var-substitution   $a |- ph0 $.
 $}
-proof-rule-existence $e |- ( \exists x x ) $.
+
+proof-rule-existence $a |- ( \exists x x ) $.
+
 ${
     proof-rule-singleton.0 $e #ApplicationContext xX ph0 $.
     proof-rule-singleton.1 $e #Substitution ph2 ph0 ( \and yY ph1 ) xX $.
     proof-rule-singleton.2 $e #Substitution ph3 ph0 ( \and yY ( \not ph1 ) ) xX $.
     proof-rule-singleton $a |- ( \not ( \and ph2 ph3 ) ) $.    
 $}
-
-
-
