@@ -212,17 +212,17 @@ ${
 $}
 ${
     equal-positive.0 $e #Positive xX ph0 $.
-    equal-positive.1 $e #Equal ph0 ph1 $.
+    equal-positive.1 $e #Equal ph1 ph0 $.
     equal-positive   $a #Positive xX ph1 $.
 $}
 ${
     equal-negative.0 $e #Negative xX ph0 $.
-    equal-negative.1 $e #Equal ph0 ph1 $.
+    equal-negative.1 $e #Equal ph1 ph0 $.
     equal-negative   $a #Negative xX ph1 $.
 $}
 ${
     equal-fresh.0 $e #Fresh xX ph0 $.
-    equal-fresh.1 $e #Equal ph0 ph1 $.
+    equal-fresh.1 $e #Equal ph1 ph0 $.
     equal-fresh   $a #Fresh xX ph1 $.
 $}
 ${
@@ -234,13 +234,27 @@ ${
 $}
 ${
     equal-application-context.0 $e #ApplicationContext xX ph0 $.
-    equal-application-context.1 $e #Equal ph0 ph1 $.
+    equal-application-context.1 $e #Equal ph1 ph0 $.
     equal-application-context   $a #ApplicationContext xX ph1 $.
 $}
 ${
     equal-proof.0 $e |- ph0 $.
-    equal-proof.1 $e #Equal ph0 ph1 $.
+    equal-proof.1 $e #Equal ph1 ph0 $.
     equal-proof   $a |- ph1 $.
+$}
+${
+    equal-imp.0 $e #Equal ph0 ph2 $.
+    equal-imp.1 $e #Equal ph1 ph3 $.
+    equal-imp $a #Equal ( \imp ph0 ph1 ) ( \imp ph2 ph3 ) $.
+$}
+${
+    equal-app.0 $e #Equal ph0 ph2 $.
+    equal-app.0 $e #Equal ph1 ph3 $.
+    equal-app $a #Equal ( \app ph0 ph1 ) ( \app ph2 ph3 ) $.
+$}
+${
+    equal-exists.0 $e #Equal ph0 ph1 $.
+    equal-exists $a #Equal ( \exists x ph0 ) ( \exists x ph1 ) $.
 $}
 
 $( Defining Very Basic Syntactic Sugar $)
@@ -284,6 +298,7 @@ ${
 $}
 ${
     proof-rule-gen.0 $e |- ( \imp ph0 ph1 ) $.
+    proof-rule-gen.1 $e #Fresh x ph1 $.
     proof-rule-gen   $a |- ( \imp ( \exists x ph0 ) ph1 ) $.
 $}
 

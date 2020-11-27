@@ -148,6 +148,8 @@ class Theorem:
         for essential_proof in essential_proofs:
             script += essential_proof.script
 
+        assert self.statement.label is not None, f"applying a theorem without label: {self.statement}"
+
         script.append(self.statement.label)
 
         instance = SubstitutionVisitor(substitution).visit(self.statement)
