@@ -37,8 +37,8 @@ class ASTTransformer(Transformer):
         options = args[2] if len(args) > 1 else Options()
         return ApplyCommand(args[0], options)
 
-    def sorry_command(self, args):
-        return SorryCommand()
+    def shuffle_command(self, args):
+        return ShuffleCommand()
 
     def section_command(self, args):
         return SectionCommand(args[0])
@@ -64,7 +64,7 @@ token: TOKEN
 script: command*
 
 command: "apply" token [SEPARATOR options] -> apply_command
-       | "sorry"                           -> sorry_command
+       | "meh"                             -> shuffle_command
        | SECTION_MARK                      -> section_command
 
 options: option ("," option)*

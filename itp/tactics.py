@@ -1,7 +1,7 @@
 from typing import Mapping
 
 from proof.metamath.ast import Term
-from proof.metamath.composer import Theorem
+from proof.metamath.composer import Theorem, Proof
 from proof.metamath.visitors import CopyVisitor
 
 from .env import Environment, GoalStack, ProofStack
@@ -46,6 +46,11 @@ class ApplyTactic(Tactic):
         metavars_subst_visitor = SubstitutionVisitor(self.metavars_substitution)
         copied_statement = metavars_subst_visitor.visit(copied_statement)
         essentials = [ metavars_subst_visitor.visit(essential) for essential in self.theorem.essentials ]
+
+        # remove labels of essential statements
+        for essential in essentials:
+            essential.label = None
+            essential.statement_type = "?"
 
         # check that they indeed have disjoint metavariables
         # assert len(top_goal.get_metavariables().intersection(copied_statement.get_metavariables())) == 0
@@ -119,3 +124,17 @@ class ApplyTactic(Tactic):
         ))
 
         return proof_stack
+
+
+"""
+Move the current goal to the last
+"""
+class ShuffleTactic(Tactic):
+    def __init__(self):
+        self.statement = None
+
+    def apply(self, env: Environment, goal_stack: GoalStack) -> GoalStack:
+        return [ goal_stack[-1] ] + goal_stack[:-1]
+
+    def resolve(self, env: Environment, proof_stack: ProofStack) -> ProofStack:
+        return proof_stack[1:] + [ proof_stack[0] ]

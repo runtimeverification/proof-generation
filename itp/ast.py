@@ -4,7 +4,7 @@ Syntax trees of the proof script
 
 from typing import List
 
-from .tactics import Tactic, ApplyTactic
+from .tactics import Tactic, ApplyTactic, ShuffleTactic
 
 from proof.metamath.parser import parse_term_with_metavariables
 
@@ -49,9 +49,12 @@ class ApplyCommand(Command):
         return ApplyTactic(env.composer.theorems[self.label], substitution)
 
 
-class SorryCommand(Command):
+class ShuffleCommand(Command):
     def __str__(self) -> str:
         return f"<sorry>"
+
+    def get_tactic(self, env) -> Tactic:
+        return ShuffleTactic()
 
 
 class SectionCommand(Command):

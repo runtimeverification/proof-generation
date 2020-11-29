@@ -12,7 +12,7 @@ composer.load(database)
 
 env = Environment(composer)
 goal_stack = GoalStack([
-    StructuredStatement(Statement.PROVABLE, [
+    StructuredStatement("?", [
         Application("|-"),
         Application("\\imp", [ Metavariable("ph0"), Metavariable("ph0") ])
     ]),
@@ -22,8 +22,9 @@ ast = parse_script(r"""
 apply proof-rule-mp
 apply proof-rule-mp
 apply proof-rule-prop-2
-apply proof-rule-prop-1
+meh
 apply proof-rule-prop-1 with ph1 = "ph0"
+apply proof-rule-prop-1
 """)
 
 tactics = [ command.get_tactic(env) for command in ast.commands ]
