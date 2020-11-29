@@ -25,7 +25,7 @@ def quit_prompt():
 def print_state(state: ProofState):
     if len(state.goal_stack):
         print("goal(s):")
-        for i, goal in enumerate(state.goal_stack):
+        for i, goal in enumerate(state.goal_stack[::-1]):
             if i == 0:
                 print(f"  {ANSI.BOLD}{goal}{ANSI.RESET}")
             else:
@@ -85,7 +85,7 @@ def main():
                 if len(redo_states):
                     undo_states.append((state, command))
                     new_state, command = redo_states.pop()
-                    print(f"reoding command {command}")
+                    print(f"redoing command `{command}`")
                     state = new_state
                 else:
                     print("no newer state")
@@ -93,6 +93,9 @@ def main():
             elif command_src.lower() == "proof":
                 proof = state.gen_proof()
                 print(proof)
+                empty_input = True
+            elif command_src.lower() == "script":
+                print("\n".join(map(lambda t: str(t[1]), undo_states)))
                 empty_input = True
             else:
                 command = parse_command(command_src)

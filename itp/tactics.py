@@ -37,6 +37,8 @@ class ApplyTactic(Tactic):
         metavars = copied_statement.get_metavariables()
         for essential in self.theorem.essentials:
             metavars.update(essential.get_metavariables())
+        metavars = list(metavars)
+        metavars.sort() # making things a bit more deterministic
 
         for metavar in metavars:
             if metavar not in self.metavars_substitution:

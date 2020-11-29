@@ -20,7 +20,18 @@ class Options(BaseAST):
         self.kwargs = kwargs
 
     def __str__(self) -> str:
-        return f"<option {self.args}, {self.kwargs}>"
+        output = []
+
+        if self.args:
+            output += list(map(lambda s: s.replace("\"", "\\\""), self.args))
+
+        if self.kwargs:
+            output += list(map(lambda t: "{} = \"{}\"".format(t[0], t[1].replace("\"", "\\\"")), self.kwargs.items()))
+
+        return ", ".join(output)
+
+    def empty(self) -> bool:
+        return not self.args and not self.kwargs
 
 
 class Command(BaseAST):
@@ -34,7 +45,7 @@ class ApplyCommand(Command):
         self.options = options
 
     def __str__(self) -> str:
-        return f"<apply {self.label} {self.options}>"
+        return f"apply {self.label}" + (f" with {self.options}" if not self.options.empty() else "")
 
     def get_tactic(self, state) -> Tactic:
         assert self.label in state.composer.theorems, f"cannot find theorem {self.label}"
@@ -54,7 +65,7 @@ class LetCommand(Command):
         self.options = options
 
     def __str__(self) -> str:
-        return f"<let {self.options}>"
+        return f"let {self.options}"
 
     def get_tactic(self, state) -> Tactic:
         assert not self.options.args, "apply tactic is not expecting any positional arguments"
@@ -71,7 +82,7 @@ class LetCommand(Command):
 
 class ShuffleCommand(Command):
     def __str__(self) -> str:
-        return f"<meh>"
+        return f"meh"
 
     def get_tactic(self, state) -> Tactic:
         return ShuffleTactic()
