@@ -249,7 +249,7 @@ ${
 $}
 ${
     equal-app.0 $e #Equal ph0 ph2 $.
-    equal-app.0 $e #Equal ph1 ph3 $.
+    equal-app.1 $e #Equal ph1 ph3 $.
     equal-app $a #Equal ( \app ph0 ph1 ) ( \app ph2 ph3 ) $.
 $}
 ${

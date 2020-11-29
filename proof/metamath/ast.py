@@ -228,6 +228,14 @@ class StructuredStatement(Statement):
     def visit(self, visitor: MetamathVisitor):
         return visitor.proxy_visit_structured_statement(self)
 
+    def __eq__(self, other) -> bool:
+        if isinstance(other, StructuredStatement):
+            return self.statement_type == other.statement_type and \
+                   self.terms == other.terms and \
+                   self.label == other.label and \
+                   self.proof == other.proof
+        return False
+
 
 """
 A block is a list of statements,

@@ -189,18 +189,7 @@ $}
 
 $( Other lemmas $)
 
-${
-    equal-not.0 $e #Equal ph0 ph1 $.
-    equal-not $p #Equal ( \not ph0 ) ( \not ph1 ) $=
-        ph0-is-pattern not-is-pattern ph0-is-pattern bot-is-pattern
-        imp-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern not-is-sugar
-        ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern
-        bot-is-pattern imp-is-pattern ph1-is-pattern not-is-pattern
-        ph0-is-pattern bot-is-pattern ph1-is-pattern bot-is-pattern equal-not.0
-        bot-is-pattern equal-reflexivity equal-imp ph1-is-pattern not-is-pattern
-        ph1-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern not-is-sugar
-        equal-symmetry equal-transitivity equal-transitivity $.
-$}
+lemma-top $p |- \top $= ? $.
 
 ${
     lemma-forall-gen.0 $e |- ( \imp ph0 ph1 ) $.
@@ -210,9 +199,7 @@ $}
 
 lemma-dn-intro $p |- ( \imp ph0 ( \imp ( \imp ph0 \bot ) \bot ) ) $= ? $.
 
-lemma-top $p |- \top $= ? $.
-
-${
+$( ${
     $d x ph2 $.
     lemma-sorted-forall-gen.0 $e |- ( \imp ph0 ph1 ) $.
     lemma-sorted-forall-gen.1 $e #Fresh x ph0 $.
@@ -223,6 +210,6 @@ ${
     $d x ph1 $.
     lemma-sort-forall-gen-variant.0 $e |- ph0 $.
     lemma-sort-forall-gen-variant $p |- ( \sorted-forall x ph1 ph0 ) $= ? $.
-$}
+$} $)
 
 lemma-eq-reflexivity $p |- ( \eq ph0 ph0 ) $= ? $.

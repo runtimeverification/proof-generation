@@ -1,17 +1,18 @@
-from typing import Tuple
+from typing import Tuple, Mapping
 
 import os
 import re
 
 from lark import Lark, Transformer
 from lark.visitors import v_args
+
 from .ast import *
 
 
 class ASTTransformer(Transformer):
-    def __init__(self):
+    def __init__(self, metavariables=[]):
         super().__init__()
-        self.metavariables = []
+        self.metavariables = metavariables
 
     def token(self, args):
         return args[0].value
@@ -152,11 +153,21 @@ def parse_database(src: str) -> Database:
     return ASTTransformer().transform(tree)
 
 
+def parse_term_with_metavariables(src: str, metavariables: Set[str]={}) -> Term:
+    tree = statement_parser.parse(f"l $a {src} $.")
+    stmt = ASTTransformer(metavariables).transform(tree)
+    assert len(stmt.terms) == 1, f"syntax error: {src}"
+    return stmt.terms[0]
+
+
 """
 Load a file and resolve all includes
 """
-def flatten_includes(path: str, trace: List[str]=[]) -> str:
+def flatten_includes(path: str, loaded: Set[str]=set(), trace: List[str]=[]) -> str:
     path = os.path.realpath(path)
+
+    if path in loaded:
+        return ""
 
     if path in trace:
         raise Exception(f"recursivly loading {path}")
@@ -174,11 +185,13 @@ def flatten_includes(path: str, trace: List[str]=[]) -> str:
             # if not os.path.isabs(include_path):
             #     include_path = os.path.join(os.path.dirname(path), include_path)
 
-            included_source = flatten_includes(include_path, trace=trace + [path])
+            included_source = flatten_includes(include_path, loaded, trace=trace + [path])
             source = source[:match.start()] + included_source + source[match.end():]
+
+    loaded.add(path)
 
     return source
 
 
 def load_database(path: str) -> Database:
-    return parse_database(flatten_includes(path))
+    return parse_database(flatten_includes(path, set()))

@@ -196,6 +196,12 @@ class Context:
         else:
             return current
 
+    def get_all_floatings(self) -> List[Tuple[str, str]]:
+        if self.prev is not None:
+            return self.prev.get_all_floatings() + self.active_floatings
+        else:
+            return self.active_floatings
+
     def get_all_essentials(self) -> List[StructuredStatement]:
         if self.prev is not None:
             return self.prev.get_all_essentials() + self.active_essentials
@@ -253,6 +259,9 @@ class Composer(MetamathVisitor):
     def find_metavariables_of_typecode(self, typecode: str) -> List[str]:
         return self.context.find_floatings_of_typecode(typecode)
 
+    def get_all_metavariables(self) -> List[str]:
+        return [ var for _, var in self.context.get_all_floatings() ]
+
     ####################################
     # Composer as a metamath AST visitor
     ####################################
@@ -283,7 +292,9 @@ class Composer(MetamathVisitor):
             for essential in essentials:
                 metavariables.update(essential.get_metavariables())
 
+            # print(f"??? {metavariables}")
             floatings = self.context.find_floatings(metavariables)
+            # print("!!!")
 
             assert len(floatings) == len(metavariables), \
                    "some metavariables not found in {}, only found {}".format(metavariables, floatings)
