@@ -7,7 +7,7 @@ from proof.metamath.parser import load_database
 from proof.metamath.composer import Composer
 
 from .parser import parse_command
-from .env import ProofState
+from .state import ProofState
 from .ansi import ANSI
 
 

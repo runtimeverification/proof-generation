@@ -4,7 +4,7 @@ from proof.metamath.ast import Term
 from proof.metamath.composer import Theorem, Proof
 from proof.metamath.visitors import CopyVisitor
 
-from .env import ProofState
+from .state import ProofState
 from .extension import SchematicVariable, SubstitutionVisitor
 
 
