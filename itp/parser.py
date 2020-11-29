@@ -37,11 +37,11 @@ class ASTTransformer(Transformer):
         options = args[2] if len(args) > 1 else Options()
         return ApplyCommand(args[0], options)
 
+    def let_command(self, args):
+        return LetCommand(args[0])
+
     def shuffle_command(self, args):
         return ShuffleCommand()
-
-    def section_command(self, args):
-        return SectionCommand(args[0])
 
     def script(self, args):
         return Script(args)
@@ -64,8 +64,8 @@ token: TOKEN
 script: command*
 
 command: "apply" token [SEPARATOR options] -> apply_command
+       | "let" options                     -> let_command
        | "meh"                             -> shuffle_command
-       | SECTION_MARK                      -> section_command
 
 options: option ("," option)*
 option: value           -> positional_option
@@ -84,6 +84,20 @@ script_parser = Lark(
 )
 
 
+command_parser = Lark(
+    syntax,
+    start="command",
+    parser="lalr",
+    lexer="standard",
+    propagate_positions=True,
+)
+
+
 def parse_script(src: str) -> Script:
     tree = script_parser.parse(src)
+    return ASTTransformer().transform(tree)
+
+
+def parse_command(src: str) -> Command:
+    tree = command_parser.parse(src)
     return ASTTransformer().transform(tree)

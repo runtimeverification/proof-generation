@@ -4,7 +4,7 @@ Syntax trees of the proof script
 
 from typing import List
 
-from .tactics import Tactic, ApplyTactic, ShuffleTactic
+from .tactics import Tactic, ApplyTactic, SetSchematicVariableTactic, ShuffleTactic
 
 from proof.metamath.parser import parse_term_with_metavariables
 
@@ -24,7 +24,7 @@ class Options(BaseAST):
 
 
 class Command(BaseAST):
-    def get_tactic(self, env) -> Tactic:
+    def get_tactic(self, state) -> Tactic:
         raise NotImplementedError()
 
 
@@ -36,33 +36,45 @@ class ApplyCommand(Command):
     def __str__(self) -> str:
         return f"<apply {self.label} {self.options}>"
 
-    def get_tactic(self, env) -> Tactic:
-        assert self.label in env.composer.theorems
+    def get_tactic(self, state) -> Tactic:
+        assert self.label in state.composer.theorems, f"cannot find theorem {self.label}"
         assert not self.options.args, "apply tactic is not expecting any positional arguments"
 
         substitution = {}
 
         for key, value in self.options.kwargs.items():
             assert type(value) is str
-            substitution[key] = parse_term_with_metavariables(value, set(env.composer.get_all_metavariables()))
+            substitution[key] = parse_term_with_metavariables(value, set(state.composer.get_all_metavariables()))
 
-        return ApplyTactic(env.composer.theorems[self.label], substitution)
+        return ApplyTactic(state.composer.theorems[self.label], substitution)
+
+
+class LetCommand(Command):
+    def __init__(self, options: Options=Options()):
+        self.options = options
+
+    def __str__(self) -> str:
+        return f"<let {self.options}>"
+
+    def get_tactic(self, state) -> Tactic:
+        assert not self.options.args, "apply tactic is not expecting any positional arguments"
+
+        substitution = {}
+
+        # TODO: check for schematic variables here
+        for key, value in self.options.kwargs.items():
+            assert type(value) is str
+            substitution[key] = parse_term_with_metavariables(value, set(state.composer.get_all_metavariables()))
+
+        return SetSchematicVariableTactic(substitution)
 
 
 class ShuffleCommand(Command):
     def __str__(self) -> str:
-        return f"<sorry>"
+        return f"<meh>"
 
-    def get_tactic(self, env) -> Tactic:
+    def get_tactic(self, state) -> Tactic:
         return ShuffleTactic()
-
-
-class SectionCommand(Command):
-    def __init__(self, mark: str):
-        self.mark = mark
-
-    def __str__(self) -> str:
-        return f"<section {self.mark}>"
 
 
 class Script(BaseAST):

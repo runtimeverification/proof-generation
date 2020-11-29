@@ -4,15 +4,21 @@ from proof.metamath.ast import Term
 from proof.metamath.composer import Theorem, Proof
 from proof.metamath.visitors import CopyVisitor
 
-from .env import Environment, GoalStack, ProofStack
+from .env import ProofState
 from .extension import SchematicVariable, SubstitutionVisitor
 
 
 class Tactic:
-    def apply(self, env: Environment, goal_stack: GoalStack) -> GoalStack:
+    """
+    Transforms the proof state
+    """
+    def apply(self, state: ProofState):
         raise NotImplementedError()
 
-    def resolve(self, env: Environment, proof_stack: ProofStack) -> ProofStack:
+    """
+    Transforms the proof stack
+    """
+    def resolve(self, state: ProofState):
         raise NotImplementedError()
 
 
@@ -24,13 +30,9 @@ class ApplyTactic(Tactic):
         self.theorem = theorem
         self.metavars_substitution = initial_substitution
 
-    def apply(self, env: Environment, goal_stack: GoalStack) -> GoalStack:
-        goal_stack = goal_stack.copy()
-
-        top_goal = goal_stack.pop()
-        copied_statement = CopyVisitor().visit(self.theorem.statement)
-        copied_statement.label = None
-        copied_statement.proof = None
+    def apply(self, state: ProofState):
+        top_goal = state.goal_stack.pop()
+        copied_statement = state.sanitize_goal_statement(self.theorem.statement)
 
         metavars = copied_statement.get_metavariables()
         for essential in self.theorem.essentials:
@@ -38,24 +40,21 @@ class ApplyTactic(Tactic):
 
         for metavar in metavars:
             if metavar not in self.metavars_substitution:
-                typecode = env.composer.find_metavariable(metavar)
-                self.metavars_substitution[metavar] = env.get_next_schematic_variable(typecode)
+                typecode = state.composer.find_metavariable(metavar)
+                self.metavars_substitution[metavar] = state.get_next_schematic_variable(typecode)
 
         # replace all metavariables in the applied theorem
         # with distinct schematic variables
         metavars_subst_visitor = SubstitutionVisitor(self.metavars_substitution)
         copied_statement = metavars_subst_visitor.visit(copied_statement)
-        essentials = [ metavars_subst_visitor.visit(essential) for essential in self.theorem.essentials ]
 
-        # remove labels of essential statements
-        for essential in essentials:
-            essential.label = None
-            essential.statement_type = "?"
+        essentials = [ state.sanitize_goal_statement(essential) for essential in self.theorem.essentials ]
+        essentials = [ metavars_subst_visitor.visit(essential) for essential in essentials ]
 
         # check that they indeed have disjoint metavariables
         # assert len(top_goal.get_metavariables().intersection(copied_statement.get_metavariables())) == 0
 
-        unification = env.composer.unify_statements(top_goal, copied_statement)
+        unification = state.composer.unify_statements(top_goal, copied_statement)
         assert unification is not None, f"unable to unify the goal {top_goal} with {copied_statement}"
 
         # only consider the substitution of schematic variables
@@ -72,58 +71,94 @@ class ApplyTactic(Tactic):
 
                 # hook each schematic variable to its actual substitute
                 # so that we can expand them later
-                left.assigned = right
+                state.assign_schematic_variable(left, right)
             else:
                 # we should not replace a metavariable in the goal with a schematic variable
                 assert left == right, f"unable to unify the goal {top_goal} with {copied_statement}"
 
-        print("applying", self.theorem.statement.label, copied_statement)
+        # print("applying", self.theorem.statement.label, copied_statement)
 
         schematic_subst_visitor = SubstitutionVisitor(schematic_substitution)
 
         # add all essentials to the goal stack
-        essentials = [ schematic_subst_visitor.visit(essential) for essential in essentials ]
-        goal_stack += essentials[::-1]
+        state.goal_stack += essentials[::-1]
 
         changed = True
 
         # apply the substitution until no change is possible
         while changed:
-            old_stack = goal_stack.copy()
-            goal_stack = [ schematic_subst_visitor.visit(stmt) for stmt in goal_stack ]
-            changed = old_stack != goal_stack
+            old_stack = state.goal_stack.copy()
+            state.goal_stack = [ schematic_subst_visitor.visit(stmt) for stmt in state.goal_stack ]
+            changed = old_stack != state.goal_stack
 
-        return goal_stack
+        # check if the removed goal has some unresolved schematic variables
+        # that are NOT in the goal stack any more
+        changed = True
+        while changed:
+            old_top_goal = top_goal
+            top_goal = schematic_subst_visitor.visit(top_goal)
+            changed = old_top_goal != top_goal
+
+        # check if any schematic variables are killed before being assigned
+        live_svars = state.get_live_schematic_variables()
+        killed_svars = top_goal.get_metavariables().difference(live_svars)
+        killed_svars = { var for var in killed_svars if state.get_schematic_variable_from_name(var) is not None }
+        assert not killed_svars, f"schematic variable(s) {killed_svars} killed before being assigned"
 
     """
     Construct a proof from the proof stack and the information inferred before
     """
-    def resolve(self, env: Environment, proof_stack: ProofStack) -> ProofStack:
-        proof_stack = proof_stack.copy()
-
+    def resolve(self, state: ProofState):
         num_essentials = len(self.theorem.essentials)
 
-        assert len(proof_stack) >= num_essentials, \
-               f"theorem {self.theorem.statement.label} requires {num_essentials}, but only {len(proof_stack)} are on the proof stack"
+        assert len(state.proof_stack) >= num_essentials, \
+               f"theorem {self.theorem.statement.label} requires {num_essentials}, but only {len(state.proof_stack)} are on the proof stack"
 
         subproofs = []
         for _ in range(len(self.theorem.essentials)):
-            subproofs.append(proof_stack.pop())
+            subproofs.append(state.proof_stack.pop())
 
         # during apply(), we made a substitution from metavariables to schematic variables
         # now we attempt to resolve all the schematic variables to concrete terms (terms
         # without schematic variables)
         full_substitution = {
-            var: env.resolve_schematic_variables(term)
+            var: state.resolve_schematic_variables(term)
             for var, term in self.metavars_substitution.items()
         }
 
-        proof_stack.append(self.theorem.apply(
+        state.proof_stack.append(self.theorem.apply(
             *subproofs,
             **full_substitution,
         ))
 
-        return proof_stack
+
+"""
+Set some schematic variables to concrete terms (without schematic variables)
+"""
+class SetSchematicVariableTactic(Tactic):
+    def __init__(self, substitution: Mapping[str, Term]={}):
+        self.substitution = substitution
+
+    def apply(self, state: ProofState):
+        live_svars = state.get_live_schematic_variables()
+        substituting_svars = set(self.substitution.keys())
+        assert substituting_svars.issubset(live_svars), \
+               f"assigning dead/nonexistent schematic variable(s) {substituting_svars.difference(live_svars)}"
+
+        for var, term in self.substitution.items():
+            metavars = term.get_metavariables()
+            for metavar in metavars:
+                assert state.get_schematic_variable_from_name(metavar) is None, f"non-concrete term {term} substituted for schematic variable {var}"
+
+            svar = state.get_schematic_variable_from_name(var)            
+            assert svar is not None, f"cannot substitute non-schematic variable {var}"
+
+            state.assign_schematic_variable(svar, term)
+
+        subst_visitor = SubstitutionVisitor(self.substitution)
+        state.goal_stack = [ subst_visitor.visit(stmt) for stmt in state.goal_stack ]
+
+    def resolve(self, state: ProofState): pass
 
 
 """
@@ -133,8 +168,8 @@ class ShuffleTactic(Tactic):
     def __init__(self):
         self.statement = None
 
-    def apply(self, env: Environment, goal_stack: GoalStack) -> GoalStack:
-        return [ goal_stack[-1] ] + goal_stack[:-1]
+    def apply(self, state: ProofState):
+        state.goal_stack = [ state.goal_stack[-1] ] + state.goal_stack[:-1]
 
-    def resolve(self, env: Environment, proof_stack: ProofStack) -> ProofStack:
-        return proof_stack[1:] + [ proof_stack[0] ]
+    def resolve(self, state: ProofState):
+        state.proof_stack = state.proof_stack[1:] + [ state.proof_stack[0] ]
