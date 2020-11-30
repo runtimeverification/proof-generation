@@ -10,6 +10,8 @@ from .parser import parse_command
 from .state import ProofState
 from .ansi import ANSI
 
+import itp.auto
+
 
 def quit_prompt():
     try:
@@ -47,12 +49,9 @@ def main():
     assert args.goal in composer.theorems, f"cannot find label {args.goal} in the theory file {args.theory}"
 
     goal = composer.theorems[args.goal]
-
-    # load all essentials for use in the proof
-    for essential in goal.essentials:
-        composer.load(essential)
-
-    state = ProofState(composer, [ goal.statement ])
+    composer.remove_theorem(args.goal)
+    
+    state = ProofState(composer, [ goal.statement ], [ composer.load(essential) for essential in goal.essentials ])
 
     undo_states = [] # [(state before command, applied_command)]
     redo_states = [] # [(state after command, applied_command)]

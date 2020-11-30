@@ -3,23 +3,37 @@ from __future__ import annotations
 from typing import List, Optional, Mapping, NewType, Set
 
 from proof.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
-from proof.metamath.composer import Composer, Proof
+from proof.metamath.composer import Composer, Proof, Theorem
 
 from .ast import *
 from .extension import SchematicVariable, SubstitutionVisitor, CopyVisitor
 
 
 class ProofState:
-    def __init__(self, composer: Composer, init_goal_stack: List[StructuredStatement]):
+    auto_tactics = {}
+
+    @staticmethod
+    def auto(name: str):
+        def decorator(class_object):
+            ProofState.auto_tactics[name] = class_object
+            return class_object
+        return decorator
+
+    def get_auto_tactic(self, name: str):
+        assert name in ProofState.auto_tactics, f"auto tactic {name} not found"
+        return ProofState.auto_tactics[name]
+
+    def __init__(self, composer: Composer, init_goal_stack: List[StructuredStatement], hypotheses: List[Theorem]):
         self.composer = composer
         self.schematic_vars = []
         self.schematic_var_assignment = {} # num -> term
         self.goal_stack = [ self.sanitize_goal_statement(goal) for goal in init_goal_stack ]
+        self.hypotheses = hypotheses
         self.proof_stack: List[Proof] = []
         self.applied_tactics = []
 
     def copy(self) -> ProofState:
-        copied_state = ProofState(self.composer, self.goal_stack)
+        copied_state = ProofState(self.composer, self.goal_stack, self.hypotheses)
         copied_state.schematic_vars = self.schematic_vars.copy()
         copied_state.schematic_var_assignment = self.schematic_var_assignment.copy()
         copied_state.proof_stack = self.proof_stack.copy()
@@ -86,6 +100,16 @@ class ProofState:
                 schematic_substitution[svar.name] = subterm
 
         return SubstitutionVisitor(schematic_substitution).visit(term)
+
+    """
+    Check if the given term has any schematic variables
+    """
+    def is_concrete(self, term: Term) -> bool:
+        metavars = term.get_metavariables()
+        for metavar in metavars:
+            if self.get_schematic_variable_from_name(metavar) is not None:
+                return False
+        return True
 
     def apply_tactic(self, tactic: Tactic):
         tactic.apply(self)

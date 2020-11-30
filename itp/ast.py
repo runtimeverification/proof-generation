@@ -88,6 +88,18 @@ class ShuffleCommand(Command):
         return ShuffleTactic()
 
 
+class AutoCommand(Command):
+    def __init__(self, name: str, options: Options=Options()):
+        self.name = name
+        self.options = options
+
+    def __str__(self) -> str:
+        return f"auto {self.name}" + (f" with {self.options}" if not self.options.empty() else "")
+
+    def get_tactic(self, state) -> Tactic:
+        return state.get_auto_tactic(self.name)(*self.options.args, **self.options.kwargs)
+
+
 class Script(BaseAST):
     def __init__(self, commands: List[Command]):
         self.commands = commands

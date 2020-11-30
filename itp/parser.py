@@ -43,6 +43,10 @@ class ASTTransformer(Transformer):
     def shuffle_command(self, args):
         return ShuffleCommand()
 
+    def auto_command(self, args):
+        options = args[2] if len(args) > 1 else Options()
+        return AutoCommand(args[0], options)
+
     def script(self, args):
         return Script(args)
 
@@ -66,6 +70,7 @@ script: command*
 command: "apply" token [SEPARATOR options] -> apply_command
        | "let" options                     -> let_command
        | "meh"                             -> shuffle_command
+       | "auto" token [SEPARATOR options]  -> auto_command
 
 options: option ("," option)*
 option: value           -> positional_option

@@ -10,7 +10,7 @@ for proving lemmas in matching logic.
 python3 -m itp <mm file> <statement to prove>
 ```
 
-## Example
+## Example 1
 
 Suppose we have the following unproved statement in the theory file `theory/matching-logic.mm`
 ```
@@ -22,7 +22,7 @@ Then run
 python3 -m itp theory/matching-logic.mm test
 ```
 
-itp will print the current goal and wait for input
+`itp` will print the current goal and wait for input
 ```
 goal(s):
   $? |- ( \imp ph0 ph0 ) $.
@@ -59,4 +59,60 @@ apply proof-rule-prop-2
 let $5 = "( \imp ph0 ph0 )"
 apply proof-rule-prop-1
 apply proof-rule-prop-1
+```
+
+## Example 2
+
+`itp` currently supports a small amount of proof automation.
+For instance, suppose we want to prove the following lemma
+```
+kore-top-valid $p |- ( \kore-valid ph0 ( \kore-top ph0 ) ) $= ? $.
+```
+
+Once this is expanded, one can see that this is equivalent to
+```
+|- ( \eq ( \inh ph0 ) ( \inh ph0 ) )
+```
+which is true by reflexivity of `\eq`.
+
+So we can apply `equal-proof`:
+```
+goal(s):
+  $? |- ( \kore-valid ph0 ( \kore-top ph0 ) ) $.
+> apply equal-proof
+goal(s):
+  $? |- $0 $.
+  $? #Equal ( \kore-valid ph0 ( \kore-top ph0 ) ) $0 $.
+> let $0 = "( \eq ( \inh ph0 ) ( \inh ph0 ) )"
+goal(s):
+  $? |- ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
+  $? #Equal ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
+> 
+```
+
+The first goal is just by reflexivity
+```
+> apply lemma-eq-reflexivity
+goal(s):
+  $? #Equal ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
+> 
+```
+
+The next goal might be tedious to prove if the term is huge,
+so one can use the `auto equality` tactic to try to prove it
+automatically.
+```
+goal(s):
+  $? #Equal ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
+> auto equality
+no goals left!
+> 
+```
+
+So we have the concise proof script
+```
+apply equal-proof
+let $0 = "( \eq ( \inh ph0 ) ( \inh ph0 ) )"
+apply lemma-eq-reflexivity
+auto equality
 ```

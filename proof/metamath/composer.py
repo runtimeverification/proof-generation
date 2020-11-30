@@ -239,6 +239,10 @@ class Composer(MetamathVisitor):
                 if database_or_statement.statement_type == Statement.ESSENTITAL:
                     return Theorem(self, database_or_statement, [], [])
 
+    def remove_theorem(self, name: str):
+        assert name in self.theorems
+        del self.theorems[name]
+
     def encode(self, stream: TextIO):
         for stmt in self.statements:
             stmt.encode(stream)

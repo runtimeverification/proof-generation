@@ -53,9 +53,6 @@ class ApplyTactic(Tactic):
         essentials = [ state.sanitize_goal_statement(essential) for essential in self.theorem.essentials ]
         essentials = [ metavars_subst_visitor.visit(essential) for essential in essentials ]
 
-        # check that they indeed have disjoint metavariables
-        # assert len(top_goal.get_metavariables().intersection(copied_statement.get_metavariables())) == 0
-
         unification = state.composer.unify_statements(top_goal, copied_statement)
         assert unification is not None, f"unable to unify the goal {top_goal} with {copied_statement}"
 
@@ -148,9 +145,7 @@ class SetSchematicVariableTactic(Tactic):
                f"assigning dead/nonexistent schematic variable(s) {substituting_svars.difference(live_svars)}"
 
         for var, term in self.substitution.items():
-            metavars = term.get_metavariables()
-            for metavar in metavars:
-                assert state.get_schematic_variable_from_name(metavar) is None, f"non-concrete term {term} substituted for schematic variable {var}"
+            assert state.is_concrete(term), f"non-concrete term {term} substituted for schematic variable {var}"
 
             svar = state.get_schematic_variable_from_name(var)            
             assert svar is not None, f"cannot substitute non-schematic variable {var}"
