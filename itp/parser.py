@@ -61,7 +61,7 @@ COMMENT: /\$\(((.|\n)(?<!\$\)))*\$\)/
 TOKEN: /[^ \n\t\f\r]+/
 
 SECTION_MARK.2: /[\-*+]+/
-SEPARATOR.2: "with" | "as"
+SEPARATOR.2: "with" | "as" | "for"
 
 token: TOKEN
 

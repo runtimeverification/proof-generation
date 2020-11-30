@@ -23,7 +23,7 @@ class Options(BaseAST):
         output = []
 
         if self.args:
-            output += list(map(lambda s: s.replace("\"", "\\\""), self.args))
+            output += list(map(lambda s: "\"{}\"".format(s.replace("\"", "\\\"")), self.args))
 
         if self.kwargs:
             output += list(map(lambda t: "{} = \"{}\"".format(t[0], t[1].replace("\"", "\\\"")), self.kwargs.items()))

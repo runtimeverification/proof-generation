@@ -332,8 +332,10 @@ class Composer(MetamathVisitor):
             return None
 
     """
-    Attempts to unify two statements
+    Attempt to unify two statements
     NOTE: this does not check the consistency of the resulting substitution
+    but only returns a list of equations that should hold if the two statements
+    are unifiable
     """
     def unify_statements(self, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[List[Tuple[Term, Term]]]:
         solution = []
@@ -347,21 +349,26 @@ class Composer(MetamathVisitor):
 
         return solution
 
+    """
+    Check if term2 is an instance of term1, that is, if
+    there is a substitution sigma such that term1[sigma] = term2
+    NOTE: note that term1 and term2 may not be unifiable
+    but term2 could still be an instance of term1
+    """
     def unify_terms_as_instance(self, term1: Term, term2: Term) -> Optional[Mapping[str, Term]]:
         solution = self.unify_terms(term1, term2)
         if solution is None: return None
-        return self.get_substitution_from_unification(solution)
+        return self.get_instance_substitution(solution)
 
     """
-    Check if stmt2 is an instance of stmt1, that is, if
-    they are unifiable and the solution is a map from Metavariables to terms (instead of terms to metavariables)
+    Same as above but for statements
     """
     def unify_statements_as_instance(self, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[Mapping[str, Term]]:
         solution = self.unify_statements(stmt1, stmt2)
         if solution is None: return None
-        return self.get_substitution_from_unification(solution)
+        return self.get_instance_substitution(solution)
 
-    def get_substitution_from_unification(self, unification: List[Tuple[Term, Term]]) -> Optional[Mapping[str, Term]]:
+    def get_instance_substitution(self, unification: List[Tuple[Term, Term]]) -> Optional[Mapping[str, Term]]:
         substitution = {}
 
         for lhs, rhs in unification:
