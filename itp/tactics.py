@@ -1,5 +1,6 @@
 from typing import Mapping, Optional
 
+from proof.metamath.parser import parse_term_with_metavariables
 from proof.metamath.ast import Term, StructuredStatement, Application
 from proof.metamath.composer import Theorem, Proof
 from proof.metamath.visitors import CopyVisitor
@@ -9,27 +10,36 @@ from .extension import SchematicVariable, SubstitutionVisitor
 
 
 class Tactic:
+    def __init__(self, tactic_name: str):
+        self.tactic_name = tactic_name
+
     """
     Transforms the proof state
     """
-    def apply(self, state: ProofState):
+    def apply(self):
         raise NotImplementedError()
 
     """
     Transforms the proof stack
     """
-    def resolve(self, state: ProofState):
+    def resolve(self):
         raise NotImplementedError()
+
+    def parse_substitution(self, state: ProofState, options: Mapping[str, str]) -> Mapping[str, Term]:
+        substitution = {}
+
+        for key, value in options.items():
+            assert type(value) is str
+            substitution[key] = parse_term_with_metavariables(value, set(state.composer.get_all_metavariables()))
+
+        return substitution
 
 
 """
 Apply a theorem on the top of the goal stack
 """
+@ProofState.register_tactic("apply")
 class ApplyTactic(Tactic):
-    def __init__(self, theorem: Theorem, initial_substitution: Mapping[str, Term]={}):
-        self.theorem = theorem
-        self.metavars_substitution = initial_substitution
-
     """
     Unify two statements, treating only schematic variables as variables
     """
@@ -76,7 +86,12 @@ class ApplyTactic(Tactic):
 
         return substitution
 
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, theorem_name: str, **options):
+        substitution = self.parse_substitution(state, options)
+        assert theorem_name in state.composer.theorems, f"cannot find theorem {theorem_name}"
+        self.theorem = state.composer.theorems[theorem_name]
+        self.metavars_substitution = substitution
+
         top_goal = state.goal_stack.pop()
         copied_statement = state.sanitize_goal_statement(self.theorem.statement)
 
@@ -150,17 +165,17 @@ class ApplyTactic(Tactic):
 """
 Set some schematic variables to concrete terms (without schematic variables)
 """
+@ProofState.register_tactic("let")
 class SetSchematicVariableTactic(Tactic):
-    def __init__(self, substitution: Mapping[str, Term]={}):
-        self.substitution = substitution
+    def apply(self, state: ProofState, **options):
+        substitution = self.parse_substitution(state, options)
 
-    def apply(self, state: ProofState):
         live_svars = state.get_live_schematic_variables()
-        substituting_svars = set(self.substitution.keys())
+        substituting_svars = set(substitution.keys())
         assert substituting_svars.issubset(live_svars), \
                f"assigning dead/nonexistent schematic variable(s) {substituting_svars.difference(live_svars)}"
 
-        for var, term in self.substitution.items():
+        for var, term in substitution.items():
             assert state.is_concrete(term), f"non-concrete term {term} substituted for schematic variable {var}"
 
             svar = state.get_schematic_variable_from_name(var)            
@@ -168,7 +183,7 @@ class SetSchematicVariableTactic(Tactic):
 
             state.assign_schematic_variable(svar, term)
 
-        subst_visitor = SubstitutionVisitor(self.substitution)
+        subst_visitor = SubstitutionVisitor(substitution)
         state.goal_stack = [ subst_visitor.visit(stmt) for stmt in state.goal_stack ]
 
     def resolve(self, state: ProofState): pass
@@ -177,10 +192,8 @@ class SetSchematicVariableTactic(Tactic):
 """
 Move the current goal to the last
 """
+@ProofState.register_tactic("meh")
 class ShuffleTactic(Tactic):
-    def __init__(self):
-        self.statement = None
-
     def apply(self, state: ProofState):
         state.goal_stack = [ state.goal_stack[-1] ] + state.goal_stack[:-1]
 

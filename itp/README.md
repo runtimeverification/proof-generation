@@ -99,12 +99,12 @@ goal(s):
 ```
 
 The next goal might be tedious to prove if the term is huge,
-so one can use the `auto equality` tactic to try to prove it
+so one can use the `equality` tactic to try to prove it
 automatically.
 ```
 goal(s):
   $? #Equal ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
-> auto equality
+> equality
 no goals left!
 > 
 ```
@@ -114,5 +114,5 @@ So we have the concise proof script
 apply equal-proof
 let $0 = "( \eq ( \inh ph0 ) ( \inh ph0 ) )"
 apply lemma-eq-reflexivity
-auto equality
+equality
 ```

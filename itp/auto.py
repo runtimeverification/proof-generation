@@ -12,12 +12,6 @@ from .tactics import Tactic, ApplyTactic
 from .extension import SubstitutionVisitor, SchematicVariable
 
 
-class AutoTactic(Tactic):
-    def __init__(self, tactic_name: str):
-        super().__init__()
-        self.tactic_name = tactic_name
-
-
 """
 Search for claim most "similar" to the current goal,
 where the similarity is measured by the inverse of the sum of
@@ -29,8 +23,8 @@ and t is NOT a schematic variable.
 
 And by size I mean the number of applications in the term
 """
-@ProofState.auto("search")
-class SearchAutoTactic(AutoTactic):
+@ProofState.register_tactic("search")
+class SearchTactic(Tactic):
     @staticmethod
     def get_size_of_term(term: Term) -> int:
         if isinstance(term, Metavariable):
@@ -39,7 +33,7 @@ class SearchAutoTactic(AutoTactic):
         
         size = 1
         for subterm in term.subterms:
-            size += SearchAutoTactic.get_size_of_term(subterm)
+            size += SearchTactic.get_size_of_term(subterm)
 
         return size
 
@@ -50,6 +44,7 @@ class SearchAutoTactic(AutoTactic):
         return state.composer.find_metavariable(var.name)
 
     def apply(self, state: ProofState):
+        assert len(state.goal_stack), "no goals left"
         goal = state.goal_stack[-1]
         found = []
 
@@ -57,22 +52,32 @@ class SearchAutoTactic(AutoTactic):
             equations = state.composer.unify_statements(goal, theorem.statement)
             if equations is None: continue
 
+            failed = False
+            for left, right in equations:
+                # we don't allow substituting for a preexistent metavariable
+                if isinstance(left, Metavariable) and \
+                   not isinstance(left, SchematicVariable) and \
+                   not isinstance(right, Metavariable):
+                    failed = True
+                    break
+            if failed: continue
+
             distance = 0
 
             for left, right in equations:
                 if isinstance(left, Metavariable) and isinstance(right, Metavariable):
                     # if the typecode are the same then distance is 0, otherwise 1
-                    t1 = SearchAutoTactic.get_typecode_of_metavariable(state, left)
-                    t2 = SearchAutoTactic.get_typecode_of_metavariable(state, right)
+                    t1 = SearchTactic.get_typecode_of_metavariable(state, left)
+                    t2 = SearchTactic.get_typecode_of_metavariable(state, right)
                     if t1 != t2: distance += 1
                 else:
-                    distance += SearchAutoTactic.get_size_of_term(left) + SearchAutoTactic.get_size_of_term(right)
+                    distance += SearchTactic.get_size_of_term(left) + SearchTactic.get_size_of_term(right)
 
             found.append((distance, name, theorem))
 
         found.sort(key=lambda t: t[0])
 
-        print("found theorems (from most relevant to least relevant):")
+        print("theorem(s) found (from most relevant to least relevant):")
         for distance, name, theorem in found:
             print(f"{name} ({distance}): {state.sanitize_goal_statement(theorem.statement)}")
 
@@ -83,21 +88,17 @@ class SearchAutoTactic(AutoTactic):
 Automatically prove equality of terms
 modulo the definition relation #Equal
 """
-@ProofState.auto("equality")
-class EqualityAutoTactic(AutoTactic):
+@ProofState.register_tactic("equality")
+class EqualityTactic(Tactic):
     SYMBOL = "#Equal"
     SYM = "equal-symmetry"
     REFL = "equal-reflexivity"
     TRANS = "equal-transitivity"
 
-    def __init__(self, tactic_name: str):
-        super().__init__(tactic_name)
-        self.proof = None
-
     @staticmethod
     def format_target(left: Term, right: Term) -> StructuredStatement:
         return StructuredStatement(Statement.PROVABLE, [
-            Application(EqualityAutoTactic.SYMBOL),
+            Application(EqualityTactic.SYMBOL),
             left, right,
         ])
 
@@ -118,7 +119,7 @@ class EqualityAutoTactic(AutoTactic):
     def find_congruence_lemma(state: ProofState, symbol: str) -> Optional[Tuple[Theorem, List[int]]]:
         for theorem in state.composer.theorems.values():
             condition = len(theorem.statement.terms) == 3 and \
-                        theorem.statement.terms[0] == Application(EqualityAutoTactic.SYMBOL) and \
+                        theorem.statement.terms[0] == Application(EqualityTactic.SYMBOL) and \
                         isinstance(theorem.statement.terms[1], Application) and \
                         isinstance(theorem.statement.terms[2], Application) and \
                         theorem.statement.terms[1].symbol == symbol and \
@@ -143,7 +144,7 @@ class EqualityAutoTactic(AutoTactic):
             # check that essentials only assumes things about metavariables
             for essential in theorem.essentials:
                 condition = len(essential.terms) == 3 and \
-                            essential.terms[0] == Application(EqualityAutoTactic.SYMBOL) and \
+                            essential.terms[0] == Application(EqualityTactic.SYMBOL) and \
                             isinstance(essential.terms[1], Metavariable) and \
                             isinstance(essential.terms[2], Metavariable)
 
@@ -170,7 +171,7 @@ class EqualityAutoTactic(AutoTactic):
         for theorem in state.composer.theorems.values():
             condition = len(theorem.statement.terms) == 3 and \
                         len(theorem.essentials) == 0 and \
-                        theorem.statement.terms[0] == Application(EqualityAutoTactic.SYMBOL) and \
+                        theorem.statement.terms[0] == Application(EqualityTactic.SYMBOL) and \
                         isinstance(theorem.statement.terms[1], Application) and \
                         theorem.statement.terms[1].symbol == symbol
             if not condition: continue
@@ -215,11 +216,11 @@ class EqualityAutoTactic(AutoTactic):
     """
     @staticmethod
     def prove_equality(state: ProofState, left: Term, right: Term) -> Proof:
-        target = EqualityAutoTactic.format_target(left, right)
-        symmetric_target = EqualityAutoTactic.format_target(right, left)
+        target = EqualityTactic.format_target(left, right)
+        symmetric_target = EqualityTactic.format_target(right, left)
 
         if left == right:
-            return state.composer.theorems[EqualityAutoTactic.REFL].unify_and_apply(target)
+            return state.composer.theorems[EqualityTactic.REFL].unify_and_apply(target)
 
         # different metavariables
         if isinstance(left, Metavariable) and isinstance(right, Metavariable):
@@ -228,7 +229,7 @@ class EqualityAutoTactic(AutoTactic):
                 if theorem.statement.terms == target.terms:
                     return theorem.apply()
                 elif theorem.statement.terms == symmetric_target.terms:
-                    return state.composer.theorems[EqualityAutoTactic.SYM].apply(theorem.apply())
+                    return state.composer.theorems[EqualityTactic.SYM].apply(theorem.apply())
             assert False, f"unable to show {left} === {right}"
 
         # TODO: add this case
@@ -239,7 +240,7 @@ class EqualityAutoTactic(AutoTactic):
         assert isinstance(left, Application) and isinstance(right, Application)
 
         if left.symbol == right.symbol:
-            found = EqualityAutoTactic.find_congruence_lemma(state, left.symbol)
+            found = EqualityTactic.find_congruence_lemma(state, left.symbol)
             if found is not None:
                 congruence, order = found
                 subproofs = []
@@ -249,7 +250,7 @@ class EqualityAutoTactic(AutoTactic):
                     assert n < len(left.subterms) and n < len(right.subterms), \
                            f"ill-formed congruence axiom {congruence.statement.label}"
 
-                    subproof = EqualityAutoTactic.prove_equality(state, left.subterms[n], right.subterms[n])
+                    subproof = EqualityTactic.prove_equality(state, left.subterms[n], right.subterms[n])
                     subproofs.append(subproof)
 
                 proof = congruence.unify_and_apply(target, *subproofs)
@@ -258,7 +259,7 @@ class EqualityAutoTactic(AutoTactic):
                 return proof
         
         # reduce one of the terms using sugar axiom
-        sugar_axiom = EqualityAutoTactic.find_sugar_axiom(state, left.symbol)
+        sugar_axiom = EqualityTactic.find_sugar_axiom(state, left.symbol)
         if sugar_axiom:
             substitution = state.composer.unify_terms_as_instance(sugar_axiom.statement.terms[1], left)
             assert substitution is not None, f"ill-formed sugar axiom {sugar_axiom.statement}"
@@ -268,32 +269,32 @@ class EqualityAutoTactic(AutoTactic):
 
             # switching the order here in the hope
             # that we don't produce a proof that's too long
-            proof = EqualityAutoTactic.prove_equality(state, right, new_left)
+            proof = EqualityTactic.prove_equality(state, right, new_left)
 
-            return state.composer.theorems[EqualityAutoTactic.TRANS].apply(
+            return state.composer.theorems[EqualityTactic.TRANS].apply(
                 reduction_proof,
-                state.composer.theorems[EqualityAutoTactic.SYM].apply(proof),
+                state.composer.theorems[EqualityTactic.SYM].apply(proof),
             )
 
-        sugar_axiom = EqualityAutoTactic.find_sugar_axiom(state, right.symbol)
+        sugar_axiom = EqualityTactic.find_sugar_axiom(state, right.symbol)
         if sugar_axiom:
             # TODO: just being lazy here
-            return state.composer.theorems[EqualityAutoTactic.SYM].apply(
-                EqualityAutoTactic.prove_equality(state, right, left),
+            return state.composer.theorems[EqualityTactic.SYM].apply(
+                EqualityTactic.prove_equality(state, right, left),
             )
 
         assert False, f"ran out of tricks, cannot show {left} === {right}"
 
     def apply(self, state: ProofState):
         goal = state.goal_stack.pop()
-        assert len(goal.terms) == 3 and goal.terms[0] == Application(EqualityAutoTactic.SYMBOL), f"goal {goal} is not an equality claim"
+        assert len(goal.terms) == 3 and goal.terms[0] == Application(EqualityTactic.SYMBOL), f"goal {goal} is not an equality claim"
         
         _, left, right = goal.terms
 
         assert state.is_concrete(left), f"LHS {left} is not concrete"
         assert state.is_concrete(right), f"RHS {right} is not concrete"
 
-        self.proof = EqualityAutoTactic.prove_equality(state, left, right)
+        self.proof = EqualityTactic.prove_equality(state, left, right)
 
     def resolve(self, state: ProofState):
         state.proof_stack.append(self.proof)
@@ -303,21 +304,15 @@ class EqualityAutoTactic(AutoTactic):
 Expand all syntax sugar defined using #Equal
 in the current goal
 """
-@ProofState.auto("desugar")
-@ProofState.auto("desugar-all")
-class DesugarAutoTactic(AutoTactic):
-    def __init__(self, tactic_name: str, symbol: Optional[str]=None):
-        super().__init__(tactic_name)
-        self.target_symbol = symbol
-        self.equality_proofs = None
-        self.theorem = None
-
+@ProofState.register_tactic("desugar")
+@ProofState.register_tactic("desugar-all")
+class DesugarTactic(Tactic):
     """
     Look for heads that have sugar axiom and
     expand all of them in the given term
     """
     @staticmethod
-    def expand_with_options(state: ProofState, term: Term, *_, target_symbol: Optional[str]=None, desugar_all=False) -> Term:
+    def expand(state: ProofState, term: Term, *_, target_symbol: Optional[str]=None, desugar_all=False) -> Term:
         if isinstance(term, Metavariable):
             return term
 
@@ -325,7 +320,7 @@ class DesugarAutoTactic(AutoTactic):
 
         # expand all subterms
         expanded_subterm = [
-            DesugarAutoTactic.expand_with_options(state, subterm, target_symbol=target_symbol, desugar_all=desugar_all)
+            DesugarTactic.expand(state, subterm, target_symbol=target_symbol, desugar_all=desugar_all)
             for subterm in term.subterms
         ]
         new_term = Application(term.symbol, expanded_subterm)
@@ -333,7 +328,7 @@ class DesugarAutoTactic(AutoTactic):
         if target_symbol is not None and new_term.symbol != target_symbol:
             return new_term
 
-        sugar_axiom = EqualityAutoTactic.find_sugar_axiom(state, new_term.symbol)
+        sugar_axiom = EqualityTactic.find_sugar_axiom(state, new_term.symbol)
         if sugar_axiom:
             _, left, right = sugar_axiom.statement.terms
             substitution = state.composer.unify_terms_as_instance(left, new_term)
@@ -341,7 +336,7 @@ class DesugarAutoTactic(AutoTactic):
             new_term = SubstitutionVisitor(substitution).visit(right)
             
             if desugar_all:
-                new_term = DesugarAutoTactic.expand_with_options(
+                new_term = DesugarTactic.expand(
                     state, new_term,
                     target_symbol=target_symbol,
                     desugar_all=desugar_all,
@@ -349,14 +344,7 @@ class DesugarAutoTactic(AutoTactic):
 
         return new_term
 
-    def expand(self, state: ProofState, term: Term) -> Term:
-        return DesugarAutoTactic.expand_with_options(
-            state, term, 
-            target_symbol=self.target_symbol,
-            desugar_all=self.tactic_name == "desugar-all",
-        )
-
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, target_symbol: Optional[str]=None):
         goal = state.goal_stack.pop()
         assert len(goal.terms) >= 1, f"ill-formed goal {goal}"
 
@@ -367,8 +355,12 @@ class DesugarAutoTactic(AutoTactic):
             assert len(goal.terms) == 2, f"ill-formed provability claim {goal}"
             _, term = goal.terms
 
-            expanded = self.expand(state, term)
-            self.equality_proofs = [ EqualityAutoTactic.prove_equality(state, term, expanded) ]
+            expanded = DesugarTactic.expand(
+                state, term, 
+                target_symbol=target_symbol,
+                desugar_all=self.tactic_name == "desugar-all",
+            )
+            self.equality_proofs = [ EqualityTactic.prove_equality(state, term, expanded) ]
             self.theorem = state.composer.theorems["equal-proof"]
 
             state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
@@ -379,8 +371,12 @@ class DesugarAutoTactic(AutoTactic):
             assert len(goal.terms) == 3, f"ill-formed #Fresh claim {goal}"
             _, var, term = goal.terms
 
-            expanded = self.expand(state, term)
-            self.equality_proofs = [ EqualityAutoTactic.prove_equality(state, term, expanded) ]
+            expanded = DesugarTactic.expand(
+                state, term, 
+                target_symbol=target_symbol,
+                desugar_all=self.tactic_name == "desugar-all",
+            )
+            self.equality_proofs = [ EqualityTactic.prove_equality(state, term, expanded) ]
             self.theorem = self.theorem = state.composer.theorems["equal-fresh"]
 
             state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
@@ -390,9 +386,17 @@ class DesugarAutoTactic(AutoTactic):
             assert len(goal.terms) == 5, f"ill-formed #Substitution claim {goal}"
             _, t1, t2, t3, var = goal.terms
             
-            expanded_terms = [ self.expand(state, term) for term in (t1, t2, t3) ]
+            expanded_terms = [
+                DesugarTactic.expand(
+                    state, term, 
+                    target_symbol=target_symbol,
+                    desugar_all=self.tactic_name == "desugar-all",
+                )
+                for term in (t1, t2, t3)
+            ]
+
             self.equality_proofs = [
-                EqualityAutoTactic.prove_equality(state, term, expanded)
+                EqualityTactic.prove_equality(state, term, expanded)
                 for term, expanded in zip((t1, t2, t3), expanded_terms)
             ]
             self.theorem = state.composer.theorems["equal-substitution"]

@@ -4,7 +4,7 @@ Syntax trees of the proof script
 
 from typing import List
 
-from .tactics import Tactic, ApplyTactic, SetSchematicVariableTactic, ShuffleTactic
+from .state import ProofState
 
 from proof.metamath.parser import parse_term_with_metavariables
 
@@ -35,69 +35,16 @@ class Options(BaseAST):
 
 
 class Command(BaseAST):
-    def get_tactic(self, state) -> Tactic:
-        raise NotImplementedError()
-
-
-class ApplyCommand(Command):
-    def __init__(self, label: str, options: Options=Options()):
-        self.label = label
+    def __init__(self, tactic: str, options: Options=Options()):
+        self.tactic = tactic
         self.options = options
 
     def __str__(self) -> str:
-        return f"apply {self.label}" + (f" with {self.options}" if not self.options.empty() else "")
+        return f"{self.tactic}" + (f" {self.options}" if not self.options.empty() else "")
 
-    def get_tactic(self, state) -> Tactic:
-        assert self.label in state.composer.theorems, f"cannot find theorem {self.label}"
-        assert not self.options.args, "apply tactic is not expecting any positional arguments"
-
-        substitution = {}
-
-        for key, value in self.options.kwargs.items():
-            assert type(value) is str
-            substitution[key] = parse_term_with_metavariables(value, set(state.composer.get_all_metavariables()))
-
-        return ApplyTactic(state.composer.theorems[self.label], substitution)
-
-
-class LetCommand(Command):
-    def __init__(self, options: Options=Options()):
-        self.options = options
-
-    def __str__(self) -> str:
-        return f"let {self.options}"
-
-    def get_tactic(self, state) -> Tactic:
-        assert not self.options.args, "apply tactic is not expecting any positional arguments"
-
-        substitution = {}
-
-        # TODO: check for schematic variables here
-        for key, value in self.options.kwargs.items():
-            assert type(value) is str
-            substitution[key] = parse_term_with_metavariables(value, set(state.composer.get_all_metavariables()))
-
-        return SetSchematicVariableTactic(substitution)
-
-
-class ShuffleCommand(Command):
-    def __str__(self) -> str:
-        return f"meh"
-
-    def get_tactic(self, state) -> Tactic:
-        return ShuffleTactic()
-
-
-class AutoCommand(Command):
-    def __init__(self, name: str, options: Options=Options()):
-        self.name = name
-        self.options = options
-
-    def __str__(self) -> str:
-        return f"auto {self.name}" + (f" with {self.options}" if not self.options.empty() else "")
-
-    def get_tactic(self, state) -> Tactic:
-        return state.get_auto_tactic(self.name)(self.name, *self.options.args, **self.options.kwargs)
+    def apply_tactic(self, state: ProofState) -> ProofState:
+        tactic_class = state.get_tactic(self.tactic)
+        return state.apply_tactic(tactic_class(self.tactic), *self.options.args, **self.options.kwargs)
 
 
 class Script(BaseAST):

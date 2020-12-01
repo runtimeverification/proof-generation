@@ -5,23 +5,22 @@ from typing import List, Optional, Mapping, NewType, Set
 from proof.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
 from proof.metamath.composer import Composer, Proof, Theorem
 
-from .ast import *
 from .extension import SchematicVariable, SubstitutionVisitor, CopyVisitor
 
 
 class ProofState:
-    auto_tactics = {}
+    all_tactics = {}
 
     @staticmethod
-    def auto(name: str):
+    def register_tactic(name: str):
         def decorator(class_object):
-            ProofState.auto_tactics[name] = class_object
+            ProofState.all_tactics[name] = class_object
             return class_object
         return decorator
 
-    def get_auto_tactic(self, name: str):
-        assert name in ProofState.auto_tactics, f"auto tactic {name} not found"
-        return ProofState.auto_tactics[name]
+    def get_tactic(self, name: str):
+        assert name in ProofState.all_tactics, f"tactic {name} not found"
+        return ProofState.all_tactics[name]
 
     def __init__(self, composer: Composer, init_goal_stack: List[StructuredStatement], hypotheses: List[Theorem]):
         self.composer = composer
@@ -112,11 +111,11 @@ class ProofState:
         return True
 
     """
-    Apply the given tactic on a copied state and return
+    Apply the given tactic on a copied state
     """
-    def apply_tactic(self, tactic: Tactic) -> ProofState:
+    def apply_tactic(self, tactic, *args, **kwargs) -> ProofState:
         copied = self.copy()
-        tactic.apply(copied)
+        tactic.apply(copied, *args, **kwargs)
         copied.applied_tactics.append(tactic)
         return copied
 

@@ -189,7 +189,7 @@ $}
 
 $( Other lemmas $)
 
-lemma-top $p |- \top $= ? $.
+lemma-top $p |- \top $= bot-is-pattern not-is-pattern top-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern not-is-pattern bot-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern proof-rule-prop-2 bot-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern proof-rule-prop-1 proof-rule-mp bot-is-pattern bot-is-pattern proof-rule-prop-1 proof-rule-mp bot-is-pattern not-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern not-is-sugar bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern equal-reflexivity equal-symmetry equal-transitivity equal-proof top-is-pattern bot-is-pattern not-is-pattern bot-is-pattern not-is-pattern top-is-sugar bot-is-pattern not-is-pattern bot-is-pattern not-is-pattern bot-is-pattern not-is-pattern equal-reflexivity equal-symmetry equal-transitivity equal-proof $.
 
 ${
     lemma-forall-gen.0 $e |- ( \imp ph0 ph1 ) $.

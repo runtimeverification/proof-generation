@@ -12,6 +12,9 @@ class ASTTransformer(Transformer):
         assert literal.startswith("\"") and literal.endswith("\"")
         return literal[1:-1]
 
+    def value(self, args):
+        return args[0]
+
     def positional_option(self, args):
         return args[0]
 
@@ -33,19 +36,8 @@ class ASTTransformer(Transformer):
 
         return Options(*positional_args, **keyword_args)
 
-    def apply_command(self, args):
-        options = args[2] if len(args) > 1 else Options()
-        return ApplyCommand(args[0], options)
-
-    def let_command(self, args):
-        return LetCommand(args[0])
-
-    def shuffle_command(self, args):
-        return ShuffleCommand()
-
-    def auto_command(self, args):
-        options = args[2] if len(args) > 1 else Options()
-        return AutoCommand(args[0], options)
+    def command(self, args):
+        return Command(*args)
 
     def script(self, args):
         return Script(args)
@@ -58,25 +50,20 @@ COMMENT: /\$\(((.|\n)(?<!\$\)))*\$\)/
 
 %ignore COMMENT
 %ignore /[ \n\t\f\r]+/
-TOKEN: /[^ \n\t\f\r]+/
-
-SECTION_MARK.2: /[\-*+]+/
-SEPARATOR.2: "with" | "as" | "for"
+TOKEN: /[^ \n\t\f\r=,]+/
 
 token: TOKEN
 
 script: command*
 
-command: "apply" token [SEPARATOR options] -> apply_command
-       | "let" options                     -> let_command
-       | "meh"                             -> shuffle_command
-       | "auto" token [SEPARATOR options]  -> auto_command
+command: token [options]
 
 options: option ("," option)*
 option: value           -> positional_option
-      | token "=" value -> keyword_option
+      | value "=" value -> keyword_option
 
 value: STRING_LITERAL -> string
+     | token
 """
 
 
