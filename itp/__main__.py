@@ -55,19 +55,13 @@ def main():
 
     undo_states = [] # [(state before command, applied_command)]
     redo_states = [] # [(state after command, applied_command)]
-    empty_input = False
+
+    print_state(state)
 
     while True:
-        # saving old state
-        old_state = state.copy()
-
         try:
-            if not empty_input: print_state(state)
-
             command_src = input("> ").strip()
-            
-            empty_input = not command_src
-            if empty_input: continue
+            if not command_src: continue
 
             if command_src.lower() in { "q", "quit", "exit" }:
                 quit_prompt()
@@ -79,7 +73,6 @@ def main():
                     state = old_state
                 else:
                     print("no previous state")
-                    empty_input = True
             elif command_src.lower() == "redo":
                 if len(redo_states):
                     undo_states.append((state, command))
@@ -88,40 +81,34 @@ def main():
                     state = new_state
                 else:
                     print("no newer state")
-                    empty_input = True
             elif command_src.lower() == "proof":
                 proof = state.gen_proof()
                 print(proof)
-                empty_input = True
             elif command_src.lower() == "script":
                 print("\n".join(map(lambda t: str(t[1]), undo_states)))
-                empty_input = True
             else:
                 command = parse_command(command_src)
 
                 # applying the command
-                state.apply_tactic(command.get_tactic(state))
+                old_state = state
+                state = state.apply_tactic(command.get_tactic(state))
 
                 # store the history once the tactic goes through
                 undo_states.append((old_state, command))
                 redo_states = []
 
+                print_state(state)
+
         except Exception as exc:
             if args.debug:
                 traceback.print_exc()
             else:
-                print(str(exc))
-
-            empty_input = True
-            state = old_state
+                print(f"{ANSI.COLOR_RED}error:{ANSI.RESET} {ANSI.BOLD}{exc}{ANSI.RESET}")
 
         except KeyboardInterrupt:
             if args.debug:
                 traceback.print_exc()
             quit_prompt()
-
-            empty_input = True
-            state = old_state
 
 
 if __name__ == "__main__":

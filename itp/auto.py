@@ -8,8 +8,75 @@ from proof.metamath.ast import Application, Term, Metavariable, StructuredStatem
 from proof.metamath.composer import Proof, Theorem
 
 from .state import ProofState
-from .tactics import Tactic
-from .extension import SubstitutionVisitor
+from .tactics import Tactic, ApplyTactic
+from .extension import SubstitutionVisitor, SchematicVariable
+
+
+class AutoTactic(Tactic):
+    def __init__(self, tactic_name: str):
+        super().__init__()
+        self.tactic_name = tactic_name
+
+
+"""
+Search for claim most "similar" to the current goal,
+where the similarity is measured by the inverse of the sum of
+the sizes of terms in every non-trivial substitution pair.
+
+By non-trivial substitution pair I mean a pair
+x |-> t in the substitution where x is a schematic variable
+and t is NOT a schematic variable.
+
+And by size I mean the number of applications in the term
+"""
+@ProofState.auto("search")
+class SearchAutoTactic(AutoTactic):
+    @staticmethod
+    def get_size_of_term(term: Term) -> int:
+        if isinstance(term, Metavariable):
+            return 0
+        assert isinstance(term, Application)
+        
+        size = 1
+        for subterm in term.subterms:
+            size += SearchAutoTactic.get_size_of_term(subterm)
+
+        return size
+
+    @staticmethod
+    def get_typecode_of_metavariable(state: ProofState, var: Metavariable) -> Optional[str]:
+        if isinstance(var, SchematicVariable):
+            return var.typecode
+        return state.composer.find_metavariable(var.name)
+
+    def apply(self, state: ProofState):
+        goal = state.goal_stack[-1]
+        found = []
+
+        for name, theorem in state.composer.theorems.items():
+            equations = state.composer.unify_statements(goal, theorem.statement)
+            if equations is None: continue
+
+            distance = 0
+
+            for left, right in equations:
+                if isinstance(left, Metavariable) and isinstance(right, Metavariable):
+                    # if the typecode are the same then distance is 0, otherwise 1
+                    t1 = SearchAutoTactic.get_typecode_of_metavariable(state, left)
+                    t2 = SearchAutoTactic.get_typecode_of_metavariable(state, right)
+                    if t1 != t2: distance += 1
+                else:
+                    distance += SearchAutoTactic.get_size_of_term(left) + SearchAutoTactic.get_size_of_term(right)
+
+            found.append((distance, name, theorem))
+
+        found.sort(key=lambda t: t[0])
+
+        print("found theorems (from most relevant to least relevant):")
+        for distance, name, theorem in found:
+            print(f"{name} ({distance}): {state.sanitize_goal_statement(theorem.statement)}")
+
+    def resolve(self, state: ProofState): pass
 
 
 """
@@ -17,13 +84,14 @@ Automatically prove equality of terms
 modulo the definition relation #Equal
 """
 @ProofState.auto("equality")
-class EqualityAutoTactic(Tactic):
+class EqualityAutoTactic(AutoTactic):
     SYMBOL = "#Equal"
     SYM = "equal-symmetry"
     REFL = "equal-reflexivity"
     TRANS = "equal-transitivity"
 
-    def __init__(self):
+    def __init__(self, tactic_name: str):
+        super().__init__(tactic_name)
         self.proof = None
 
     @staticmethod
@@ -236,24 +304,30 @@ Expand all syntax sugar defined using #Equal
 in the current goal
 """
 @ProofState.auto("desugar")
-class DesugarAutoTactic(Tactic):
-    def __init__(self, symbol: Optional[str]=None):
+@ProofState.auto("desugar-all")
+class DesugarAutoTactic(AutoTactic):
+    def __init__(self, tactic_name: str, symbol: Optional[str]=None):
+        super().__init__(tactic_name)
         self.target_symbol = symbol
-        self.equality_proof = None
+        self.equality_proofs = None
+        self.theorem = None
 
     """
     Look for heads that have sugar axiom and
     expand all of them in the given term
     """
     @staticmethod
-    def expand_all_sugar(state: ProofState, term: Term, target_symbol: Optional[str]=None) -> Term:
+    def expand_with_options(state: ProofState, term: Term, *_, target_symbol: Optional[str]=None, desugar_all=False) -> Term:
         if isinstance(term, Metavariable):
             return term
 
         assert isinstance(term, Application)
 
         # expand all subterms
-        expanded_subterm = [ DesugarAutoTactic.expand_all_sugar(state, subterm, target_symbol) for subterm in term.subterms ]
+        expanded_subterm = [
+            DesugarAutoTactic.expand_with_options(state, subterm, target_symbol=target_symbol, desugar_all=desugar_all)
+            for subterm in term.subterms
+        ]
         new_term = Application(term.symbol, expanded_subterm)
 
         if target_symbol is not None and new_term.symbol != target_symbol:
@@ -265,27 +339,73 @@ class DesugarAutoTactic(Tactic):
             substitution = state.composer.unify_terms_as_instance(left, new_term)
             assert substitution is not None, f"ill-formed sugar axiom"
             new_term = SubstitutionVisitor(substitution).visit(right)
-            # new_term = DesugarAutoTactic.expand_all_sugar(state, new_term)
+            
+            if desugar_all:
+                new_term = DesugarAutoTactic.expand_with_options(
+                    state, new_term,
+                    target_symbol=target_symbol,
+                    desugar_all=desugar_all,
+                )
 
         return new_term
 
+    def expand(self, state: ProofState, term: Term) -> Term:
+        return DesugarAutoTactic.expand_with_options(
+            state, term, 
+            target_symbol=self.target_symbol,
+            desugar_all=self.tactic_name == "desugar-all",
+        )
+
     def apply(self, state: ProofState):
         goal = state.goal_stack.pop()
-        assert len(goal.terms) == 2 and goal.terms[0] == Application("|-"), f"goal {goal} is not a provability claim"
+        assert len(goal.terms) >= 1, f"ill-formed goal {goal}"
 
-        _, term = goal.terms
+        typecode = goal.terms[0]
 
-        expanded = DesugarAutoTactic.expand_all_sugar(state, term, self.target_symbol)
-        self.equality_proof = EqualityAutoTactic.prove_equality(state, term, expanded)
+        if typecode == Application("|-"):
+            # definition preseves provability
+            assert len(goal.terms) == 2, f"ill-formed provability claim {goal}"
+            _, term = goal.terms
 
-        state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
-            Application("|-"),
-            expanded,
-        ])))
+            expanded = self.expand(state, term)
+            self.equality_proofs = [ EqualityAutoTactic.prove_equality(state, term, expanded) ]
+            self.theorem = state.composer.theorems["equal-proof"]
+
+            state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
+                typecode, expanded,
+            ])))
+        elif typecode == Application("#Fresh"):
+            # definition preserves freshness
+            assert len(goal.terms) == 3, f"ill-formed #Fresh claim {goal}"
+            _, var, term = goal.terms
+
+            expanded = self.expand(state, term)
+            self.equality_proofs = [ EqualityAutoTactic.prove_equality(state, term, expanded) ]
+            self.theorem = self.theorem = state.composer.theorems["equal-fresh"]
+
+            state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
+                typecode, var, expanded,
+            ])))
+        elif typecode == Application("#Substitution"):
+            assert len(goal.terms) == 5, f"ill-formed #Substitution claim {goal}"
+            _, t1, t2, t3, var = goal.terms
+            
+            expanded_terms = [ self.expand(state, term) for term in (t1, t2, t3) ]
+            self.equality_proofs = [
+                EqualityAutoTactic.prove_equality(state, term, expanded)
+                for term, expanded in zip((t1, t2, t3), expanded_terms)
+            ]
+            self.theorem = state.composer.theorems["equal-substitution"]
+
+            state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
+                typecode, *expanded_terms, var,
+            ])))
+        else:
+            assert False, f"unsupported goal {goal} for desugaring"
 
     def resolve(self, state: ProofState):
         desugared_proof = state.proof_stack.pop()
-        state.proof_stack.append(state.composer.theorems["equal-proof"].apply(
+        state.proof_stack.append(self.theorem.apply(
             desugared_proof,
-            self.equality_proof,
+            *self.equality_proofs,
         ))

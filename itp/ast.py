@@ -97,7 +97,7 @@ class AutoCommand(Command):
         return f"auto {self.name}" + (f" with {self.options}" if not self.options.empty() else "")
 
     def get_tactic(self, state) -> Tactic:
-        return state.get_auto_tactic(self.name)(*self.options.args, **self.options.kwargs)
+        return state.get_auto_tactic(self.name)(self.name, *self.options.args, **self.options.kwargs)
 
 
 class Script(BaseAST):

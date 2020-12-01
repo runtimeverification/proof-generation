@@ -111,9 +111,14 @@ class ProofState:
                 return False
         return True
 
-    def apply_tactic(self, tactic: Tactic):
-        tactic.apply(self)
-        self.applied_tactics.append(tactic)
+    """
+    Apply the given tactic on a copied state and return
+    """
+    def apply_tactic(self, tactic: Tactic) -> ProofState:
+        copied = self.copy()
+        tactic.apply(copied)
+        copied.applied_tactics.append(tactic)
+        return copied
 
     def gen_proof(self) -> Proof:
         assert not self.goal_stack, "non empty goal stack"

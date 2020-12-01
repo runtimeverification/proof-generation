@@ -33,7 +33,8 @@ class ApplyTactic(Tactic):
     """
     Unify two statements, treating only schematic variables as variables
     """
-    def unify_schematic_variables(self, state: ProofState, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[Mapping[str, Term]]:
+    @staticmethod
+    def unify_schematic_variables(state: ProofState, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[Mapping[str, Term]]:
         if len(stmt1.terms) != len(stmt2.terms): return None
 
         unification = list(zip(stmt1.terms, stmt2.terms))
@@ -98,7 +99,7 @@ class ApplyTactic(Tactic):
         essentials = [ state.sanitize_goal_statement(essential) for essential in self.theorem.essentials ]
         essentials = [ metavars_subst_visitor.visit(essential) for essential in essentials ]
 
-        schematic_substitution = self.unify_schematic_variables(state, top_goal, copied_statement)
+        schematic_substitution = ApplyTactic.unify_schematic_variables(state, top_goal, copied_statement)
         assert schematic_substitution is not None, f"unable to unify the goal {top_goal} with {copied_statement}"
 
         for var, term in schematic_substitution.items():
