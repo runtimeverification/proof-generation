@@ -22,17 +22,16 @@ class ProofState:
         assert name in ProofState.all_tactics, f"tactic {name} not found"
         return ProofState.all_tactics[name]
 
-    def __init__(self, composer: Composer, init_goal_stack: List[StructuredStatement], hypotheses: List[Theorem]):
+    def __init__(self, composer: Composer, init_goal_stack: List[StructuredStatement]):
         self.composer = composer
         self.schematic_vars = []
         self.schematic_var_assignment = {} # num -> term
         self.goal_stack = [ self.sanitize_goal_statement(goal) for goal in init_goal_stack ]
-        self.hypotheses = { hyp.statement.label: hyp for hyp in hypotheses }
         self.proof_stack: List[Proof] = []
         self.applied_tactics = []
 
     def copy(self) -> ProofState:
-        copied_state = ProofState(self.composer, self.goal_stack, list(self.hypotheses.values()))
+        copied_state = ProofState(self.composer, self.goal_stack)
         copied_state.schematic_vars = self.schematic_vars.copy()
         copied_state.schematic_var_assignment = self.schematic_var_assignment.copy()
         copied_state.proof_stack = self.proof_stack.copy()

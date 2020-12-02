@@ -64,9 +64,13 @@ class InteractiveState:
         goal = composer.theorems[goal_name]
         composer.remove_theorem(goal_name)
 
+        # TODO: this assumes no essential statements in the top-level block
+        for essential in goal.essentials:
+            composer.load(essential)
+
         self.init_theory_path = theory_path
         self.init_goal = goal
-        self.proof_state = ProofState(composer, [ goal.statement ], [ composer.load(essential) for essential in goal.essentials ])
+        self.proof_state = ProofState(composer, [ goal.statement ])
 
     def loop(self):
         self.print_state()
