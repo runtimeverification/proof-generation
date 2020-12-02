@@ -94,7 +94,7 @@ class Theorem:
 
         assert len(essential_proofs) == len(self.essentials), \
                "unmatched number of subproofs for " \
-               "essential statements, expecting {}, {} given".format(len(essential_proofs), len(self.essentials))
+               "essential statements, expecting {}, {} given".format(len(self.essentials), len(essential_proofs))
 
         # TODO: check proofs for essential statements
         for essential, essential_proof in zip(self.essentials, essential_proofs):
@@ -148,6 +148,8 @@ class Theorem:
         for essential_proof in essential_proofs:
             script += essential_proof.script
 
+        assert self.statement.label is not None, f"applying a theorem without label: {self.statement}"
+
         script.append(self.statement.label)
 
         instance = SubstitutionVisitor(substitution).visit(self.statement)
@@ -194,6 +196,12 @@ class Context:
         else:
             return current
 
+    def get_all_floatings(self) -> List[Tuple[str, str]]:
+        if self.prev is not None:
+            return self.prev.get_all_floatings() + self.active_floatings
+        else:
+            return self.active_floatings
+
     def get_all_essentials(self) -> List[StructuredStatement]:
         if self.prev is not None:
             return self.prev.get_all_essentials() + self.active_essentials
@@ -223,10 +231,17 @@ class Composer(MetamathVisitor):
             self.statements.append(database_or_statement)
 
             # return the corresponding theorem
-            if isinstance(database_or_statement, StructuredStatement) and \
-               database_or_statement.statement_type in { Statement.AXIOM, Statement.FLOATING, Statement.PROVABLE }:
-                assert database_or_statement.label in self.theorems
-                return self.theorems[database_or_statement.label]
+            if isinstance(database_or_statement, StructuredStatement):
+                if database_or_statement.statement_type in { Statement.AXIOM, Statement.FLOATING, Statement.PROVABLE }:
+                    assert database_or_statement.label in self.theorems
+                    return self.theorems[database_or_statement.label]
+
+                if database_or_statement.statement_type == Statement.ESSENTITAL:
+                    return Theorem(self, database_or_statement, [], [])
+
+    def remove_theorem(self, name: str):
+        assert name in self.theorems
+        del self.theorems[name]
 
     def encode(self, stream: TextIO):
         for stmt in self.statements:
@@ -247,6 +262,9 @@ class Composer(MetamathVisitor):
     """
     def find_metavariables_of_typecode(self, typecode: str) -> List[str]:
         return self.context.find_floatings_of_typecode(typecode)
+
+    def get_all_metavariables(self) -> List[str]:
+        return [ var for _, var in self.context.get_all_floatings() ]
 
     ####################################
     # Composer as a metamath AST visitor
@@ -278,12 +296,14 @@ class Composer(MetamathVisitor):
             for essential in essentials:
                 metavariables.update(essential.get_metavariables())
 
+            # print(f"??? {metavariables}")
             floatings = self.context.find_floatings(metavariables)
+            # print("!!!")
 
             assert len(floatings) == len(metavariables), \
                    "some metavariables not found in {}, only found {}".format(metavariables, floatings)
 
-            self.theorems[stmt.label] = Theorem(self, stmt, floatings, essentials)
+            self.theorems[stmt.label] = Theorem(self, stmt, floatings.copy(), essentials.copy())
 
     ####################################################
     # Utilities to generate proofs for simple statements
@@ -312,8 +332,10 @@ class Composer(MetamathVisitor):
             return None
 
     """
-    Attempts to unify two statements
+    Attempt to unify two statements
     NOTE: this does not check the consistency of the resulting substitution
+    but only returns a list of equations that should hold if the two statements
+    are unifiable
     """
     def unify_statements(self, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[List[Tuple[Term, Term]]]:
         solution = []
@@ -328,17 +350,28 @@ class Composer(MetamathVisitor):
         return solution
 
     """
-    Check if stmt2 is an instance of stmt1, that is, if
-    they are unifiable and the solution is a map from Metavariables to terms (instead of terms to metavariables)
+    Check if term2 is an instance of term1, that is, if
+    there is a substitution sigma such that term1[sigma] = term2
+    NOTE: note that term1 and term2 may not be unifiable
+    but term2 could still be an instance of term1
+    """
+    def unify_terms_as_instance(self, term1: Term, term2: Term) -> Optional[Mapping[str, Term]]:
+        solution = self.unify_terms(term1, term2)
+        if solution is None: return None
+        return self.get_instance_substitution(solution)
+
+    """
+    Same as above but for statements
     """
     def unify_statements_as_instance(self, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[Mapping[str, Term]]:
         solution = self.unify_statements(stmt1, stmt2)
-        if solution is None:
-            return None
+        if solution is None: return None
+        return self.get_instance_substitution(solution)
 
+    def get_instance_substitution(self, unification: List[Tuple[Term, Term]]) -> Optional[Mapping[str, Term]]:
         substitution = {}
 
-        for lhs, rhs in solution:
+        for lhs, rhs in unification:
             if not isinstance(lhs, Metavariable):
                 return None
 

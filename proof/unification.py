@@ -135,6 +135,8 @@ class InjectionCombine(Equation):
 
 """
 Unify two patterns modulo certain equations
+NOTE: this generator currently only supports
+unifying a pattern with a CONCRETE pattern
 """
 class UnificationProofGenerator(ProofGenerator):
     """
