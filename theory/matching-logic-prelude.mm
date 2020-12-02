@@ -142,7 +142,7 @@ is-constant-is-pattern $a #Pattern ( \is-constant ph0 ph1 ) $.
 ${
     $d x ph0 $.
     $d x ph1 $.
-    is-constant-is-sugar $a #Equal ( \is-constant ph0 ph1 ) 
+    is-constant-is-sugar $a #Equal ( \is-constant ph0 ph1 )
                                    ( \sorted-exists x ph1 ( \eq ph0 x ) ) $.
 $}
 
@@ -166,7 +166,7 @@ ${
     $d x y z ph3 $.
     is-binary-function-is-sugar $a #Equal ( \is-binary-function ph0 ph1 ph2 ph3 )
                                           ( \sorted-forall x ph1
-                                          ( \sorted-forall y ph2 
+                                          ( \sorted-forall y ph2
                                           ( \sorted-exists z ph3 ( \eq ( \app ph0 x y ) z ) ) ) ) $.
 $}
 
