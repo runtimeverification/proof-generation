@@ -5,6 +5,8 @@ from proof.metamath.ast import Term, StructuredStatement, Application
 from proof.metamath.composer import Theorem, Proof
 from proof.metamath.visitors import CopyVisitor
 
+from proof.metamath.auto.unification import Unification
+
 from .state import ProofState
 from .extension import SchematicVariable, SubstitutionVisitor
 
@@ -40,60 +42,14 @@ Apply a theorem on the top of the goal stack
 """
 @ProofState.register_tactic("apply")
 class ApplyTactic(Tactic):
-    """
-    Unify two statements, treating only schematic variables as variables
-    """
-    @staticmethod
-    def unify_schematic_variables(state: ProofState, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[Mapping[str, Term]]:
-        if len(stmt1.terms) != len(stmt2.terms): return None
-
-        unification = list(zip(stmt1.terms, stmt2.terms))
-        substitution = {}
-
-        while len(unification):
-            left, right = unification.pop()
-            if left == right: continue
-
-            # unifying applications
-            if not isinstance(left, SchematicVariable) and \
-               not isinstance(right, SchematicVariable):
-                if not isinstance(left, Application) or not isinstance(right, Application):
-                    # we are not supposed to substitute any non-schematic metavariables
-                    return None
-
-                if left.symbol != right.symbol: return None
-                if len(left.subterms) != len(right.subterms): return None
-                unification += list(zip(left.subterms, right.subterms))
-                continue
-
-            if isinstance(left, SchematicVariable):
-                # check for recursive equations
-                if left.name in right.get_metavariables():
-                    return None
-
-                substitution[left.name] = right
-
-                subst_visitor = SubstitutionVisitor({ left.name: right })
-
-                for i, (left, right) in enumerate(unification):
-                    unification[i] = subst_visitor.visit(left), subst_visitor.visit(right)
-
-                substitution = { var: subst_visitor.visit(term) for var, term in substitution.items() }
-
-            else:
-                assert isinstance(right, SchematicVariable)
-                unification.append((right, left))
-
-        return substitution
-
     def apply(self, state: ProofState, theorem_name: str, **options):
         substitution = self.parse_substitution(state, options)
         self.metavars_substitution = substitution
 
         top_goal = state.goal_stack.pop()
 
-        if theorem_name in state.composer.theorems:
-            self.theorem = state.composer.theorems[theorem_name]
+        self.theorem = state.composer.find_theorem(theorem_name)
+        if self.theorem is not None:
             copied_statement = state.sanitize_goal_statement(self.theorem.statement)
 
             metavars = copied_statement.get_metavariables()
@@ -116,12 +72,15 @@ class ApplyTactic(Tactic):
             essentials = [ metavars_subst_visitor.visit(essential) for essential in essentials ]
 
         else:
-            assert theorem_name in state.hypotheses, f"cannot find theorem {theorem_name}"
-            self.theorem = state.hypotheses[theorem_name]
+            self.theorem = state.composer.find_essential(theorem_name)
+            assert self.theorem is not None, f"cannot find theorem {theorem_name}"
             copied_statement = self.theorem.statement
             essentials = []
 
-        schematic_substitution = ApplyTactic.unify_schematic_variables(state, top_goal, copied_statement)
+        schematic_substitution = Unification.unify_statements(
+            top_goal, copied_statement,
+            variable_class=SchematicVariable, substitution_visitor_class=SubstitutionVisitor,
+        )
         assert schematic_substitution is not None, f"unable to unify the goal {top_goal} with {copied_statement}"
 
         for var, term in schematic_substitution.items():

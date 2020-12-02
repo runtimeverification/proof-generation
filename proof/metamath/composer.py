@@ -2,13 +2,11 @@ from __future__ import annotations
 
 from typing import List, Tuple, Mapping
 
+from .auto.typecode import TypecodeProver
+from .auto.unification import Unification
+
 from .ast import *
 from .visitors import SubstitutionVisitor
-
-
-"""
-Utility classes to help with building metamath proofs
-"""
 
 
 """
@@ -54,15 +52,15 @@ class Theorem:
     """
     def as_proof(self):
         assert len(self.essentials) == 0
-        return self.unify_and_apply(self.statement)
+        return self.match_and_apply(self.statement)
 
     """
     Unify the theorem statement with a target,
     infer as many metavariables as possible, and
     then call self.apply
     """
-    def unify_and_apply(self, target: StructuredStatement, *args, **kwargs):
-        substitution = self.composer.unify_statements(self.statement, target)
+    def match_and_apply(self, target: StructuredStatement, *args, **kwargs):
+        substitution = Unification.match_statements(self.statement, target)
         assert substitution is not None, \
                "failed to unify the target statement `{}` and the theorem `{}`".format(target, self.statement)
 
@@ -98,7 +96,7 @@ class Theorem:
 
         # TODO: check proofs for essential statements
         for essential, essential_proof in zip(self.essentials, essential_proofs):
-            solution = self.composer.unify_statements_as_instance(essential, essential_proof.statement)
+            solution = Unification.match_statements_as_instance(essential, essential_proof.statement)
             assert solution is not None, \
                    "`{}` is not an instance of `{}`".format(essential_proof.statement, essential)
 
@@ -123,7 +121,7 @@ class Theorem:
             metavar_substituted = metavar_substitution[var]
             
             if isinstance(metavar_substituted, Term):
-                typecode_proof = self.composer.try_prove_typecode(typecode, metavar_substituted)
+                typecode_proof = TypecodeProver.prove_typecode(self.composer, typecode, metavar_substituted)
 
                 assert typecode_proof is not None, \
                        "a term `{}` is given for metavariable `{}`, " \
@@ -202,6 +200,16 @@ class Context:
         else:
             return self.active_floatings
 
+    def find_essential(self, label: str) -> Optional[StructuredStatement]:
+        for essential in self.active_essentials:
+            if essential.label == label:
+                return essential
+
+        if self.prev is not None:
+            return self.prev.find_essential(label)
+        else:
+            return None
+
     def get_all_essentials(self) -> List[StructuredStatement]:
         if self.prev is not None:
             return self.prev.get_all_essentials() + self.active_essentials
@@ -239,9 +247,22 @@ class Composer(MetamathVisitor):
                 if database_or_statement.statement_type == Statement.ESSENTITAL:
                     return Theorem(self, database_or_statement, [], [])
 
+    def find_theorem(self, name: str) -> Optional[Theorem]:
+        return self.theorems.get(name)
+
     def remove_theorem(self, name: str):
         assert name in self.theorems
         del self.theorems[name]
+
+    def find_essential(self, name: str) -> Optional[Theorem]:
+        essential = self.context.find_essential(name)
+        if essential:
+            return Theorem(self, essential, [], [])
+        else:
+            return None
+
+    def get_all_essentials(self) -> List[Theorem]:
+        return [ Theorem(self, essential, [], []) for essential in self.context.get_all_essentials() ]
 
     def encode(self, stream: TextIO):
         for stmt in self.statements:
@@ -296,152 +317,9 @@ class Composer(MetamathVisitor):
             for essential in essentials:
                 metavariables.update(essential.get_metavariables())
 
-            # print(f"??? {metavariables}")
             floatings = self.context.find_floatings(metavariables)
-            # print("!!!")
 
             assert len(floatings) == len(metavariables), \
                    "some metavariables not found in {}, only found {}".format(metavariables, floatings)
 
             self.theorems[stmt.label] = Theorem(self, stmt, floatings.copy(), essentials.copy())
-
-    ####################################################
-    # Utilities to generate proofs for simple statements
-    ####################################################
-
-    """
-    Attempts to unify two terms and return a mapping of subterms
-    NOTE: this does not check the consistency of the resulting substitution
-    """
-    def unify_terms(self, term1: Term, term2: Term) -> Optional[List[Tuple[Term, Term]]]:
-        if isinstance(term1, Application) and isinstance(term2, Application):
-            if term1.symbol == term2.symbol and len(term1.subterms) == len(term2.subterms):
-                solution = []
-                for subterm1, subterm2 in zip(term1.subterms, term2.subterms):
-                    subsolution = self.unify_terms(subterm1, subterm2)
-                    if subsolution is None:
-                        return None
-
-                    solution += subsolution
-                return solution
-            else:
-                return None
-        elif isinstance(term1, Metavariable) or isinstance(term2, Metavariable):
-            return [ (term1, term2) ]
-        else:
-            return None
-
-    """
-    Attempt to unify two statements
-    NOTE: this does not check the consistency of the resulting substitution
-    but only returns a list of equations that should hold if the two statements
-    are unifiable
-    """
-    def unify_statements(self, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[List[Tuple[Term, Term]]]:
-        solution = []
-
-        for term1, term2 in zip(stmt1.terms, stmt2.terms):
-            subsolution = self.unify_terms(term1, term2)
-            if subsolution is None:
-                return None
-
-            solution += subsolution
-
-        return solution
-
-    """
-    Check if term2 is an instance of term1, that is, if
-    there is a substitution sigma such that term1[sigma] = term2
-    NOTE: note that term1 and term2 may not be unifiable
-    but term2 could still be an instance of term1
-    """
-    def unify_terms_as_instance(self, term1: Term, term2: Term) -> Optional[Mapping[str, Term]]:
-        solution = self.unify_terms(term1, term2)
-        if solution is None: return None
-        return self.get_instance_substitution(solution)
-
-    """
-    Same as above but for statements
-    """
-    def unify_statements_as_instance(self, stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[Mapping[str, Term]]:
-        solution = self.unify_statements(stmt1, stmt2)
-        if solution is None: return None
-        return self.get_instance_substitution(solution)
-
-    def get_instance_substitution(self, unification: List[Tuple[Term, Term]]) -> Optional[Mapping[str, Term]]:
-        substitution = {}
-
-        for lhs, rhs in unification:
-            if not isinstance(lhs, Metavariable):
-                return None
-
-            if lhs.name in substitution:
-                if substitution[lhs.name] == rhs:
-                    continue
-                else:
-                    return None
-
-            substitution[lhs.name] = rhs
-
-        return substitution
-
-    """
-    Tries to prove a statement of the form
-    <typecode> <term>
-    by recursively unify the target with a theorem of this form
-    """
-    def try_prove_typecode(self, typecode: str, term: Term) -> Optional[Proof]:
-        # try to find a matching floating statement first if the term is a metavariable
-        if isinstance(term, Metavariable):
-            for _, theorem in self.theorems.items():
-                if theorem.statement.statement_type == Statement.FLOATING:
-                    other_typecode, metavar = theorem.statement.terms
-
-                    if other_typecode.symbol == typecode and metavar.name == term.name:
-                        # found a direct proof
-                        return theorem.apply()
-            # otherwise treat the metavariable as a term
-
-        expected_statement = StructuredStatement(Statement.PROVABLE, [ Application(typecode), term ])
-
-        # print(">>> try to prove", expected_statement)
-
-        # TODO: check if this may loop infinitely
-
-        # try to find a non-floating statement without hypotheses and unify
-        for _, theorem in self.theorems.items():
-            if len(theorem.essentials) == 0 and theorem.statement.statement_type != Statement.FLOATING:
-                # check that expected_statement is an instance of theorem.statement
-                solution = self.unify_statements_as_instance(theorem.statement, expected_statement)
-
-                if solution is None:
-                    continue
-
-                # print("try to apply", theorem.statement, "to", expected_statement)
-                
-                # try to recursively prove that each of the subterms in the solution
-                # also have the suitable typecode
-                meta_subst = {}
-                failed = False
-
-                for metavar, subterm in solution.items():
-                    # find out the expected typecode for <metavar>
-                    for expected_typecode, other_metavar in theorem.floatings:
-                        if other_metavar == metavar:
-                            break
-                    else:
-                        assert False, "unable to find metavarible {} in theorem {}".format(metavar, theorem)
-
-                    subproof = self.try_prove_typecode(expected_typecode, subterm)
-                    if subproof is None:
-                        # print("failed to prove", expected_typecode, subterm)
-                        failed = True
-                        break
-
-                    meta_subst[metavar] = subproof
-
-                # found a proof
-                if not failed:
-                    return theorem.apply(**meta_subst)
-        
-        return None

@@ -108,7 +108,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
 
     def postvisit_sort_instance(self, sort_instance: kore.SortInstance) -> Proof:
         symbol = KorePatternEncoder.encode_sort(sort_instance)
-        return self.env.substitution_axioms[symbol].unify_and_apply(
+        return self.env.substitution_axioms[symbol].match_and_apply(
             self.target,
             *[ self.visit(arg) for arg in sort_instance.arguments ],
         )
@@ -141,11 +141,11 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
 
     def postvisit_string_literal(self, literal: kore.StringLiteral) -> Proof:
         symbol = KorePatternEncoder.encode_string_literal(literal)
-        return self.env.substitution_axioms[symbol].unify_and_apply(self.target)
+        return self.env.substitution_axioms[symbol].match_and_apply(self.target)
 
     def postvisit_application(self, application: kore.Application) -> Proof:
         symbol = KorePatternEncoder.encode_symbol(application.symbol)
-        return self.env.substitution_axioms[symbol].unify_and_apply(
+        return self.env.substitution_axioms[symbol].match_and_apply(
             self.target,
             *[ self.visit(arg) for arg in application.symbol.sort_arguments + application.arguments ],
         )
