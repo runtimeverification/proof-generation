@@ -225,7 +225,7 @@ class EqualityTactic(Tactic):
         # different metavariables
         if isinstance(left, Metavariable) and isinstance(right, Metavariable):
             # try to find an essential that says so
-            for theorem in state.hypotheses:
+            for theorem in state.hypotheses.values():
                 if theorem.statement.terms == target.terms:
                     return theorem.apply()
                 elif theorem.statement.terms == symmetric_target.terms:

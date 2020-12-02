@@ -120,10 +120,11 @@ class InteractiveState:
         ans = input(f"are you sure to reload {self.init_theory_path}? (y/n) <n> ")
         if ans.strip().lower() != "y": return
 
-        print("re-applying the following script:")
-        print("==================")
-        self.command_script()
-        print("==================")
+        if len(self.undo_states):
+            print("re-applying the following script:")
+            print("==================")
+            self.command_script()
+            print("==================")
 
         old_commands = [ command for _, command in self.undo_states ]
         self.init_from_theory_and_goal(self.init_theory_path, self.init_goal.statement.label)
@@ -134,6 +135,9 @@ class InteractiveState:
         for command in old_commands:
             print(f"applying the command: {command}")
             self.apply_tactic_command(command)
+
+        if len(self.undo_states) == 0:
+            self.print_state()
 
     @BuiltinCommand.add("undo", help_message="undo a tactic")
     def command_undo(self):

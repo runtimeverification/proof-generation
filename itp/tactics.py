@@ -88,31 +88,38 @@ class ApplyTactic(Tactic):
 
     def apply(self, state: ProofState, theorem_name: str, **options):
         substitution = self.parse_substitution(state, options)
-        assert theorem_name in state.composer.theorems, f"cannot find theorem {theorem_name}"
-        self.theorem = state.composer.theorems[theorem_name]
         self.metavars_substitution = substitution
 
         top_goal = state.goal_stack.pop()
-        copied_statement = state.sanitize_goal_statement(self.theorem.statement)
 
-        metavars = copied_statement.get_metavariables()
-        for essential in self.theorem.essentials:
-            metavars.update(essential.get_metavariables())
-        metavars = list(metavars)
-        metavars.sort() # making things a bit more deterministic
+        if theorem_name in state.composer.theorems:
+            self.theorem = state.composer.theorems[theorem_name]
+            copied_statement = state.sanitize_goal_statement(self.theorem.statement)
 
-        for metavar in metavars:
-            if metavar not in self.metavars_substitution:
-                typecode = state.composer.find_metavariable(metavar)
-                self.metavars_substitution[metavar] = state.get_next_schematic_variable(typecode)
+            metavars = copied_statement.get_metavariables()
+            for essential in self.theorem.essentials:
+                metavars.update(essential.get_metavariables())
+            metavars = list(metavars)
+            metavars.sort() # making things a bit more deterministic
 
-        # replace all metavariables in the applied theorem
-        # with distinct schematic variables
-        metavars_subst_visitor = SubstitutionVisitor(self.metavars_substitution)
-        copied_statement = metavars_subst_visitor.visit(copied_statement)
+            for metavar in metavars:
+                if metavar not in self.metavars_substitution:
+                    typecode = state.composer.find_metavariable(metavar)
+                    self.metavars_substitution[metavar] = state.get_next_schematic_variable(typecode)
 
-        essentials = [ state.sanitize_goal_statement(essential) for essential in self.theorem.essentials ]
-        essentials = [ metavars_subst_visitor.visit(essential) for essential in essentials ]
+            # replace all metavariables in the applied theorem
+            # with distinct schematic variables
+            metavars_subst_visitor = SubstitutionVisitor(self.metavars_substitution)
+            copied_statement = metavars_subst_visitor.visit(copied_statement)
+
+            essentials = [ state.sanitize_goal_statement(essential) for essential in self.theorem.essentials ]
+            essentials = [ metavars_subst_visitor.visit(essential) for essential in essentials ]
+
+        else:
+            assert theorem_name in state.hypotheses, f"cannot find theorem {theorem_name}"
+            self.theorem = state.hypotheses[theorem_name]
+            copied_statement = self.theorem.statement
+            essentials = []
 
         schematic_substitution = ApplyTactic.unify_schematic_variables(state, top_goal, copied_statement)
         assert schematic_substitution is not None, f"unable to unify the goal {top_goal} with {copied_statement}"
