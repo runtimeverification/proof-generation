@@ -88,6 +88,9 @@ class Metavariable(Term):
             return self.name == other.name
         return False
 
+    def __hash__(self) -> int:
+        return hash(self.name)
+
 
 class Application(Term):
     def __init__(self, symbol: str, subterms: List[Term]=[]):
@@ -120,6 +123,11 @@ class Application(Term):
         if isinstance(other, Application):
             return self.symbol == other.symbol and self.subterms == other.subterms
         return False
+
+    def __hash__(self) -> int:
+        children_hash = 0
+        for subterm in self.subterms: children_hash ^= hash(subterm)
+        return hash(self.symbol) ^ children_hash
 
 
 class Statement(BaseAST):
