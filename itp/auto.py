@@ -201,15 +201,50 @@ with pattern metavariables as atomic propositions
 """
 @ProofState.register_tactic("propositional")
 class PropositionalTactic(Tactic):
+    # connective -> arity
+    PROPOSITION_CONNECTIVES = {
+        "\\imp": 2,
+        "\\bot": 0,
+
+        "\\and": 2,
+        "\\or": 2,
+        "\\not": 1,
+
+        "\\top": 0,
+        "\\iff": 2,
+    }
+
+    f"""
+    A propositional formula/pattern is defined as a pattern built
+    from the following constructs:
+      - atomic propositions: pattern metavariables
+      - \imp
+      - \bot
+      - \and
+      - \or
+      - \not
+      - \top
+      - \iff
+
+    In the comments below,
+    the fragment with only \imp and \bot will be called implicative
+    the fragment with only \and, \or, and \not will be called conjunctive
+    """
     def is_propositional(self, state: ProofState, term: Term) -> bool:
         if isinstance(term, Application):
-            if term.symbol == "\\imp" and len(term.subterms) == 2:
-                return self.is_propositional(state, term.subterms[0]) and \
-                       self.is_propositional(state, term.subterms[1])
-            elif term.symbol == "\\bot" and len(term.subterms) == 0:
-                return True
-            else:
+            if term.symbol not in PropositionalTactic.PROPOSITION_CONNECTIVES:
                 return False
+
+            arity = PropositionalTactic.PROPOSITION_CONNECTIVES[term.symbol]
+
+            if len(term.subterms) != arity:
+                return False
+
+            for subterm in term.subterms:
+                if not self.is_propositional(state, subterm):
+                    return False
+
+            return True
 
         if isinstance(term, Metavariable):
             typecode = state.composer.find_metavariable(term.name)
@@ -442,20 +477,27 @@ class PropositionalTactic(Tactic):
         assert False, f"unable to reduce {term} to cnf"
 
     """
-    Reduce imp and bot to and/or/not, this simplifies
-    the reduce_to_cnf process
+    Reduce a propositional term to the conjunctive fragment (i.e.
+    reduce to only using \and, \or, and \not)
     """
-    def reduce_imp_bot(self, state: ProofState, term: Term) -> Proof:
+    def reduce_to_conjunctive(self, state: ProofState, term: Term) -> Proof:
         if isinstance(term, Metavariable):
             return self.apply_iff_reflexivity(state, term)
 
         assert isinstance(term, Application)
 
+        if term.symbol in { "\\and", "\\or", "\\not" }:
+            return self.apply_iff_congruence(
+                state,
+                *[ self.reduce_to_conjunctive(state, subterm) for subterm in term.subterms ],
+                connective=term.symbol[1:],
+            )
+
         if term.symbol == "\\imp":
             left, right = term.subterms
 
-            left_reduced = self.reduce_imp_bot(state, left)
-            right_reduced = self.reduce_imp_bot(state, right)
+            left_reduced = self.reduce_to_conjunctive(state, left)
+            right_reduced = self.reduce_to_conjunctive(state, right)
 
             return self.apply_iff_transitivity(
                 state,
@@ -465,13 +507,76 @@ class PropositionalTactic(Tactic):
                     self.apply_iff_congruence(state, left_reduced, connective="not"),
                     right_reduced,
                     connective="or",
-                )
+                ),
+            )
+
+        # iff to and of two implications
+        if term.symbol == "\\iff":
+            left, right = term.subterms
+
+            left_reduced = self.reduce_to_conjunctive(state, left)
+            right_reduced = self.reduce_to_conjunctive(state, right)
+
+            return self.apply_iff_transitivity(
+                state,
+                state.composer.find_theorem("iff-to-and").apply(ph0=left, ph1=right),
+                self.apply_iff_congruence(
+                    state,
+                    self.apply_iff_congruence(
+                        state,
+                        self.apply_iff_congruence(state, left_reduced, connective="not"),
+                        right_reduced,
+                        connective="or",
+                    ),
+                    self.apply_iff_congruence(
+                        state,
+                        self.apply_iff_congruence(state, right_reduced, connective="not"),
+                        left_reduced,
+                        connective="or",
+                    ),
+                    connective="and",
+                ),
             )
 
         if term.symbol == "\\bot":
             return state.composer.find_theorem("bot-to-and").as_proof()
 
+        if term.symbol == "\\top":
+            return state.composer.find_theorem("top-to-or").as_proof()
+
         assert False, f"unable to reduce pattern {term}"
+
+    # """
+    # Reduce imp and bot to and/or/not, this simplifies
+    # the reduce_to_cnf process
+    # """
+    # def reduce_imp_bot(self, state: ProofState, term: Term) -> Proof:
+    #     if isinstance(term, Metavariable):
+    #         return self.apply_iff_reflexivity(state, term)
+
+    #     assert isinstance(term, Application)
+
+    #     if term.symbol == "\\imp":
+    #         left, right = term.subterms
+
+    #         left_reduced = self.reduce_imp_bot(state, left)
+    #         right_reduced = self.reduce_imp_bot(state, right)
+
+    #         return self.apply_iff_transitivity(
+    #             state,
+    #             state.composer.find_theorem("imp-to-or").apply(ph0=left, ph1=right),
+    #             self.apply_iff_congruence(
+    #                 state,
+    #                 self.apply_iff_congruence(state, left_reduced, connective="not"),
+    #                 right_reduced,
+    #                 connective="or",
+    #             )
+    #         )
+
+    #     if term.symbol == "\\bot":
+    #         return state.composer.find_theorem("bot-to-and").as_proof()
+
+    #     assert False, f"unable to reduce pattern {term}"
 
     """
     Move the nth clause/literal to the first, and return a proof of equivalence
@@ -983,16 +1088,13 @@ class PropositionalTactic(Tactic):
         _, goal_term = goal.terms
 
         print("expanding the goal")
+        assert self.is_propositional(state, goal_term), f"the goal {goal} is not propositional"
 
-        expanded_goal_term = EqualityProver.expand_sugar(state.composer, goal_term, desugar_all=True)
-        assert self.is_propositional(state, expanded_goal_term), f"{goal} expands to {expanded_goal_term} which has non-positional constructs"
-        expansion_proof = EqualityProver.prove_equality(state.composer, goal_term, expanded_goal_term)
-
-        negated_goal_term = Application("\\imp", [ expanded_goal_term, Application("\\bot") ])
+        negated_goal_term = Application("\\not", [ goal_term ])
 
         print("reducing the negation of the goal to CNF")
 
-        reduction_proof = self.reduce_imp_bot(state, negated_goal_term)
+        reduction_proof = self.reduce_to_conjunctive(state, negated_goal_term)
         _, reduced_term = self.decompose_iff(reduction_proof)
 
         cnf_proof = self.reduce_to_cnf(state, reduced_term)
@@ -1036,14 +1138,9 @@ class PropositionalTactic(Tactic):
             falsum_proof,
         )
 
-        expanded_goal_proof = state.composer.find_theorem("proof-rule-mp").apply(
-            state.composer.find_theorem("proof-rule-prop-3").apply(ph0=expanded_goal_term),
+        goal_proof = state.composer.find_theorem("proof-rule-mp").apply(
+            state.composer.find_theorem("contradiction").apply(ph0=goal_term),
             falsum_proof,
-        )
-
-        goal_proof = state.composer.find_theorem("equal-proof").apply(
-            expanded_goal_proof,
-            expansion_proof,
         )
 
         self.goal_proof = goal_proof

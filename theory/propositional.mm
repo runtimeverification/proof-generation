@@ -49,6 +49,8 @@ $}
 
 imp-to-or $p |- ( \iff ( \imp ph0 ph1 ) ( \or ( \not ph0 ) ph1 ) ) $= ? $.
 bot-to-and $p |- ( \iff \bot ( \and ph0 ( \not ph0 ) ) ) $= ? $.
+top-to-or $p |- ( \iff \top ( \or ph0 ( \not ph0 ) ) ) $= ? $.
+iff-to-and $p |- ( \iff ( \iff ph0 ph1 ) ( \and ( \or ( \not ph0 ) ph1 ) ( \or ( \not ph1 ) ph0 ) ) ) $= ? $.
 
 and-associativity $p |- ( \iff ( \and ( \and ph0 ph1 ) ph2 ) ( \and ph0 ( \and ph1 ph2 ) ) ) $= ? $.
 and-commutativity $p |- ( \iff ( \and ph0 ph1 ) ( \and ph1 ph0 ) ) $= ? $.
@@ -75,6 +77,8 @@ or-top $p |- ( \iff ( \or \top ph0 ) \top ) $= ? $.
 and-bot $p |- ( \imp ( \and \bot ph0 ) \bot ) $= ? $.
 
 and-elim-left $p |- ( \imp ( \and ph0 ph1 ) ph0 ) $= ? $.
+
+contradiction $p |- ( \imp ( \imp ( \not ph0 ) \bot ) ph0 ) $= ? $.
 
 $( three versions of resolution $)
 resolution-1 $p |- ( \imp ( \and ( \or ( \not ph0 ) ph1 ) ( \or ph0 ph2 ) ) ( \or ph1 ph2 ) ) $= ? $.

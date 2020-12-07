@@ -183,6 +183,8 @@ ${
     substitution-mu   $a #Substitution ( \mu Y ph3 ) ( \mu X ph1 ) ph0 xX $.
 $}
 
+substitution-identity $a #Substitution ph0 ph0 xX xX $.
+
 $( Application Contexts $)
 
 application-context-var $a #ApplicationContext xX xX $.
@@ -286,7 +288,7 @@ $( FOL Reasoning $)
 
 proof-rule-prop-1 $a |- ( \imp ph0 ( \imp ph1 ph0 ) ) $.
 proof-rule-prop-2 $a |- ( \imp ( \imp ph0 ( \imp ph1 ph2 ) ) ( \imp ( \imp ph0 ph1 ) ( \imp ph0 ph2 ) ) ) $.
-proof-rule-prop-3 $a |- ( \imp ( \imp ( ph0 \bot ) \bot ) ph0 ) $.
+proof-rule-prop-3 $a |- ( \imp ( \imp ( \imp ph0 \bot ) \bot ) ph0 ) $.
 ${
     proof-rule-mp.0 $e |- ( \imp ph0 ph1 ) $.
     proof-rule-mp.1 $e |- ph0 $.
