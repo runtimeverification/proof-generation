@@ -213,3 +213,22 @@ ${
 $} $)
 
 lemma-eq-reflexivity $p |- ( \eq ph0 ph0 ) $= ? $.
+
+
+$( ==================================== $)
+
+${
+    lemmq-floor-intro.0 $e |- ph0 $.
+    lemma-floor-intro $p |- ( \floor ph0 ) $= ? $. 
+$}
+
+${
+    lemma-eq-intro.0 $e |- ( \imp ph0 ph1 ) $.
+    lemma-eq-intro.1 $e |- ( \imp ph1 ph0 ) $.
+    lemma-eq-intro $p |- ( \eq ph0 ph1 ) $= ? $.
+$}
+
+${
+    lemma-eq-1 $e |- ph0 $.
+    lemma-eq-1 $p |- ( \eq ( \and ph0 ph1 ) ph1 ) $= ? $.
+$}
