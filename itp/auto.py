@@ -199,8 +199,8 @@ Try to resolve the current goal if it's
 a propositional claim, i.e., a propositional pattern
 with pattern metavariables as atomic propositions
 """
-@ProofState.register_tactic("propositional")
-class PropositionalTactic(Tactic):
+@ProofState.register_tactic("tautology")
+class TautologyTactic(Tactic):
     # connective -> arity
     PROPOSITION_CONNECTIVES = {
         "\\imp": 2,
@@ -214,7 +214,7 @@ class PropositionalTactic(Tactic):
         "\\iff": 2,
     }
 
-    f"""
+    r"""
     A propositional formula/pattern is defined as a pattern built
     from the following constructs:
       - atomic propositions: pattern metavariables
@@ -232,10 +232,10 @@ class PropositionalTactic(Tactic):
     """
     def is_propositional(self, state: ProofState, term: Term) -> bool:
         if isinstance(term, Application):
-            if term.symbol not in PropositionalTactic.PROPOSITION_CONNECTIVES:
+            if term.symbol not in TautologyTactic.PROPOSITION_CONNECTIVES:
                 return False
 
-            arity = PropositionalTactic.PROPOSITION_CONNECTIVES[term.symbol]
+            arity = TautologyTactic.PROPOSITION_CONNECTIVES[term.symbol]
 
             if len(term.subterms) != arity:
                 return False
@@ -476,7 +476,7 @@ class PropositionalTactic(Tactic):
 
         assert False, f"unable to reduce {term} to cnf"
 
-    """
+    r"""
     Reduce a propositional term to the conjunctive fragment (i.e.
     reduce to only using \and, \or, and \not)
     """
@@ -545,38 +545,6 @@ class PropositionalTactic(Tactic):
             return state.composer.find_theorem("top-to-or").as_proof()
 
         assert False, f"unable to reduce pattern {term}"
-
-    # """
-    # Reduce imp and bot to and/or/not, this simplifies
-    # the reduce_to_cnf process
-    # """
-    # def reduce_imp_bot(self, state: ProofState, term: Term) -> Proof:
-    #     if isinstance(term, Metavariable):
-    #         return self.apply_iff_reflexivity(state, term)
-
-    #     assert isinstance(term, Application)
-
-    #     if term.symbol == "\\imp":
-    #         left, right = term.subterms
-
-    #         left_reduced = self.reduce_imp_bot(state, left)
-    #         right_reduced = self.reduce_imp_bot(state, right)
-
-    #         return self.apply_iff_transitivity(
-    #             state,
-    #             state.composer.find_theorem("imp-to-or").apply(ph0=left, ph1=right),
-    #             self.apply_iff_congruence(
-    #                 state,
-    #                 self.apply_iff_congruence(state, left_reduced, connective="not"),
-    #                 right_reduced,
-    #                 connective="or",
-    #             )
-    #         )
-
-    #     if term.symbol == "\\bot":
-    #         return state.composer.find_theorem("bot-to-and").as_proof()
-
-    #     assert False, f"unable to reduce pattern {term}"
 
     """
     Move the nth clause/literal to the first, and return a proof of equivalence
