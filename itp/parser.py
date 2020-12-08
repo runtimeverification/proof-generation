@@ -1,3 +1,5 @@
+from typing import Optional
+
 from lark import Lark, Transformer
 
 from .ast import *
@@ -36,6 +38,11 @@ class ASTTransformer(Transformer):
 
         return Options(*positional_args, **keyword_args)
 
+    def command_or_empty(self, args):
+        if len(args):
+            return args[0]
+        return None
+
     def command(self, args):
         return Command(*args)
 
@@ -46,17 +53,18 @@ class ASTTransformer(Transformer):
 syntax = r"""
 %import common.ESCAPED_STRING -> STRING_LITERAL
 
-COMMENT: /\$\(((.|\n)(?<!\$\)))*\$\)/
+BLOCK_COMMENT: /\$\(((.|\n)(?<!\$\)))*\$\)/
+INLINE_COMMENT: /\#[^\n]*/
 
-%ignore COMMENT
+%ignore BLOCK_COMMENT
+%ignore INLINE_COMMENT
 %ignore /[ \n\t\f\r]+/
-TOKEN: /[^ \n\t\f\r=,]+/
+TOKEN: /[^ \n\t\f\r=,\#\.]+/
 
 token: TOKEN
 
-script: command*
-
 command: token [options]
+command_or_empty: [command]
 
 options: option ("," option)*
 option: value           -> positional_option
@@ -67,29 +75,15 @@ value: STRING_LITERAL -> string
 """
 
 
-script_parser = Lark(
-    syntax,
-    start="script",
-    parser="lalr",
-    lexer="standard",
-    propagate_positions=True,
-)
-
-
 command_parser = Lark(
     syntax,
-    start="command",
+    start="command_or_empty",
     parser="lalr",
     lexer="standard",
     propagate_positions=True,
 )
 
 
-def parse_script(src: str) -> Script:
-    tree = script_parser.parse(src)
-    return ASTTransformer().transform(tree)
-
-
-def parse_command(src: str) -> Command:
+def parse_command(src: str) -> Optional[Command]:
     tree = command_parser.parse(src)
     return ASTTransformer().transform(tree)

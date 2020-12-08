@@ -3,8 +3,114 @@ $[ theory/matching-logic-prelude.mm $]
 ${
     hyp-syllogism.0 $e |- ( \imp ph0 ph1 ) $.
     hyp-syllogism.1 $e |- ( \imp ph1 ph2 ) $.
-    hyp-syllogism $p |- ( \imp ph0 ph2 ) $= ? $.
+    hyp-syllogism $p |- ( \imp ph0 ph2 ) $=
+        $(
+            apply "proof-rule-mp"
+            let $0 = "( \imp ph0 ph1 )"
+            apply "proof-rule-mp"
+            let $2 = "( \imp ph0 ( \imp ph1 ph2 ) )"
+            apply "proof-rule-prop-2"
+            apply "proof-rule-mp"
+            let $7 = "( \imp ph1 ph2 )"
+            apply "proof-rule-prop-1"
+            apply "hyp-syllogism.1"
+            apply "hyp-syllogism.0"
+        $)
+        ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern proof-rule-prop-2 ph1-is-pattern ph2-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern imp-is-pattern imp-is-pattern ph1-is-pattern ph2-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-1 hyp-syllogism.1 proof-rule-mp proof-rule-mp hyp-syllogism.0 proof-rule-mp $.
+
 $}
+
+bot-elim $p |- ( \imp \bot ph0 ) $=
+    $(
+        apply "proof-rule-mp"
+        let $0 = "( \imp \bot ( \imp ( \imp ph0 \bot ) \bot ) )"
+        apply "proof-rule-mp"
+        let $2 = "( \imp \bot ( \imp ( \imp ( \imp ph0 \bot ) \bot ) ph0 ) )"
+        apply "proof-rule-prop-2"
+        apply "proof-rule-mp"
+        let $7 = "( \imp ( \imp ( \imp ph0 \bot ) \bot ) ph0 )"
+        apply "proof-rule-prop-1"
+        apply "proof-rule-prop-3"
+        apply "proof-rule-prop-1"
+    $)
+    bot-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern imp-is-pattern bot-is-pattern ph0-is-pattern imp-is-pattern bot-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern bot-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern imp-is-pattern bot-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern bot-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-2 ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern bot-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern bot-is-pattern proof-rule-prop-1 ph0-is-pattern proof-rule-prop-3 proof-rule-mp proof-rule-mp bot-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern proof-rule-prop-1 proof-rule-mp $.
+
+contradiction $p |- ( \imp ( \imp ( \not ph0 ) \bot ) ph0 ) $=
+    $(
+        desugar "\not"
+        apply "proof-rule-prop-3"
+    $)
+    ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern not-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-3 ph0-is-pattern not-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern not-is-pattern bot-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph0-is-pattern not-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern not-is-sugar ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern equal-reflexivity equal-symmetry equal-transitivity bot-is-pattern equal-reflexivity equal-imp ph0-is-pattern equal-reflexivity equal-imp equal-proof $.
+
+imp-reflexivity $p |- ( \imp ph0 ph0 ) $=
+    $(
+        apply proof-rule-mp
+        apply proof-rule-mp
+        apply proof-rule-prop-2
+        let $5 = "( \imp ph0 ph0 )"
+        apply proof-rule-prop-1
+        apply proof-rule-prop-1
+    $)
+    ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-2 ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern proof-rule-prop-1 proof-rule-mp ph0-is-pattern ph0-is-pattern proof-rule-prop-1 proof-rule-mp $.
+
+top-intro $p |- \top $=
+    $(
+        desugar-all
+        apply "imp-reflexivity"
+    $)
+    bot-is-pattern bot-is-pattern imp-is-pattern top-is-pattern bot-is-pattern imp-reflexivity top-is-pattern bot-is-pattern not-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern top-is-sugar bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern not-is-pattern bot-is-pattern not-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern not-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern not-is-sugar bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern equal-reflexivity equal-symmetry equal-transitivity equal-symmetry equal-symmetry equal-transitivity equal-proof $.
+
+mp $p |- ( \imp ph0 ( \imp ( \imp ph0 ph1 ) ph1 ) ) $=
+    $(
+        apply "proof-rule-mp"
+        apply "proof-rule-mp"
+        let $0 = "( \imp ph0 ( \imp ( \imp ph0 ph1 ) ph0 ) )"
+        let $2 = "( \imp ph0 ( \imp ( \imp ( \imp ph0 ph1 ) ph0 ) ( \imp ( \imp ph0 ph1 ) ph1 ) ) )"
+        apply "proof-rule-prop-2"
+        meh
+        apply "proof-rule-prop-1"
+        apply "proof-rule-mp"
+        apply "proof-rule-mp"
+        let $9 = "( \imp ph0 ( \imp ( \imp ph0 ph1 ) ( \imp ph0 ph1 ) ) )"
+        let $11 = "( \imp ph0 ( \imp ( \imp ( \imp ph0 ph1 ) ( \imp ph0 ph1 ) ) ( \imp ( \imp ( \imp ph0 ph1 ) ph0 ) ( \imp ( \imp ph0 ph1 ) ph1 ) ) ) )"
+        apply "proof-rule-prop-2"
+        apply "proof-rule-mp"
+        let $16 = "( \imp ( \imp ( \imp ph0 ph1 ) ( \imp ph0 ph1 ) ) ( \imp ( \imp ( \imp ph0 ph1 ) ph0 ) ( \imp ( \imp ph0 ph1 ) ph1 ) ) )"
+        apply "proof-rule-prop-1"
+        apply "proof-rule-prop-2"
+        apply "proof-rule-mp"
+        let $23 = "( \imp ( \imp ph0 ph1 ) ( \imp ph0 ph1 ) )"
+        apply "proof-rule-prop-1"
+        apply "imp-reflexivity"
+    $)
+    ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern proof-rule-prop-2 ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern proof-rule-prop-2 ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-1 ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern proof-rule-prop-2 proof-rule-mp proof-rule-mp ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-1 ph0-is-pattern ph1-is-pattern imp-is-pattern imp-reflexivity proof-rule-mp proof-rule-mp proof-rule-mp ph0-is-pattern ph0-is-pattern ph1-is-pattern imp-is-pattern proof-rule-prop-1 proof-rule-mp $.
+
+not-elim $p |- ( \imp ph0 ( \imp ( \imp ph0 \bot ) \bot ) ) $= $( apply mp $) ph0-is-pattern bot-is-pattern mp $.
+
+or-intro-left $p |- ( \imp ph0 ( \imp ( \imp ph0 \bot ) ph1 ) ) $=
+    $(
+        apply "proof-rule-mp"
+        apply "proof-rule-mp"
+        # let $0 = "( \imp ph0 ( \imp ( \imp ph0 \bot ) \bot ) )"
+        # let $2 = "( \imp ph0 ( \imp ( \imp ( \imp ph0 \bot ) \bot ) ( \imp ( \imp ph0 \bot ) ph1 ) ) )"
+        apply "proof-rule-prop-2"
+        apply "proof-rule-mp"
+        apply "proof-rule-mp"
+        # let $9 = "( \imp ph0 ( \imp ( \imp ( \imp ph0 \bot ) ( \imp \bot ph1 ) ) ( \imp ( \imp ( \imp ph0 \bot ) \bot ) ( \imp ( \imp ph0 \bot ) ph1 ) ) ) )"
+        apply "proof-rule-prop-2"
+        apply "proof-rule-mp"
+        apply "proof-rule-prop-1"
+        apply "proof-rule-prop-2"
+        apply "proof-rule-mp"
+        apply "proof-rule-prop-1"
+        apply "proof-rule-mp"
+        apply "proof-rule-prop-1"
+        apply "bot-elim"
+        apply "not-elim"
+    $)
+    ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern proof-rule-prop-2 ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern proof-rule-prop-2 ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-1 ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern proof-rule-prop-2 proof-rule-mp proof-rule-mp ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-1 bot-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern imp-is-pattern bot-is-pattern ph1-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern proof-rule-prop-1 ph1-is-pattern bot-elim proof-rule-mp proof-rule-mp proof-rule-mp proof-rule-mp ph0-is-pattern not-elim proof-rule-mp $.
+
+and-elim-left $p |- ( \imp ( \and ph0 ph1 ) ph0 ) $= ? $.
 
 ${
     imp-compat-in-and.0 $e |- ( \imp ph0 ph1 ) $.
@@ -75,10 +181,6 @@ and-top $p |- ( \iff ( \and \top ph0 ) ph0 ) $= ? $.
 or-top $p |- ( \iff ( \or \top ph0 ) \top ) $= ? $.
 
 and-bot $p |- ( \imp ( \and \bot ph0 ) \bot ) $= ? $.
-
-and-elim-left $p |- ( \imp ( \and ph0 ph1 ) ph0 ) $= ? $.
-
-contradiction $p |- ( \imp ( \imp ( \not ph0 ) \bot ) ph0 ) $= ? $.
 
 $( three versions of resolution $)
 resolution-1 $p |- ( \imp ( \and ( \or ( \not ph0 ) ph1 ) ( \or ph0 ph2 ) ) ( \or ph1 ph2 ) ) $= ? $.

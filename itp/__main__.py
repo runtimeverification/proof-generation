@@ -88,6 +88,7 @@ class InteractiveState:
                 else:
                     # apply a tactic command then
                     command = parse_command(command_src)
+                    if command is None: continue
                     self.apply_tactic_command(command)
             except Exception as exc:
                 if self.debug:
