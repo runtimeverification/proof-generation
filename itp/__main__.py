@@ -80,9 +80,10 @@ class InteractiveState:
                 if not command_src: continue
 
                 lowered = command_src.lower()
+                split = lowered.split()
                 for command in BuiltinCommand.builtin_commands:
-                    if lowered in command.names:
-                        command.handler(self)
+                    if split[0] in command.names:
+                        command.handler(self, *split[1:])
                         break
                 else:
                     # apply a tactic command then
@@ -170,8 +171,13 @@ class InteractiveState:
         self.print_state()
 
     @BuiltinCommand.add("proof", help_message="once all goals are resolved, print the final proof")
-    def command_proof(self):
-        print(self.proof_state.gen_proof())
+    def command_proof(self, output_file=None):
+        proof_text = str(self.proof_state.gen_proof())
+        if output_file is not None:
+            with open(output_file, "w") as output:
+                output.write(proof_text)
+        else:
+            print(proof_text)
 
     @BuiltinCommand.add("script", help_message="print all tactics applied")
     def command_script(self):
