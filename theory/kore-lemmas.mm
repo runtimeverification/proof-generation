@@ -198,10 +198,19 @@ $}
 $( ===================================== $)
 $( I'm working on this part. ---- Xiaohong $)
 
+$( I'm following [TR'19, Lemma 58] $)
+
 ${
-    $d z ph0 $.
-    kore-equality-deduce-implies.0 $e |- ( \kore-valid z ( \kore-equals ph0 z ph1 ph2 ) )  $.
-    kore-equality-deduce-implies $e |- ( \kore-valid z ( \kore-implies ph0 ph1 ph2 ) )  $.
+    kore-definedness $p |- ( \kore-valid ph1 ( \kore-ceil ph0 ph1 x ) ) $= ? $.
+$}
+
+${
+    kore-ph-implies-ceil-ph $p |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-ceil ph0 ph0 ph1 ) ) ) $= ? $.
+$}
+
+${
+    kore-equality-deduce-implies.0 $e |- ( \kore-valid ph0 ( \kore-equals ph0 ph0 ph1 ph2 ) )  $.
+    kore-equality-deduce-implies $p |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) )  $= ? $.
 $}
 
 ${
