@@ -59,7 +59,7 @@ INLINE_COMMENT: /\#[^\n]*/
 %ignore BLOCK_COMMENT
 %ignore INLINE_COMMENT
 %ignore /[ \n\t\f\r]+/
-TOKEN: /[^ \n\t\f\r=,\#\.]+/
+TOKEN: /[^ \n\t\f\r=,\#]+/
 
 token: TOKEN
 
