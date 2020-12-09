@@ -937,7 +937,7 @@ class TautologyTactic(Tactic):
             )
 
         # reduce iff to imp
-        simplification_proof = state.composer.find_theorem("rule-iff-left").apply(proof)
+        simplification_proof = state.composer.find_theorem("rule-iff-elim-left").apply(proof)
 
         # three possible versions of resolution may apply
 
@@ -966,7 +966,7 @@ class TautologyTactic(Tactic):
 
             # now we need to merge the resolvent to the correct format
             merge_proof = self.merge_junctions(state, resolvent_left, resolvent_right, "or")
-            merge_proof_imp = state.composer.find_theorem("rule-iff-left").apply(merge_proof)
+            merge_proof_imp = state.composer.find_theorem("rule-iff-elim-left").apply(merge_proof)
 
             resolution_proof = state.composer.find_theorem("rule-imp-transitivity").apply(
                 resolution_proof,
@@ -1017,7 +1017,7 @@ class TautologyTactic(Tactic):
                         resolution_proof,
                     ),
                 ),
-                state.composer.find_theorem("rule-iff-left").apply(self.apply_iff_reflexivity(state, cnf)),
+                state.composer.find_theorem("rule-iff-elim-left").apply(self.apply_iff_reflexivity(state, cnf)),
             )
         else:
             resolution_proof = state.composer.find_theorem("rule-imp-compat-in-and").apply(
@@ -1025,11 +1025,11 @@ class TautologyTactic(Tactic):
                     simplification_proof,
                     resolution_proof,
                 ),
-                state.composer.find_theorem("rule-iff-left").apply(self.apply_iff_reflexivity(state, cnf)),
+                state.composer.find_theorem("rule-iff-elim-left").apply(self.apply_iff_reflexivity(state, cnf)),
             )
 
         resolution_proof = state.composer.find_theorem("rule-imp-transitivity").apply(
-            state.composer.find_theorem("rule-iff-left").apply(
+            state.composer.find_theorem("rule-iff-elim-left").apply(
                 state.composer.find_theorem("rule-iff-symmetry").apply(
                     state.composer.find_theorem("and-idempotency").apply(ph0=cnf),
                 ),
@@ -1100,7 +1100,7 @@ class TautologyTactic(Tactic):
 
         # the negation of the goal implies falsum
         falsum_proof = state.composer.find_theorem("rule-imp-transitivity").apply(
-            state.composer.find_theorem("rule-iff-left").apply(
+            state.composer.find_theorem("rule-iff-elim-left").apply(
                 self.apply_iff_transitivity(state, reduction_proof, cnf_proof, simpl_proof)
             ),
             falsum_proof,
