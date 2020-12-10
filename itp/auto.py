@@ -962,7 +962,7 @@ class TautologyTactic(Tactic):
                 ])
             ])
 
-            resolution_proof = state.composer.find_theorem("resolution-1").match_and_apply(target_statement)
+            resolution_proof = state.composer.find_theorem("resolution-4").match_and_apply(target_statement)
 
             # now we need to merge the resolvent to the correct format
             merge_proof = self.merge_junctions(state, resolvent_left, resolvent_right, "or")
@@ -1000,7 +1000,7 @@ class TautologyTactic(Tactic):
 
         else:
             # otherwise it reduces to falsum!
-            resolution_proof = state.composer.find_theorem("resolution-4").apply(ph0=second_clause[0])
+            resolution_proof = state.composer.find_theorem("resolution-1").apply(ph0=second_clause[0])
             falsum_found = True
 
         # 1. cnf -> cnf /\ cnf
