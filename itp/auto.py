@@ -1013,7 +1013,7 @@ class TautologyTactic(Tactic):
                 state.composer.find_theorem("rule-imp-transitivity").apply(
                     simplification_proof,
                     state.composer.find_theorem("rule-imp-transitivity").apply(
-                        state.composer.find_theorem("and-elim-left").apply(ph0=first_and_second_clause, ph1=rest),
+                        state.composer.find_theorem("and-elim-left-sugar").apply(ph0=first_and_second_clause, ph1=rest),
                         resolution_proof,
                     ),
                 ),
