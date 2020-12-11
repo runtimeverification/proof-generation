@@ -84,4 +84,3 @@ $c \kore-dv-symbol $.
 kore-dv-is-symbol $a #Symbol \kore-dv-symbol $.
 kore-dv-is-pattern $a #Pattern ( \kore-dv ph0 ph1 ) $.
 kore-dv-is-sugar $a #Equal ( \kore-dv ph0 ph1 ) ( \app ( \app \kore-dv-symbol ph0 ) ph1 ) $.
-

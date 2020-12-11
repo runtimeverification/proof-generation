@@ -229,6 +229,6 @@ ${
 $}
 
 ${
-    lemma-eq-1 $e |- ph0 $.
+    lemma-eq-1.0 $e |- ph0 $.
     lemma-eq-1 $p |- ( \eq ( \and ph0 ph1 ) ph1 ) $= ? $.
 $}

@@ -6,7 +6,9 @@ from .kore import ast as kore
 from .kore.visitors import FreePatternVariableVisitor
 from .kore.utils import KoreUtils, PatternPath
 
+from .metamath import ast as mm
 from .metamath.composer import Proof
+from .metamath.auto.typecode import TypecodeProver
 
 from .env import ProofGenerator, ProofEnvironment, ProvableClaim
 from .equality import EqualityProofGenerator
@@ -96,7 +98,7 @@ class DuplicateConjunction(Equation):
             path,
             subpattern.arguments[0],
             self.env.get_theorem("kore-dup-and").apply(
-                x=self.env.get_theorem("x-element-var").as_proof(),
+                x=TypecodeProver.prove_typecode(self.env.composer, "#ElementVariable", mm.Metavariable("x")),
                 ph0=encoded_sort,
                 ph1=encoded_pattern,
             ),
