@@ -226,6 +226,7 @@ class Composer(MetamathVisitor):
         self.context = Context() # outermost context for a database
         self.theorems = {} # label -> Theorem
         self.statements = [] # all statements at the top level
+        self.segments = {} # name -> (start index, None or (exclusive) end index)
 
     def load(self, database_or_statement: Union[Database, Statement]):
         if isinstance(database_or_statement, Database):
@@ -264,10 +265,31 @@ class Composer(MetamathVisitor):
     def get_all_essentials(self) -> List[Theorem]:
         return [ Theorem(self, essential, [], []) for essential in self.context.get_all_essentials() ]
 
-    def encode(self, stream: TextIO):
-        for stmt in self.statements:
+    def encode(self, stream: TextIO, segment=None):
+        for stmt in self.statements if segment is None else self.get_segment(segment):
             stmt.encode(stream)
             stream.write("\n")
+
+    """
+    This implements simple segmentation mechanism. To start a segment,
+    call start_segment(name). To end a segment, call end_segment.
+    To get all statements in a segment, call get_segment
+    """
+    def start_segment(self, name: str):
+        assert name not in self.segments, f"duplicate segment {name}"
+        self.segments[name] = (len(self.statements), None)
+
+    def end_segment(self, name: str):
+        assert name in self.segments, f"segment {name} does not exist"
+        start, end = self.segments[name]
+        assert end is None, f"segment {name} has already ended"
+        self.segments[name] = start, len(self.statements)
+
+    def get_segment(self, name: str):
+        assert name in self.segments, f"segment {name} does not exist"
+        start, end = self.segments[name]
+        if end is None: return self.statements[start:]
+        else: return self.statements[start:end]
 
     """
     look up a metavariable, if found, return the typecode,

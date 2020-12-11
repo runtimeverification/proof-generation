@@ -90,7 +90,7 @@ This should be independent of the
 type of proof one wants to build
 """
 class ProofEnvironment:
-    def __init__(self, module: kore.Module, prelude: mm.Database=None):
+    def __init__(self, module: kore.Module, composer: Composer=Composer()):
         self.module = module
         self.loaded_modules = {}
 
@@ -110,22 +110,8 @@ class ProofEnvironment:
 
         self.domain_values = set() # set of (sort, string literal)
 
-        self.composer = Composer()
-
-        # load all theorems in the prelude
-        if prelude is not None:
-            self.load_metamath_statement(prelude)
-            self.load_comment(f"---------------- end of prelude ----------------")
-
-        self.load_comment(f"---------------- start of module {self.module.name} ----------------")
+        self.composer = composer
         self.init_module()
-        self.load_comment(f"---------------- end of module {self.module.name} ----------------")
-
-    """
-    Encode and dump the entire metamath database into the stream
-    """
-    def dump_database(self, stream: TextIO):
-        self.composer.encode(stream)
 
     """
     Expand all aliases and quantify all free variables
@@ -212,6 +198,9 @@ class ProofEnvironment:
 
     def get_theorem(self, label: str) -> Theorem:
         return self.composer.theorems[label]
+
+    def load_metamath_database(self, database: mm.Database):
+        return self.composer.load(database)
 
     def load_metamath_statement(self, statement: mm.Statement) -> Optional[Theorem]:
         return self.composer.load(statement)

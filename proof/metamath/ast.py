@@ -164,6 +164,20 @@ class Comment(Statement):
         return visitor.proxy_visit_comment(self)
 
 
+class IncludeStatement(Statement):
+    def __init__(self, path: str):
+        super().__init__()
+        self.path = path
+
+    def encode(self, stream: TextIO):
+        stream.write("$[ ")
+        stream.write(self.path)
+        stream.write(" $]")
+
+    def visit(self, visitor: MetamathVisitor):
+        return visitor.proxy_visit_include_statement(self)
+
+
 """
 A list of tokens without any structures.
 Constant and variable statements are of this kind

@@ -7,22 +7,22 @@ from ..visitors import SubstitutionVisitor
 from .unification import Unification
 
 
-class EqualityProver:
-    SYMBOL = "#Equal"
-    SYM = "equal-symmetry"
-    REFL = "equal-reflexivity"
-    TRANS = "equal-transitivity"
+class NotationProver:
+    SYMBOL = "#Notation"
+    SYM = "notation-symmetry"
+    REFL = "notation-reflexivity"
+    TRANS = "notation-transitivity"
 
     @staticmethod
     def format_target(left: Term, right: Term) -> StructuredStatement:
         return StructuredStatement(Statement.PROVABLE, [
-            Application(EqualityProver.SYMBOL),
+            Application(NotationProver.SYMBOL),
             left, right,
         ])
 
     """
     A sugar axiom of symbol S should be of the form
-    $a #Equal ( S a b c ... ) phi $. for some phi, and metavariables a b c
+    $a #Notation ( S a b c ... ) phi $. for some phi, and metavariables a b c
     and it should not have any essential hypotheses (the ones with essentials
     are not supported right now)
     """
@@ -31,7 +31,7 @@ class EqualityProver:
         for theorem in composer.theorems.values():
             condition = len(theorem.statement.terms) == 3 and \
                         len(theorem.essentials) == 0 and \
-                        theorem.statement.terms[0] == Application(EqualityProver.SYMBOL) and \
+                        theorem.statement.terms[0] == Application(NotationProver.SYMBOL) and \
                         isinstance(theorem.statement.terms[1], Application) and \
                         theorem.statement.terms[1].symbol == symbol
             if not condition: continue
@@ -54,9 +54,9 @@ class EqualityProver:
     """
     A congruence lemma for a symbol S is of the form
     ${
-        $e #Equal a a' $.
-        $e #Equal b b' $.
-        $p #Equal ( S a b c ) ( S a' b' c' ) $.
+        $e #Notation a a' $.
+        $e #Notation b b' $.
+        $p #Notation ( S a b c ) ( S a' b' c' ) $.
     $}
     Note that the hypotheses may not contain all immediate child terms
     and the order may be different from the order in the application
@@ -68,7 +68,7 @@ class EqualityProver:
     def find_congruence_lemma(composer: Composer, symbol: str) -> Optional[Tuple[Theorem, List[int]]]:
         for theorem in composer.theorems.values():
             condition = len(theorem.statement.terms) == 3 and \
-                        theorem.statement.terms[0] == Application(EqualityProver.SYMBOL) and \
+                        theorem.statement.terms[0] == Application(NotationProver.SYMBOL) and \
                         isinstance(theorem.statement.terms[1], Application) and \
                         isinstance(theorem.statement.terms[2], Application) and \
                         theorem.statement.terms[1].symbol == symbol and \
@@ -93,7 +93,7 @@ class EqualityProver:
             # check that essentials only assumes things about metavariables
             for essential in theorem.essentials:
                 condition = len(essential.terms) == 3 and \
-                            essential.terms[0] == Application(EqualityProver.SYMBOL) and \
+                            essential.terms[0] == Application(NotationProver.SYMBOL) and \
                             isinstance(essential.terms[1], Metavariable) and \
                             isinstance(essential.terms[2], Metavariable)
 
@@ -110,9 +110,9 @@ class EqualityProver:
         return None
 
     """
-    equality algorithm: given two terms phi and psi, there are (wlog) 3 cases
+    notation algorithm: given two terms phi and psi, there are (wlog) 3 cases
     1. phi and psi are both metavariables
-       - if phi == psi, use equal-reflexivity
+       - if phi == psi, use notation-reflexivity
        - if phi != psi, try to find a essential hypothesis that asserts this fact
        - otherwise fail
     2. phi is a metavariable but psi is not
@@ -127,18 +127,18 @@ class EqualityProver:
          then try again.
 
     some assumptions:
-    1. sugar axioms (of the form #Equal ( a ... ) ( b ... )) are "directed" in the sense
+    1. sugar axioms (of the form #Notation ( a ... ) ( b ... )) are "directed" in the sense
        that it should intuitively mean ( a ... ) is defined as ( b ... ), not the other way around
     2. congruence lemmas and sugar axioms are unique for each definition (if they exist)
-    3. no cycles of equality (except for common axioms like symmetry)
+    3. no cycles of notation (except for common axioms like symmetry)
     """
     @staticmethod
-    def prove_equality(composer: Composer, left: Term, right: Term) -> Proof:
-        target = EqualityProver.format_target(left, right)
-        symmetric_target = EqualityProver.format_target(right, left)
+    def prove_notation(composer: Composer, left: Term, right: Term) -> Proof:
+        target = NotationProver.format_target(left, right)
+        symmetric_target = NotationProver.format_target(right, left)
 
         if left == right:
-            return composer.theorems[EqualityProver.REFL].match_and_apply(target)
+            return composer.theorems[NotationProver.REFL].match_and_apply(target)
 
         # different metavariables
         if isinstance(left, Metavariable) and isinstance(right, Metavariable):
@@ -147,7 +147,7 @@ class EqualityProver:
                 if theorem.statement.terms == target.terms:
                     return theorem.apply()
                 elif theorem.statement.terms == symmetric_target.terms:
-                    return composer.theorems[EqualityProver.SYM].apply(theorem.apply())
+                    return composer.theorems[NotationProver.SYM].apply(theorem.apply())
             assert False, f"unable to show {left} === {right}"
 
         # TODO: add this case
@@ -158,7 +158,7 @@ class EqualityProver:
         assert isinstance(left, Application) and isinstance(right, Application)
 
         if left.symbol == right.symbol:
-            found = EqualityProver.find_congruence_lemma(composer, left.symbol)
+            found = NotationProver.find_congruence_lemma(composer, left.symbol)
             if found is not None:
                 congruence, order = found
                 subproofs = []
@@ -168,7 +168,7 @@ class EqualityProver:
                     assert n < len(left.subterms) and n < len(right.subterms), \
                            f"ill-formed congruence axiom {congruence.statement.label}"
 
-                    subproof = EqualityProver.prove_equality(composer, left.subterms[n], right.subterms[n])
+                    subproof = NotationProver.prove_notation(composer, left.subterms[n], right.subterms[n])
                     subproofs.append(subproof)
 
                 proof = congruence.match_and_apply(target, *subproofs)
@@ -177,7 +177,7 @@ class EqualityProver:
                 return proof
         
         # reduce one of the terms using sugar axiom
-        sugar_axiom = EqualityProver.find_sugar_axiom(composer, left.symbol)
+        sugar_axiom = NotationProver.find_sugar_axiom(composer, left.symbol)
         if sugar_axiom:
             substitution = Unification.match_terms_as_instance(sugar_axiom.statement.terms[1], left)
             assert substitution is not None, f"ill-formed sugar axiom {sugar_axiom.statement}"
@@ -187,18 +187,18 @@ class EqualityProver:
 
             # switching the order here in the hope
             # that we don't produce a proof that's too long
-            proof = EqualityProver.prove_equality(composer, right, new_left)
+            proof = NotationProver.prove_notation(composer, right, new_left)
 
-            return composer.theorems[EqualityProver.TRANS].apply(
+            return composer.theorems[NotationProver.TRANS].apply(
                 reduction_proof,
-                composer.theorems[EqualityProver.SYM].apply(proof),
+                composer.theorems[NotationProver.SYM].apply(proof),
             )
 
-        sugar_axiom = EqualityProver.find_sugar_axiom(composer, right.symbol)
+        sugar_axiom = NotationProver.find_sugar_axiom(composer, right.symbol)
         if sugar_axiom:
             # TODO: just being lazy here
-            return composer.theorems[EqualityProver.SYM].apply(
-                EqualityProver.prove_equality(composer, right, left),
+            return composer.theorems[NotationProver.SYM].apply(
+                NotationProver.prove_notation(composer, right, left),
             )
 
         assert False, f"ran out of tricks, cannot show {left} === {right}"
@@ -216,7 +216,7 @@ class EqualityProver:
 
         # expand all subterms
         expanded_subterm = [
-            EqualityProver.expand_sugar(composer, subterm, target_symbol=target_symbol, desugar_all=desugar_all)
+            NotationProver.expand_sugar(composer, subterm, target_symbol=target_symbol, desugar_all=desugar_all)
             for subterm in term.subterms
         ]
         new_term = Application(term.symbol, expanded_subterm)
@@ -224,7 +224,7 @@ class EqualityProver:
         if target_symbol is not None and new_term.symbol != target_symbol:
             return new_term
 
-        sugar_axiom = EqualityProver.find_sugar_axiom(composer, new_term.symbol)
+        sugar_axiom = NotationProver.find_sugar_axiom(composer, new_term.symbol)
         if sugar_axiom:
             _, left, right = sugar_axiom.statement.terms
             substitution = Unification.match_terms_as_instance(left, new_term)
@@ -232,7 +232,7 @@ class EqualityProver:
             new_term = SubstitutionVisitor(substitution).visit(right)
             
             if desugar_all:
-                new_term = EqualityProver.expand_sugar(
+                new_term = NotationProver.expand_sugar(
                     composer, new_term,
                     target_symbol=target_symbol,
                     desugar_all=desugar_all,

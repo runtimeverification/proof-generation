@@ -51,7 +51,7 @@ $c #Negative $.
 $c #Fresh $.
 $c #ApplicationContext $.
 $c #Substitution $.
-$c #Equal $.
+$c #Notation $.
 $c |- $.
 
 $c \bot    $.
@@ -200,63 +200,63 @@ ${
 $}
 
 $( Meta-Level Equality for Defining Syntactic Sugar $)
-$( #Equal is a congruence. $)
+$( #Notation is a congruence. $)
 
-equal-reflexivity $a #Equal ph0 ph0 $.
+notation-reflexivity $a #Notation ph0 ph0 $.
 ${
-    equal-symmetry.0 $e #Equal ph0 ph1 $.
-    equal-symmetry   $a #Equal ph1 ph0 $.
+    notation-symmetry.0 $e #Notation ph0 ph1 $.
+    notation-symmetry   $a #Notation ph1 ph0 $.
 $}
 ${
-    equal-transitivity.0 $e #Equal ph0 ph1 $.
-    equal-transitivity.1 $e #Equal ph1 ph2 $.
-    equal-transitivity   $a #Equal ph0 ph2 $.
+    notation-transitivity.0 $e #Notation ph0 ph1 $.
+    notation-transitivity.1 $e #Notation ph1 ph2 $.
+    notation-transitivity   $a #Notation ph0 ph2 $.
 $}
 ${
-    equal-positive.0 $e #Positive xX ph0 $.
-    equal-positive.1 $e #Equal ph1 ph0 $.
-    equal-positive   $a #Positive xX ph1 $.
+    notation-positive.0 $e #Positive xX ph0 $.
+    notation-positive.1 $e #Notation ph1 ph0 $.
+    notation-positive   $a #Positive xX ph1 $.
 $}
 ${
-    equal-negative.0 $e #Negative xX ph0 $.
-    equal-negative.1 $e #Equal ph1 ph0 $.
-    equal-negative   $a #Negative xX ph1 $.
+    notation-negative.0 $e #Negative xX ph0 $.
+    notation-negative.1 $e #Notation ph1 ph0 $.
+    notation-negative   $a #Negative xX ph1 $.
 $}
 ${
-    equal-fresh.0 $e #Fresh xX ph0 $.
-    equal-fresh.1 $e #Equal ph1 ph0 $.
-    equal-fresh   $a #Fresh xX ph1 $.
+    notation-fresh.0 $e #Fresh xX ph0 $.
+    notation-fresh.1 $e #Notation ph1 ph0 $.
+    notation-fresh   $a #Fresh xX ph1 $.
 $}
 ${
-    equal-substitution.0 $e #Substitution ph0 ph1 ph2 xX $.
-    equal-substitution.1 $e #Equal ph3 ph0 $.
-    equal-substitution.2 $e #Equal ph4 ph1 $.
-    equal-substitution.3 $e #Equal ph5 ph2 $.
-    equal-substitution   $a #Substitution ph3 ph4 ph5 xX $.
+    notation-substitution.0 $e #Substitution ph0 ph1 ph2 xX $.
+    notation-substitution.1 $e #Notation ph3 ph0 $.
+    notation-substitution.2 $e #Notation ph4 ph1 $.
+    notation-substitution.3 $e #Notation ph5 ph2 $.
+    notation-substitution   $a #Substitution ph3 ph4 ph5 xX $.
 $}
 ${
-    equal-application-context.0 $e #ApplicationContext xX ph0 $.
-    equal-application-context.1 $e #Equal ph1 ph0 $.
-    equal-application-context   $a #ApplicationContext xX ph1 $.
+    notation-application-context.0 $e #ApplicationContext xX ph0 $.
+    notation-application-context.1 $e #Notation ph1 ph0 $.
+    notation-application-context   $a #ApplicationContext xX ph1 $.
 $}
 ${
-    equal-proof.0 $e |- ph0 $.
-    equal-proof.1 $e #Equal ph1 ph0 $.
-    equal-proof   $a |- ph1 $.
+    notation-proof.0 $e |- ph0 $.
+    notation-proof.1 $e #Notation ph1 ph0 $.
+    notation-proof   $a |- ph1 $.
 $}
 ${
-    equal-imp.0 $e #Equal ph0 ph2 $.
-    equal-imp.1 $e #Equal ph1 ph3 $.
-    equal-imp $a #Equal ( \imp ph0 ph1 ) ( \imp ph2 ph3 ) $.
+    notation-imp.0 $e #Notation ph0 ph2 $.
+    notation-imp.1 $e #Notation ph1 ph3 $.
+    notation-imp $a #Notation ( \imp ph0 ph1 ) ( \imp ph2 ph3 ) $.
 $}
 ${
-    equal-app.0 $e #Equal ph0 ph2 $.
-    equal-app.1 $e #Equal ph1 ph3 $.
-    equal-app $a #Equal ( \app ph0 ph1 ) ( \app ph2 ph3 ) $.
+    notation-app.0 $e #Notation ph0 ph2 $.
+    notation-app.1 $e #Notation ph1 ph3 $.
+    notation-app $a #Notation ( \app ph0 ph1 ) ( \app ph2 ph3 ) $.
 $}
 ${
-    equal-exists.0 $e #Equal ph0 ph1 $.
-    equal-exists $a #Equal ( \exists x ph0 ) ( \exists x ph1 ) $.
+    notation-exists.0 $e #Notation ph0 ph1 $.
+    notation-exists $a #Notation ( \exists x ph0 ) ( \exists x ph1 ) $.
 $}
 
 $( Defining Very Basic Syntactic Sugar $)
@@ -264,15 +264,15 @@ $( It is used in the proof system. $)
 
 $c \not $.
 not-is-pattern $a #Pattern ( \not ph0 ) $.
-not-is-sugar   $a #Equal ( \not ph0 ) ( \imp ph0 \bot ) $.
+not-is-sugar   $a #Notation ( \not ph0 ) ( \imp ph0 \bot ) $.
 
 $c \or $.
 or-is-pattern $a #Pattern ( \or ph0 ph1 ) $.
-or-is-sugar   $a #Equal ( \or ph0 ph1 ) ( \imp ( \not ph0 ) ph1 ) $.
+or-is-sugar   $a #Notation ( \or ph0 ph1 ) ( \imp ( \not ph0 ) ph1 ) $.
 
 $c \and $.
 and-is-pattern $a #Pattern ( \and ph0 ph1 ) $.
-and-is-sugar   $a #Equal ( \and ph0 ph1 ) ( \not ( \or ( \not ph0 ) ( \not ph1 ) ) ) $.
+and-is-sugar   $a #Notation ( \and ph0 ph1 ) ( \not ( \or ( \not ph0 ) ( \not ph1 ) ) ) $.
 
 $( Matching Logic Proof System $)
 $(

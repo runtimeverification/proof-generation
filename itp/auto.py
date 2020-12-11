@@ -8,7 +8,7 @@ from proof.metamath.ast import Application, Term, Metavariable, StructuredStatem
 from proof.metamath.composer import Proof, Theorem
 
 from proof.metamath.auto.unification import Unification
-from proof.metamath.auto.equality import EqualityProver
+from proof.metamath.auto.notation import NotationProver
 
 from .state import ProofState
 from .tactics import Tactic, ApplyTactic
@@ -88,28 +88,28 @@ class SearchTactic(Tactic):
 
 
 """
-Automatically prove equality of terms
-modulo the definition relation #Equal
+Automatically prove notational equivalence of terms
+modulo the definition relation #Notation
 """
-@ProofState.register_tactic("equality")
-class EqualityTactic(Tactic):
+@ProofState.register_tactic("notation")
+class NotationTactic(Tactic):
     def apply(self, state: ProofState):
         goal = state.goal_stack.pop()
-        assert len(goal.terms) == 3 and goal.terms[0] == Application(EqualityProver.SYMBOL), f"goal {goal} is not an equality claim"
+        assert len(goal.terms) == 3 and goal.terms[0] == Application(NotationProver.SYMBOL), f"goal {goal} is not an notation claim"
         
         _, left, right = goal.terms
 
         assert state.is_concrete(left), f"LHS {left} is not concrete"
         assert state.is_concrete(right), f"RHS {right} is not concrete"
 
-        self.proof = EqualityProver.prove_equality(state.composer, left, right)
+        self.proof = NotationProver.prove_notation(state.composer, left, right)
 
     def resolve(self, state: ProofState):
         state.proof_stack.append(self.proof)
 
 
 """
-Expand all syntax sugar defined using #Equal
+Expand all syntax sugar defined using #Notation
 in the current goal
 """
 @ProofState.register_tactic("desugar")
@@ -128,13 +128,13 @@ class DesugarTactic(Tactic):
 
             assert state.is_concrete(term), f"term {term} is not concrete"
 
-            expanded = EqualityProver.expand_sugar(
+            expanded = NotationProver.expand_sugar(
                 state.composer, term, 
                 target_symbol=target_symbol,
                 desugar_all=self.tactic_name == "desugar-all",
             )
-            self.equality_proofs = [ EqualityProver.prove_equality(state.composer, term, expanded) ]
-            self.theorem = state.composer.theorems["equal-proof"]
+            self.notation_proofs = [ NotationProver.prove_notation(state.composer, term, expanded) ]
+            self.theorem = state.composer.theorems["notation-proof"]
 
             state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
                 typecode, expanded,
@@ -146,13 +146,13 @@ class DesugarTactic(Tactic):
 
             assert state.is_concrete(term), f"term {term} is not concrete"
 
-            expanded = EqualityProver.expand_sugar(
+            expanded = NotationProver.expand_sugar(
                 state.composer, term, 
                 target_symbol=target_symbol,
                 desugar_all=self.tactic_name == "desugar-all",
             )
-            self.equality_proofs = [ EqualityProver.prove_equality(state.composer, term, expanded) ]
-            self.theorem = self.theorem = state.composer.theorems["equal-fresh"]
+            self.notation_proofs = [ NotationProver.prove_notation(state.composer, term, expanded) ]
+            self.theorem = self.theorem = state.composer.theorems["notation-fresh"]
 
             state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
                 typecode, var, expanded,
@@ -166,7 +166,7 @@ class DesugarTactic(Tactic):
             assert state.is_concrete(t3), f"term {t3} is not concrete"
             
             expanded_terms = [
-                EqualityProver.expand_sugar(
+                NotationProver.expand_sugar(
                     state.composer, term, 
                     target_symbol=target_symbol,
                     desugar_all=self.tactic_name == "desugar-all",
@@ -174,11 +174,11 @@ class DesugarTactic(Tactic):
                 for term in (t1, t2, t3)
             ]
 
-            self.equality_proofs = [
-                EqualityProver.prove_equality(state.composer, term, expanded)
+            self.notation_proofs = [
+                NotationProver.prove_notation(state.composer, term, expanded)
                 for term, expanded in zip((t1, t2, t3), expanded_terms)
             ]
-            self.theorem = state.composer.theorems["equal-substitution"]
+            self.theorem = state.composer.theorems["notation-substitution"]
 
             state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
                 typecode, *expanded_terms, var,
@@ -190,7 +190,7 @@ class DesugarTactic(Tactic):
         desugared_proof = state.proof_stack.pop()
         state.proof_stack.append(self.theorem.apply(
             desugared_proof,
-            *self.equality_proofs,
+            *self.notation_proofs,
         ))
 
 

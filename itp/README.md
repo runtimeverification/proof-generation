@@ -75,18 +75,18 @@ Once this is expanded, one can see that this is equivalent to
 ```
 which is true by reflexivity of `\eq`.
 
-So we can apply `equal-proof`:
+So we can apply `notation-proof`:
 ```
 goal(s):
   $? |- ( \kore-valid ph0 ( \kore-top ph0 ) ) $.
-> apply equal-proof
+> apply notation-proof
 goal(s):
   $? |- $0 $.
-  $? #Equal ( \kore-valid ph0 ( \kore-top ph0 ) ) $0 $.
+  $? #Notation ( \kore-valid ph0 ( \kore-top ph0 ) ) $0 $.
 > let $0 = "( \eq ( \inh ph0 ) ( \inh ph0 ) )"
 goal(s):
   $? |- ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
-  $? #Equal ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
+  $? #Notation ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
 > 
 ```
 
@@ -94,25 +94,25 @@ The first goal is just by reflexivity
 ```
 > apply lemma-eq-reflexivity
 goal(s):
-  $? #Equal ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
+  $? #Notation ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
 > 
 ```
 
 The next goal might be tedious to prove if the term is huge,
-so one can use the `equality` tactic to try to prove it
+so one can use the `notation` tactic to try to prove it
 automatically.
 ```
 goal(s):
-  $? #Equal ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
-> equality
+  $? #Notation ( \kore-valid ph0 ( \kore-top ph0 ) ) ( \eq ( \inh ph0 ) ( \inh ph0 ) ) $.
+> notation
 no goals left!
 > 
 ```
 
 So we have the concise proof script
 ```
-apply equal-proof
+apply notation-proof
 let $0 = "( \eq ( \inh ph0 ) ( \inh ph0 ) )"
 apply lemma-eq-reflexivity
-equality
+notation
 ```
