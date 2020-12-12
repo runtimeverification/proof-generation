@@ -212,13 +212,10 @@ ${
     lemma-sort-forall-gen-variant $p |- ( \sorted-forall x ph1 ph0 ) $= ? $.
 $} $)
 
-lemma-eq-reflexivity $p |- ( \eq ph0 ph0 ) $= ? $.
-
-
 $( ==================================== $)
 
 ${
-    lemmq-floor-intro.0 $e |- ph0 $.
+    lemma-floor-intro.0 $e |- ph0 $.
     lemma-floor-intro $p |- ( \floor ph0 ) $= ? $. 
 $}
 
@@ -231,4 +228,42 @@ $}
 ${
     lemma-eq-1.0 $e |- ph0 $.
     lemma-eq-1 $p |- ( \eq ( \and ph0 ph1 ) ph1 ) $= ? $.
+$}
+
+$( Implication Reflexivity $)
+$( Same as the one for propositional logic $)
+
+lemma-imp-reflexivity $p |- ( \imp ph0 ph0 ) $= ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-2 ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern proof-rule-prop-1 proof-rule-mp ph0-is-pattern ph0-is-pattern proof-rule-prop-1 proof-rule-mp $.
+
+$(================== Equality ==================$)
+
+$( Reflexivity $)
+
+lemma-eq-reflexivity $p |- ( \eq ph0 ph0 ) $= ? $.
+
+$( Transitivity $)
+
+${
+    lemma-eq-transitivity.0 $e |- ( \eq ph0 ph1 ) $.
+    lemma-eq-transitivity.1 $e |- ( \eq ph1 ph2 ) $.
+    lemma-eq-transitivity $p |- ( \eq ph0 ph2 ) $= ? $.
+$}
+
+$( Congruence $)
+
+${
+    lemma-eq-congruence-or.0 $e |- ( \eq ph0 ph2 ) $.
+    lemma-eq-congruence-or.1 $e |- ( \eq ph1 ph3 ) $.
+    lemma-eq-congruence-or $p |- ( \eq ( \or ph0 ph1 ) ( \or ph2 ph3 ) ) $= ? $.
+$}
+
+${
+    lemma-eq-congruence-and.0 $e |- ( \eq ph0 ph2 ) $.
+    lemma-eq-congruence-and.1 $e |- ( \eq ph1 ph3 ) $.
+    lemma-eq-congruence-and $p |- ( \eq ( \and ph0 ph1 ) ( \and ph2 ph3 ) ) $= ? $.
+$}
+
+${
+    lemma-eq-congruence-not.0 $e |- ( \eq ph0 ph1 ) $.
+    lemma-eq-congruence-not $p |- ( \eq ( \not ph0 ) ( \not ph1 ) ) $= ? $.
 $}

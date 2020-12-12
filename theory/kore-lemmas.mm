@@ -250,8 +250,52 @@ ${
 $}
 
 $( modus ponens with one sort variable $)
+$(
 ${
     kore-mp-v1.0 $e |- ( \kore-forall-sort x ( \kore-valid ph1 ph0 ) ) $.
     kore-mp-v1.1 $e |- ( \kore-forall-sort x ( \kore-valid ph1 ( \kore-implies ph1 ph0 ph2 ) ) ) $.
     kore-mp-v1 $p |- ( \kore-forall-sort x ( \kore-valid ph1 ph2 ) ) $= ? $.
+$}
+$)
+
+tofix $p |- ( \iff ph2 ( \or ( \and ( \not ph0 ) ph0 ) ph2 ) ) $= ? $.
+
+$( modus ponens with one sort variable $)
+${
+    kore-mp-v1.0 $e |- ( \kore-valid ph1 ph0 ) $.
+    kore-mp-v1.1 $e |- ( \kore-valid ph1 ( \kore-implies ph1 ph0 ph2 ) ) $.
+    kore-mp-v1 $p |- ( \kore-valid ph1 ph2 ) $= 
+    $(
+        desugar \kore-valid
+        desugar \kore-top
+        apply lemma-eq-transitivity
+        let $1 = "( \or ( \and ( \not ph0 ) ( \inh ph1 ) ) ph2 )"
+        apply lemma-eq-transitivity
+        let $4 = "( \or ( \and ( \not ph0 ) ph0 ) ph2 )"
+        desugar \eq
+        apply lemma-floor-intro
+        meh
+        apply lemma-eq-congruence-or
+        apply lemma-eq-congruence-and
+        apply lemma-eq-congruence-not
+        apply lemma-eq-reflexivity
+        apply proof-rule-mp
+        let $18 = "( \kore-valid ph1 ph0 )"
+        desugar \kore-valid
+        desugar \kore-top
+        apply lemma-imp-reflexivity
+        apply kore-mp-v1.0
+        apply lemma-eq-reflexivity
+        apply proof-rule-mp
+        let $22 = "( \kore-valid ph1 ( \kore-implies ph1 ph0 ph2 ) )"
+        desugar \kore-valid
+        desugar \kore-implies
+        desugar \kore-or
+        desugar \kore-not
+        desugar \kore-top
+        apply lemma-imp-reflexivity
+        apply kore-mp-v1.1
+        apply tofix
+    $)
+    ? $.
 $}
