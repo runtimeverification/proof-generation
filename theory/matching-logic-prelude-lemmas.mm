@@ -1,4 +1,5 @@
 $[ theory/matching-logic-prelude.mm $]
+$[ theory/propositional.mm $]
 
 $( Substitution lemmas $)
 
@@ -220,6 +221,11 @@ ${
 $}
 
 ${
+    lemma-floor-elim.0 $e |- ( \floor ph0 ) $.
+    lemma-floor-elim $p |- ph0 $= ? $. 
+$}
+
+${
     lemma-eq-intro.0 $e |- ( \imp ph0 ph1 ) $.
     lemma-eq-intro.1 $e |- ( \imp ph1 ph0 ) $.
     lemma-eq-intro $p |- ( \eq ph0 ph1 ) $= ? $.
@@ -235,18 +241,47 @@ $( Same as the one for propositional logic $)
 
 lemma-imp-reflexivity $p |- ( \imp ph0 ph0 ) $= ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern ph0-is-pattern proof-rule-prop-2 ph0-is-pattern ph0-is-pattern ph0-is-pattern imp-is-pattern proof-rule-prop-1 proof-rule-mp ph0-is-pattern ph0-is-pattern proof-rule-prop-1 proof-rule-mp $.
 
+lemma-eq-imp $p |- ( \imp ( \eq ph0 ph1 ) ( \imp ph0 ph1 ) ) $= ? $.
+
 $(================== Equality ==================$)
 
 $( Reflexivity $)
 
 lemma-eq-reflexivity $p |- ( \eq ph0 ph0 ) $= ? $.
 
+$( Symmetry $)
+
+${
+    lemma-eq-symmetry.0 $e |- ( \eq ph1 ph0 ) $.
+    lemma-eq-symmetry $p |- ( \eq ph0 ph1 ) $= ? $.
+$}
+
 $( Transitivity $)
 
 ${
     lemma-eq-transitivity.0 $e |- ( \eq ph0 ph1 ) $.
     lemma-eq-transitivity.1 $e |- ( \eq ph1 ph2 ) $.
-    lemma-eq-transitivity $p |- ( \eq ph0 ph2 ) $= ? $.
+    lemma-eq-transitivity $p |- ( \eq ph0 ph2 ) $= 
+    $(
+        desugar \eq
+        apply lemma-floor-intro
+        apply rule-iff-transitivity
+        let $2 = ph1
+        apply lemma-floor-elim
+        apply proof-rule-mp
+        let $5 = "( \eq ph0 ph1 )"
+        desugar \eq
+        apply lemma-imp-reflexivity
+        apply lemma-eq-transitivity.0
+        apply lemma-floor-elim
+        apply proof-rule-mp
+        let $9 = "( \eq ph1 ph2 )"
+        desugar \eq
+        apply lemma-imp-reflexivity
+        apply lemma-eq-transitivity.1 
+    $)
+    ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern lemma-imp-reflexivity ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern eq-is-sugar ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-imp notation-proof lemma-eq-transitivity.0 proof-rule-mp lemma-floor-elim ph1-is-pattern ph2-is-pattern iff-is-pattern ph1-is-pattern ph2-is-pattern eq-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph1-is-pattern ph2-is-pattern eq-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern lemma-imp-reflexivity ph1-is-pattern ph2-is-pattern eq-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph2-is-pattern eq-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph2-is-pattern eq-is-sugar ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity ph1-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-imp notation-proof lemma-eq-transitivity.1 proof-rule-mp lemma-floor-elim rule-iff-transitivity lemma-floor-intro ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern eq-is-sugar ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof
+    $.
 $}
 
 $( Congruence $)

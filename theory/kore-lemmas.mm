@@ -1,5 +1,4 @@
 $[ theory/kore.mm $]
-$[ theory/propositional.mm $]
 
 $( KORE LEMMAS $)
 
