@@ -216,6 +216,16 @@ $} $)
 $( ==================================== $)
 
 ${
+    lemma-forall-intro.0 $e |- ph0 $.
+    lemma-forall-intro $p |- ( \forall s0 ph0 ) $= ? $. 
+$}
+
+${
+    lemma-forall-elim.0 $e |- ( \forall s0 ph0 ) $.
+    lemma-forall-elim $p |- ph0 $= ? $. 
+$}
+
+${
     lemma-floor-intro.0 $e |- ph0 $.
     lemma-floor-intro $p |- ( \floor ph0 ) $= ? $. 
 $}
@@ -247,13 +257,33 @@ $(================== Equality ==================$)
 
 $( Reflexivity $)
 
-lemma-eq-reflexivity $p |- ( \eq ph0 ph0 ) $= ? $.
+lemma-eq-reflexivity $p |- ( \eq ph0 ph0 ) $= 
+$(
+    desugar "\eq"
+    apply "lemma-floor-intro"
+    apply "iff-reflexivity"
+$)
+ph0-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph0-is-pattern eq-is-pattern ph0-is-pattern ph0-is-pattern iff-is-pattern ph0-is-pattern iff-reflexivity lemma-floor-intro ph0-is-pattern ph0-is-pattern eq-is-pattern ph0-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph0-is-pattern eq-is-sugar ph0-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof
+$.
 
 $( Symmetry $)
 
 ${
     lemma-eq-symmetry.0 $e |- ( \eq ph1 ph0 ) $.
-    lemma-eq-symmetry $p |- ( \eq ph0 ph1 ) $= ? $.
+    lemma-eq-symmetry $p |- ( \eq ph0 ph1 ) $= 
+    $(
+        desugar \eq
+        apply lemma-floor-intro
+        apply rule-iff-symmetry
+        apply lemma-floor-elim
+        apply proof-rule-mp
+        let $4 = "( \eq ph1 ph0 )"
+        desugar \eq
+        apply lemma-imp-reflexivity
+        apply lemma-eq-symmetry.0
+    $)
+    ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern ph1-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern ph1-is-pattern ph0-is-pattern eq-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph1-is-pattern ph0-is-pattern eq-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern lemma-imp-reflexivity ph1-is-pattern ph0-is-pattern eq-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph0-is-pattern eq-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph0-is-pattern eq-is-sugar ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity ph1-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-imp notation-proof lemma-eq-symmetry.0 proof-rule-mp lemma-floor-elim rule-iff-symmetry lemma-floor-intro ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern eq-is-sugar ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof
+    $.
 $}
 
 $( Transitivity $)
@@ -289,16 +319,67 @@ $( Congruence $)
 ${
     lemma-eq-congruence-or.0 $e |- ( \eq ph0 ph2 ) $.
     lemma-eq-congruence-or.1 $e |- ( \eq ph1 ph3 ) $.
-    lemma-eq-congruence-or $p |- ( \eq ( \or ph0 ph1 ) ( \or ph2 ph3 ) ) $= ? $.
+    lemma-eq-congruence-or $p |- ( \eq ( \or ph0 ph1 ) ( \or ph2 ph3 ) ) $= 
+    $(
+        desugar "\eq"
+        apply "lemma-floor-intro"
+        apply "rule-iff-compat-in-or"
+        apply "lemma-floor-elim"
+        apply "proof-rule-mp"
+        let $6 = "( \eq ph0 ph2 )"
+        desugar "\eq"
+        apply "lemma-imp-reflexivity"
+        apply "lemma-eq-congruence-or.0"
+        apply "lemma-floor-elim"
+        apply "proof-rule-mp"
+        let $10 = "( \eq ph1 ph3 )"
+        desugar "\eq"
+        apply "lemma-imp-reflexivity"
+        apply "lemma-eq-congruence-or.1"
+    $)
+    ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern iff-is-pattern ph0-is-pattern ph2-is-pattern ph1-is-pattern ph3-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern lemma-imp-reflexivity ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern eq-is-sugar ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-imp notation-proof lemma-eq-congruence-or.0 proof-rule-mp lemma-floor-elim ph1-is-pattern ph3-is-pattern iff-is-pattern ph1-is-pattern ph3-is-pattern eq-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph1-is-pattern ph3-is-pattern eq-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern lemma-imp-reflexivity ph1-is-pattern ph3-is-pattern eq-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern eq-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern eq-is-sugar ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-imp notation-proof lemma-eq-congruence-or.1 proof-rule-mp lemma-floor-elim rule-iff-compat-in-or lemma-floor-intro ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern eq-is-sugar ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph3-is-pattern or-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof
+    $.
 $}
 
 ${
     lemma-eq-congruence-and.0 $e |- ( \eq ph0 ph2 ) $.
     lemma-eq-congruence-and.1 $e |- ( \eq ph1 ph3 ) $.
-    lemma-eq-congruence-and $p |- ( \eq ( \and ph0 ph1 ) ( \and ph2 ph3 ) ) $= ? $.
+    lemma-eq-congruence-and $p |- ( \eq ( \and ph0 ph1 ) ( \and ph2 ph3 ) ) $= 
+    $(
+        desugar "\eq"
+        apply "lemma-floor-intro"
+        apply "rule-iff-compat-in-and"
+        apply "lemma-floor-elim"
+        apply "proof-rule-mp"
+        let $6 = "( \eq ph0 ph2 )"
+        desugar "\eq"
+        apply "lemma-imp-reflexivity"
+        apply "lemma-eq-congruence-and.0"
+        apply "lemma-floor-elim"
+        apply "proof-rule-mp"
+        let $10 = "( \eq ph1 ph3 )"
+        desugar "\eq"
+        apply "lemma-imp-reflexivity"
+        apply "lemma-eq-congruence-and.1"
+    $)
+    ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern iff-is-pattern ph0-is-pattern ph2-is-pattern ph1-is-pattern ph3-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern lemma-imp-reflexivity ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern eq-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern eq-is-sugar ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity ph0-is-pattern ph2-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-imp notation-proof lemma-eq-congruence-and.0 proof-rule-mp lemma-floor-elim ph1-is-pattern ph3-is-pattern iff-is-pattern ph1-is-pattern ph3-is-pattern eq-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph1-is-pattern ph3-is-pattern eq-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern lemma-imp-reflexivity ph1-is-pattern ph3-is-pattern eq-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern eq-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern eq-is-sugar ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity ph1-is-pattern ph3-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-imp notation-proof lemma-eq-congruence-and.1 proof-rule-mp lemma-floor-elim rule-iff-compat-in-and lemma-floor-intro ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern eq-is-sugar ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern ph3-is-pattern and-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof
+    $.
 $}
 
 ${
     lemma-eq-congruence-not.0 $e |- ( \eq ph0 ph1 ) $.
-    lemma-eq-congruence-not $p |- ( \eq ( \not ph0 ) ( \not ph1 ) ) $= ? $.
+    lemma-eq-congruence-not $p |- ( \eq ( \not ph0 ) ( \not ph1 ) ) $= 
+    $(
+        desugar "\eq"
+        apply "lemma-floor-intro"
+        apply "rule-iff-compat-in-not"
+        apply "lemma-floor-elim"
+        apply "proof-rule-mp"
+        let $4 = "( \eq ph0 ph1 )"
+        desugar "\eq"
+        apply "lemma-imp-reflexivity"
+        apply "lemma-eq-congruence-not.0"
+    $)
+    ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern eq-is-pattern ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern iff-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern lemma-imp-reflexivity ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern eq-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern eq-is-sugar ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity ph0-is-pattern ph1-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-imp notation-proof lemma-eq-congruence-not.0 proof-rule-mp lemma-floor-elim rule-iff-compat-in-not lemma-floor-intro ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern eq-is-pattern ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern eq-is-sugar ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern iff-is-pattern floor-is-pattern ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof
+    $.
 $}

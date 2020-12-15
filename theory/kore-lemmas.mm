@@ -251,9 +251,9 @@ $}
 
 $( modus ponens with one sort variable $)
 ${
-    kore-mp-v1.0 $e |- ( \kore-forall-sort x ( \kore-valid x ph0 ) ) $.
-    kore-mp-v1.1 $e |- ( \kore-forall-sort x ( \kore-valid x ( \kore-implies x ph0 ph2 ) ) ) $.
-    kore-mp-v1 $p |- ( \kore-forall-sort x ( \kore-valid x ph2 ) ) $= ? $.
+    kore-mp-v1.0 $e |- ( \kore-forall-sort s0 ( \kore-valid s0 ph0 ) ) $.
+    kore-mp-v1.1 $e |- ( \kore-forall-sort s0 ( \kore-valid s0 ( \kore-implies s0 ph0 ph2 ) ) ) $.
+    kore-mp-v1 $p |- ( \kore-forall-sort s0 ( \kore-valid s0 ph2 ) ) $= ? $.
 $}
 
 $( modus ponens $)
