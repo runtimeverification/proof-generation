@@ -251,7 +251,6 @@ ${
     lemma-eq-intro.1 $e |- ( \imp ph1 ph0 ) $.
     lemma-eq-intro $p |- ( \eq ph0 ph1 ) $= 
     $(
-        desugar "\iff"
         desugar "\eq"
         apply "lemma-floor-intro"
         desugar "\iff"
