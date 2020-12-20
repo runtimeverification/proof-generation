@@ -102,6 +102,7 @@ def output_theory(composer: Composer, prelude: Optional[str], output: str, stand
 
         abs_output_path = os.path.realpath(output)
         abs_prelude_path = os.path.realpath(prelude)
+        assert abs_output_path is not None and abs_prelude_path is not None
 
         module_path = os.path.join(abs_output_path, "module.mm")
         dv_path = os.path.join(abs_output_path, "dv.mm")

@@ -244,7 +244,7 @@ ${
     lemma-floor-imp $p |- ( \imp ( \floor ph0 ) ph0 ) $= ? $.   
 $}
 
-$(================== Equality ==================$)
+$( ================== Equality ================== $)
 
 ${
     lemma-eq-intro.0 $e |- ( \imp ph0 ph1 ) $.

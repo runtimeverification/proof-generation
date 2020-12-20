@@ -142,6 +142,9 @@ class Statement(BaseAST):
     def encode(self, stream: TextIO):
         raise NotImplementedError()
 
+    def visit(self, visitor: MetamathVisitor):
+        raise NotImplementedError()
+
 
 class Comment(Statement):
     def __init__(self, text: str):

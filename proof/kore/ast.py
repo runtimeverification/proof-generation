@@ -11,12 +11,12 @@ class KoreVisitor(Visitor): pass
 
 class BaseAST:
     def __init__(self, attributes: List[Application]=[]):
-        self.meta_line = None
-        self.meta_column = None
-        self.meta_end_line = None
-        self.meta_end_column = None
-        self.meta_parent = None
-        self.meta_module = None
+        self.meta_line: Optional[int] = None
+        self.meta_column: Optional[int] = None
+        self.meta_end_line: Optional[int] = None
+        self.meta_end_column: Optional[int] = None
+        self.meta_parent: Optional[BaseAST] = None
+        self.meta_module: Optional[Module] = None
         self.attributes = attributes
 
     def set_position(self, line: int, column: int, end_line: int, end_column: int):
@@ -31,7 +31,9 @@ class BaseAST:
     def get_parent(self) -> BaseAST:
         if self.meta_parent is None:
             self.error_with_position("does not have a parent")
-        return self.meta_parent
+            assert False # to make mypy happy
+        else:
+            return self.meta_parent
 
     def set_parent(self, parent: BaseAST):
         self.meta_parent = parent
@@ -93,7 +95,7 @@ class Module(BaseAST):
 
         # sort out different sentences
         self.imports: Set[ImportStatement] = set()
-        self.sort_map: Mapping[str, Sort] = {}
+        self.sort_map: Mapping[str, SortDefinition] = {}
         self.symbol_map: Mapping[str, SymbolDefinition] = {}
         self.alias_map: Mapping[str, AliasDefinition] = {}
         self.axioms: List[Axiom] = []
