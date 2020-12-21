@@ -103,6 +103,7 @@ class ProofEnvironment:
         self.anywhere_axioms = [] # provable claims
         self.substitution_axioms = {} # constant symbol (in metamath) -> theorem
         self.sort_axioms = {} # constant symbol (in metamath) -> theorem
+        self.equational_axioms = {} # symbol instance -> provable claim
 
         self.sort_injection_symbol = None
         self.sort_injection_axiom = None
@@ -212,14 +213,19 @@ class ProofEnvironment:
     Encode and load a Kore axiom into the generator
     and return the corresponding theorem object
     """
-    def load_axiom(self, axiom: kore.Axiom, label: str, comment=True) -> Theorem:
+    def load_axiom(self, axiom: kore.Axiom, label: str, comment=True, provable=False) -> Theorem:
         term = self.encode_pattern(axiom)
 
         if comment:
             self.load_comment(str(axiom))
 
         # <label> $a |- <axiom> $.
-        stmt = mm.StructuredStatement(mm.Statement.AXIOM, [ mm.Application("|-"), term ], label=label)
+        stmt = mm.StructuredStatement(
+            mm.Statement.AXIOM if not provable else mm.Statement.PROVABLE,
+            [ mm.Application("|-"), term ],
+            label=label,
+        )
+        
         return self.load_metamath_statement(stmt)
 
     def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition, label: str):
@@ -395,17 +401,24 @@ class ProofEnvironment:
         return axiom.get_attribute_by_symbol("functional") is not None or \
                axiom.get_attribute_by_symbol("subsort") is not None
 
-    def is_equational_axiom(self, axiom: kore.Axiom) -> bool:
+    def is_equational_axiom(self, axiom: kore.Axiom) -> Optional[kore.SymbolInstance]:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
         if not (isinstance(inner_pattern, kore.MLPattern) and inner_pattern.construct == kore.MLPattern.IMPLIES):
-            return False
+            return None
 
         rhs = inner_pattern.arguments[1]
         if not (isinstance(rhs, kore.MLPattern) and rhs.construct == kore.MLPattern.AND):
-            return False
+            return None
 
         equation = rhs.arguments[0]
-        return isinstance(equation, kore.MLPattern) and equation.construct == kore.MLPattern.EQUALS
+        if not (isinstance(equation, kore.MLPattern) and equation.construct == kore.MLPattern.EQUALS):
+            return None
+
+        eqn_lhs = equation.arguments[0]
+        if not isinstance(eqn_lhs, kore.Application):
+            return None
+
+        return eqn_lhs.symbol
 
     def is_subsort_axiom(self, axiom: kore.Axiom) -> Optional[Tuple[kore.SortInstance, kore.SortInstance]]:
         attribute = axiom.get_attribute_by_symbol("subsort")
@@ -472,10 +485,10 @@ class ProofEnvironment:
             is_functional = self.is_functional_axiom(axiom)
             is_rewrite = self.is_rewrite_axiom(axiom)
             is_anywhere = self.is_anywhere_rule_axiom(axiom)
-            is_equational = self.is_equational_axiom(axiom)
+            equation_head_symbol = self.is_equational_axiom(axiom)
             subsort_tuple = self.is_subsort_axiom(axiom)
 
-            if is_functional or is_rewrite or is_anywhere or is_equational or subsort_tuple is not None:
+            if is_functional or is_rewrite or is_anywhere or equation_head_symbol is not None or subsort_tuple is not None:
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
 
                 # record these statements for later use
@@ -487,7 +500,13 @@ class ProofEnvironment:
                     self.rewrite_axioms[uid] = ProvableClaim(axiom, theorem.as_proof())
                 elif is_anywhere:
                     self.anywhere_axioms.append(ProvableClaim(axiom, theorem.as_proof()))
-
+                
+                if equation_head_symbol is not None:
+                    if equation_head_symbol not in self.equational_axioms:
+                        self.equational_axioms[equation_head_symbol] = []
+                    self.equational_axioms[equation_head_symbol].append(ProvableClaim(axiom, theorem.as_proof()))
+                
+                # subsort axioms have the same form as functional axioms
                 if subsort_tuple is not None:
                     sort1, sort2 = subsort_tuple
                     self.subsort_relation.add_subsort(sort1, sort2, theorem)
