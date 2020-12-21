@@ -222,11 +222,11 @@ $( ==================================== $)
 
 ${
     lemma-forall-intro.0 $e |- ph0 $.
-    lemma-forall-intro $p |- ( \forall s0 ph0 ) $= ? $. 
+    lemma-forall-intro $p |- ( \forall ph1 ph0 ) $= ? $. 
 $}
 
 ${
-    lemma-forall-elim.0 $e |- ( \forall s0 ph0 ) $.
+    lemma-forall-elim.0 $e |- ( \forall ph1 ph0 ) $.
     lemma-forall-elim $p |- ph0 $= ? $. 
 $}
 
