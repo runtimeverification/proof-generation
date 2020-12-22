@@ -226,7 +226,15 @@ class Composer(MetamathVisitor):
         self.context = Context() # outermost context for a database
         self.theorems = {} # label -> Theorem
         self.statements = [] # all statements at the top level
-        self.segments = {} # name -> (start index, None or (exclusive) end index)
+
+        # mark each statement with a unique "segment label"
+        # so that we can selectively encode certain set of
+        # statements before others
+        # the stack is used so that one can mark a set
+        # of setences in another segment and restore the old
+        # segment
+        self.segment_stack = [] # a stack of current segments
+        self.segments = {} # name -> [indices]
 
     def load(self, database_or_statement: Union[Database, Statement]):
         if isinstance(database_or_statement, Database):
@@ -235,8 +243,10 @@ class Composer(MetamathVisitor):
         self.visit(database_or_statement)
 
         if isinstance(database_or_statement, Database):
+            self.add_indices_to_current_segment(list(range(len(self.statements), len(self.statements) + len(database_or_statement.statements))))
             self.statements += database_or_statement.statements
         else:
+            self.add_indices_to_current_segment([ len(self.statements) ])
             self.statements.append(database_or_statement)
 
             # return the corresponding theorem
@@ -270,26 +280,46 @@ class Composer(MetamathVisitor):
             stmt.encode(stream)
             stream.write("\n")
 
-    """
-    This implements simple segmentation mechanism. To start a segment,
-    call start_segment(name). To end a segment, call end_segment.
-    To get all statements in a segment, call get_segment
-    """
+    # """
+    # This implements simple segmentation mechanism. To start a segment,
+    # call start_segment(name). To end a segment, call end_segment.
+    # To get all statements in a segment, call get_segment
+    # """
+    # def start_segment(self, name: str):
+    #     assert name not in self.segments, f"duplicate segment {name}"
+    #     self.segments[name] = (len(self.statements), None)
+
+    # def end_segment(self, name: str):
+    #     assert name in self.segments, f"segment {name} does not exist"
+    #     start, end = self.segments[name]
+    #     assert end is None, f"segment {name} has already ended"
+    #     self.segments[name] = start, len(self.statements)
+
+    # def get_segment(self, name: str):
+    #     assert name in self.segments, f"segment {name} does not exist"
+    #     start, end = self.segments[name]
+    #     if end is None: return self.statements[start:]
+    #     else: return self.statements[start:end]
+
     def start_segment(self, name: str):
-        assert name not in self.segments, f"duplicate segment {name}"
-        self.segments[name] = (len(self.statements), None)
+        self.segment_stack.append(name)
 
-    def end_segment(self, name: str):
-        assert name in self.segments, f"segment {name} does not exist"
-        start, end = self.segments[name]
-        assert end is None, f"segment {name} has already ended"
-        self.segments[name] = start, len(self.statements)
+    def end_segment(self):
+        self.segment_stack.pop()
 
-    def get_segment(self, name: str):
-        assert name in self.segments, f"segment {name} does not exist"
-        start, end = self.segments[name]
-        if end is None: return self.statements[start:]
-        else: return self.statements[start:end]
+    def get_segment(self, name: str) -> List[Statement]:
+        if name not in self.segments: return []
+        return [ self.statements[i] for i in self.segments[name] ]
+
+    def add_indices_to_current_segment(self, indices: List[int]):
+        if len(self.segment_stack) == 0:
+            return
+
+        name = self.segment_stack[-1]
+
+        if name not in self.segments:
+            self.segments[name] = []
+        self.segments[name] += indices
 
     """
     look up a metavariable, if found, return the typecode,
