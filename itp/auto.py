@@ -9,6 +9,7 @@ from proof.metamath.composer import Proof, Theorem
 
 from proof.metamath.auto.unification import Unification
 from proof.metamath.auto.notation import NotationProver
+from proof.metamath.auto.substitution import SubstitutionProver
 
 from .state import ProofState
 from .tactics import Tactic, ApplyTactic
@@ -192,6 +193,25 @@ class DesugarTactic(Tactic):
             desugared_proof,
             *self.notation_proofs,
         ))
+
+"""
+Prove a statement about substitution
+"""
+@ProofState.register_tactic("substitution")
+class SubstitutionTactic(Tactic):
+    def apply(self, state: ProofState):
+        goal = state.goal_stack.pop()
+        assert len(goal.terms) == 5 and goal.terms[0] == Application("#Substitution"), f"not a substitution goal {goal}"
+
+        _, after, before, pattern, var = goal.terms
+        self.proof = SubstitutionProver.prove_substitution(
+            state.composer,
+            after, before, pattern, var,
+            hypotheses=state.composer.get_all_essentials(),
+        )
+
+    def resolve(self, state: ProofState):
+        state.proof_stack.append(self.proof)
 
 
 """

@@ -239,3 +239,8 @@ class NotationProver:
                 )
 
         return new_term
+
+    @staticmethod
+    def expand_sugar_with_proof(composer: Composer, term: Term, *args, **kwargs) -> Tuple[Term, Proof]:
+        expanded = NotationProver.expand_sugar(composer, term, *args, **kwargs)
+        return expanded, NotationProver.prove_notation(composer, term, expanded)

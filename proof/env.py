@@ -9,6 +9,7 @@ from .kore.utils import KoreUtils
 
 from .metamath import ast as mm
 from .metamath.composer import Composer, Theorem, Proof
+from .metamath.auto.substitution import SubstitutionProver
 
 from .encoder import KorePatternEncoder
 
@@ -308,42 +309,69 @@ class ProofEnvironment:
     """
     def load_constant(self, symbol: str, arity: int, label: str):
         # allocate all required metavariable at once
-        var, = self.gen_metavariables("#Variable", 1)
+        subst_var, = self.gen_metavariables("#Variable", 1)
         pattern_var, *subpattern_vars = self.gen_metavariables("#Pattern", arity * 2 + 1)
 
         # declare metamath constant
-        self.load_metamath_statement(mm.RawStatement(mm.Statement.CONSTANT, [ symbol ]))
+        # this is the actual symbol at the matching logic level used for application
+        applicative_symbol = symbol + "-symbol"
+        self.load_metamath_statement(mm.RawStatement(mm.Statement.CONSTANT, [ symbol, applicative_symbol ]))
 
-        # declare #Pattern syntax
-        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.PROVABLE, [
+        # declare #Symbol
+        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
+            mm.Application("#Symbol"),
+            mm.Application(applicative_symbol),
+        ], label=label + "-is-symbol"))
+
+        # declare #Pattern
+        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
             mm.Application("#Pattern"),
             mm.Application(symbol, [ mm.Metavariable(v) for v in subpattern_vars[:arity] ]),
-        ], label=label + "-pattern"))
+        ], label=label + "-is-pattern"))
+
+        # declare syntax sugar
+        desugared = mm.Application(applicative_symbol)
+        for var in subpattern_vars[:arity]:
+            desugared = mm.Application("\\app", [ desugared, mm.Metavariable(var) ])
+
+        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
+            mm.Application("#Notation"),
+            mm.Application(symbol, [ mm.Metavariable(v) for v in subpattern_vars[:arity] ]),
+            desugared,
+        ], label=label + "-is-sugar"))
 
         # generate substitution rule
         substitution_rule_name = label + "-substitution"
         essentials = []
+        essential_theorems = []
+
         for i in range(arity):
             after = subpattern_vars[i]
             before = subpattern_vars[i + arity]
 
-            essentials.append(mm.StructuredStatement(mm.Statement.ESSENTITAL, [
+            essential = mm.StructuredStatement(mm.Statement.ESSENTITAL, [
                 mm.Application("#Substitution"),
                 mm.Metavariable(after),
                 mm.Metavariable(before),
                 mm.Metavariable(pattern_var),
-                mm.Metavariable(var),
-            ], label=f"{substitution_rule_name}.{i}"))
+                mm.Metavariable(subst_var),
+            ], label=f"{substitution_rule_name}.{i}")
 
-        conclusion = mm.StructuredStatement(mm.Statement.PROVABLE, [
-            mm.Application("#Substitution"),
+            essentials.append(essential)
+            essential_theorems.append(Theorem(self.composer, essential, [], []))
+
+        # prove the substitution rule
+        subst_proof = SubstitutionProver.prove_substitution(
+            self.composer,
             mm.Application(symbol, list(map(mm.Metavariable, subpattern_vars[:arity]))),
             mm.Application(symbol, list(map(mm.Metavariable, subpattern_vars[arity:]))),
             mm.Metavariable(pattern_var),
-            mm.Metavariable(var),
-        ], label=substitution_rule_name)
+            mm.Metavariable(subst_var),
+            essential_theorems,
+        )
+        subst_proof.statement.label = substitution_rule_name
 
-        self.load_metamath_statement(mm.Block(essentials + [ conclusion ]))
+        self.load_metamath_statement(mm.Block(essentials + [ subst_proof.statement ]))
 
         assert substitution_rule_name in self.composer.theorems
         self.substitution_axioms[symbol] = self.composer.theorems[substitution_rule_name]
