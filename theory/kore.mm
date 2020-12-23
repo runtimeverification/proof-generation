@@ -40,7 +40,7 @@ kore-valid-is-pattern $a #Pattern ( \kore-valid ph0 ph1 ) $.
 kore-valid-is-sugar $a #Notation ( \kore-valid ph0 ph1 ) ( \eq ph1 ( \kore-top ph0 ) ) $.
 
 kore-bottom-is-pattern $a #Pattern ( \kore-bottom ph0 ) $.
-kore-bottom-is-sugar $a #Pattern ( \kore-bottom ph0 ) \bot $.
+kore-bottom-is-sugar $a #Notation ( \kore-bottom ph0 ) \bot $.
 
 kore-top-is-pattern $a #Pattern ( \kore-top ph0 ) $.
 kore-top-is-sugar $a #Notation ( \kore-top ph0 ) ( \inh ph0 ) $.

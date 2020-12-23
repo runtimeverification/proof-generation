@@ -104,52 +104,32 @@ def output_theory(composer: Composer, prelude: Optional[str], output: str, stand
         abs_prelude_path = os.path.realpath(prelude)
         assert abs_output_path is not None and abs_prelude_path is not None
 
-        module_path = os.path.join(abs_output_path, "module.mm")
-        dv_path = os.path.join(abs_output_path, "dv.mm")
-        proof_path = os.path.join(abs_output_path, "proof.mm")
-
-        # dump the translated module
-        with open(module_path, "w") as module_file:
-            IncludeStatement(abs_prelude_path).encode(module_file)
-            module_file.write("\n")
-            composer.encode(module_file, "module")
+        output_list = [
+            ("variable", "variable.mm"),
+            ("sort", "module-sort.mm"),
+            ("symbol", "module-symbol.mm"),
+            ("dv", "dv.mm"),
+            ("module", "module-axiom.mm"),
+        ]
 
         if include_rewrite_proof:
-            rewrite_segment = composer.get_segment("rewrite")
+            output_list += [
+                ("substitution", "substitution.mm"),
+                ("rewrite", "goal.mm"),
+            ]
 
-            dv_segment = []
-            proof_segment = []
-
-            # TODO: this is a bit of a hack
-            for i, stmt in enumerate(rewrite_segment):
-                if isinstance(stmt, StructuredStatement):
-                    if stmt.label is not None and (stmt.label.startswith("step-") or stmt.label == "goal"):
-                        proof_segment.append(stmt)
-                    else:
-                        dv_segment.append(stmt)
-                    continue
-                elif isinstance(stmt, Comment):
-                    if i + 1 < len(rewrite_segment):
-                        next_stmt = rewrite_segment[i + 1]
-                        if next_stmt.label is not None and (next_stmt.label.startswith("step-") or next_stmt.label == "goal"):
-                            proof_segment.append(stmt)
-                            continue
-
-                dv_segment.append(stmt)
-
-            with open(dv_path, "w") as dv_file:
-                IncludeStatement(module_path).encode(dv_file)
-                dv_file.write("\n")
-                for stmt in dv_segment:
-                    stmt.encode(dv_file)
-                    dv_file.write("\n")
-
-            with open(proof_path, "w") as proof_file:
-                IncludeStatement(dv_path).encode(proof_file)
-                proof_file.write("\n")
-                for stmt in proof_segment:
-                    stmt.encode(proof_file)
-                    proof_file.write("\n")
+        for i, (segment, output_path) in enumerate(output_list):
+            full_path = os.path.join(abs_output_path, output_path)
+            with open(full_path, "w") as f:
+                # include the last file
+                if i == 0:
+                    previous_path = abs_prelude_path
+                else:
+                    previous_path = os.path.join(abs_output_path, output_list[i - 1][1])
+                
+                IncludeStatement(previous_path).encode(f)
+                f.write("\n")
+                composer.encode(f, segment)
 
 
 def main():
@@ -172,12 +152,12 @@ def main():
     if args.prelude is not None:
         load_prelude(composer, args.prelude)
 
-    composer.start_segment("module")
-
     module = definition.module_map[args.module]
-    env = ProofEnvironment(module, composer)
+    env = ProofEnvironment(composer)
 
-    composer.end_segment("module")
+    composer.start_segment("module")
+    env.load_module(module)
+    composer.end_segment()
 
     print("loading snapshots")
 
@@ -188,7 +168,7 @@ def main():
         if len(snapshots) >= 2:
             composer.start_segment("rewrite")
             prove_rewriting(env, snapshots)
-            composer.end_segment("rewrite")
+            composer.end_segment()
         else:
             print("only one snapshot, nothing to prove")
 

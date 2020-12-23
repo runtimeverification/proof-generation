@@ -91,12 +91,12 @@ This should be independent of the
 type of proof one wants to build
 """
 class ProofEnvironment:
-    def __init__(self, module: kore.Module, composer: Composer=Composer()):
-        self.module = module
+    def __init__(self, composer: Composer=Composer()):
+        self.module = None
         self.loaded_modules = {}
 
         #################################
-        # theorems sorted into categories
+        # some axioms that will be used later
         #################################
         self.functional_axioms = {} # symbol instance -> provable claim
         self.domain_value_functional_axioms = {} # (sort, string literal) -> provable claim
@@ -113,7 +113,6 @@ class ProofEnvironment:
         self.domain_values = set() # set of (sort, string literal)
 
         self.composer = composer
-        self.init_module()
 
     """
     Expand all aliases and quantify all free variables
@@ -130,7 +129,11 @@ class ProofEnvironment:
     """
     Translate all axioms in the kore module
     """
-    def init_module(self):
+    def load_module(self, module: kore.Module):
+        assert self.module is None, "loading multiple modules"
+
+        self.module = module
+
         self.preprocess_module(self.module)
         self.load_module_sentences(self.module)
 
@@ -155,6 +158,8 @@ class ProofEnvironment:
     metavar_map: map from metavariable name to typecode
     """
     def load_metavariables(self, metavar_map: Mapping[str, str]):
+        self.composer.start_segment("variable")
+
         # filter out existing metavariables and
         # check duplication (different typecode for the same variable)
         new_metavars = {}
@@ -167,7 +172,9 @@ class ProofEnvironment:
                 assert found_typecode == typecode, \
                        "inconsistent metavariable typecode: both {} and {} for variable {}".format(found_typecode, typecode, var)
 
-        if not new_metavars: return
+        if not new_metavars:
+            self.composer.end_segment()
+            return
 
         self.load_comment(f"adding {len(new_metavars)} new metavariable(s)")
 
@@ -190,6 +197,8 @@ class ProofEnvironment:
             if len(element_vars) > 1:
                 disjoint_stmt = mm.StructuredStatement(mm.Statement.DISJOINT, list(map(mm.Metavariable, element_vars)))
                 self.load_metamath_statement(disjoint_stmt)
+
+        self.composer.end_segment()
 
     def encode_pattern(self, pattern: Union[kore.Axiom, kore.Pattern, kore.Sort]) -> mm.Term:
         encoder = KorePatternEncoder()
@@ -262,6 +271,8 @@ class ProofEnvironment:
         offset = len(self.domain_values)
         self.domain_values.update(new_domain_values)
 
+        self.composer.start_segment("dv")
+
         for index, (sort, literal) in enumerate(new_domain_values):
             index += offset
 
@@ -303,6 +314,8 @@ class ProofEnvironment:
             theorem = self.load_axiom(functional_axiom, functional_rule_name)
             self.domain_value_functional_axioms[sort, literal] = ProvableClaim(functional_axiom, theorem.as_proof())
 
+        self.composer.end_segment()
+
     """
     Load a constant symbol into the composer
     and generate appropriate axioms (e.g. substitution rule)
@@ -341,6 +354,8 @@ class ProofEnvironment:
         ], label=label + "-is-sugar"))
 
         # generate substitution rule
+        self.composer.start_segment("substitution")
+
         substitution_rule_name = label + "-substitution"
         essentials = []
         essential_theorems = []
@@ -372,6 +387,8 @@ class ProofEnvironment:
         subst_proof.statement.label = substitution_rule_name
 
         self.load_metamath_statement(mm.Block(essentials + [ subst_proof.statement ]))
+
+        self.composer.end_segment()
 
         assert substitution_rule_name in self.composer.theorems
         self.substitution_axioms[symbol] = self.composer.theorems[substitution_rule_name]
@@ -503,11 +520,15 @@ class ProofEnvironment:
         for import_stmt in module.imports:
             self.load_module_sentences(import_stmt.module)
 
+        self.composer.start_segment("sort")
         for index, (_, sort_definition) in enumerate(module.sort_map.items()):
             self.load_sort_definition(sort_definition, f"{module.name}-sort-{index}")
+        self.composer.end_segment()
 
+        self.composer.start_segment("symbol")
         for index, (_, symbol_definition) in enumerate(module.symbol_map.items()):
             self.load_symbol_definition(symbol_definition, f"{module.name}-symbol-{index}")
+        self.composer.end_segment()
 
         for index, axiom in enumerate(module.axioms):
             is_functional = self.is_functional_axiom(axiom)
