@@ -231,16 +231,6 @@ ${
 $}
 
 ${
-    lemma-imp-intro.0 $e |- ph0 $.
-    lemma-imp-intro $p |- ( \imp ( \in-sort s0 \sort ) ph0 ) $= ? $. 
-$}
-
-${
-    lemma-imp-elim.0 $e |- ( \imp ( \in-sort s0 \sort ) ph0 ) $.
-    lemma-imp-elim $p |- ph0 $= ? $. 
-$}
-
-${
     lemma-floor-intro.0 $e |- ph0 $.
     lemma-floor-intro $p |- ( \floor ph0 ) $= ? $. 
 $}
