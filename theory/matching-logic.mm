@@ -137,6 +137,7 @@ ${
 $}
 ${
     $d xX x $.
+    fresh-in-exists.0 $e #Fresh xX ph0 $.
     fresh-in-exists $a #Fresh xX ( \exists x ph0 ) $.
 $}
 fresh-in-exists-shadowed $a #Fresh x ( \exists x ph0 ) $.
@@ -145,6 +146,10 @@ ${
     fresh-in-mu $a #Fresh xX ( \mu X ph0 ) $.
 $}
 fresh-in-mu-shadowed $a #Fresh X ( \mu X ph0 ) $.
+${
+    $d xX ph0 $.
+    fresh-disjoint $a #Fresh xX ph0 $.
+$}
 
 $( Substitution $)
 $( #Substitution ph0 ph1 ph2 xX means ph0 === ph1[ph2/xX] $)
@@ -356,7 +361,8 @@ proof-rule-existence $a |- ( \exists x x ) $.
 
 ${
     proof-rule-singleton.0 $e #ApplicationContext xX ph0 $.
-    proof-rule-singleton.1 $e #Substitution ph2 ph0 ( \and yY ph1 ) xX $.
-    proof-rule-singleton.2 $e #Substitution ph3 ph0 ( \and yY ( \not ph1 ) ) xX $.
-    proof-rule-singleton $a |- ( \not ( \and ph2 ph3 ) ) $.    
+    proof-rule-singleton.1 $e #ApplicationContext yY ph1 $.
+    proof-rule-singleton.2 $e #Substitution ph3 ph0 ( \and x ph2 ) xX $.
+    proof-rule-singleton.3 $e #Substitution ph4 ph1 ( \and x ( \not ph2 ) ) yY $.
+    proof-rule-singleton $a |- ( \not ( \and ph3 ph4 ) ) $.    
 $}
