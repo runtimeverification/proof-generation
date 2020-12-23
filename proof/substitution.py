@@ -179,13 +179,13 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
                 theorem_name = "substitution-kore-forall-shadowed" if ml_pattern.construct == kore.MLPattern.FORALL else \
                                "substitution-kore-exists-shadowed"
 
-                var_sort_subproof = self.visit(binding_var.sort)
-                body_sort_subproof = self.visit(body_sort)
+                # var_sort_subproof = self.visit(binding_var.sort)
+                # body_sort_subproof = self.visit(body_sort)
 
                 # shadowed
                 return self.env.get_theorem(theorem_name).apply(
-                    var_sort_subproof,
-                    body_sort_subproof,
+                    # var_sort_subproof,
+                    # body_sort_subproof,
                     ph2=self.env.encode_pattern(body),
                 )
             else:
@@ -193,13 +193,17 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
                                "substitution-kore-exists"
 
                 var_sort_subproof = self.visit(binding_var.sort)
-                body_sort_subproof = self.visit(body_sort)
+                # body_sort_subproof = self.visit(body_sort)
                 body_subproof = self.visit(body)
+
+                encoded_body_sort = self.env.encode_pattern(body_sort)
 
                 return self.env.get_theorem(theorem_name).apply(
                     var_sort_subproof,
-                    body_sort_subproof,
+                    # body_sort_subproof,
                     body_subproof,
+                    ph1=encoded_body_sort,
+                    ph4=encoded_body_sort,
                     y=self.env.encode_pattern(binding_var), # still need to specify the binding variable
                 )
                 
