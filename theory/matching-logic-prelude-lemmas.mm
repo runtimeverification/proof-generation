@@ -220,6 +220,10 @@ $} $)
 
 $( ==================================== $)
 
+lemma-and-ceil $p |- ( \eq ( \and ( \ceil x ) ph0 ) ph0 ) $= ? $.
+
+lemma-or-and $p |- ( \eq ( \or ( \and ( \not ph1 ) ph0 ) ( \and ( \ceil ph1 ) ph0 ) ) ph0 ) $= ? $.
+
 ${
     lemma-forall-intro.0 $e |- ph0 $.
     lemma-forall-intro $p |- ( \forall ph1 ph0 ) $= ? $. 
