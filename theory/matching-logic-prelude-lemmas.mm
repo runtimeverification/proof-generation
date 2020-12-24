@@ -195,7 +195,21 @@ lemma-top $p |- \top $= bot-is-pattern not-is-pattern top-is-pattern bot-is-patt
 ${
     lemma-forall-gen.0 $e |- ( \imp ph0 ph1 ) $.
     lemma-forall-gen.1 $e #Fresh x ph0 $.
-    lemma-forall-gen $p |- ( \imp ph0 ( \forall x ph1 ) ) $= ? $.
+    lemma-forall-gen $p |- ( \imp ph0 ( \forall x ph1 ) ) $=
+        $(
+            apply "rule-imp-transitivity"
+            apply "dn-intro-sugar"
+            desugar "\forall"
+            apply "rule-contrapositive-sugar"
+            apply "proof-rule-gen"
+            apply "rule-contrapositive-sugar"
+            apply "lemma-forall-gen.0"
+            desugar "\not"
+            apply "fresh-in-imp"
+            apply "lemma-forall-gen.1"
+            apply "fresh-in-bot"
+        $)
+        ph0-is-pattern ph0-is-pattern not-is-pattern not-is-pattern ph1-is-pattern x-is-element-var forall-is-pattern ph0-is-pattern dn-intro-sugar ph0-is-pattern not-is-pattern not-is-pattern ph1-is-pattern not-is-pattern x-is-element-var exists-is-pattern not-is-pattern imp-is-pattern ph0-is-pattern not-is-pattern not-is-pattern ph1-is-pattern x-is-element-var forall-is-pattern imp-is-pattern ph1-is-pattern not-is-pattern x-is-element-var exists-is-pattern ph0-is-pattern not-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern not-is-pattern x-is-element-var ph0-is-pattern ph1-is-pattern lemma-forall-gen.0 rule-contrapositive-sugar ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern not-is-pattern x-is-element-var element-var-is-var ph0-is-pattern bot-is-pattern x-is-element-var element-var-is-var lemma-forall-gen.1 x-is-element-var element-var-is-var fresh-in-bot fresh-in-imp ph0-is-pattern not-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern not-is-sugar ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-fresh proof-rule-gen rule-contrapositive-sugar ph0-is-pattern not-is-pattern not-is-pattern ph1-is-pattern x-is-element-var forall-is-pattern ph0-is-pattern not-is-pattern not-is-pattern ph1-is-pattern not-is-pattern x-is-element-var exists-is-pattern not-is-pattern ph0-is-pattern not-is-pattern not-is-pattern notation-reflexivity ph1-is-pattern x-is-element-var forall-is-pattern ph1-is-pattern not-is-pattern x-is-element-var exists-is-pattern not-is-pattern ph1-is-pattern not-is-pattern x-is-element-var exists-is-pattern not-is-pattern ph1-is-pattern x-is-element-var forall-is-sugar ph1-is-pattern not-is-pattern x-is-element-var exists-is-pattern not-is-pattern ph1-is-pattern not-is-pattern x-is-element-var exists-is-pattern not-is-pattern ph1-is-pattern not-is-pattern x-is-element-var exists-is-pattern not-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-imp notation-proof rule-imp-transitivity $.
 $}
 
 lemma-dn-intro $p |- ( \imp ph0 ( \imp ( \imp ph0 \bot ) \bot ) ) $= 
@@ -222,11 +236,11 @@ $( ==================================== $)
 
 ${
     lemma-forall-intro.0 $e |- ph0 $.
-    lemma-forall-intro $p |- ( \forall ph1 ph0 ) $= ? $. 
+    lemma-forall-intro $p |- ( \forall x ph0 ) $= ? $. 
 $}
 
 ${
-    lemma-forall-elim.0 $e |- ( \forall ph1 ph0 ) $.
+    lemma-forall-elim.0 $e |- ( \forall x ph0 ) $.
     lemma-forall-elim $p |- ph0 $= ? $. 
 $}
 
