@@ -404,6 +404,13 @@ ${
         ph0-is-pattern floor-is-pattern ph0-is-pattern ph0-is-pattern lemma-floor-imp lemma-floor-elim.0 proof-rule-mp $.
 $}
 
+lemma-floor-imp-floor $p |- ( \imp ( \floor ( \imp ph0 ph1 ) ) ( \imp ( \floor ph0 ) ( \floor ph1 ) ) ) $= ? $.
+
+${
+    lemma-floor-imp-elim.0 $e |- ( \floor ( \imp ph0 ph1 ) ) $.
+    lemma-floor-imp-elim $p |- ( \imp ( \floor ph0 ) ( \floor ph1 ) ) $= ? $.
+$}
+
 lemma-and-ceil $p |- ( \eq ( \and ( \ceil x ) ph0 ) ph0 ) $=
     $(
         desugar "\eq"
@@ -438,6 +445,10 @@ lemma-or-and $p |- ( \eq ( \or ( \and ( \not ph1 ) ph0 ) ( \and ( \ceil ph1 ) ph
         apply "lemma-ph-imp-ceil-ph"
     $)
     ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern eq-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern iff-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern ph0-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-elim-right-sugar ph1-is-pattern ceil-is-pattern ph0-is-pattern and-elim-right-sugar rule-or-elim-sugar ph1-is-pattern not-is-pattern ph1-is-pattern ceil-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern imp-is-pattern ph1-is-pattern not-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern lemma-i-giveup-on-naming-1 ph1-is-pattern ph1-is-pattern ceil-is-pattern imp-is-pattern ph1-is-pattern not-is-pattern ph1-is-pattern ceil-is-pattern or-is-pattern ph1-is-pattern ph1-is-pattern ceil-is-pattern imp-is-pattern ph1-is-pattern not-is-pattern ph1-is-pattern ceil-is-pattern or-is-pattern ph1-is-pattern ph1-is-pattern ceil-is-pattern imp-to-or rule-iff-elim-left ph1-is-pattern lemma-ph-imp-ceil-ph proof-rule-mp proof-rule-mp rule-iff-intro lemma-floor-intro ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern eq-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern eq-is-sugar ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern and-is-pattern ph1-is-pattern ceil-is-pattern ph0-is-pattern and-is-pattern or-is-pattern ph0-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof $.
+
+$( ==================================== $)
+
+lemma-mp $p |- ( \imp ( \iff ph1 ph0 ) ( \imp ( \iff ( \or ( \and ( \not ph1 ) ph0 ) ph2 ) ph0 ) ( \iff ph2 ph0 ) ) ) $= ? $.
 
 $( ================== Equality ================== $)
 
