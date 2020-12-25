@@ -828,69 +828,142 @@ class TautologyTactic(Tactic):
             simplification_proof,
             self.simplify_cnf(state, simplified_cnf, i + 1),
         )
+    
+    """
+    A clause is a tautology iff it contains a pair of complementing literals
+    """
+    def is_clause_tautology(self, clause: List[Term]) -> bool:
+        literal_map = {}
+
+        for literal in clause:
+            if isinstance(literal, Metavariable):
+                var = literal
+                value = True
+            else:
+                var, = literal.subterms
+                value = False
+
+            if var in literal_map and literal_map[var] != value:
+                return True
+            else:
+                literal_map[var] = value
+
+        return False
 
     """
-    Find the next pair of clauses to apply resolution to
-    so that we can get a new clause modulo commutativity of or
-
-    If no such pair can be found, None is returned
-
-    The return format is
-    (clause index for the positive occurence, literal index,
-     clause index for the negative occurence, literal index)
+    Test if any of the existing clauses is equivalent to the given clause
+    or if the current clause is a tautology
     """
-    def find_next_pair_to_resolve(self, state: ProofState, cnf: Term) -> Optional[Tuple[int, int, int, int]]:
-        conjuncts = self.junction_to_list(cnf, "and")
-        assert len(conjuncts) >= 2, f"resolution does not apply to {cnf}"
-        clauses = [ self.junction_to_list(conjunt, "or") for conjunt in conjuncts ]
+    def is_clause_new(self, clauses: List[List[Term]], clause: List[Term]) -> bool:
+        if self.is_clause_tautology(clause):
+            return False
 
-        positive_occurences = {} # metavar name -> [ ( position of the clause, position of the literal ) ]
-        negative_occurences = {} # ^ same
+        for old_clause in clauses:
+            if set(clause) == set(old_clause):
+                return False
+        
+        return True
 
-        for i, clause in enumerate(clauses):
-            for j, literal in enumerate(clause):
-                if isinstance(literal, Metavariable):
-                    if literal.name not in positive_occurences:
-                        positive_occurences[literal.name] = []
+    """
+    Given a list of clauses, find a path of resolutions that
+    will lead to falsum (using a naive BFS algorithm)
 
-                    positive_occurences[literal.name].append((i, j))
-                elif isinstance(literal, Application) and literal.symbol == "\\not":
-                    var = literal.subterms[0]
+    A path is a list of triples (c1, c2, var), c1 != c2
+    where var occurs in c1 and (not var) occurs in c2
+    """
+    def find_path_to_falsum(self, clauses: List[List[Term]]) -> Optional[List[Tuple[int, int, Metavariable]]]:
+        queue = [ (clauses, []) ]
+        initial_length = len(clauses)
+        current_depth = 0
+
+        while queue:
+            clauses, path = queue.pop(0)
+
+            if len(clauses) > initial_length + current_depth:
+                current_depth = len(clauses) - initial_length
+                print(f"search depth: {current_depth}, size of queue: {len(queue)}")
+
+            # find all possible pairs to apply resolution
+            # such that we would result in a new and non-tautology
+            # clause
+
+            # record all positive and negative occurrences of variables
+            positive_occurences = {} # metavar -> [ ( position of the clause, position of the literal ) ]
+            negative_occurences = {} # ^ same
+
+            for i, clause in enumerate(clauses):
+                for j, literal in enumerate(clause):
+                    if isinstance(literal, Metavariable):
+                        if literal not in positive_occurences:
+                            positive_occurences[literal] = []
+
+                        positive_occurences[literal].append((i, j))
+                    elif isinstance(literal, Application) and literal.symbol == "\\not":
+                        var = literal.subterms[0]
+                        assert isinstance(var, Metavariable)
+                        if var not in negative_occurences:
+                            negative_occurences[var] = []
+
+                        negative_occurences[var].append((i, j))
+
+            # test each candidate pair
+            next_steps = []
+
+            for var in set(positive_occurences).intersection(set(negative_occurences)):
+                candidates = [
+                    (pos_clause, pos_literal, neg_clause, neg_literal)
+                    for pos_clause, pos_literal in positive_occurences[var]
+                    for neg_clause, neg_literal in negative_occurences[var]
+                    if pos_clause != neg_clause
+                ]
+
+                for pos_clause, pos_literal, neg_clause, neg_literal in candidates:
+                    clause1 = clauses[pos_clause].copy()
+                    clause2 = clauses[neg_clause].copy()
+
+                    var = clause1[pos_literal]
                     assert isinstance(var, Metavariable)
-                    if var.name not in negative_occurences:
-                        negative_occurences[var.name] = []
 
-                    negative_occurences[var.name].append((i, j))
+                    del clause1[pos_literal]
+                    del clause2[neg_literal]
 
-        # similar to clauses but represents each clause
-        # as a set of literals
-        clause_sets = [ set(clause) for clause in clauses ]
+                    # this order should be the same as the order in resolution-* lemmas
+                    new_clause = clause2 + clause1
+                    new_path = path + [ ( pos_clause, neg_clause, var ) ]
 
-        for var in positive_occurences:
-            if var in negative_occurences:
-                for pos_clause, pos_literal in positive_occurences[var]:
-                    for neg_clause, neg_literal in negative_occurences[var]:
-                        if pos_clause != neg_clause:
-                            # try applying them
-                            left_pos_removed = clauses[pos_clause][:pos_literal] + clauses[pos_clause][pos_literal + 1:]
-                            right_neg_removed = clauses[neg_clause][:neg_literal] + clauses[neg_clause][neg_literal + 1:]
+                    # find falsum
+                    if len(new_clause) == 0:
+                        return new_path
 
-                            # found a new clause
-                            new_clause = set(left_pos_removed + right_neg_removed)
-                            if new_clause not in clause_sets:
-                                return (pos_clause, pos_literal, neg_clause, neg_literal)
+                    if self.is_clause_new(clauses, new_clause):
+                        # make sure we don't make duplicate clauses
+                        for next_clauses, _ in next_steps:
+                            if set(next_clauses[0]) == set(new_clause):
+                                break
+                        else:
+                            # print([ new_clause ] + clauses)
+                            next_steps.append(([ list(set(new_clause)) ] + clauses, new_path))
+
+            # print(len(clauses), len(queue), len(next_steps))
+
+            queue += next_steps
 
         return None
 
     """
     Given a CNF term ph, try to apply the resolution rule
     and return a proof of ph -> ph' where ph' is the result
-    of applying resolution
+    of applying resolution on the literals indicated by
+    the quadruplet (pos_clause, pos_literal, neg_clause, neg_literal)
     """
-    def apply_resolution(self, state: ProofState, cnf: Term) -> Optional[Proof]:
-        result = self.find_next_pair_to_resolve(state, cnf)
-        if result is None: return None
-        pos_clause, pos_literal, neg_clause, neg_literal = result
+    def apply_resolution(self, state: ProofState, cnf: Term, pos_clause: int, neg_clause: int, var: Metavariable) -> Proof:
+        # result = self.find_next_pair_to_resolve(state, cnf)
+        # if result is None: return None
+        # pos_clause, pos_literal, neg_clause, neg_literal = result
+
+        clauses = [ self.junction_to_list(conjunct, "or") for conjunct in self.junction_to_list(cnf) ]
+        pos_literal = clauses[pos_clause].index(var)
+        neg_literal = clauses[neg_clause].index(Application("\\not", [ var ]))
 
         # print(var, pos_clause, neg_clause)
 
@@ -942,7 +1015,7 @@ class TautologyTactic(Tactic):
         permuted_clauses = [ self.junction_to_list(conjunct, "or") for conjunct in permuted_conjuncts ]
 
         # one last step to transform the statement to
-        # ( merge1 /\ merg2 ) /\ rest
+        # ( merge1 /\ merge2 ) /\ rest
         if len(permuted_conjuncts) > 2:
             proof = self.apply_iff_transitivity(
                 state,
@@ -1023,6 +1096,16 @@ class TautologyTactic(Tactic):
             resolution_proof = state.composer.find_theorem("resolution-1").apply(ph0=second_clause[0])
             falsum_found = True
 
+        # simplify the resolvent
+        if not falsum_found:
+            _, resolvent = self.decompose_imp(resolution_proof)
+            # assuming here the resolvent is not top (which should be filtered out by the initial search)
+
+            resolution_proof = state.composer.find_theorem("rule-imp-transitivity").apply(
+                resolution_proof,
+                state.composer.find_theorem("rule-iff-elim-left").apply(self.simplify_clause(state, resolvent)),
+            )
+
         # 1. cnf -> cnf /\ cnf
         # 2. cnf -> first_two_clauses -> resolvent
         # 3. cnf -> cnf
@@ -1093,28 +1176,27 @@ class TautologyTactic(Tactic):
         simpl_proof = self.simplify_cnf(state, cnf_term)
         _, cnf_term = self.decompose_iff(simpl_proof)
 
-        # print(cnf_term)
-        # print(list(map(lambda t: self.junction_to_list(t, "or"), self.junction_to_list(cnf_term, "and"))))
+        # separated clauses
+        clauses = [ self.junction_to_list(conjunct, "or") for conjunct in self.junction_to_list(cnf_term) ]
+
+        # find a path to falsum
+        print(f"searching a path to falsum")
+        path = self.find_path_to_falsum(clauses)
+        assert path is not None, f"the equivalent cnf {clauses} does not imply falsum"
 
         # proof that the cnf implies falsum
         falsum_proof = None
 
-        while True:
-            print("applying resolution")
-            step = self.apply_resolution(state, cnf_term)
+        print(f"applying {len(path)} step(s) of resolution")
 
-            if step is None:
-                assert False, f"unable to prove {goal}"
-
+        for c1, c2, var in path:
+            step = self.apply_resolution(state, cnf_term, c1, c2, var)
             _, cnf_term = self.decompose_imp(step)
 
             if falsum_proof is None: falsum_proof = step
             else: falsum_proof = state.composer.find_theorem("rule-imp-transitivity").apply(falsum_proof, step)
 
-            # we have reduced the goal to bottom
-            # and we can produce a final proof now
-            if cnf_term == Application("\\bot"):
-                break
+        assert cnf_term == Application("\\bot")
 
         print("resolved to falsum, constructing final proof")
 
