@@ -194,6 +194,19 @@ ${
 $}
 substitution-identity $a #Substitution ph0 ph0 xX xX $.
 ${
+    $( if yY is free in ph0, then (ph0[yY/xX])[ph3/yY] === ph0[ph3/xX] $)
+    yY-free-in-ph0 $e #Fresh yY ph0 $.
+    ph1-definition $e #Substitution ph1 ph0 yY xX $.
+    ${
+        substitution-fold.0   $e #Substitution ph2 ph1 ph3 yY $.
+        substitution-fold     $a #Substitution ph2 ph0 ph3 xX $.
+    $}
+    ${
+        substitution-unfold.0 $e #Substitution ph2 ph0 ph3 xX $.
+        substitution-unfold   $a #Substitution ph2 ph1 ph3 yY $.
+    $}
+$}
+${
     substitution-inverse.0 $e #Fresh xX ph0 $.
     substitution-inverse.1 $e #Substitution ph1 ph0 xX yY $.
     substitution-inverse   $a #Substitution ph0 ph1 yY xX $.
