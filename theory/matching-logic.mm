@@ -137,6 +137,7 @@ ${
 $}
 ${
     $d xX x $.
+    fresh-in-exists.0 $e #Fresh xX ph0 $.
     fresh-in-exists $a #Fresh xX ( \exists x ph0 ) $.
 $}
 fresh-in-exists-shadowed $a #Fresh x ( \exists x ph0 ) $.
@@ -145,6 +146,15 @@ ${
     fresh-in-mu $a #Fresh xX ( \mu X ph0 ) $.
 $}
 fresh-in-mu-shadowed $a #Fresh X ( \mu X ph0 ) $.
+${
+    $d xX ph0 $.
+    fresh-disjoint $a #Fresh xX ph0 $.
+$}
+${
+    fresh-in-substitution.0 $e #Fresh xX ph1 $.
+    fresh-in-substitution.1 $e #Substitution ph2 ph0 ph1 xX $.
+    fresh-in-substitution $a #Fresh xX ph2 $.
+$}
 
 $( Substitution $)
 $( #Substitution ph0 ph1 ph2 xX means ph0 === ph1[ph2/xX] $)
@@ -182,8 +192,29 @@ ${
     substitution-mu.1 $e #Substitution ph3 ph2 ph0 xX $.
     substitution-mu   $a #Substitution ( \mu Y ph3 ) ( \mu X ph1 ) ph0 xX $.
 $}
-
 substitution-identity $a #Substitution ph0 ph0 xX xX $.
+${
+    $( if yY is free in ph0, then (ph0[yY/xX])[ph3/yY] === ph0[ph3/xX] $)
+    yY-free-in-ph0 $e #Fresh yY ph0 $.
+    ph1-definition $e #Substitution ph1 ph0 yY xX $.
+    ${
+        substitution-fold.0   $e #Substitution ph2 ph1 ph3 yY $.
+        substitution-fold     $a #Substitution ph2 ph0 ph3 xX $.
+    $}
+    ${
+        substitution-unfold.0 $e #Substitution ph2 ph0 ph3 xX $.
+        substitution-unfold   $a #Substitution ph2 ph1 ph3 yY $.
+    $}
+$}
+${
+    substitution-inverse.0 $e #Fresh xX ph0 $.
+    substitution-inverse.1 $e #Substitution ph1 ph0 xX yY $.
+    substitution-inverse   $a #Substitution ph0 ph1 yY xX $.
+$}
+${
+    substitution-fresh.0 $e #Fresh xX ph0 $.
+    substitution-fresh $a #Substitution ph0 ph0 ph1 xX $.
+$}
 
 $( Application Contexts $)
 
@@ -356,7 +387,8 @@ proof-rule-existence $a |- ( \exists x x ) $.
 
 ${
     proof-rule-singleton.0 $e #ApplicationContext xX ph0 $.
-    proof-rule-singleton.1 $e #Substitution ph2 ph0 ( \and yY ph1 ) xX $.
-    proof-rule-singleton.2 $e #Substitution ph3 ph0 ( \and yY ( \not ph1 ) ) xX $.
-    proof-rule-singleton $a |- ( \not ( \and ph2 ph3 ) ) $.    
+    proof-rule-singleton.1 $e #ApplicationContext yY ph1 $.
+    proof-rule-singleton.2 $e #Substitution ph3 ph0 ( \and x ph2 ) xX $.
+    proof-rule-singleton.3 $e #Substitution ph4 ph1 ( \and x ( \not ph2 ) ) yY $.
+    proof-rule-singleton $a |- ( \not ( \and ph3 ph4 ) ) $.    
 $}

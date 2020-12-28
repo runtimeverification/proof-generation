@@ -20,7 +20,7 @@ class ProofGenerator:
 
 
 """
-A claim sigma in kore and a metamath proof of its encoding
+A claim in kore and a metamath proof of its encoding
 This pair comes up often because we need to
 reuse some operations and information on the Kore ast
 """

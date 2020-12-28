@@ -78,6 +78,12 @@ $c \eq $.
 eq-is-pattern $a #Pattern ( \eq ph0 ph1 ) $.
 eq-is-sugar   $a #Notation ( \eq ph0 ph1 ) ( \floor ( \iff ph0 ph1 ) ) $.
 
+${
+    eq-elim.0 $e #Substitution ph2 ph4 ph0 x $.
+    eq-elim.1 $e #Substitution ph3 ph4 ph1 x $.
+    eq-elim $a |- ( \imp ( \eq ph0 ph1 ) ( \imp ph2 ph3 ) ) $.
+$}
+
 $( Part 3. Sorts and Inhabitants $)
 
 $c \sort $.
