@@ -866,6 +866,8 @@ ${
     $.
 $}
 
+$( ==================================== $)
+
 ${
     lemma-prenex-forall-imp.0 $e #Fresh x ph1 $.
     lemma-prenex-forall-imp.1 $e |- ( \forall x ( \imp ph0 ph1 ) ) $.
