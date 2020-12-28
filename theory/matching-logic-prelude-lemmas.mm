@@ -493,7 +493,7 @@ ${
             apply "notation-proof"
             let $15 = "( \or ( \ceil ( \and x ( \not ph0 ) ) ) ( \ceil ph0 ) )"
             meh
-            let $14 = "x"
+            let $4 = "x"
             notation
             desugar "\ceil"
             apply "fresh-in-app"
@@ -968,11 +968,20 @@ ${
         y-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern y-is-element-var exists-is-pattern z-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern z-is-element-var exists-is-pattern ph1-is-pattern x-is-element-var forall-is-pattern ph2-is-pattern imp-is-pattern y-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern y-is-element-var exists-is-pattern z-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern z-is-element-var exists-is-pattern y-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern z-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern y-is-element-var z-is-element-var y-is-element-var element-var-is-var var-is-pattern ph0-is-pattern z-is-element-var element-var-is-var y-is-element-var element-var-is-var var-is-pattern z-is-element-var element-var-is-var fresh-disjoint ph0-is-pattern z-is-element-var element-var-is-var fresh-disjoint fresh-in-eq z-is-element-var element-var-is-var var-is-pattern z-is-element-var element-var-is-var var-is-pattern ph0-is-pattern y-is-element-var element-var-is-var var-is-pattern ph0-is-pattern y-is-element-var element-var-is-var z-is-element-var element-var-is-var var-is-pattern y-is-element-var element-var-is-var substitution-var-same ph0-is-pattern z-is-element-var element-var-is-var var-is-pattern y-is-element-var element-var-is-var functional-substitution.0 substitution-fresh substitution-eq alpha-exists rule-iff-elim-left ph1-is-pattern x-is-element-var forall-is-pattern ph3-is-pattern z-is-element-var forall-is-pattern imp-is-pattern z-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern z-is-element-var exists-is-pattern ph1-is-pattern x-is-element-var forall-is-pattern ph2-is-pattern imp-is-pattern imp-is-pattern z-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern z-is-element-var exists-is-pattern ph3-is-pattern z-is-element-var forall-is-pattern ph2-is-pattern imp-is-pattern imp-is-pattern ph1-is-pattern x-is-element-var forall-is-pattern ph3-is-pattern z-is-element-var forall-is-pattern imp-is-pattern z-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern z-is-element-var exists-is-pattern ph1-is-pattern x-is-element-var forall-is-pattern ph2-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern z-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern z-is-element-var exists-is-pattern ph3-is-pattern z-is-element-var forall-is-pattern ph2-is-pattern ph1-is-pattern x-is-element-var forall-is-pattern lemma-i-giveup-on-naming-2 ph0-is-pattern ph3-is-pattern ph2-is-pattern z-is-element-var ph0-is-pattern z-is-element-var element-var-is-var fresh-disjoint ph1-is-pattern ph3-is-pattern ph2-is-pattern ph0-is-pattern x-is-element-var element-var-is-var z-is-element-var element-var-is-var ph1-is-pattern z-is-element-var element-var-is-var fresh-disjoint functional-substitution.2 functional-substitution.1 substitution-unfold functional-substitution-var-same proof-rule-mp ph1-is-pattern x-is-element-var forall-is-pattern ph3-is-pattern z-is-element-var forall-is-pattern ph1-is-pattern ph3-is-pattern x-is-element-var z-is-element-var ph1-is-pattern z-is-element-var element-var-is-var fresh-disjoint functional-substitution.2 alpha-forall rule-iff-elim-left proof-rule-mp rule-imp-transitivity $.
 $}
 
-$( ${
+$(
+
+${
     $d z x $.
     rule-functional-substitution-var-diff.0 $e #Fresh y ph0 $.
     rule-functional-substitution-var-diff.1 $e |- ( \exists y ( \eq y ph0 ) ) $.
     rule-functional-substitution.2 $e |- ( \forall x ph1 ) $.
     rule-functional-substitution.3 $e #Substitution ph2 ph1 ph0 x $.
     rule-functional-substitution $p |- ph2 $= ? $.
-$} $)
+$}
+
+${
+    rule-iff-compat-in-exists.0 $e |- ( \iff ph0 ph1 ) $.
+    rule-iff-compat-in-exists $p |- ( \iff ( \exists x ph0 ) ( \exists x ph1 ) ) $= ? $.
+$}
+
+$)

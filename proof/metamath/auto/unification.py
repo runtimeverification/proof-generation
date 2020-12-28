@@ -14,6 +14,7 @@ class Unification:
         equations: List[Tuple[Term, Term]],
         variable_class=Metavariable,
         substitution_visitor_class=SubstitutionVisitor,
+        variable_order=lambda v1, v2: True, # returns True iff v1 <= v2, False otherwise
     ) -> Optional[Mapping[str, Term]]:
         substitution = {}
 
@@ -37,6 +38,11 @@ class Unification:
                 # check for recursive equations
                 if left.name in right.get_metavariables():
                     return None
+
+                # if both are variables, potentially switch them to
+                # make sure left <= right in some given ordering
+                if isinstance(right, variable_class) and not variable_order(left, right):
+                    left, right = right, left
 
                 substitution[left.name] = right
 
