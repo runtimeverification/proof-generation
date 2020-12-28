@@ -79,7 +79,11 @@ class ApplyTactic(Tactic):
 
         schematic_substitution = Unification.unify_statements(
             top_goal, copied_statement,
-            variable_class=SchematicVariable, substitution_visitor_class=SubstitutionVisitor,
+            variable_class=SchematicVariable,
+            substitution_visitor_class=SubstitutionVisitor,
+            # newer schematic variable are used as substitution variables
+            # with higher priority than older schematic variables
+            variable_order=lambda v1, v2: v1.num > v2.num,
         )
         assert schematic_substitution is not None, f"unable to unify the goal {top_goal} with {copied_statement}"
 
