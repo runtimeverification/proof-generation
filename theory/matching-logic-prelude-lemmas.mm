@@ -258,6 +258,18 @@ ${
     lemma-floor-imp $p |- ( \imp ( \floor ph0 ) ph0 ) $= ? $.   
 $}
 
+${
+    lemma-in-sort.0 $e |- ( \in-sort ph1 ph0 ) $.
+    lemma-in-sort $p |- ( \imp ph1 ( \inh ph0 ) ) $= ? $.
+$}
+
+${
+    lemma-mp2.0 $e |- ph0 $.
+    lemma-mp2.1 $e |- ph1 $.
+    lemma-mp2.2 $e |- ( \imp ( \and ph0 ph1 ) ph2 ) $.
+    lemma-mp2 $p |- ph2 $= ? $.
+$}
+
 $( ================== Equality ================== $)
 
 ${
