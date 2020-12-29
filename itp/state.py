@@ -1,11 +1,34 @@
 from __future__ import annotations
 
-from typing import List, Optional, Mapping, NewType, Set
+from typing import List, Optional, Mapping, NewType, Set, Callable
 
 from proof.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
 from proof.metamath.composer import Composer, Proof, Theorem
 
 from .extension import SchematicVariable, SubstitutionVisitor, CopyVisitor
+
+
+"""
+A goal is a pair (id, statement)
+All dependencies between goals
+are recorded in ProofState so that
+we can copy states more easily
+"""
+class Goal:
+    def __init__(self, goal_id: int, statement: StructuredStatement):
+        self.statement = Goal.sanitize_goal_statement(statement)
+        self.goal_id = goal_id
+
+    def copy(self) -> Goal:
+        return Goal(self.goal_id, self.statement)
+
+    @staticmethod
+    def sanitize_goal_statement(statement: StructuredStatement) -> StructuredStatement:
+        copied = CopyVisitor().visit(statement)
+        copied.statement_type = "?"
+        copied.label = None
+        copied.proof = None
+        return copied
 
 
 class ProofState:
@@ -22,28 +45,84 @@ class ProofState:
         assert name in ProofState.all_tactics, f"tactic {name} not found"
         return ProofState.all_tactics[name]
 
-    def __init__(self, composer: Composer, init_goal_stack: List[StructuredStatement]):
+    def __init__(self, composer: Composer, init_goal: StructuredStatement):
         self.composer = composer
+
+        # set of schematic variables
         self.schematic_vars = []
         self.schematic_var_assignment = {} # num -> term
-        self.goal_stack = [ self.sanitize_goal_statement(goal) for goal in init_goal_stack ]
-        self.proof_stack: List[Proof] = []
-        self.applied_tactics = []
+
+        # the graph of dependencies of goals
+        # it should ideally be a DAG
+        # (not necessarily a tree since we may
+        # have claims being used by multiple goals)
+        self.all_goals = [ Goal(0, init_goal) ]
+        self.current_goals = [ 0 ]
+        self.goal_dependencies = {} # goal id -> List[goal id]
+        self.goal_resolver = {} # goal id -> Tactic that resolved the goal
 
     def copy(self) -> ProofState:
-        copied_state = ProofState(self.composer, self.goal_stack)
+        copied_state = ProofState(self.composer, self.get_goal_with_id(0).statement)
         copied_state.schematic_vars = self.schematic_vars.copy()
         copied_state.schematic_var_assignment = self.schematic_var_assignment.copy()
-        copied_state.proof_stack = self.proof_stack.copy()
-        copied_state.applied_tactics = self.applied_tactics.copy()
+        
+        copied_state.all_goals = self.all_goals.copy()
+        copied_state.current_goals = self.current_goals.copy()
+        copied_state.goal_dependencies = { goal_id: deps.copy() for goal_id, deps in self.goal_dependencies.items() }
+        copied_state.goal_resolver = self.goal_resolver.copy()
+        
         return copied_state
 
-    def sanitize_goal_statement(self, goal: StructuredStatement) -> StructuredStatement:
-        copied = CopyVisitor().visit(goal)
-        copied.statement_type = "?"
-        copied.label = None
-        copied.proof = None
-        return copied
+    def add_goal_dependency(self, parent: Goal, child: Goal):
+        if parent.goal_id not in self.goal_dependencies:
+            self.goal_dependencies[parent.goal_id] = []
+        self.goal_dependencies[parent.goal_id].append(child.goal_id)
+
+    def get_goal_dependencies(self, goal: Goal) -> List[Goal]:
+        if goal.goal_id not in self.goal_dependencies:
+            return []
+        return [ self.get_goal_with_id(dep) for dep in self.goal_dependencies[goal.goal_id] ]
+
+    def get_goal_with_id(self, goal_id: int) -> Goal:
+        return self.all_goals[goal_id]
+
+    def get_current_top_goal(self) -> Goal:
+        assert len(self.current_goals), "no goals left"
+        return self.get_goal_with_id(self.current_goals[-1])
+
+    """
+    Get the current list of goals from top to bottom
+    """
+    def get_current_goal_statements(self) -> List[StructuredStatement]:
+        return [ self.get_goal_with_id(goal_id).statement for goal_id in self.current_goals ][::-1]
+
+    def resolve_current_goal(self, tactic) -> Goal:
+        assert len(self.current_goals), "no goals left"
+        resolved_goal_id = self.current_goals.pop()
+        self.goal_resolver[resolved_goal_id] = tactic
+        return self.get_goal_with_id(resolved_goal_id)
+
+    def push_derived_goals(self, parent: Goal, statements: List[StructuredStatement]):
+        new_goals = [ Goal(len(self.all_goals) + i, statement) for i, statement in enumerate(statements) ]
+        
+        self.all_goals += new_goals
+
+        # current goals are reversed because the first one should be resolved the first
+        self.current_goals += [ goal.goal_id for goal in new_goals[::-1] ]
+
+        for goal in new_goals:
+            self.add_goal_dependency(parent, goal)
+
+    def push_derived_goal(self, parent: Goal, statement: StructuredStatement):
+        self.push_derived_goals(parent, [ statement ])
+
+    """
+    Apply some transformation on all current goals
+    """
+    def transform_all_current_goals(self, transformation: Callable[StructuredStatement, StructuredStatement]):
+        for goal_id in self.current_goals:
+            goal = self.all_goals[goal_id]
+            self.all_goals[goal_id] = Goal(goal_id, transformation(goal.statement))
 
     def get_next_schematic_variable(self, typecode: str) -> SchematicVariable:
         var = SchematicVariable(typecode, len(self.schematic_vars))
@@ -72,8 +151,8 @@ class ProofState:
     """
     def get_live_schematic_variables(self) -> Set[str]:
         live_vars = set()
-        for goal in self.goal_stack:
-            live_vars.update(goal.get_metavariables())
+        for goal_id in self.current_goals:
+            live_vars.update(self.get_goal_with_id(goal_id).statement.get_metavariables())
         return live_vars
 
     """
@@ -115,17 +194,22 @@ class ProofState:
     def apply_tactic(self, tactic, *args, **kwargs) -> ProofState:
         copied = self.copy()
         tactic.apply(copied, *args, **kwargs)
-        copied.applied_tactics.append(tactic)
         return copied
 
+    """
+    Generate a proof for the given goal by tracing
+    through the DAG and obtaining subproofs
+    """
+    def gen_proof_for_goal(self, goal: Goal) -> Proof:
+        subproofs = [ self.gen_proof_for_goal(dep) for dep in self.get_goal_dependencies(goal) ]
+        assert goal.goal_id in self.goal_resolver, "goal not resolved yet"
+        tactic = self.goal_resolver[goal.goal_id]
+        return tactic.resolve(self, subproofs)
+
+    """
+    Generate the proof for the initial goal
+    """
     def gen_proof(self) -> Proof:
-        assert not self.goal_stack, "non empty goal stack"
-
-        self.proof_stack = []
-
-        for tactic in self.applied_tactics[::-1]:
-            tactic.resolve(self)
-
-        assert len(self.proof_stack) == 1, "proof stack should contain exactly one proof"
-
-        return self.proof_stack[0]
+        assert not self.current_goals, "non empty goal stack"
+        init_goal = self.get_goal_with_id(0)
+        return self.gen_proof_for_goal(init_goal)

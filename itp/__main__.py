@@ -70,7 +70,7 @@ class InteractiveState:
 
         self.init_theory_path = theory_path
         self.init_goal = goal
-        self.proof_state = ProofState(composer, [ goal.statement ])
+        self.proof_state = ProofState(composer, goal.statement)
 
     def loop(self):
         self.print_state()
@@ -111,9 +111,10 @@ class InteractiveState:
         self.print_state()
 
     def print_state(self):
-        if len(self.proof_state.goal_stack):
+        current_goals = self.proof_state.get_current_goal_statements()
+        if len(current_goals):
             print("goal(s):")
-            for i, goal in enumerate(self.proof_state.goal_stack[::-1]):
+            for i, goal in enumerate(current_goals):
                 if i == 0:
                     print(f"  {ANSI.BOLD}{goal}{ANSI.RESET}")
                 else:

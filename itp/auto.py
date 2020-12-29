@@ -11,7 +11,7 @@ from proof.metamath.auto.unification import Unification
 from proof.metamath.auto.notation import NotationProver
 from proof.metamath.auto.substitution import SubstitutionProver
 
-from .state import ProofState
+from .state import ProofState, Goal
 from .tactics import Tactic, ApplyTactic
 from .extension import SubstitutionVisitor, SchematicVariable
 
@@ -48,12 +48,12 @@ class SearchTactic(Tactic):
         return state.composer.find_metavariable(var.name)
 
     def apply(self, state: ProofState):
-        assert len(state.goal_stack), "no goals left"
-        goal = state.goal_stack[-1]
+        goal = state.get_current_top_goal()
+        statement = goal.statement
         found = []
 
         for name, theorem in state.composer.theorems.items():
-            equations = Unification.match_statements(goal, theorem.statement)
+            equations = Unification.match_statements(statement, theorem.statement)
             if equations is None: continue
 
             failed = False
@@ -83,9 +83,9 @@ class SearchTactic(Tactic):
 
         print("theorem(s) found (from most relevant to least relevant):")
         for distance, name, theorem in found:
-            print(f"{name} ({distance}): {state.sanitize_goal_statement(theorem.statement)}")
+            print(f"{name} ({distance}): {Goal.sanitize_goal_statement(theorem.statement)}")
 
-    def resolve(self, state: ProofState): pass
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof: pass
 
 
 """
@@ -95,18 +95,19 @@ modulo the definition relation #Notation
 @ProofState.register_tactic("notation")
 class NotationTactic(Tactic):
     def apply(self, state: ProofState):
-        goal = state.goal_stack.pop()
-        assert len(goal.terms) == 3 and goal.terms[0] == Application(NotationProver.SYMBOL), f"goal {goal} is not an notation claim"
+        goal = state.resolve_current_goal(self)
+        statement = goal.statement
+        assert len(statement.terms) == 3 and statement.terms[0] == Application(NotationProver.SYMBOL), f"goal {statement} is not an notation claim"
         
-        _, left, right = goal.terms
+        _, left, right = statement.terms
 
         assert state.is_concrete(left), f"LHS {left} is not concrete"
         assert state.is_concrete(right), f"RHS {right} is not concrete"
 
         self.proof = NotationProver.prove_notation(state.composer, left, right)
 
-    def resolve(self, state: ProofState):
-        state.proof_stack.append(self.proof)
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        return self.proof
 
 
 """
@@ -117,15 +118,16 @@ in the current goal
 @ProofState.register_tactic("desugar-all")
 class DesugarTactic(Tactic):
     def apply(self, state: ProofState, target_symbol: Optional[str]=None):
-        goal = state.goal_stack.pop()
-        assert len(goal.terms) >= 1, f"ill-formed goal {goal}"
+        goal = state.resolve_current_goal(self)
+        statement = goal.statement
+        assert len(statement.terms) >= 1, f"ill-formed goal {statement}"
 
-        typecode = goal.terms[0]
+        typecode = statement.terms[0]
 
         if typecode == Application("|-"):
             # definition preseves provability
-            assert len(goal.terms) == 2, f"ill-formed provability claim {goal}"
-            _, term = goal.terms
+            assert len(statement.terms) == 2, f"ill-formed provability claim {statement}"
+            _, term = statement.terms
 
             assert state.is_concrete(term), f"term {term} is not concrete"
 
@@ -137,13 +139,13 @@ class DesugarTactic(Tactic):
             self.notation_proofs = [ NotationProver.prove_notation(state.composer, term, expanded) ]
             self.theorem = state.composer.theorems["notation-proof"]
 
-            state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
+            state.push_derived_goal(goal, StructuredStatement("p", [
                 typecode, expanded,
-            ])))
+            ]))
         elif typecode == Application("#Fresh"):
             # definition preserves freshness
-            assert len(goal.terms) == 3, f"ill-formed #Fresh claim {goal}"
-            _, var, term = goal.terms
+            assert len(statement.terms) == 3, f"ill-formed #Fresh claim {statement}"
+            _, var, term = statement.terms
 
             assert state.is_concrete(term), f"term {term} is not concrete"
 
@@ -155,12 +157,12 @@ class DesugarTactic(Tactic):
             self.notation_proofs = [ NotationProver.prove_notation(state.composer, term, expanded) ]
             self.theorem = self.theorem = state.composer.theorems["notation-fresh"]
 
-            state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
+            state.push_derived_goal(goal, StructuredStatement("p", [
                 typecode, var, expanded,
-            ])))
+            ]))
         elif typecode == Application("#Substitution"):
-            assert len(goal.terms) == 5, f"ill-formed #Substitution claim {goal}"
-            _, t1, t2, t3, var = goal.terms
+            assert len(statement.terms) == 5, f"ill-formed #Substitution claim {statement}"
+            _, t1, t2, t3, var = statement.terms
 
             assert state.is_concrete(t1), f"term {t1} is not concrete"
             assert state.is_concrete(t2), f"term {t2} is not concrete"
@@ -181,18 +183,18 @@ class DesugarTactic(Tactic):
             ]
             self.theorem = state.composer.theorems["notation-substitution"]
 
-            state.goal_stack.append(state.sanitize_goal_statement(StructuredStatement("p", [
+            state.push_derived_goal(goal, StructuredStatement("p", [
                 typecode, *expanded_terms, var,
-            ])))
+            ]))
         else:
-            assert False, f"unsupported goal {goal} for desugaring"
+            assert False, f"unsupported goal {statement} for desugaring"
 
-    def resolve(self, state: ProofState):
-        desugared_proof = state.proof_stack.pop()
-        state.proof_stack.append(self.theorem.apply(
-            desugared_proof,
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        assert len(subproofs) == 1
+        return self.theorem.apply(
+            subproofs[0],
             *self.notation_proofs,
-        ))
+        )
 
 """
 Prove a statement about substitution
@@ -200,18 +202,19 @@ Prove a statement about substitution
 @ProofState.register_tactic("substitution")
 class SubstitutionTactic(Tactic):
     def apply(self, state: ProofState):
-        goal = state.goal_stack.pop()
-        assert len(goal.terms) == 5 and goal.terms[0] == Application("#Substitution"), f"not a substitution goal {goal}"
+        goal = state.resolve_current_goal(self)
+        statement = goal.statement
+        assert len(statement.terms) == 5 and statement.terms[0] == Application("#Substitution"), f"not a substitution goal {statement}"
 
-        _, after, before, pattern, var = goal.terms
+        _, after, before, pattern, var = statement.terms
         self.proof = SubstitutionProver.prove_substitution(
             state.composer,
             after, before, pattern, var,
             hypotheses=state.composer.get_all_essentials(),
         )
 
-    def resolve(self, state: ProofState):
-        state.proof_stack.append(self.proof)
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        return self.proof
 
 
 """
@@ -1152,14 +1155,15 @@ class TautologyTactic(Tactic):
         return resolution_proof
 
     def apply(self, state: ProofState):
-        goal = state.goal_stack.pop()
-        assert len(goal.terms) == 2 and goal.terms[0] == Application("|-"), f"{goal} is not a provability claim"
-        assert state.is_concrete(goal), f"{goal} still have schematic variables"
+        goal = state.resolve_current_goal(self)
+        statement = goal.statement
+        assert len(statement.terms) == 2 and statement.terms[0] == Application("|-"), f"{statement} is not a provability claim"
+        assert state.is_concrete(statement), f"{statement} still have schematic variables"
 
-        _, goal_term = goal.terms
+        _, goal_term = statement.terms
 
         print("expanding the goal")
-        assert self.is_propositional(state, goal_term), f"the goal {goal} is not propositional"
+        assert self.is_propositional(state, goal_term), f"goal {statement} is not propositional"
 
         negated_goal_term = Application("\\not", [ goal_term ])
 
@@ -1215,5 +1219,5 @@ class TautologyTactic(Tactic):
 
         self.goal_proof = goal_proof
 
-    def resolve(self, state: ProofState):
-        state.proof_stack.append(self.goal_proof)
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        return self.goal_proof
