@@ -116,7 +116,41 @@ in the current goal
 """
 @ProofState.register_tactic("desugar")
 @ProofState.register_tactic("desugar-all")
+@ProofState.register_tactic("desugar-kore")
 class DesugarTactic(Tactic):
+    def find_kore_symbol(self, state: ProofState, term: Term) -> Optional[str]:
+        if isinstance(term, Application):
+            if term.symbol.startswith("\\kore-") and NotationProver.find_sugar_axiom(state.composer, term.symbol) is not None:
+                return term.symbol
+            
+            for subterm in term.subterms:
+                found = self.find_kore_symbol(state, subterm)
+                if found is not None:
+                    return found
+            
+            return None
+        else:
+            return None
+    
+    """
+    Desugar all non constant symbols beginning with \kore-
+    """
+    def desugar_kore(self, state: ProofState, term: Term) -> Term:
+        while True:
+            symbol = self.find_kore_symbol(state, term)
+            if symbol is None: return term
+            term = NotationProver.expand_sugar(state.composer, term, target_symbol=symbol)
+
+    def desugar(self, state: ProofState, term: Term, target_symbol: Optional[str]=None) -> Term:
+        if self.tactic_name == "desugar-kore":
+            return self.desugar_kore(state, term)
+        else:
+            return NotationProver.expand_sugar(
+                state.composer, term, 
+                target_symbol=target_symbol,
+                desugar_all=self.tactic_name == "desugar-all",
+            )
+
     def apply(self, state: ProofState, target_symbol: Optional[str]=None):
         goal = state.resolve_current_goal(self)
         statement = goal.statement
@@ -131,11 +165,7 @@ class DesugarTactic(Tactic):
 
             assert state.is_concrete(term), f"term {term} is not concrete"
 
-            expanded = NotationProver.expand_sugar(
-                state.composer, term, 
-                target_symbol=target_symbol,
-                desugar_all=self.tactic_name == "desugar-all",
-            )
+            expanded = self.desugar(state, term, target_symbol)
             self.notation_proofs = [ NotationProver.prove_notation(state.composer, term, expanded) ]
             self.theorem = state.composer.theorems["notation-proof"]
 
@@ -149,11 +179,7 @@ class DesugarTactic(Tactic):
 
             assert state.is_concrete(term), f"term {term} is not concrete"
 
-            expanded = NotationProver.expand_sugar(
-                state.composer, term, 
-                target_symbol=target_symbol,
-                desugar_all=self.tactic_name == "desugar-all",
-            )
+            expanded = self.desugar(state, term, target_symbol)
             self.notation_proofs = [ NotationProver.prove_notation(state.composer, term, expanded) ]
             self.theorem = self.theorem = state.composer.theorems["notation-fresh"]
 
@@ -169,11 +195,7 @@ class DesugarTactic(Tactic):
             assert state.is_concrete(t3), f"term {t3} is not concrete"
             
             expanded_terms = [
-                NotationProver.expand_sugar(
-                    state.composer, term, 
-                    target_symbol=target_symbol,
-                    desugar_all=self.tactic_name == "desugar-all",
-                )
+                self.desugar(state, term, target_symbol)
                 for term in (t1, t2, t3)
             ]
 
