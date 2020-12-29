@@ -29,9 +29,9 @@ class Theorem:
         self,
         composer: Composer,
         statement: StructuredStatement,
-        floatings: List[Tuple[str, str]], # a list of pairs (typecode, metavariable),
-                                          # in the order that should be instantiated
-                                          # (order of the floating statements)
+        floatings: List[Tuple[str, str, str]], # a list of pairs (typecode, metavariable, label),
+                                               # in the order that should be instantiated
+                                               # (order of the floating statements)
         essentials: List[StructuredStatement], # a list of essential statements (hypotheses)
     ):
         self.composer = composer
@@ -80,15 +80,11 @@ class Theorem:
         return self.apply(*args, **kwargs)
 
     """
-    Applies the theorem, given the following arguments:
-      - a list of essential proofs, from which we may infer some of
-        the metavariables by unification
-      - a map from metavariable name -> proof or term (in the latter case we
-        will try to prove the typecode automatically)
+    Infer a list of subproofs for the hypotheses from the information given
     """
-    def apply(self, *essential_proofs: Proof, **metavar_substitution) -> Proof:
+    def infer_hypotheses(self, *essential_proofs: Proof, **metavar_substitution) -> Tuple[List[Proof], Mapping[str, Term]]:
         substitution = {}
-        script = []
+        floating_proofs = []
 
         assert len(essential_proofs) == len(self.essentials), \
                "unmatched number of subproofs for " \
@@ -111,7 +107,7 @@ class Theorem:
                     # update metavar_substitution to reflect this assignment
                     metavar_substitution[var] = term
 
-        for typecode, var in self.floatings:
+        for typecode, var, _ in self.floatings:
             assert var in metavar_substitution, \
                    "assignment to metavariable `{}` cannot be inferred".format(var)
 
@@ -141,21 +137,61 @@ class Theorem:
                    "wrong proof for `{} {}`, got {}".format(typecode, var, typecode_proof.statement)
 
             substitution[var] = proved_term
-            script += typecode_proof.script
+            floating_proofs.append(typecode_proof)
 
-        for essential_proof in essential_proofs:
-            script += essential_proof.script
+        return floating_proofs + list(essential_proofs), substitution
 
-        assert self.statement.label is not None, f"applying a theorem without label: {self.statement}"
-
-        script.append(self.statement.label)
-
+    def get_conclusion_instance(self, substitution: Mapping[str, Term]) -> StructuredStatement:
         instance = SubstitutionVisitor(substitution).visit(self.statement)
         instance.label = None
         instance.statement_type = Statement.PROVABLE
-        instance.proof = script
+        return instance
 
-        return Proof(instance, script)
+    """
+    Applies the theorem, given the following arguments:
+      - a list of essential proofs, from which we may infer some of
+        the metavariables by unification
+      - a map from metavariable name -> proof or term (in the latter case we
+        will try to prove the typecode automatically)
+    """
+    def apply(self, *essential_proofs: Proof, **metavar_substitution) -> Proof:
+        subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
+
+        assert self.statement.label is not None, f"applying a theorem without label: {self.statement}"
+        proof_script = sum([ subproof.script for subproof in subproofs ], []) + [ self.statement.label ]
+
+        instance = self.get_conclusion_instance(substitution)
+        instance.proof = proof_script
+
+        return Proof(instance, proof_script)
+        
+    """
+    Instead of explicitly referencing the labeled statement,
+    we can inline the proof in some other proof to remove
+    the dependency. However, the proof script will be longer
+    """
+    def inline_apply(self, proof_of_theorem: Proof, *essential_proofs: Proof, **metavar_substitution) -> Proof:
+        subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
+
+        # labels of hypotheses
+        hyp_labels = [ label for _, _, label in self.floatings ] + [ essential.label for essential in self.essentials ]
+        assert len(subproofs) == len(hyp_labels)
+
+        hyp_proof_map = dict(zip(hyp_labels, subproofs))
+
+        # create an inlined proof
+        proof_script = []
+
+        for label in proof_of_theorem.script:
+            if label in hyp_proof_map:
+                proof_script += hyp_proof_map[label].script
+            else:
+                proof_script.append(label)
+
+        instance = self.get_conclusion_instance(substitution)
+        instance.proof = proof_script
+
+        return Proof(instance, proof_script)
 
 
 """
@@ -165,11 +201,11 @@ class Context:
     def __init__(self, prev: Context=None):
         self.prev = prev
 
-        self.active_floatings = [] # list of (typecode, metavariable)
+        self.active_floatings = [] # list of (typecode, metavariable, label)
         self.active_essentials = [] # list of essential statements
 
-    def add_floating(self, typecode: str, variable: str):
-        self.active_floatings.append((typecode, variable))
+    def add_floating(self, typecode: str, variable: str, label: str):
+        self.active_floatings.append((typecode, variable, label))
 
     def add_essential(self, stmt: StructuredStatement):
         self.active_essentials.append(stmt)
@@ -177,24 +213,24 @@ class Context:
     """
     return a fraction of self.metavariables according to the given set
     """
-    def find_floatings(self, metavariables: Set[str]) -> List[Tuple[str, str]]:
-        fraction = [ (typecode, var) for typecode, var in self.active_floatings if var in metavariables]
+    def find_floatings(self, metavariables: Set[str]) -> List[Tuple[str, str, str]]:
+        fraction = [ (typecode, var, label) for typecode, var, label in self.active_floatings if var in metavariables]
         if self.prev is not None:
             return self.prev.find_floatings(metavariables) + fraction
         else:
-            return fraction
+            return fraction.copy()
 
     """
     return all metavariables of the given typecode
     """
     def find_floatings_of_typecode(self, expected_typcode: str) -> List[str]:
-        current = [ var for typecode, var in self.active_floatings if typecode == expected_typcode ]
+        current = [ var for typecode, var, _ in self.active_floatings if typecode == expected_typcode ]
         if self.prev is not None:
             return self.find_floatings_of_typecode(expected_typcode) + current
         else:
             return current
 
-    def get_all_floatings(self) -> List[Tuple[str, str]]:
+    def get_all_floatings(self) -> List[Tuple[str, str, str]]:
         if self.prev is not None:
             return self.prev.get_all_floatings() + self.active_floatings
         else:
@@ -214,7 +250,7 @@ class Context:
         if self.prev is not None:
             return self.prev.get_all_essentials() + self.active_essentials
         else:
-            return self.active_essentials
+            return self.active_essentials.copy()
 
 
 """
@@ -285,22 +321,6 @@ class Composer(MetamathVisitor):
     # call start_segment(name). To end a segment, call end_segment.
     # To get all statements in a segment, call get_segment
     # """
-    # def start_segment(self, name: str):
-    #     assert name not in self.segments, f"duplicate segment {name}"
-    #     self.segments[name] = (len(self.statements), None)
-
-    # def end_segment(self, name: str):
-    #     assert name in self.segments, f"segment {name} does not exist"
-    #     start, end = self.segments[name]
-    #     assert end is None, f"segment {name} has already ended"
-    #     self.segments[name] = start, len(self.statements)
-
-    # def get_segment(self, name: str):
-    #     assert name in self.segments, f"segment {name} does not exist"
-    #     start, end = self.segments[name]
-    #     if end is None: return self.statements[start:]
-    #     else: return self.statements[start:end]
-
     def start_segment(self, name: str):
         self.segment_stack.append(name)
 
@@ -337,7 +357,7 @@ class Composer(MetamathVisitor):
         return self.context.find_floatings_of_typecode(typecode)
 
     def get_all_metavariables(self) -> List[str]:
-        return [ var for _, var in self.context.get_all_floatings() ]
+        return [ var for _, var, _ in self.context.get_all_floatings() ]
 
     ####################################
     # Composer as a metamath AST visitor
@@ -353,7 +373,7 @@ class Composer(MetamathVisitor):
     def postvisit_structured_statement(self, stmt: StructuredStatement, *args):
         if stmt.statement_type == Statement.FLOATING:
             typecode, variable = stmt.terms
-            self.context.add_floating(typecode.symbol, variable.name)
+            self.context.add_floating(typecode.symbol, variable.name, stmt.label)
 
             # any floating statement is also a theorem
             self.theorems[stmt.label] = Theorem(self, stmt, [], [])
@@ -374,4 +394,4 @@ class Composer(MetamathVisitor):
             assert len(floatings) == len(metavariables), \
                    "some metavariables not found in {}, only found {}".format(metavariables, floatings)
 
-            self.theorems[stmt.label] = Theorem(self, stmt, floatings.copy(), essentials.copy())
+            self.theorems[stmt.label] = Theorem(self, stmt, floatings, essentials)

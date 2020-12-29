@@ -90,16 +90,22 @@ class InteractiveState:
                     command = parse_command(command_src)
                     if command is None: continue
                     self.apply_tactic_command(command)
-            except Exception as exc:
+
+            except EOFError:
                 if self.debug:
                     traceback.print_exc()
-                else:
-                    print(f"{ANSI.COLOR_RED}error:{ANSI.RESET} {ANSI.BOLD}{exc}{ANSI.RESET}")
+                self.command_quit()
 
             except KeyboardInterrupt:
                 if self.debug:
                     traceback.print_exc()
                 self.command_quit()
+
+            except Exception as exc:
+                if self.debug:
+                    traceback.print_exc()
+                else:
+                    print(f"{ANSI.COLOR_RED}error:{ANSI.RESET} {ANSI.BOLD}{exc}{ANSI.RESET}")
 
     def apply_tactic_command(self, command: Command):
         old_state = self.proof_state
@@ -111,16 +117,40 @@ class InteractiveState:
         self.print_state()
 
     def print_state(self):
+        segments = []
+
+        # print all current inline claims
+        claims = self.proof_state.get_all_claims()
+        if len(claims):
+            segments.append("\n".join([
+                "inline claim(s):",
+                *[ "  " + str(claim.statement) for claim in claims ],
+            ]))
+
+        # print all current goals
         current_goals = self.proof_state.get_current_goal_statements()
         if len(current_goals):
-            print("goal(s):")
-            for i, goal in enumerate(current_goals):
-                if i == 0:
-                    print(f"  {ANSI.BOLD}{goal}{ANSI.RESET}")
-                else:
-                    print(f"  {goal}")
+            # print all essential hypotheses usable for the current goal
+            essentials = self.proof_state.get_all_essentials_for_current_top_goal()
+            if len(essentials):
+                segments.append("\n".join([
+                    "essential(s):",
+                    *[ "  " + str(essential.statement) for essential in essentials ],
+                ]))
+
+
+            segments.append("\n".join([
+                "goal(s):",
+                *[
+                    f"  {ANSI.BOLD}{goal}{ANSI.RESET}" if i == 0 else f"  {goal}"
+                    for i, goal in enumerate(current_goals)
+                ]
+            ]))
         else:
-            print("no goals left!")
+            segments.append("no goals left!")
+
+        separator = "===================="
+        print(separator + "\n" + f"\n{separator}\n".join(segments))
 
     @BuiltinCommand.add("reload", help_message="reload the theory file and re-apply all tactics")
     def command_reload(self):

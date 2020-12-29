@@ -46,7 +46,7 @@ class TypecodeProver:
 
                 for metavar, subterm in solution.items():
                     # find out the expected typecode for <metavar>
-                    for expected_typecode, other_metavar in theorem.floatings:
+                    for expected_typecode, other_metavar, _ in theorem.floatings:
                         if other_metavar == metavar:
                             break
                     else:

@@ -153,11 +153,16 @@ def parse_database(src: str) -> Database:
     return ASTTransformer().transform(tree)
 
 
-def parse_term_with_metavariables(src: str, metavariables: Set[str]={}) -> Term:
+def parse_terms_with_metavariables(src: str, metavariables: Set[str]={}) -> List[Term]:
     tree = statement_parser.parse(f"l $a {src} $.")
     stmt = ASTTransformer(metavariables).transform(tree)
-    assert len(stmt.terms) == 1, f"syntax error: {src}"
-    return stmt.terms[0]
+    return stmt.terms
+
+
+def parse_term_with_metavariables(src: str, metavariables: Set[str]={}) -> Term:
+    terms = parse_terms_with_metavariables(src, metavariables)
+    assert len(terms) == 1, f"syntax error: {src}"
+    return terms[0]
 
 
 """

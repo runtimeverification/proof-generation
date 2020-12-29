@@ -46,6 +46,10 @@ Apply a theorem on the top of the goal stack
 """
 @ProofState.register_tactic("apply")
 class ApplyTactic(Tactic):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.use_claim = False
+
     def apply(self, state: ProofState, theorem_name: str, **options):
         substitution = self.parse_substitution(state, options)
         self.metavars_substitution = substitution
@@ -54,6 +58,15 @@ class ApplyTactic(Tactic):
         top_goal_statement = top_goal.statement
 
         self.theorem = state.composer.find_theorem(theorem_name)
+
+        # try to find an inline claim
+        if self.theorem is None:
+            found = state.find_claim(theorem_name)
+            if found is not None:
+                self.theorem, claim_goal = found
+                self.use_claim = True
+                state.add_goal_dependency(top_goal, claim_goal)
+
         if self.theorem is not None:
             copied_statement = Goal.sanitize_goal_statement(self.theorem.statement)
 
@@ -77,7 +90,8 @@ class ApplyTactic(Tactic):
             essentials = [ metavars_subst_visitor.visit(essential) for essential in essentials ]
 
         else:
-            self.theorem = state.composer.find_essential(theorem_name)
+            # try to find a hypotheses
+            self.theorem = state.find_essential_for_goal(theorem_name, top_goal)
             assert self.theorem is not None, f"cannot find theorem {theorem_name}"
             copied_statement = self.theorem.statement
             essentials = []
@@ -128,10 +142,17 @@ class ApplyTactic(Tactic):
             for var, term in self.metavars_substitution.items()
         }
 
-        return self.theorem.apply(
-            *subproofs,
-            **full_substitution,
-        )
+        if self.use_claim:
+            # get an inline proof if the reference theorem is an inline claim
+            return self.theorem.inline_apply(
+                *subproofs, # subproofs would include the proof of the claim as the first one since we added the dependency
+                **full_substitution,
+            )
+        else:
+            return self.theorem.apply(
+                *subproofs,
+                **full_substitution,
+            )
 
 
 """
@@ -182,8 +203,9 @@ class ClaimTactic(Tactic):
         # TODO: well...
         while True:
             name = prefix + str(i)
-            if state.composer.find_theorem(name) is None:
+            if state.composer.find_theorem(name) is None and state.find_claim(name) is None:
                 return name
+            i += 1
 
     def apply(self, state: ProofState, *args, **kwargs):
         # the last argument or the single kwarg is the conclusion
@@ -209,7 +231,17 @@ class ClaimTactic(Tactic):
         terms = self.parse_terms(state, conclusion)
         conclusion = StructuredStatement(Statement.PROVABLE, terms, label=label)
 
-        print(essentials, conclusion)
+        # TODO: this should probably stay in metamath.composer?
+        # find all related floating statements
+        metavariables = conclusion.get_metavariables()
+        for essential in essentials:
+            metavariables.update(essential.get_metavariables())
+
+        floatings = state.composer.context.find_floatings(metavariables)
+
+        self.claim_theorm = Theorem(state.composer, conclusion, floatings, essentials)
+        self.claim_goal = state.add_claim(self.claim_theorm)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
-        pass
+        # return the proof of the theorem
+        return state.gen_proof_for_goal(self.claim_goal)
