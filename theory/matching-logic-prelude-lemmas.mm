@@ -665,6 +665,10 @@ ${
         ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern lemma-mp2.2 ph0-is-pattern ph1-is-pattern lemma-mp2.0 lemma-mp2.1 rule-and-intro-sugar proof-rule-mp $.
 $}
 
+${
+    lemma-floor-imp-floor2 $p |- ( \imp ( \floor ph0 ) ( \floor ( \floor ph0 ) ) ) $= ? $.
+$}
+
 $( ==================================== $)
 
 ${

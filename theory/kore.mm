@@ -34,7 +34,7 @@ kore-forall-is-pattern $a #Pattern ( \kore-forall ph0 ph1 x ph2 ) $.
 kore-forall-is-sugar $a #Notation ( \kore-forall ph0 ph1 x ph2 ) ( \sorted-forall x ph0 ph2 ) $.
 
 kore-forall-sort-is-pattern $a #Pattern ( \kore-forall-sort s0 ph0 ) $.
-kore-forall-sort-is-sugar $a #Notation ( \kore-forall-sort s0 ph0 ) ( \forall-sort s0 ph0 ) $.
+kore-forall-sort-is-sugar $a #Notation ( \kore-forall-sort s0 ph0 ) ( \forall-sort s0 ph0 ) $. 
 
 kore-valid-is-pattern $a #Pattern ( \kore-valid ph0 ph1 ) $.
 kore-valid-is-sugar $a #Notation ( \kore-valid ph0 ph1 ) ( \eq ph1 ( \kore-top ph0 ) ) $.
