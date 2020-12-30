@@ -133,7 +133,7 @@ class DesugarTactic(Tactic):
             return None
     
     """
-    Desugar all non constant symbols beginning with \kore-
+    Desugar all non constant symbols beginning with \\kore-
     """
     def desugar_kore(self, state: ProofState, term: Term) -> Term:
         while True:

@@ -88,5 +88,5 @@ kore-dv-is-sugar $a #Notation ( \kore-dv ph0 ph1 ) ( \app ( \app \kore-dv-symbol
 kore-is-sort-is-pattern $a #Pattern ( \kore-is-sort ph0 ) $.
 ${
     $d s0 ph0 $.
-    kore-is-sort-is-sugar $a #Notation ( \kore-is-sort ph0 ) ( \exists-sort s0 \sort ( \eq s0 ph0 ) ) $.
+    kore-is-sort-is-sugar $a #Notation ( \kore-is-sort ph0 ) ( \exists-sort s0 ( \eq s0 ph0 ) ) $.
 $}
