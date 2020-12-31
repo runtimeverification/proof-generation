@@ -346,12 +346,12 @@ proof-rule-propagation-or-right $a |- ( \imp ( \app ph0 ( \or ph1 ph2 ) )
                                              ( \or ( \app ph0 ph1 ) ( \app ph0 ph2 ) ) ) $.
 ${
     proof-rule-propagation-exists-left.0 $e #Fresh x ph1 $.
-    proof-rule-propagation-exists-left   $a |- ( \imp ( ( \app ( \exists x ph0 ) ph1 ) ) 
+    proof-rule-propagation-exists-left   $a |- ( \imp ( \app ( \exists x ph0 ) ph1 )
                                                       ( \exists x ( \app ph0 ph1 ) ) ) $.
 $}
 ${
     proof-rule-propagation-exists-right.0 $e #Fresh x ph0 $.
-    proof-rule-propagation-exists-right   $a |- ( \imp ( ( \app ph0 ( \exists x ph1 ) ) ) 
+    proof-rule-propagation-exists-right   $a |- ( \imp ( \app ph0 ( \exists x ph1 ) )
                                                        ( \exists x ( \app ph0 ph1 ) ) ) $.
 $}
 ${
