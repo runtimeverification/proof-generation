@@ -666,6 +666,18 @@ ${
 $}
 
 ${
+    lemma-pmp.0 $e |- ( \imp ph0 ph1 ) $.
+    lemma-pmp.1 $e |- ( \imp ph1 ph2 ) $.
+    lemma-pmp $p |- ( \imp ph0 ph2 ) $= ? $.
+$}
+
+${
+    lemma-pmp2.0 $e |- ( \imp ph0 ph1 ) $.
+    lemma-pmp2.1 $e |- ( \imp ph0 ( \imp ph1 ph2 ) ) $.
+    lemma-pmp2 $p |- ( \imp ph0 ph2 ) $= ? $.
+$}
+
+${
     lemma-floor-imp-floor2 $p |- ( \imp ( \floor ph0 ) ( \floor ( \floor ph0 ) ) ) $= ? $.
 $}
 
