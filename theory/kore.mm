@@ -22,7 +22,9 @@ $c \kore-floor $.
 $c \kore-equals $.
 $c \kore-in $.
 $c \kore-next $.
+$c \kore-eventually $.
 $c \kore-rewrites $.
+$c \kore-rewrites-star $.
 $c \kore-dv $.
 $c \kore-valid $.
 $c \kore-is-sort $.
@@ -77,8 +79,18 @@ kore-next-is-symbol $a #Symbol \kore-next-symbol $.
 kore-next-is-pattern $a #Pattern ( \kore-next ph0 ph1 ) $.
 kore-next-is-sugar $a #Notation ( \kore-next ph0 ph1 ) ( \app \kore-next-symbol ph1 ) $.
 
+kore-evetually-is-pattern $a #Pattern ( \kore-eventually ph0 ph1 ) $.
+${
+    $d X ph0 $.
+    $d X ph1 $.
+    kore-evetually-is-sugar $a #Notation ( \kore-eventually ph0 ph1 ) ( \mu X ( \kore-or ph0 ph1 ( \kore-next ph0 X ) ) ) $.
+$}
+
 kore-rewrites-is-pattern $a #Pattern ( \kore-rewrites ph0 ph1 ph2 ) $.
 kore-rewrites-is-sugar $a #Notation ( \kore-rewrites ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-next ph0 ph2 ) ) $.
+
+kore-rewrites-star-is-pattern $a #Pattern ( \kore-rewrites-star ph0 ph1 ph2 ) $.
+kore-rewrites-star-is-sugar $a #Notation ( \kore-rewrites-star ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-eventually ph0 ph2 ) ) $.
 
 $c \kore-dv-symbol $.
 kore-dv-is-symbol $a #Symbol \kore-dv-symbol $.

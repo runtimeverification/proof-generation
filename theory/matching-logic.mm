@@ -93,11 +93,17 @@ ${
     positive-in-mu.0 $e #Positive xX ph0 $.
     positive-in-mu   $a #Positive xX ( \mu X ph0 ) $.
 $}
+${
+    $d xX ph0 $.
+    positive-disjoint $a #Positive xX ph0 $.
+$}
 
 ${
     $d xX yY $.
     negative-in-var $a #Negative xX yY $.
 $}
+negative-in-symbol $a #Negative xX sg0 $.
+negative-in-bot $a #Negative xX \bot $.
 ${
     negative-in-imp.0 $e #Positive xX ph0 $.
     negative-in-imp.1 $e #Negative xX ph1 $.
@@ -115,6 +121,10 @@ $}
 ${
     negative-in-mu.0 $e #Negative xX ph0 $.
     negative-in-mu   $a #Negative xX ( \mu X ph0 ) $.
+$}
+${
+    $d xX ph0 $.
+    negative-disjoint $a #Negative xX ph0 $.
 $}
 
 $( Fresh $)
