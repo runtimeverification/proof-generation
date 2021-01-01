@@ -11,7 +11,7 @@ from proof.metamath.auto.unification import Unification
 from proof.metamath.auto.notation import NotationProver
 from proof.metamath.auto.substitution import SubstitutionProver
 
-from .state import ProofState, Goal
+from .state import ProofState, Goal, NoStateChangeException
 from .tactics import Tactic, ApplyTactic
 from .extension import SubstitutionVisitor, SchematicVariable
 
@@ -84,6 +84,8 @@ class SearchTactic(Tactic):
         print("theorem(s) found (from most relevant to least relevant):")
         for distance, name, theorem in found:
             print(f"{name} ({distance}): {Goal.sanitize_goal_statement(theorem.statement)}")
+
+        raise NoStateChangeException()
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof: pass
 

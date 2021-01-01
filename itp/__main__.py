@@ -10,7 +10,7 @@ from proof.metamath.composer import Composer
 
 from .ast import Command
 from .parser import parse_command
-from .state import ProofState
+from .state import ProofState, NoStateChangeException
 from .ansi import ANSI
 
 import itp.auto
@@ -100,6 +100,9 @@ class InteractiveState:
                 if self.debug:
                     traceback.print_exc()
                 self.command_quit()
+
+            except NoStateChangeException:
+                continue
 
             except Exception as exc:
                 if self.debug:

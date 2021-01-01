@@ -9,6 +9,13 @@ from .extension import SchematicVariable, SubstitutionVisitor, CopyVisitor
 
 
 """
+Tactic should raise this exception when there
+is no change in the proof state
+"""
+class NoStateChangeException(Exception): pass
+
+
+"""
 A goal is a tuple (id, statement, [claim label])
 All dependencies between goals
 are recorded in ProofState so that
