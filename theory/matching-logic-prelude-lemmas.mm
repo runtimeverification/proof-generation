@@ -1441,3 +1441,15 @@ ${
     in-sort-or.1 $e |- ( \in-sort ph2 ph0 ) $.
     in-sort-or $p |- ( \in-sort ( \or ph1 ph2 ) ph0 ) $= ? $.
 $}
+
+${
+    imp-and-intro-right.0 $e |- ( \imp ph0 ph2 ) $.
+    imp-and-intro-right $p |- ( \imp ph0 ( \and ph1 ph2 ) )
+    $= ? $.
+$}
+
+${
+    imp-and-intro-left.0 $e |- ( \imp ph0 ph1 ) $.
+    imp-and-intro-left $p |- ( \imp ph0 ( \and ph1 ph2 ) )
+    $= ? $.
+$}
