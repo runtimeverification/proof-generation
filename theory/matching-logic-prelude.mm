@@ -100,6 +100,8 @@ $c \in-sort $.
 in-sort-is-pattern $a #Pattern ( \in-sort ph0 ph1 ) $.
 in-sort-is-sugar   $a #Notation ( \in-sort ph0 ph1 ) ( \included ph0 ( \inh ph1 ) ) $.
 
+inh-sort-nonempty $a |- ( \exists x ( \in-sort x \sort ) ) $.
+
 $c \sorted-forall $.
 sorted-forall-is-pattern $a #Pattern ( \sorted-forall x ph0 ph1 ) $.
 sorted-forall-is-sugar   $a #Notation ( \sorted-forall x ph0 ph1 ) ( \forall x ( \imp ( \in-sort x ph0 ) ph1 ) ) $. 
