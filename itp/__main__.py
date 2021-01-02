@@ -57,7 +57,7 @@ class InteractiveState:
 
     def init_from_theory_and_goal(self, theory_path: str, goal_name: str):
         composer = Composer()
-        database = load_database(theory_path)
+        database = load_database(theory_path, include_proof=False)
         composer.load(database)
         assert goal_name in composer.theorems, f"cannot find label {goal_name} in the theory file {theory_path}"
 

@@ -813,11 +813,3 @@ ${
     kore-rewrites-star-transitivity.1 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph2 ph3 ) ) $.
     kore-rewrites-star-transitivity $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph3 ) ) $= ? $.
 $}
-
-${
-    $d x s0 $.
-    $d x ph0 $.
-    $d x ph1 $.
-    kore-functional-implies-in-sort.0 $e |- ( \kore-forall-sort s0 ( \kore-valid s0 ( \kore-exists ph0 s0 x ( \kore-equals ph0 s0 x ph1 ) ) ) ) $.
-    kore-functional-implies-in-sort $p |- ( \in-sort ph1 ph0 ) $= ? $.
-$}
