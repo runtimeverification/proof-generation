@@ -104,6 +104,7 @@ class ProofEnvironment:
         self.anywhere_axioms = [] # provable claims
         self.substitution_axioms = {} # constant symbol (in metamath) -> theorem
         self.sort_axioms = {} # constant symbol (in metamath) -> theorem
+        self.sorting_lemmas = {} # constant symbol (in metamath) -> theorem
         self.equational_axioms = {} # symbol instance -> provable claim
 
         self.sort_injection_symbol = None
@@ -245,6 +246,35 @@ class ProofEnvironment:
         self.load_comment(str(symbol_definition))
         self.load_constant(encoded_symbol, arity, label)
 
+        # generate sorting lemma
+        # TODO: add support for sort parametric symbols
+        if len(symbol_definition.sort_variables) == 0:
+            pattern_vars = self.gen_metavariables("#Pattern", arity)
+            
+            encoded_output_sort = self.encode_pattern(symbol_definition.output_sort)
+            sorting_axiom_term = mm.Application("\\in-sort", [
+                mm.Application(encoded_symbol, [ mm.Metavariable(v) for v in pattern_vars ]),
+                encoded_output_sort,
+            ])
+
+            for v, sort in list(zip(pattern_vars, symbol_definition.input_sorts))[::-1]:
+                assert isinstance(sort, kore.SortInstance)
+                encoded_sort = self.encode_pattern(sort)
+
+                sorting_axiom_term = mm.Application("\\imp", [
+                    mm.Application("\\in-sort", [ mm.Metavariable(v), encoded_sort ]),
+                    sorting_axiom_term,
+                ])
+
+            self.sorting_lemmas[encoded_symbol] = self.load_metamath_statement(mm.StructuredStatement(
+                mm.Statement.PROVABLE,
+                [
+                    mm.Application("|-"),
+                    sorting_axiom_term,
+                ],
+                label=f"{label}-sorting",
+            ))
+
     def load_sort_definition(self, sort_definition: kore.SortDefinition, label: str):
         encoded_sort = KorePatternEncoder.encode_sort(sort_definition.sort_id)
         arity = len(sort_definition.sort_variables)
@@ -324,11 +354,14 @@ class ProofEnvironment:
         # allocate all required metavariable at once
         subst_var, = self.gen_metavariables("#Variable", 1)
         pattern_var, *subpattern_vars = self.gen_metavariables("#Pattern", arity * 2 + 1)
+        pattern_vars = [ pattern_var ] + list(subpattern_vars)
 
         # declare metamath constant
         # this is the actual symbol at the matching logic level used for application
         applicative_symbol = symbol + "-symbol"
         self.load_metamath_statement(mm.RawStatement(mm.Statement.CONSTANT, [ symbol, applicative_symbol ]))
+
+        sugared_pattern = mm.Application(symbol, [ mm.Metavariable(v) for v in pattern_vars[:arity] ])
 
         # declare #Symbol
         self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
@@ -339,17 +372,17 @@ class ProofEnvironment:
         # declare #Pattern
         self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
             mm.Application("#Pattern"),
-            mm.Application(symbol, [ mm.Metavariable(v) for v in subpattern_vars[:arity] ]),
+            sugared_pattern,
         ], label=label + "-is-pattern"))
 
         # declare syntax sugar
         desugared = mm.Application(applicative_symbol)
-        for var in subpattern_vars[:arity]:
+        for var in pattern_vars[:arity]:
             desugared = mm.Application("\\app", [ desugared, mm.Metavariable(var) ])
 
         self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
             mm.Application("#Notation"),
-            mm.Application(symbol, [ mm.Metavariable(v) for v in subpattern_vars[:arity] ]),
+            sugared_pattern,
             desugared,
         ], label=label + "-is-sugar"))
 

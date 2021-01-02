@@ -168,7 +168,7 @@ def parse_term_with_metavariables(src: str, metavariables: Set[str]={}) -> Term:
 """
 Load a file and resolve all includes
 """
-def flatten_includes(path: str, loaded: Set[str]=set(), trace: List[str]=[]) -> str:
+def flatten_includes(path: str, loaded: Set[str]=set(), trace: List[str]=[], include_proof=True) -> str:
     path = os.path.realpath(path)
 
     if path in loaded:
@@ -180,6 +180,9 @@ def flatten_includes(path: str, loaded: Set[str]=set(), trace: List[str]=[]) -> 
     with open(path) as mm_file:
         source = mm_file.read()
         
+        if not include_proof:
+            source = remove_proof(source)
+        
         while True:
             match = re.search(r"\$\[\s+([^\s]+)\s+\$\]", source)
             if match is None:
@@ -190,7 +193,7 @@ def flatten_includes(path: str, loaded: Set[str]=set(), trace: List[str]=[]) -> 
             # if not os.path.isabs(include_path):
             #     include_path = os.path.join(os.path.dirname(path), include_path)
 
-            included_source = flatten_includes(include_path, loaded, trace=trace + [path])
+            included_source = flatten_includes(include_path, loaded, trace=trace + [path], include_proof=include_proof)
             source = source[:match.start()] + included_source + source[match.end():]
 
     loaded.add(path)
@@ -198,5 +201,12 @@ def flatten_includes(path: str, loaded: Set[str]=set(), trace: List[str]=[]) -> 
     return source
 
 
-def load_database(path: str) -> Database:
-    return parse_database(flatten_includes(path, set()))
+def remove_proof(src: str) -> str:
+    # remove comments first
+    src = re.sub(r"\$\(((.|\n)(?<!\$\)))*\$\)", "", src)
+    return re.sub(r"\$=\s*[^\$]*\s*\$\.", "$= ? $.", src)
+
+
+def load_database(path: str, include_proof=True) -> Database:
+    src = flatten_includes(path, set(), include_proof=include_proof)
+    return parse_database(src)
