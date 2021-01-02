@@ -47,7 +47,13 @@ class SearchTactic(Tactic):
             return var.typecode
         return state.composer.find_metavariable(var.name)
 
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, limit: Union[str, int]=7):
+        if type(limit) is str:
+            if limit == "all":
+                limit = None
+            else:
+                limit = int(limit)
+
         goal = state.get_current_top_goal()
         statement = goal.statement
         found = []
@@ -81,8 +87,8 @@ class SearchTactic(Tactic):
 
         found.sort(key=lambda t: t[0])
 
-        print("theorem(s) found (from most relevant to least relevant):")
-        for distance, name, theorem in found:
+        print("theorem(s) found (from the least relevant to the most relevant):")
+        for distance, name, theorem in found[:limit][::-1]:
             print(f"{name} ({distance}): {Goal.sanitize_goal_statement(theorem.statement)}")
 
         raise NoStateChangeException()
