@@ -1,6 +1,7 @@
 from typing import Optional
 
 from ..ast import Metavariable, Term, Statement, Application, StructuredStatement
+from ..visitors import SubstitutionVisitor
 
 from .unification import Unification
 
@@ -30,12 +31,24 @@ class TypecodeProver:
 
         # try to find a non-floating statement without hypotheses and unify
         for _, theorem in composer.theorems.items():
-            if len(theorem.essentials) == 0 and theorem.statement.statement_type != Statement.FLOATING:
+            if len(theorem.essentials) <= 1 and theorem.statement.statement_type != Statement.FLOATING:
                 # check that expected_statement is an instance of theorem.statement
                 solution = Unification.match_statements_as_instance(theorem.statement, expected_statement)
 
                 if solution is None:
                     continue
+
+                subproofs = []
+
+                # try to find an exact essential that matches the hypotheses
+                if len(theorem.essentials):
+                    hypothesis = SubstitutionVisitor(solution).visit(theorem.essentials[0])
+                    for essential in composer.get_all_essentials():
+                        if hypothesis.terms == essential.statement.terms:
+                            subproofs.append(essential.apply())
+                            break
+                    else:
+                        continue
 
                 # print("try to apply", theorem.statement, "to", expected_statement)
                 
@@ -62,6 +75,6 @@ class TypecodeProver:
 
                 # found a proof
                 if not failed:
-                    return theorem.apply(**meta_subst)
+                    return theorem.apply(*subproofs, **meta_subst)
         
         return None
