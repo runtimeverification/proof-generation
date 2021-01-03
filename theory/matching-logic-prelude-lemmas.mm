@@ -1528,3 +1528,12 @@ ${
         $)
         ph2-is-pattern ph0-is-pattern in-sort-is-pattern ph1-is-pattern ph2-is-pattern or-is-pattern ph0-is-pattern in-sort-is-pattern ph1-is-pattern ph0-is-pattern in-sort-is-pattern ph2-is-pattern ph0-is-pattern in-sort-is-pattern ph1-is-pattern ph2-is-pattern or-is-pattern ph0-is-pattern in-sort-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern in-sort-or-alt in-sort-or.0 proof-rule-mp in-sort-or.1 proof-rule-mp $.
 $}
+
+in-sort-inh $p |- ( \in-sort ( \inh ph0 ) ph0 ) $=
+    $(
+        desugar "\in-sort"
+        desugar "\included"
+        apply "lemma-floor-intro"
+        apply "imp-reflexivity"
+    $)
+    ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern imp-is-pattern ph0-is-pattern inh-is-pattern imp-reflexivity lemma-floor-intro ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern included-is-sugar ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof ph0-is-pattern inh-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern in-sort-is-sugar ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern included-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof $.
