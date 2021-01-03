@@ -3,6 +3,34 @@ $[ theory/kore-substitution.mm $]
 $[ theory/kore-propositional.mm $]
 $[ theory/kore-sorting.mm $]
 
+$( #Notation lemmas $)
+
+${
+    notation-kore-valid.0 $e #Notation ph0 ph2 $.
+    notation-kore-valid.1 $e #Notation ph1 ph3 $.
+    notation-kore-valid $p #Notation ( \kore-valid ph0 ph1 ) ( \kore-valid ph2 ph3 ) $= ph0-is-pattern ph1-is-pattern kore-valid-is-pattern ph1-is-pattern ph0-is-pattern kore-top-is-pattern eq-is-pattern ph2-is-pattern ph3-is-pattern kore-valid-is-pattern ph0-is-pattern ph1-is-pattern kore-valid-is-sugar ph2-is-pattern ph3-is-pattern kore-valid-is-pattern ph1-is-pattern ph0-is-pattern kore-top-is-pattern eq-is-pattern ph2-is-pattern ph3-is-pattern kore-valid-is-pattern ph3-is-pattern ph2-is-pattern kore-top-is-pattern eq-is-pattern ph1-is-pattern ph0-is-pattern kore-top-is-pattern eq-is-pattern ph2-is-pattern ph3-is-pattern kore-valid-is-sugar ph1-is-pattern ph0-is-pattern kore-top-is-pattern eq-is-pattern ph3-is-pattern ph2-is-pattern kore-top-is-pattern eq-is-pattern ph1-is-pattern ph0-is-pattern kore-top-is-pattern ph3-is-pattern ph2-is-pattern kore-top-is-pattern notation-kore-valid.1 ph0-is-pattern kore-top-is-pattern ph0-is-pattern inh-is-pattern ph2-is-pattern kore-top-is-pattern ph0-is-pattern kore-top-is-sugar ph2-is-pattern kore-top-is-pattern ph0-is-pattern inh-is-pattern ph2-is-pattern kore-top-is-pattern ph2-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern ph2-is-pattern kore-top-is-sugar ph0-is-pattern inh-is-pattern ph2-is-pattern inh-is-pattern ph0-is-pattern ph2-is-pattern notation-kore-valid.0 notation-inh notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-eq notation-symmetry notation-transitivity notation-symmetry notation-transitivity $.
+$}
+
+${
+    notation-kore-next.0 $e #Notation ph0 ph2 $.
+    notation-kore-next.1 $e #Notation ph1 ph3 $.
+    notation-kore-next $p #Notation ( \kore-next ph0 ph1 ) ( \kore-next ph2 ph3 ) $= ph0-is-pattern ph1-is-pattern kore-next-is-pattern kore-next-is-symbol symbol-is-pattern ph1-is-pattern app-is-pattern ph2-is-pattern ph3-is-pattern kore-next-is-pattern ph0-is-pattern ph1-is-pattern kore-next-is-sugar ph2-is-pattern ph3-is-pattern kore-next-is-pattern kore-next-is-symbol symbol-is-pattern ph1-is-pattern app-is-pattern ph2-is-pattern ph3-is-pattern kore-next-is-pattern kore-next-is-symbol symbol-is-pattern ph3-is-pattern app-is-pattern kore-next-is-symbol symbol-is-pattern ph1-is-pattern app-is-pattern ph2-is-pattern ph3-is-pattern kore-next-is-sugar kore-next-is-symbol symbol-is-pattern ph1-is-pattern app-is-pattern kore-next-is-symbol symbol-is-pattern ph3-is-pattern app-is-pattern kore-next-is-symbol symbol-is-pattern ph1-is-pattern kore-next-is-symbol symbol-is-pattern ph3-is-pattern kore-next-is-symbol symbol-is-pattern notation-reflexivity notation-kore-next.1 notation-app notation-symmetry notation-transitivity notation-symmetry notation-transitivity $.
+$}
+
+${
+    notation-kore-or.0 $e #Notation ph0 ph3 $.
+    notation-kore-or.1 $e #Notation ph1 ph4 $.
+    notation-kore-or.2 $e #Notation ph2 ph5 $.
+    notation-kore-or $p #Notation ( \kore-or ph0 ph1 ph2 ) ( \kore-or ph3 ph4 ph5 ) $= ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-or-is-pattern ph1-is-pattern ph2-is-pattern or-is-pattern ph3-is-pattern ph4-is-pattern ph5-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-or-is-sugar ph3-is-pattern ph4-is-pattern ph5-is-pattern kore-or-is-pattern ph1-is-pattern ph2-is-pattern or-is-pattern ph3-is-pattern ph4-is-pattern ph5-is-pattern kore-or-is-pattern ph4-is-pattern ph5-is-pattern or-is-pattern ph1-is-pattern ph2-is-pattern or-is-pattern ph3-is-pattern ph4-is-pattern ph5-is-pattern kore-or-is-sugar ph1-is-pattern ph2-is-pattern or-is-pattern ph4-is-pattern ph5-is-pattern or-is-pattern ph1-is-pattern ph2-is-pattern ph4-is-pattern ph5-is-pattern notation-kore-or.1 notation-kore-or.2 notation-or notation-symmetry notation-transitivity notation-symmetry notation-transitivity $.
+$}
+
+${
+    notation-kore-implies.0 $e #Notation ph0 ph3 $.
+    notation-kore-implies.1 $e #Notation ph1 ph4 $.
+    notation-kore-implies.2 $e #Notation ph2 ph5 $.
+    notation-kore-implies $p #Notation ( \kore-implies ph0 ph1 ph2 ) ( \kore-implies ph3 ph4 ph5 ) $= ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph2-is-pattern kore-or-is-pattern ph3-is-pattern ph4-is-pattern ph5-is-pattern kore-implies-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-implies-is-sugar ph3-is-pattern ph4-is-pattern ph5-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph2-is-pattern kore-or-is-pattern ph3-is-pattern ph4-is-pattern ph5-is-pattern kore-implies-is-pattern ph3-is-pattern ph3-is-pattern ph4-is-pattern kore-not-is-pattern ph5-is-pattern kore-or-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph2-is-pattern kore-or-is-pattern ph3-is-pattern ph4-is-pattern ph5-is-pattern kore-implies-is-sugar ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph2-is-pattern kore-or-is-pattern ph3-is-pattern ph3-is-pattern ph4-is-pattern kore-not-is-pattern ph5-is-pattern kore-or-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph2-is-pattern ph3-is-pattern ph3-is-pattern ph4-is-pattern kore-not-is-pattern ph5-is-pattern notation-kore-implies.0 ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern kore-top-is-pattern and-is-pattern ph3-is-pattern ph4-is-pattern kore-not-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-sugar ph3-is-pattern ph4-is-pattern kore-not-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern kore-top-is-pattern and-is-pattern ph3-is-pattern ph4-is-pattern kore-not-is-pattern ph4-is-pattern not-is-pattern ph3-is-pattern kore-top-is-pattern and-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern kore-top-is-pattern and-is-pattern ph3-is-pattern ph4-is-pattern kore-not-is-sugar ph1-is-pattern not-is-pattern ph0-is-pattern kore-top-is-pattern and-is-pattern ph4-is-pattern not-is-pattern ph3-is-pattern kore-top-is-pattern and-is-pattern ph1-is-pattern not-is-pattern ph0-is-pattern kore-top-is-pattern ph4-is-pattern not-is-pattern ph3-is-pattern kore-top-is-pattern ph1-is-pattern ph4-is-pattern notation-kore-implies.1 notation-not ph0-is-pattern kore-top-is-pattern ph0-is-pattern inh-is-pattern ph3-is-pattern kore-top-is-pattern ph0-is-pattern kore-top-is-sugar ph3-is-pattern kore-top-is-pattern ph0-is-pattern inh-is-pattern ph3-is-pattern kore-top-is-pattern ph3-is-pattern inh-is-pattern ph0-is-pattern inh-is-pattern ph3-is-pattern kore-top-is-sugar ph0-is-pattern inh-is-pattern ph3-is-pattern inh-is-pattern ph0-is-pattern ph3-is-pattern notation-kore-implies.0 notation-inh notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-and notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-kore-implies.2 notation-kore-or notation-symmetry notation-transitivity notation-symmetry notation-transitivity $.
+$}
+
 $( kore-in-sort-* theorems $)
 
 ${
@@ -823,11 +851,204 @@ ${
 $}
 
 ${
-    kore-rewrites-star-transitivity.0 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph2 ) ) $.
-    kore-rewrites-star-transitivity.1 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph2 ph3 ) ) $.
-    kore-rewrites-star-transitivity $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph3 ) ) $= ? $.
+    $d X ph0 $.
+    $d X ph1 $.
+    rule-kore-eventually-sorting.0 $e |- ( \in-sort ph1 ph0 ) $.
+    rule-kore-eventually-sorting $p |- ( \in-sort ( \kore-eventually ph0 ph1 ) ph0 ) $=
+        $(
+            apply "notation-proof"
+            apply "kore-rewrites-star-intro-lemma-sorting-0"
+            apply "rule-kore-eventually-sorting.0"
+            apply "notation-in-sort"
+            let $2 = "X"
+            apply "kore-evetually-is-sugar"
+            apply "notation-reflexivity"
+        $)
+        ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var rule-kore-eventually-sorting.0 kore-rewrites-star-intro-lemma-sorting-0 ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-evetually-is-sugar ph0-is-pattern notation-reflexivity notation-in-sort notation-proof $.
 $}
 
 ${
+    $d X ph0 $.
+    $d X ph1 $.
+    kore-eventually-intro.0 $e |- ( \in-sort ph1 ph0 ) $.
+    kore-eventually-intro $p |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-eventually ph0 ph1 ) ) ) $=
+        $(
+            apply "rule-kore-implies-transitivity"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "kore-or-intro-left"
+            apply "kore-eventually-intro.0"
+            apply "proof-rule-mp"
+            apply "kore-next-sorting"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-eventually-intro.0"
+            apply "notation-proof"
+            apply "kore-rewrites-star-intro-lemma-mu"
+            apply "kore-eventually-intro.0"
+            apply "notation-kore-valid"
+            apply "notation-reflexivity"
+            apply "notation-kore-implies"
+            apply "notation-reflexivity"
+            apply "notation-kore-or"
+            apply "notation-reflexivity"
+            apply "notation-reflexivity"
+            apply "notation-kore-next"
+            apply "notation-reflexivity"
+            let $19 = "X"
+            apply "kore-evetually-is-sugar"
+            apply "kore-evetually-is-sugar"
+        $)
+        ph0-is-pattern ph1-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern kore-implies-is-pattern kore-valid-is-pattern ph1-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern kore-implies-is-pattern kore-valid-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-intro-left kore-eventually-intro.0 proof-rule-mp ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-sorting ph0-is-pattern ph1-is-pattern kore-eventually-intro.0 rule-kore-eventually-sorting proof-rule-mp proof-rule-mp ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-implies-is-pattern kore-valid-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-implies-is-pattern kore-valid-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-eventually-intro.0 kore-rewrites-star-intro-lemma-mu ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-implies-is-pattern ph0-is-pattern notation-reflexivity ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 ph0-is-pattern notation-reflexivity ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-next-is-pattern ph0-is-pattern notation-reflexivity ph1-is-pattern notation-reflexivity ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 ph0-is-pattern notation-reflexivity ph0-is-pattern ph1-is-pattern X-is-element-var kore-evetually-is-sugar notation-kore-next notation-kore-or ph0-is-pattern ph1-is-pattern X-is-element-var kore-evetually-is-sugar notation-kore-implies notation-kore-valid notation-proof rule-kore-implies-transitivity $.
+$}
 
+${
+    $d X ph0 $.
+    $d X ph1 $.
+    kore-next-eventually.0 $e |- ( \in-sort ph1 ph0 ) $.
+    kore-next-eventually $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-next ph0 ( \kore-eventually ph0 ph1 ) ) ( \kore-eventually ph0 ph1 ) ) ) $=
+        $(
+            apply "rule-kore-implies-transitivity"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "kore-or-intro-right"
+            apply "proof-rule-mp"
+            apply "kore-next-sorting"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-next-eventually.0"
+            apply "kore-next-eventually.0"
+            apply "notation-proof"
+            apply "kore-rewrites-star-intro-lemma-mu"
+            apply "kore-next-eventually.0"
+            let $19 = "X"
+            apply "notation-kore-valid"
+            apply "notation-reflexivity"
+            apply "notation-kore-implies"
+            apply "notation-reflexivity"
+            apply "notation-kore-or"
+            apply "notation-reflexivity"
+            apply "notation-reflexivity"
+            apply "notation-kore-next"
+            apply "notation-reflexivity"
+            apply "kore-evetually-is-sugar"
+            apply "kore-evetually-is-sugar"
+        $)
+        ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph1-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern kore-implies-is-pattern kore-valid-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern in-sort-is-pattern ph1-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern kore-implies-is-pattern kore-valid-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph1-is-pattern kore-or-intro-right ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-sorting ph0-is-pattern ph1-is-pattern kore-next-eventually.0 rule-kore-eventually-sorting proof-rule-mp proof-rule-mp kore-next-eventually.0 proof-rule-mp ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-implies-is-pattern kore-valid-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-implies-is-pattern kore-valid-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-next-eventually.0 kore-rewrites-star-intro-lemma-mu ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-implies-is-pattern ph0-is-pattern notation-reflexivity ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 ph0-is-pattern notation-reflexivity ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 kore-next-is-pattern ph0-is-pattern notation-reflexivity ph1-is-pattern notation-reflexivity ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 ph0-is-pattern notation-reflexivity ph0-is-pattern ph1-is-pattern X-is-element-var kore-evetually-is-sugar notation-kore-next notation-kore-or ph0-is-pattern ph1-is-pattern X-is-element-var kore-evetually-is-sugar notation-kore-implies notation-kore-valid notation-proof rule-kore-implies-transitivity $.
+$}
+
+${
+    $d X ph0 $.
+    $d X ph1 $.
+    kore-eventually-kt.0 $e |- ( \in-sort ph1 ph0 ) $.
+    kore-eventually-kt.1 $e |- ( \in-sort ph2 ph0 ) $.
+    kore-eventually-kt.2 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-eventually ph0 ph2 ) ) ) $.
+    kore-eventually-kt $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-eventually ph0 ph1 ) ( \kore-eventually ph0 ph2 ) ) ) $=
+        $(
+            apply "kore-implies-intro"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-eventually-kt.0"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-eventually-kt.1"
+            apply "notation-proof"
+            let $7 = "( \imp ( \mu X ( \kore-or ph0 ph1 ( \kore-next ph0 X ) ) ) ( \kore-eventually ph0 ph2 ) )"
+            meh
+            apply "notation-imp"
+            apply "kore-evetually-is-sugar"
+            apply "notation-reflexivity"
+            apply "proof-rule-kt"
+            apply "substitution-kore-or"
+            apply "substitution-fresh"
+            apply "fresh-disjoint"
+            apply "substitution-fresh"
+            apply "fresh-disjoint"
+            apply "substitution-kore-next"
+            apply "substitution-fresh"
+            apply "fresh-disjoint"
+            apply "substitution-var-same"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "kore-implies-elim"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "kore-or-sorting"
+            apply "kore-eventually-kt.0"
+            apply "proof-rule-mp"
+            apply "kore-next-sorting"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-eventually-kt.1"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-eventually-kt.1"
+            apply "kore-or-elim"
+            apply "kore-eventually-kt.0"
+            apply "proof-rule-mp"
+            apply "kore-next-sorting"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-eventually-kt.1"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-eventually-kt.1"
+            apply "kore-eventually-kt.2"
+            apply "kore-next-eventually"
+            apply "kore-eventually-kt.1"
+        $)
+        ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern ph0-is-pattern ph1-is-pattern kore-eventually-kt.0 rule-kore-eventually-sorting ph0-is-pattern ph2-is-pattern kore-eventually-kt.1 rule-kore-eventually-sorting ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern X-is-element-var set-var-is-var var-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern X-is-element-var ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern X-is-element-var set-var-is-var var-is-pattern kore-next-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern X-is-element-var set-var-is-var ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern X-is-element-var set-var-is-var ph0-is-pattern X-is-element-var set-var-is-var fresh-disjoint substitution-fresh ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern X-is-element-var set-var-is-var ph1-is-pattern X-is-element-var set-var-is-var fresh-disjoint substitution-fresh ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern ph0-is-pattern X-is-element-var set-var-is-var var-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern X-is-element-var set-var-is-var ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern X-is-element-var set-var-is-var ph0-is-pattern X-is-element-var set-var-is-var fresh-disjoint substitution-fresh ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern X-is-element-var set-var-is-var substitution-var-same substitution-kore-next substitution-kore-or ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern kore-valid-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern kore-valid-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern kore-valid-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern imp-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-elim ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern in-sort-is-pattern ph1-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-is-pattern ph0-is-pattern in-sort-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern kore-or-sorting kore-eventually-kt.0 proof-rule-mp ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-sorting ph0-is-pattern ph2-is-pattern kore-eventually-kt.1 rule-kore-eventually-sorting proof-rule-mp proof-rule-mp proof-rule-mp ph0-is-pattern ph2-is-pattern kore-eventually-kt.1 rule-kore-eventually-sorting proof-rule-mp ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-eventually-kt.0 ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-is-pattern ph0-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-next-sorting ph0-is-pattern ph2-is-pattern kore-eventually-kt.1 rule-kore-eventually-sorting proof-rule-mp ph0-is-pattern ph2-is-pattern kore-eventually-kt.1 rule-kore-eventually-sorting kore-eventually-kt.2 ph0-is-pattern ph2-is-pattern kore-eventually-kt.1 kore-next-eventually kore-or-elim proof-rule-mp proof-rule-kt ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-rewrites-star-intro-lemma-sorting-1.0 ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern ph0-is-pattern ph1-is-pattern X-is-element-var kore-evetually-is-sugar ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern notation-reflexivity notation-imp notation-proof kore-implies-intro $.
+$}
+
+${
+    kore-implies-compat-in-kore-eventually.0 $e |- ( \in-sort ph1 ph0 ) $.
+    kore-implies-compat-in-kore-eventually.1 $e |- ( \in-sort ph2 ph0 ) $.
+    kore-implies-compat-in-kore-eventually.2 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
+    kore-implies-compat-in-kore-eventually $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-eventually ph0 ph1 ) ( \kore-eventually ph0 ph2 ) ) ) $=
+        $(
+            apply "kore-eventually-kt"
+            apply "kore-implies-compat-in-kore-eventually.0"
+            apply "kore-implies-compat-in-kore-eventually.1"
+            apply "rule-kore-implies-transitivity"
+            apply "kore-implies-compat-in-kore-eventually.2"
+            apply "kore-eventually-intro"
+            apply "kore-implies-compat-in-kore-eventually.1"
+        $)
+        ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-implies-compat-in-kore-eventually.0 kore-implies-compat-in-kore-eventually.1 ph0-is-pattern ph1-is-pattern ph2-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-compat-in-kore-eventually.2 ph0-is-pattern ph2-is-pattern kore-implies-compat-in-kore-eventually.1 kore-eventually-intro rule-kore-implies-transitivity kore-eventually-kt $.
+$}
+
+${
+    kore-eventually-join.0 $e |- ( \in-sort ph1 ph0 ) $.
+    kore-eventually-join $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-eventually ph0 ( \kore-eventually ph0 ph1 ) ) ( \kore-eventually ph0 ph1 ) ) ) $=
+        $(
+            apply "kore-eventually-kt"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-eventually-join.0"
+            apply "kore-eventually-join.0"
+            apply "kore-implies-reflexivity"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-eventually-join.0"
+        $)
+        ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph1-is-pattern ph0-is-pattern ph1-is-pattern kore-eventually-join.0 rule-kore-eventually-sorting kore-eventually-join.0 ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-evetually-is-pattern ph0-is-pattern ph1-is-pattern kore-eventually-join.0 rule-kore-eventually-sorting kore-implies-reflexivity kore-eventually-kt $.
+$}
+
+${
+    kore-rewrites-star-transitivity.0 $e |- ( \in-sort ph1 ph0 ) $.
+    kore-rewrites-star-transitivity.1 $e |- ( \in-sort ph2 ph0 ) $.
+    kore-rewrites-star-transitivity.2 $e |- ( \in-sort ph3 ph0 ) $.
+    kore-rewrites-star-transitivity.3 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph2 ) ) $.
+    kore-rewrites-star-transitivity.4 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph2 ph3 ) ) $.
+    kore-rewrites-star-transitivity $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph3 ) ) $=
+        $(
+            desugar "\kore-rewrites-star"
+            apply "rule-kore-implies-transitivity"
+            apply "rule-kore-implies-transitivity"
+            apply "notation-proof"
+            apply "kore-rewrites-star-transitivity.3"
+            let $6 = "( \kore-eventually ph0 ph2 )"
+            notation
+            apply "kore-implies-compat-in-kore-eventually"
+            apply "kore-rewrites-star-transitivity.1"
+            apply "rule-kore-eventually-sorting"
+            apply "kore-rewrites-star-transitivity.2"
+            apply "notation-proof"
+            apply "kore-rewrites-star-transitivity.4"
+            notation
+            apply "kore-eventually-join"
+            apply "kore-rewrites-star-transitivity.2"
+        $)
+        ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern kore-valid-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph3-is-pattern kore-rewrites-star-is-pattern kore-valid-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-evetually-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern ph0-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-evetually-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-rewrites-star-is-pattern kore-valid-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern kore-valid-is-pattern kore-rewrites-star-transitivity.3 ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern notation-reflexivity ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-sugar ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern kore-rewrites-star-is-sugar ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-sugar ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-implies-is-sugar ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-sugar ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern kore-or-is-sugar ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern or-is-sugar ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph1-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern kore-evetually-is-pattern imp-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-symmetry notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-kore-valid notation-proof ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-rewrites-star-transitivity.1 ph0-is-pattern ph3-is-pattern kore-rewrites-star-transitivity.2 rule-kore-eventually-sorting ph0-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-rewrites-star-is-pattern kore-valid-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern kore-valid-is-pattern kore-rewrites-star-transitivity.4 ph0-is-pattern ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern notation-reflexivity ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-sugar ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-rewrites-star-is-sugar ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-sugar ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph2-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-sugar ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-sugar ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-or-is-sugar ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern or-is-sugar ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern kore-not-is-pattern not-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern imp-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-symmetry notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-kore-valid notation-proof kore-implies-compat-in-kore-eventually rule-kore-implies-transitivity ph0-is-pattern ph3-is-pattern kore-rewrites-star-transitivity.2 kore-eventually-join rule-kore-implies-transitivity ph0-is-pattern ph0-is-pattern ph1-is-pattern ph3-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern notation-reflexivity ph0-is-pattern ph1-is-pattern ph3-is-pattern kore-rewrites-star-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph1-is-pattern ph3-is-pattern kore-rewrites-star-is-sugar ph0-is-pattern ph1-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph3-is-pattern kore-evetually-is-pattern kore-implies-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-kore-valid notation-proof $.
 $}
