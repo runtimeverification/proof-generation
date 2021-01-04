@@ -84,40 +84,6 @@ $( Ungrouped theorems $)
 
 kore-top-valid-v1 $p |- ( \kore-forall-sort x ( \kore-valid x ( \kore-top x ) ) ) $= x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern imp-is-pattern x-is-element-var forall-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var kore-forall-sort-is-pattern top-is-pattern x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern imp-is-pattern x-is-element-var forall-is-pattern top-is-pattern x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern imp-is-pattern x-is-element-var x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern imp-is-pattern top-is-pattern x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern imp-is-pattern imp-is-pattern x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern imp-is-pattern top-is-pattern proof-rule-prop-1 x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern imp-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern proof-rule-prop-1 x-is-element-var element-var-is-var var-is-pattern kore-top-valid proof-rule-mp proof-rule-mp bot-is-pattern bot-is-pattern imp-is-pattern top-is-pattern x-is-element-var element-var-is-var bot-is-pattern bot-is-pattern x-is-element-var element-var-is-var x-is-element-var element-var-is-var fresh-in-bot x-is-element-var element-var-is-var fresh-in-bot fresh-in-imp top-is-pattern bot-is-pattern not-is-pattern bot-is-pattern bot-is-pattern imp-is-pattern top-is-sugar bot-is-pattern not-is-sugar notation-transitivity notation-fresh lemma-forall-gen lemma-top proof-rule-mp x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var kore-forall-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var forall-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern imp-is-pattern x-is-element-var forall-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var kore-forall-sort-is-sugar x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var forall-sort-is-pattern sort-is-symbol symbol-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var sorted-forall-is-pattern x-is-element-var element-var-is-var var-is-pattern sort-is-symbol symbol-is-pattern in-sort-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern imp-is-pattern x-is-element-var forall-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var forall-sort-is-sugar sort-is-symbol symbol-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var element-var-is-var var-is-pattern kore-top-is-pattern kore-valid-is-pattern x-is-element-var sorted-forall-is-sugar notation-transitivity notation-transitivity notation-proof $.
 
-$( forall elimination with no sort variables $)
-${
-    $d y z $.
-    $d y ph0 $.
-    $d y ph3 $.
-    $d z ph0 $.
-    $d z ph3 $.
-    kore-forall-elim.0 $e |- ( \kore-valid ph1 ( \kore-forall ph0 ph1 x ph2 ) ) $.
-    $( ph3 is functional and has sort ph0 $)
-    kore-forall-elim.1 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-exists ph0 z y ( \kore-equals ph0 z y ph3 ) ) ) ) $.
-    kore-forall-elim.2 $e #Substitution ph4 ph2 ph3 x $.
-    kore-forall-elim $p |- ( \kore-valid ph1 ph4 ) $= ? $.
-$}
-
-$( forall elimination with 1 sort variable $)
-${
-    $d x y $.
-    $d z w $.
-
-    $d x ph0 $.
-    $d z ph0 $.
-    $d y ph0 $.
-    $d w ph0 $.
-
-    $d z ph2 $.
-    $d w ph2 $.
-
-    kore-forall-elim-v1.0 $e |- ( \kore-forall-sort x ( \kore-valid ph4 ( \kore-forall ph0 ph4 y ph1 ) ) ) $.
-    $( ph2 is functional and has sort ph0 $)
-    kore-forall-elim-v1.1 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-exists ph0 z w ( \kore-equals ph0 z w ph2 ) ) ) ) $.
-    kore-forall-elim-v1.2 $e #Substitution ph3 ph1 ph2 y $.
-    kore-forall-elim-v1 $p |- ( \kore-forall-sort x ( \kore-valid ph4 ph3 ) ) $= ? $.
-$}
-
 ${
     $d x ph0 $.
     kore-is-sort-elim.0 $e |- ( \kore-is-sort ph0 ) $.
@@ -660,6 +626,43 @@ ${
             apply "kore-equality.6"
         $)
         ph5-is-pattern z-is-element-var ph0-is-pattern ph1-is-pattern ph2-is-pattern ph3-is-pattern ph4-is-pattern ph5-is-pattern x-is-element-var z-is-element-var kore-equality.0 ph3-is-pattern z-is-element-var kore-equality.1 kore-forall-sort-intro kore-equality.2 kore-equality.3 ph1-is-pattern ph0-is-pattern in-sort-is-pattern z-is-element-var kore-equality.4 kore-forall-sort-intro ph2-is-pattern ph0-is-pattern in-sort-is-pattern z-is-element-var kore-equality.5 kore-forall-sort-intro kore-equality.6 kore-equality-lemma-1 kore-forall-sort-elim-disjoint $.
+$}
+
+$( ===================================== $)
+
+$( forall elimination with no sort variables $)
+${
+    $d y z $.
+    $d y ph0 $.
+    $d y ph3 $.
+    $d z ph0 $.
+    $d z ph3 $.
+    kore-forall-elim.0 $e |- ( \kore-valid ph1 ( \kore-forall ph0 ph1 x ph2 ) ) $.
+    $( ph3 is functional and has sort ph0 $)
+    kore-forall-elim.1 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-exists ph0 z y ( \kore-equals ph0 z y ph3 ) ) ) ) $.
+    kore-forall-elim.2 $e #Substitution ph4 ph2 ph3 x $.
+    kore-forall-elim.3 $e |- ( \imp ( \in-sort x ph0 ) ( \in-sort ph2 ph1 ) ) $.
+    kore-forall-elim $p |- ( \kore-valid ph1 ph4 ) $= ? $.
+$}
+
+$( forall elimination with 1 sort variable $)
+${
+    $d x y $.
+    $d z w $.
+
+    $d x ph0 $.
+    $d z ph0 $.
+    $d y ph0 $.
+    $d w ph0 $.
+
+    $d z ph2 $.
+    $d w ph2 $.
+
+    kore-forall-elim-v1.0 $e |- ( \kore-forall-sort x ( \kore-valid ph4 ( \kore-forall ph0 ph4 y ph1 ) ) ) $.
+    $( ph2 is functional and has sort ph0 $)
+    kore-forall-elim-v1.1 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-exists ph0 z w ( \kore-equals ph0 z w ph2 ) ) ) ) $.
+    kore-forall-elim-v1.2 $e #Substitution ph3 ph1 ph2 y $.
+    kore-forall-elim-v1 $p |- ( \kore-forall-sort x ( \kore-valid ph4 ph3 ) ) $= ? $.
 $}
 
 $( ===================================== $)
