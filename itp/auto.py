@@ -10,6 +10,7 @@ from proof.metamath.composer import Proof, Theorem
 from proof.metamath.auto.unification import Unification
 from proof.metamath.auto.notation import NotationProver
 from proof.metamath.auto.substitution import SubstitutionProver
+from proof.metamath.auto.sorting import SortingProver
 
 from .state import ProofState, Goal, NoStateChangeException
 from .tactics import Tactic, ApplyTactic
@@ -240,6 +241,7 @@ class DesugarTactic(Tactic):
             *self.notation_proofs,
         )
 
+
 """
 Prove a statement about substitution
 """
@@ -256,6 +258,18 @@ class SubstitutionTactic(Tactic):
             after, before, pattern, var,
             hypotheses=state.composer.get_all_essentials(),
         )
+
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        return self.proof
+
+
+@ProofState.register_tactic("sorting")
+class SortingTactic(Tactic):
+    def apply(self, state: ProofState):
+        goal = state.resolve_current_goal(self)
+        statement = goal.statement
+        assert len(statement.terms) == 2 and statement.terms[0] == Application("|-"), f"not a provability goal {statement}"
+        self.proof = SortingProver.prove_sorting_statement(state.composer, statement)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         return self.proof
