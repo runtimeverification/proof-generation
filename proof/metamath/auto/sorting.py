@@ -89,9 +89,14 @@ class SortingProver:
             if term is None: continue
 
             conjuncts = SortingProver.is_imp_conjunctions(term)
-            if conjuncts is None: continue
-            
-            left_conjuncts, right_conjuncts = conjuncts
+            if conjuncts is None:
+                if SortingProver.is_in_sort(term):
+                    left_conjuncts = []
+                    right_conjuncts = [ term ]
+                else:
+                    continue
+            else:
+                left_conjuncts, right_conjuncts = conjuncts
         
             # all conjuncts have to be \in-sort patterns
             failed = False
@@ -181,14 +186,28 @@ class SortingProver:
 
         sorting_lemma = SortingProver.find_sorting_lemma_for_symbol(composer, conclusion_term.symbol)
         sorting_lemma_term = SortingProver.is_provability_statement(sorting_lemma.statement)
+
+        if SortingProver.is_in_sort(sorting_lemma_term) is not None:
+            sorting_lemma_rhs = sorting_lemma_term
+        else:
+            sorting_lemma_rhs = sorting_lemma_term.subterms[1]
         
-        substitution = Unification.match_terms_as_instance(sorting_lemma_term.subterms[1], conclusion)
+        substitution = Unification.match_terms_as_instance(sorting_lemma_rhs, conclusion)
 
         assert substitution is not None, f"unable to unify the conclusion {conclusion} with the sorting lemma |- {sorting_lemma_term}"
         assert set(substitution.keys()).issubset(sorting_lemma.statement.get_metavariables()), \
                f"free metavariables left unused in the sorting lemma |- {sorting_lemma_term}"
 
         subproof = sorting_lemma.apply(**substitution)
+
+        # we can prove the conclusion directly without using hypotheses
+        if SortingProver.is_in_sort(sorting_lemma_term) is not None:
+            assert subproof.statement.terms[1] == conclusion, f"unable to prove {statement}"
+
+            return composer.find_theorem("proof-rule-mp").apply(
+                composer.find_theorem("proof-rule-prop-1").apply(ph0=conclusion, ph1=hypothesis),
+                subproof,
+            )
 
         # this statement should also be a implication
         # we prove the left hand side of our target
