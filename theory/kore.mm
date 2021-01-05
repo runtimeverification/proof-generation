@@ -32,11 +32,8 @@ $c \kore-is-sort $.
 kore-exists-is-pattern $a #Pattern ( \kore-exists ph0 ph1 x ph2 ) $.
 kore-exists-is-sugar $a #Notation ( \kore-exists ph0 ph1 x ph2 ) ( \sorted-exists x ph0 ph2 ) $.
 
-kore-forall-is-pattern $a #Pattern ( \kore-forall ph0 ph1 x ph2 ) $.
-kore-forall-is-sugar $a #Notation ( \kore-forall ph0 ph1 x ph2 ) ( \sorted-forall x ph0 ph2 ) $.
-
 kore-forall-sort-is-pattern $a #Pattern ( \kore-forall-sort s0 ph0 ) $.
-kore-forall-sort-is-sugar $a #Notation ( \kore-forall-sort s0 ph0 ) ( \forall-sort s0 ph0 ) $. 
+kore-forall-sort-is-sugar $a #Notation ( \kore-forall-sort s0 ph0 ) ( \forall-sort s0 ph0 ) $.
 
 kore-valid-is-pattern $a #Pattern ( \kore-valid ph0 ph1 ) $.
 kore-valid-is-sugar $a #Notation ( \kore-valid ph0 ph1 ) ( \eq ph1 ( \kore-top ph0 ) ) $.
@@ -62,10 +59,10 @@ kore-implies-is-sugar $a #Notation ( \kore-implies ph0 ph1 ph2 ) ( \kore-or ph0 
 kore-iff-is-pattern $a #Pattern ( \kore-iff ph0 ph1 ph2 ) $.
 kore-iff-is-sugar $a #Notation ( \kore-iff ph0 ph1 ph2 ) ( \kore-and ph0 ( \kore-implies ph0 ph1 ph2 ) ( \kore-implies ph0 ph2 ph1 ) ) $.
 
-kore-ceil-is-pattern   $a #Pattern ( \kore-ceil ph0 ph1 ph2 ) $.
+kore-ceil-is-pattern $a #Pattern ( \kore-ceil ph0 ph1 ph2 ) $.
 kore-ceil-is-sugar $a #Notation ( \kore-ceil ph0 ph1 ph2 ) ( \and ( \ceil ph2 ) ( \kore-top ph1 ) ) $.
 
-kore-floor-is-pattern  $a #Pattern ( \kore-floor ph0 ph1 ph2 ) $.
+kore-floor-is-pattern $a #Pattern ( \kore-floor ph0 ph1 ph2 ) $.
 kore-floor-is-sugar $a #Notation ( \kore-floor ph0 ph1 ph2 ) ( \kore-not ph1 ( \kore-ceil ph0 ph1 ( \kore-not ph0 ph2 ) ) ) $.
 
 kore-equals-is-pattern $a #Pattern ( \kore-equals ph0 ph1 ph2 ph3 ) $.
@@ -102,3 +99,6 @@ ${
     $d s0 ph0 $.
     kore-is-sort-is-sugar $a #Notation ( \kore-is-sort ph0 ) ( \exists-sort s0 ( \eq s0 ph0 ) ) $.
 $}
+
+kore-forall-is-pattern $a #Pattern ( \kore-forall ph0 ph1 x ph2 ) $.
+kore-forall-is-sugar $a #Notation ( \kore-forall ph0 ph1 x ph2 ) ( \kore-not ph1 ( \kore-exists ph0 ph1 x ( \kore-not ph1 ph2 ) ) ) $.
