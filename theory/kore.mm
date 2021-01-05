@@ -30,7 +30,7 @@ $c \kore-valid $.
 $c \kore-is-sort $.
 
 kore-exists-is-pattern $a #Pattern ( \kore-exists ph0 ph1 x ph2 ) $.
-kore-exists-is-sugar $a #Notation ( \kore-exists ph0 ph1 x ph2 ) ( \sorted-exists x ph0 ph2 ) $.
+kore-exists-is-sugar $a #Notation ( \kore-exists ph0 ph1 x ph2 ) ( \and ( \sorted-exists x ph0 ph2 ) ( \inh ph1 ) ) $.
 
 kore-forall-sort-is-pattern $a #Pattern ( \kore-forall-sort s0 ph0 ) $.
 kore-forall-sort-is-sugar $a #Notation ( \kore-forall-sort s0 ph0 ) ( \forall-sort s0 ph0 ) $.
