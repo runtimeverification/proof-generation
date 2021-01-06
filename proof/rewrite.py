@@ -552,7 +552,12 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         # this arithmetic fact
         self.env.composer.start_segment("dv")
         self.env.load_comment("NOTE: domain value reasoning checked by external tool")
-        thm = self.env.load_axiom(claim, f"{self.env.sanitize_label_name(application.symbol.definition.symbol)}-domain-fact-{self.axiom_counter}", comment=False)
+        thm = self.env.load_axiom(
+            claim,
+            f"{self.env.sanitize_label_name(application.symbol.definition.symbol)}-domain-fact-{self.axiom_counter}",
+            comment=False,
+            provable=True,
+        )
         self.env.composer.end_segment()
 
         print(f"> bulitin symbol proof obligation: {claim}")
