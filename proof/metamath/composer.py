@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import List, Tuple, Mapping
+from traceback import print_exc
+
+from typing import List, Tuple, Mapping, Callable
 
 from .auto.typecode import TypecodeProver
 from .auto.unification import Unification
@@ -19,6 +21,23 @@ class Proof:
 
     def __str__(self):
         return str(self.statement)
+
+
+"""
+A proof generator that's supposed to prove the statement given to it,
+if not, it will raise an error
+"""
+class AutoProof:
+    def prove(self, composer: Composer, statement: StructuredStatement) -> Proof:
+        raise NotImplementedError()
+
+
+class MethodAutoProof(AutoProof):
+    def __init__(self, method: Callable[[Composer, StructuredStatement], Proof]):
+        self.method = method
+
+    def prove(self, composer: Composer, statement: StructuredStatement) -> Proof:
+        return self.method(composer, statement)
 
 
 """
@@ -92,6 +111,12 @@ class Theorem:
 
         # TODO: check proofs for essential statements
         for essential, essential_proof in zip(self.essentials, essential_proofs):
+            # auto proofs will be resolved later
+            if isinstance(essential_proof, AutoProof):
+                continue
+
+            assert isinstance(essential_proof, Proof), f"wrong proof {essential_proof} of {essential}"
+
             solution = Unification.match_statements_as_instance(essential, essential_proof.statement)
             assert solution is not None, \
                    "`{}` is not an instance of `{}`".format(essential_proof.statement, essential)
@@ -139,7 +164,21 @@ class Theorem:
             substitution[var] = proved_term
             floating_proofs.append(typecode_proof)
 
-        return floating_proofs + list(essential_proofs), substitution
+        # resolve auto proofs
+        essential_proofs = list(essential_proofs)
+        subst_visitor = SubstitutionVisitor(substitution)
+
+        for i, proof in enumerate(essential_proofs):
+            if isinstance(proof, AutoProof):
+                essential_instance = subst_visitor.visit(self.essentials[i])
+                try:
+                    essential_proofs[i] = proof.prove(self.composer, essential_instance)
+                except Exception:
+                    print_exc()
+                    assert False, f"unable to automatically generate proof for {essential_instance}"
+
+
+        return floating_proofs + essential_proofs, substitution
 
     def get_conclusion_instance(self, substitution: Mapping[str, Term]) -> StructuredStatement:
         instance = SubstitutionVisitor(substitution).visit(self.statement)

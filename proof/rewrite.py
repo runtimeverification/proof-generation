@@ -6,6 +6,7 @@ from .kore.visitors import KoreVisitor, PatternOnlyVisitorStructure
 
 from .metamath import ast as mm
 from .metamath.composer import Proof, Theorem
+from .metamath.auto.sorting import SortingProver
 
 from .encoder import KorePatternEncoder
 
@@ -93,14 +94,12 @@ class RewriteProofGenerator(ProofGenerator):
             requires_proof = self.prove_requires_clause(requires)
             if requires_proof is None: continue
 
-            top_valid_proof = self.env.get_theorem("kore-top-valid").apply(
-                ph0=self.env.encode_pattern(instantiated_axiom.claim.pattern.sorts[0]),
-            )
-            
-            concrete_rewrite_proof = self.env.get_theorem("kore-rewrites-conditional").apply(
+            concrete_rewrite_proof = self.env.get_theorem("kore-rewrites-conditional-concrete").apply(
+                SortingProver.auto,
+                SortingProver.auto,
+                SortingProver.auto,
                 instantiated_axiom.proof,
                 requires_proof,
-                top_valid_proof,
             )
 
             # reconstruct the rewrite pattern in kore
@@ -158,15 +157,30 @@ class RewriteProofGenerator(ProofGenerator):
         return concrete_rewrite_claim.proof
 
     """
-    Use transitivity of rewrite
-    to chain a list of rewrite steps
+    Convert rewrites to rewrites-star and 
+    then chain them together using transitivity
     """
     def chain_rewrite_steps(self, step_theorems: List[Theorem]) -> Proof:
         assert len(step_theorems)
 
-        current_proof = step_theorems[0].as_proof()
+        current_proof = self.env.get_theorem("kore-rewrites-star-intro").apply(
+            SortingProver.auto,
+            SortingProver.auto,
+            step_theorems[0].as_proof(),
+        )
+
         for next_step in step_theorems[1:]:
-            current_proof = self.env.get_theorem("kore-rewrites-trans").apply(current_proof, next_step.as_proof())
+            current_proof = self.env.get_theorem("kore-rewrites-star-transitivity").apply(
+                SortingProver.auto,
+                SortingProver.auto,
+                SortingProver.auto,
+                current_proof,
+                self.env.get_theorem("kore-rewrites-star-intro").apply(
+                    SortingProver.auto,
+                    SortingProver.auto,
+                    next_step.as_proof(),
+                ),
+            )
         
         return current_proof
 

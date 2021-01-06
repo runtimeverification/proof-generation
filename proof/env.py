@@ -8,6 +8,7 @@ from .kore import ast as kore
 from .kore.utils import KoreUtils
 
 from .metamath import ast as mm
+from .metamath.visitors import SubstitutionVisitor
 from .metamath.composer import Composer, Theorem, Proof
 from .metamath.auto.substitution import SubstitutionProver
 
@@ -239,6 +240,65 @@ class ProofEnvironment:
         
         return self.load_metamath_statement(stmt)
 
+    def load_symbol_sorting_lemma(self, symbol_definition: kore.SymbolDefinition, label: str):
+        encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
+        arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
+
+        pattern_vars = self.gen_metavariables("#Pattern", arity)
+        pattern_vars = [ mm.Metavariable(v) for v in pattern_vars ]
+
+        sort_pattern_vars = pattern_vars[:len(symbol_definition.sort_variables)]
+        argument_pattern_vars = pattern_vars[len(symbol_definition.sort_variables):]
+
+        # for simplicity, we replace all sort variables (which are #ElementVariable's)
+        # by pattern variables since \\kore-is-sort implies they are singletons
+        sort_var_subst = {
+            self.encode_pattern(element_var).name: pattern_var
+            for element_var, pattern_var in zip(symbol_definition.sort_variables, sort_pattern_vars)
+        }
+        sort_var_subst_visitor = SubstitutionVisitor(sort_var_subst)
+
+        encoded_output_sort = self.encode_pattern(symbol_definition.output_sort)
+        encoded_output_sort = sort_var_subst_visitor.visit(encoded_output_sort)
+
+        sorting_axiom_rhs = mm.Application("\\in-sort", [
+            mm.Application(encoded_symbol, [ v for v in pattern_vars ]),
+            encoded_output_sort,
+        ])
+
+        sorting_axiom_hypotheses = []
+
+        # add hypotheses for sort arguments
+        for v in sort_pattern_vars:
+            sorting_axiom_hypotheses.append(mm.Application("\\kore-is-sort", [ v ]))
+
+        # add hypotheses for pattern arguments
+        for v, sort in zip(argument_pattern_vars, symbol_definition.input_sorts):
+            encoded_sort = self.encode_pattern(sort)
+            encoded_sort = sort_var_subst_visitor.visit(encoded_sort)
+            sorting_axiom_hypotheses.append(mm.Application("\\in-sort", [ v, encoded_sort ]))
+
+        # construct the hypothesis and the entire statement
+        # hypothesis: \and ( \in-sort ph0 <sort0> ) ( \in-sort ph1 <sort1> ) ...
+        if len(sorting_axiom_hypotheses) == 0:
+            sorting_axiom_term = sorting_axiom_rhs
+        elif len(sorting_axiom_hypotheses) == 1:
+            sorting_axiom_term = mm.Application("\\imp", [ sorting_axiom_hypotheses[0], sorting_axiom_rhs ])
+        else:
+            lhs = mm.Application("\\and", sorting_axiom_hypotheses[:2])
+            for hyp in sorting_axiom_hypotheses[2:]:
+                lhs = mm.Application("\\and", [ lhs, hyp ])
+            sorting_axiom_term = mm.Application("\\imp", [ lhs, sorting_axiom_rhs ])
+
+        self.sorting_lemmas[encoded_symbol] = self.load_metamath_statement(mm.StructuredStatement(
+            mm.Statement.AXIOM,
+            [
+                mm.Application("|-"),
+                sorting_axiom_term,
+            ],
+            label=f"{label}-sorting",
+        ))
+
     def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition, label: str):
         encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
         arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
@@ -246,34 +306,7 @@ class ProofEnvironment:
         self.load_comment(str(symbol_definition))
         self.load_constant(encoded_symbol, arity, label)
 
-        # generate sorting lemma
-        # TODO: add support for sort parametric symbols
-        if len(symbol_definition.sort_variables) == 0:
-            pattern_vars = self.gen_metavariables("#Pattern", arity)
-            
-            encoded_output_sort = self.encode_pattern(symbol_definition.output_sort)
-            sorting_axiom_term = mm.Application("\\in-sort", [
-                mm.Application(encoded_symbol, [ mm.Metavariable(v) for v in pattern_vars ]),
-                encoded_output_sort,
-            ])
-
-            for v, sort in list(zip(pattern_vars, symbol_definition.input_sorts))[::-1]:
-                assert isinstance(sort, kore.SortInstance)
-                encoded_sort = self.encode_pattern(sort)
-
-                sorting_axiom_term = mm.Application("\\imp", [
-                    mm.Application("\\in-sort", [ mm.Metavariable(v), encoded_sort ]),
-                    sorting_axiom_term,
-                ])
-
-            self.sorting_lemmas[encoded_symbol] = self.load_metamath_statement(mm.StructuredStatement(
-                mm.Statement.PROVABLE,
-                [
-                    mm.Application("|-"),
-                    sorting_axiom_term,
-                ],
-                label=f"{label}-sorting",
-            ))
+        self.load_symbol_sorting_lemma(symbol_definition, label)
 
     def load_sort_definition(self, sort_definition: kore.SortDefinition, label: str):
         encoded_sort = KorePatternEncoder.encode_sort(sort_definition.sort_id)

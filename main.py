@@ -19,8 +19,10 @@ from proof.env import ProofEnvironment
 from proof.rewrite import RewriteProofGenerator
 
 
-def load_prelude(composer: Composer, path: str):
-    prelude = load_database(path)
+def load_prelude(composer: Composer, args):
+    # if we are not outputing a standalone proof object
+    # there is no need to load proofs (which are huge)
+    prelude = load_database(args.prelude, include_proof=args.standalone)
     composer.load(prelude)
 
 
@@ -150,7 +152,7 @@ def main():
         definition.resolve()
 
     if args.prelude is not None:
-        load_prelude(composer, args.prelude)
+        load_prelude(composer, args)
 
     module = definition.module_map[args.module]
     env = ProofEnvironment(composer)

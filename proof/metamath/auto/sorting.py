@@ -1,7 +1,7 @@
 from typing import Mapping, Optional, Tuple, List
 
 from ..ast import Metavariable, Term, Application, Statement, StructuredStatement
-from ..composer import Composer, Theorem, Proof
+from ..composer import Composer, Theorem, Proof, MethodAutoProof
 
 from .unification import Unification
 
@@ -32,7 +32,6 @@ Otherwise, we will try to prove
 
 Whenever it comes to the point that we need to show ( \in-sort psij ph0 ), for some 1 <= j <= k
 we will scan the essentials to show that
-
 """
 class SortingProver:
     @staticmethod
@@ -81,6 +80,10 @@ class SortingProver:
             return None
 
     @staticmethod
+    def is_kore_is_sort(term: Term) -> bool:
+        return isinstance(term, Application) and term.symbol == "\\kore-is-sort" and len(term.subterms) == 1
+
+    @staticmethod
     def find_sorting_lemma_for_symbol(composer: Composer, symbol: str) -> Optional[Theorem]:
         for theorem in composer.theorems.values():
             if len(theorem.essentials) != 0: continue
@@ -101,7 +104,8 @@ class SortingProver:
             # all conjuncts have to be \in-sort patterns
             failed = False
             for conjunct in left_conjuncts + right_conjuncts:
-                if SortingProver.is_in_sort(conjunct) is None:
+                if SortingProver.is_in_sort(conjunct) is None and \
+                   not SortingProver.is_kore_is_sort(conjunct):
                     failed = True
                     break
             if failed: continue
@@ -121,13 +125,56 @@ class SortingProver:
 
             return theorem
 
+    r"""
+    Prove a statement of the form:
+    |- ( \kore-is-sort ph0 )
+
+    TODO: add support for sort-parametric sorts
+    """
+    @staticmethod
+    def prove_kore_is_sort(composer: Composer, statement: StructuredStatement) -> Proof:
+        term = SortingProver.is_provability_statement(statement)
+        assert term is not None, f"statement {statement} is not a provability claim"
+
+        assert isinstance(term, Application) and term.symbol == "\\kore-is-sort" and len(term.subterms) == 1, \
+               f"unexpected kore-is-sort claim {statement}"
+
+        for theorem in composer.theorems.values():
+            if len(theorem.essentials) != 0: continue
+
+            theorem_term = SortingProver.is_provability_statement(theorem.statement)
+            if theorem_term is None: continue
+
+            if not isinstance(theorem_term, Application) or \
+               theorem_term.symbol != "\\kore-is-sort" or \
+               len(theorem_term.subterms) != 1:
+                continue
+
+            substitution = Unification.match_statements_as_instance(theorem.statement, statement)
+            if substitution is None:
+                continue
+
+            proof = theorem.match_and_apply(statement)
+
+            if proof.statement.terms == statement.terms:
+                break
+        else:
+            assert proof.statement.terms == statement.terms, f"unable to prove {statement}"
+
+        return proof
+
+
+    r"""
+    Prove a statement of the form:
+    |- ( \imp <hypotheses> ( conjunction of the form of either ( \in-sort ph0 ph1 ) or ( \kore-is-sort ph0 ) ) )
+    """
     @staticmethod
     def prove_sorting_statement(composer: Composer, statement: StructuredStatement) -> Proof:
         term = SortingProver.is_provability_statement(statement)
-        assert term is not None
+        assert term is not None, f"statement {statement} is not a provability claim"
 
-        # if the top level is \in-sort (i.e. if there is no hypotheses/sorting environment)
-        if isinstance(term, Application) and term.symbol == "\\in-sort":
+        # if the top level is not \imp (i.e. if there is no hypotheses/sorting environment)
+        if isinstance(term, Application) and term.symbol != "\\imp":
             return composer.find_theorem("proof-rule-mp").apply(
                 SortingProver.prove_sorting_statement(composer, SortingProver.construct_imp_goal(Application("\\top"), term)),
                 composer.find_theorem("top-intro").apply(),
@@ -145,8 +192,26 @@ class SortingProver:
                 SortingProver.prove_sorting_statement(composer, subgoal2),
             )
 
+        # now assume len(right_conjuncts) == 1:
+
         hypothesis = term.subterms[0]
         conclusion = right_conjuncts[0]
+
+        # if the conclusion is a \kore-is-sort claims
+        # currently we are assuming that it's directly provable
+        # without any hypothesis
+        if isinstance(conclusion, Application) and conclusion.symbol == "\\kore-is-sort":
+            return composer.find_theorem("proof-rule-mp").apply(
+                composer.find_theorem("proof-rule-prop-1").apply(ph0=conclusion, ph1=hypothesis),
+                SortingProver.prove_kore_is_sort(composer, StructuredStatement(
+                    Statement.PROVABLE,
+                    [
+                        Application("|-"),
+                        conclusion,
+                    ]
+                ))
+            )
+
         conclusion_term, _ = SortingProver.is_in_sort(conclusion)
 
         # if the conclusion in one of the essentials
@@ -185,6 +250,8 @@ class SortingProver:
         assert isinstance(conclusion_term, Application), f"unable to prove {statement}"
 
         sorting_lemma = SortingProver.find_sorting_lemma_for_symbol(composer, conclusion_term.symbol)
+        assert sorting_lemma is not None, f"unable to find sorting lemma for symbol {conclusion_term.symbol}"
+
         sorting_lemma_term = SortingProver.is_provability_statement(sorting_lemma.statement)
 
         if SortingProver.is_in_sort(sorting_lemma_term) is not None:
@@ -236,3 +303,5 @@ class SortingProver:
             composer,
             SortingProver.construct_imp_goal(hypothesis, SortingProver.in_sort(term, sort)),
         )
+
+    auto = MethodAutoProof(prove_sorting_statement.__func__)

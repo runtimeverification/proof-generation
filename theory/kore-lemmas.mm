@@ -641,7 +641,6 @@ ${
     $( ph3 is functional and has sort ph0 $)
     kore-forall-elim.1 $e |- ( \kore-forall-sort z ( \kore-valid z ( \kore-exists ph0 z y ( \kore-equals ph0 z y ph3 ) ) ) ) $.
     kore-forall-elim.2 $e #Substitution ph4 ph2 ph3 x $.
-    kore-forall-elim.3 $e |- ( \imp ( \in-sort x ph0 ) ( \in-sort ph2 ph1 ) ) $.
     kore-forall-elim $p |- ( \kore-valid ph1 ph4 ) $= ? $.
 $}
 
