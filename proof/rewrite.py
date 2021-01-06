@@ -345,7 +345,7 @@ class RewriteProofGenerator(ProofGenerator):
         # since we assumed ensures is top, we can remove it as well
         # that is, from \and{R}(<equation>, top)
         # we can get <equation>
-        and_eliminated = self.env.get_theorem("kore-and-elim-left-v1").apply(
+        and_eliminated = self.env.get_theorem("kore-and-equals-top-elim-v1").apply(
             instantiated_axiom.proof,
         )
         instantiated_axiom_claim = kore.Claim(

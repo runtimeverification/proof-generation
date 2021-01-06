@@ -6,6 +6,7 @@ from .kore.utils import KoreUtils, PatternPath
 
 from .metamath import ast as mm
 from .metamath.composer import Proof
+from .metamath.auto.sorting import SortingProver
 
 from .encoder import KorePatternEncoder
 
@@ -59,6 +60,9 @@ class EqualityProofGenerator(ProofGenerator):
             provable.proof,
             subst_proof1,
             subst_proof2,
+            SortingProver.auto,
+            SortingProver.auto,
+            SortingProver.auto,
         )
 
         return ProvableClaim(final_axiom, final_proof)

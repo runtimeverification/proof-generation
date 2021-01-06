@@ -106,6 +106,13 @@ kore-floor-sorting $p |- ( \in-sort ( \kore-floor ph0 ph2 ph1 ) ph2 ) $=
 
 kore-next-sorting $p |- ( \imp ( \in-sort ph1 ph0 ) ( \in-sort ( \kore-next ph0 ph1 ) ph0 ) ) $= ? $.
 
+kore-equals-sorting $p |- ( \in-sort ( \kore-equals ph0 ph1 ph2 ph3 ) ph1 ) $=
+    $(
+        desugar "\kore-equals"
+        apply "kore-floor-sorting"
+    $)
+    ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-iff-is-pattern kore-floor-is-pattern ph1-is-pattern in-sort-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern ph3-is-pattern kore-equals-is-pattern ph1-is-pattern in-sort-is-pattern ph0-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-iff-is-pattern ph1-is-pattern kore-floor-sorting ph0-is-pattern ph1-is-pattern ph2-is-pattern ph3-is-pattern kore-equals-is-pattern ph1-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-iff-is-pattern kore-floor-is-pattern ph1-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern ph3-is-pattern kore-equals-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-iff-is-pattern kore-floor-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-iff-is-pattern kore-floor-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern ph3-is-pattern kore-equals-is-sugar ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-iff-is-pattern kore-floor-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-iff-is-pattern kore-floor-is-pattern ph0-is-pattern ph1-is-pattern ph0-is-pattern ph2-is-pattern ph3-is-pattern kore-iff-is-pattern kore-floor-is-pattern notation-reflexivity notation-symmetry notation-transitivity ph1-is-pattern notation-reflexivity notation-in-sort notation-proof $.
+
 kore-dv-sorting $p |- ( \in-sort ( \kore-dv ph0 ph1 ) ph0 ) $= ? $.
 
 ${
