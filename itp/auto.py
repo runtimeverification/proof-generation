@@ -209,6 +209,20 @@ class DesugarTactic(Tactic):
             state.push_derived_goal(goal, StructuredStatement("p", [
                 typecode, var, expanded,
             ]))
+        elif typecode == Application("#ApplicationContext"):
+            # definition preserves freshness
+            assert len(statement.terms) == 3, f"ill-formed #ApplicationContext claim {statement}"
+            _, var, term = statement.terms
+
+            assert state.is_concrete(term), f"term {term} is not concrete"
+
+            expanded = self.desugar(state, term, target_symbol)
+            self.notation_proofs = [ NotationProver.prove_notation(state.composer, term, expanded) ]
+            self.theorem = self.theorem = state.composer.theorems["notation-application-context"]
+
+            state.push_derived_goal(goal, StructuredStatement("p", [
+                typecode, var, expanded,
+            ]))
         elif typecode == Application("#Substitution"):
             assert len(statement.terms) == 5, f"ill-formed #Substitution claim {statement}"
             _, t1, t2, t3, var = statement.terms
