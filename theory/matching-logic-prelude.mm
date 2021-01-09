@@ -183,7 +183,7 @@ $( Part 6. Unit $)
 
 $c \unit-sort $.
 unit-sort-is-symbol $a #Symbol \unit-sort $.
-unit-sort-is-sort $a |- ( \in-sort \unit-sort \sort ) $.
+unit-sort-is-sort $a |- ( \exists-sort x ( \eq x \unit-sort ) ) $.
 
 $c \unit $.
 unit-is-pattern $a #Symbol \unit $.
