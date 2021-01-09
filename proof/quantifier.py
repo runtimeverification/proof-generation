@@ -6,6 +6,7 @@ from .kore.visitors import PatternVariableVisitor
 
 from .metamath import ast as mm
 from .metamath.composer import Proof
+from .metamath.auto.sorting import SortingProver
 
 from .env import ProofGenerator, ProvableClaim
 from .substitution import SingleSubstitutionProofGenerator
@@ -40,10 +41,12 @@ class QuantifierProofGenerator(ProofGenerator):
             1: "kore-forall-elim-v1",
         }
 
-        if len(provable.claim.sort_variables) in thm_map:
-            thm = thm_map[len(provable.claim.sort_variables)]
+        num_sort_vars = len(provable.claim.sort_variables)
+
+        if num_sort_vars in thm_map:
+            thm = thm_map[num_sort_vars]
         else:
-            raise Exception(f"forall elimination for axiom with {len(provable.claim.sort_variables)} variable(s) is not supported")
+            raise Exception(f"forall elimination for axiom with {num_sort_vars} variable(s) is not supported")
 
         eliminated = 0
 
@@ -72,6 +75,8 @@ class QuantifierProofGenerator(ProofGenerator):
                 provable.proof,
                 pattern_is_functional.proof,
                 subst_proof,
+                SortingProver.auto,
+                SortingProver.auto,
             )
 
             provable = ProvableClaim(new_claim, new_proof)

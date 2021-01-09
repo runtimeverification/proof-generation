@@ -142,6 +142,8 @@ class ApplyTactic(Tactic):
             for var, term in self.metavars_substitution.items()
         }
 
+        # print(self.theorem.statement.label)
+
         if self.use_claim:
             # get an inline proof if the reference theorem is an inline claim
             return self.theorem.inline_apply(
