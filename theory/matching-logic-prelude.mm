@@ -8,9 +8,10 @@ $(
     Part 3. Sorts and Inhabitants
     Part 4. Special Patterns (Singletons, Top, Bottom, Predicates)
     Part 5. Constant, Unary, and Binary Functions (internal use only)
-    Part 6. Pairs
-    Part 7. Tuples
-    Part 8. Functions
+    Part 6. Unit
+    Part 7. Pairs
+    Part 8. Tuples
+    Part 9. Functions
 $)
 
 $( Part 0. More Metavariables $)
@@ -124,7 +125,7 @@ $c \is-singleton $.
 is-singleton-is-pattern $a #Pattern ( \is-singleton ph0 ) $.
 ${
     $d x ph0 $.
-    is-singleton-is-sugar $a #Notation ( \is-singleton ph0 ) ( \exists x ( \eq ph0 x ) ) $.
+    is-singleton-is-sugar $a #Notation ( \is-singleton ph0 ) ( \exists x ( \eq x ph0 ) ) $.
 $}
 
 $c \is-top $.
@@ -178,7 +179,19 @@ ${
                                           ( \sorted-exists z ph3 ( \eq ( \app ph0 x y ) z ) ) ) ) $.
 $}
 
-$( Part 6. Pairs $)
+$( Part 6. Unit $)
+
+$c \unit-sort $.
+unit-sort-is-symbol $a #Symbol \unit-sort $.
+unit-sort-is-sort $a |- ( \in-sort \unit-sort \sort ) $.
+
+$c \unit $.
+unit-is-pattern $a #Symbol \unit $.
+unit-is-singleton $a |- ( \is-singleton \unit ) $.
+
+unit-sort $a |- ( \eq \unit ( \inh \unit-sort ) ) $.
+
+$( Part 7. Pairs $)
 
 $c \pair-sort-symbol $.
 pair-sort-symbol-is-symbol $a #Symbol \pair-sort-symbol $.
