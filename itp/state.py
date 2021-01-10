@@ -40,18 +40,18 @@ class Goal:
 
 
 class ProofState:
-    all_tactics = {}
+    all_tactics = {} # name -> ( tactic class name, [help message] )
 
     @staticmethod
-    def register_tactic(name: str):
+    def register_tactic(name: str, help_msg: Optional[str] = None):
         def decorator(class_object):
-            ProofState.all_tactics[name] = class_object
+            ProofState.all_tactics[name] = class_object, help_msg
             return class_object
         return decorator
 
     def get_tactic(self, name: str):
         assert name in ProofState.all_tactics, f"tactic {name} not found"
-        return ProofState.all_tactics[name]
+        return ProofState.all_tactics[name][0]
 
     def __init__(self, composer: Composer, init_goal: StructuredStatement):
         self.composer = composer

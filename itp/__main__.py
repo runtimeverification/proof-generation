@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 import argparse
 import readline
@@ -16,9 +16,13 @@ from .ansi import ANSI
 import itp.auto
 import itp.tactics
 
+readline.parse_and_bind("tab: complete")
+
+TAB = "  "
+
 
 class BuiltinCommand:
-    builtin_commands = []
+    builtin_commands = [] # list of BuiltinCommand
 
     def __init__(self, *names, help_message=None, handler=None):
         self.names = set(names)
@@ -33,16 +37,20 @@ class BuiltinCommand:
         return decorator
 
     @staticmethod
+    def get_all_command_names() -> List[str]:
+        return sum([ sorted(cmd.names) for cmd in BuiltinCommand.builtin_commands ], [])
+
+    @staticmethod
     def print_help():
         lines = []
 
         for command in BuiltinCommand.builtin_commands:
-            lines.append("{} - {}".format("/".join(command.names), command.help_message))
+            lines.append("{}{} - {}".format(TAB, "/".join(command.names), command.help_message))
 
         print("""\
 usage:
-<tactic> [options] - apply a tactic
-{}""".format("\n".join(lines)))
+{}<tactic> [options] - apply a tactic
+{}""".format(TAB, "\n".join(lines)))
 
 
 class InteractiveState:
@@ -71,6 +79,29 @@ class InteractiveState:
         self.init_theory_path = theory_path
         self.init_goal = goal
         self.proof_state = ProofState(composer, goal.statement)
+
+        # initialize completer
+        readline.set_completer_delims(" ")
+        readline.set_completer(self.command_completer)
+
+    def command_completer(self, text: str, state: int) -> List[str]:
+        command_names = sorted(ProofState.all_tactics.keys()) + BuiltinCommand.get_all_command_names()
+        theorem_names = sorted(self.proof_state.composer.theorems.keys())
+
+        current_buffer = readline.get_line_buffer().decode().lstrip()
+        split = current_buffer.split(" ")
+
+        if len(split) > 1:
+            filtered_names = [ name for name in theorem_names if name.startswith(text) ]
+
+            if text.startswith("\""):
+                filtered_names = [ "\"" + name + "\"" for name in theorem_names if name.startswith(text[1:]) ]
+            else:
+                filtered_names = [ name for name in theorem_names if name.startswith(text) ]
+        else:
+            filtered_names = [ name + " " for name in command_names if name.startswith(text) ]
+
+        return (filtered_names + [ None ])[state]
 
     def loop(self):
         self.print_state()
@@ -127,7 +158,7 @@ class InteractiveState:
         if len(claims):
             segments.append("\n".join([
                 "inline claim(s):",
-                *[ "  " + str(claim.statement) for claim in claims ],
+                *[ TAB + str(claim.statement) for claim in claims ],
             ]))
 
         # print all current goals
@@ -138,14 +169,14 @@ class InteractiveState:
             if len(essentials):
                 segments.append("\n".join([
                     "essential(s):",
-                    *[ "  " + str(essential.statement) for essential in essentials ],
+                    *[ TAB + str(essential.statement) for essential in essentials ],
                 ]))
 
 
             segments.append("\n".join([
                 "goal(s):",
                 *[
-                    f"  {ANSI.BOLD}{goal}{ANSI.RESET}" if i == 0 else f"  {goal}"
+                    f"{TAB}{ANSI.BOLD}{goal}{ANSI.RESET}" if i == 0 else f"{TAB}{goal}"
                     for i, goal in enumerate(current_goals)
                 ]
             ]))
@@ -221,6 +252,9 @@ class InteractiveState:
     @BuiltinCommand.add("help", help_message="print this help message")
     def command_help(self):
         BuiltinCommand.print_help()
+        print("\navailable tactics:")
+        for name, (_, help_msg) in self.proof_state.all_tactics.items():
+            print(f"{TAB}{name} - {help_msg or '<no help message>'}")
 
     @BuiltinCommand.add("q", "quit", "exit", help_message="quit itp")
     def command_quit(self):
