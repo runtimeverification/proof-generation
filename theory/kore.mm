@@ -75,6 +75,7 @@ $c \kore-next-symbol $.
 kore-next-is-symbol $a #Symbol \kore-next-symbol $.
 kore-next-is-pattern $a #Pattern ( \kore-next ph0 ph1 ) $.
 kore-next-is-sugar $a #Notation ( \kore-next ph0 ph1 ) ( \app \kore-next-symbol ph1 ) $.
+kore-next-sorting $a |- ( \imp ( \in-sort ph1 ph0 ) ( \in-sort ( \kore-next ph0 ph1 ) ph0 ) ) $.
 
 kore-evetually-is-pattern $a #Pattern ( \kore-eventually ph0 ph1 ) $.
 ${
@@ -93,6 +94,7 @@ $c \kore-dv-symbol $.
 kore-dv-is-symbol $a #Symbol \kore-dv-symbol $.
 kore-dv-is-pattern $a #Pattern ( \kore-dv ph0 ph1 ) $.
 kore-dv-is-sugar $a #Notation ( \kore-dv ph0 ph1 ) ( \app ( \app \kore-dv-symbol ph0 ) ph1 ) $.
+kore-dv-sorting $a |- ( \in-sort ( \kore-dv ph0 ph1 ) ph0 ) $.
 
 kore-is-sort-is-pattern $a #Pattern ( \kore-is-sort ph0 ) $.
 ${
