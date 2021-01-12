@@ -1,9 +1,9 @@
 import unittest
 
-import proof.kore.ast as kore
-from proof.kore.utils import KoreUtils
-from proof.kore.parser import parse_pattern, parse_axiom, parse_module
-from proof.encoder import KorePatternEncoder
+import ml.kore.ast as kore
+from ml.kore.utils import KoreUtils
+from ml.kore.parser import parse_pattern, parse_axiom, parse_module
+from ml.rewrite.encoder import KorePatternEncoder
 
 class TestKorePatternEncoder(unittest.TestCase):
     def __init__(self, *args, **kwargs):
