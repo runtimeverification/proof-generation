@@ -1,10 +1,10 @@
 from typing import Union, Tuple
 
-from .kore import ast as kore
-from .kore.utils import KoreUtils
+from ml.kore import ast as kore
+from ml.kore.utils import KoreUtils
 
-from .metamath import ast as mm
-from .metamath.composer import Proof, Theorem
+from ml.metamath import ast as mm
+from ml.metamath.composer import Proof, Theorem
 
 from .encoder import KorePatternEncoder
 

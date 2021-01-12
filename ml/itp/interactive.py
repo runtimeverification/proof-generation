@@ -1,20 +1,20 @@
 from typing import Optional, List
 
-import argparse
 import readline
 import traceback
 
-from proof.metamath.ast import StructuredStatement, Statement, Application, Metavariable
-from proof.metamath.parser import load_database
-from proof.metamath.composer import Composer
+from ml.metamath.ast import StructuredStatement, Statement, Application, Metavariable
+from ml.metamath.parser import load_database
+from ml.metamath.composer import Composer
 
-from .ast import Command
-from .parser import parse_command
-from .state import ProofState, NoStateChangeException
-from .ansi import ANSI
+from ml.itp.ast import Command
+from ml.itp.parser import parse_command
+from ml.itp.state import ProofState, NoStateChangeException
 
-import itp.auto
-import itp.tactics
+from ml.utils.ansi import ANSI
+
+import ml.itp.auto
+import ml.itp.tactics
 
 readline.parse_and_bind("tab: complete")
 
@@ -266,19 +266,3 @@ class InteractiveState:
 
         if ans.strip().lower() == "y":
             exit(0)
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("theory", help=".mm theory file")
-    parser.add_argument("goal", help="the initial goal statement")
-    parser.add_argument("--debug", action="store_const", const=True, default=False, help="enable debug mode")
-    args = parser.parse_args()
-
-    itp_state = InteractiveState(debug=args.debug)
-    itp_state.init_from_theory_and_goal(args.theory, args.goal)
-    itp_state.loop()
-
-
-if __name__ == "__main__":
-    main()

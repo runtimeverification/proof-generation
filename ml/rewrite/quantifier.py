@@ -1,12 +1,12 @@
 from typing import List, Tuple, Mapping
 
-from .kore import ast as kore
-from .kore.utils import KoreUtils
-from .kore.visitors import PatternVariableVisitor
+from ml.kore import ast as kore
+from ml.kore.utils import KoreUtils
+from ml.kore.visitors import PatternVariableVisitor
 
-from .metamath import ast as mm
-from .metamath.composer import Proof
-from .metamath.auto.sorting import SortingProver
+from ml.metamath import ast as mm
+from ml.metamath.composer import Proof
+from ml.metamath.auto.sorting import SortingProver
 
 from .env import ProofGenerator, ProvableClaim
 from .substitution import SingleSubstitutionProofGenerator

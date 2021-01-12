@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TextIO, Optional, List, Set, Union
 from io import StringIO
 
-from proof.utils.visitor import Visitor
+from ml.utils.visitor import Visitor
 
 """
 This is a less general version

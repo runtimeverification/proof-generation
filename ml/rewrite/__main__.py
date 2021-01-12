@@ -6,17 +6,17 @@ import argparse
 from typing import List, Optional
 from io import StringIO
 
-from proof.kore.parser import parse_definition, parse_pattern
-from proof.kore.visitors import FreePatternVariableVisitor, PatternSubstitutionVisitor
-from proof.kore.ast import StringLiteral, MLPattern, Module, Pattern
-from proof.kore.utils import KoreUtils
+from ml.kore.parser import parse_definition, parse_pattern
+from ml.kore.visitors import FreePatternVariableVisitor, PatternSubstitutionVisitor
+from ml.kore.ast import StringLiteral, MLPattern, Module, Pattern
+from ml.kore.utils import KoreUtils
 
-from proof.metamath.parser import load_database
-from proof.metamath.ast import Statement, StructuredStatement, IncludeStatement, Comment
-from proof.metamath.composer import Composer
+from ml.metamath.parser import load_database
+from ml.metamath.ast import Statement, StructuredStatement, IncludeStatement, Comment
+from ml.metamath.composer import Composer
 
-from proof.env import ProofEnvironment
-from proof.rewrite import RewriteProofGenerator
+from .env import ProofEnvironment
+from .rewrite import RewriteProofGenerator
 
 
 def load_prelude(composer: Composer, args):

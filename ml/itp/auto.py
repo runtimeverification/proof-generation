@@ -4,13 +4,13 @@ Some auto tactics
 
 from typing import Optional, Tuple, List, Union
 
-from proof.metamath.ast import Application, Term, Metavariable, StructuredStatement, Statement
-from proof.metamath.composer import Proof, Theorem
+from ml.metamath.ast import Application, Term, Metavariable, StructuredStatement, Statement
+from ml.metamath.composer import Proof, Theorem
 
-from proof.metamath.auto.unification import Unification
-from proof.metamath.auto.notation import NotationProver
-from proof.metamath.auto.substitution import SubstitutionProver
-from proof.metamath.auto.sorting import SortingProver
+from ml.metamath.auto.unification import Unification
+from ml.metamath.auto.notation import NotationProver
+from ml.metamath.auto.substitution import SubstitutionProver
+from ml.metamath.auto.sorting import SortingProver
 
 from .state import ProofState, Goal, NoStateChangeException
 from .tactics import Tactic, ApplyTactic

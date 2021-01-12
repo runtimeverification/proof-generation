@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import List, Tuple, NewType, Optional, Mapping
 
-from .kore import ast as kore
-from .kore.visitors import FreePatternVariableVisitor
-from .kore.utils import KoreUtils, PatternPath
+from ml.kore import ast as kore
+from ml.kore.visitors import FreePatternVariableVisitor
+from ml.kore.utils import KoreUtils, PatternPath
 
-from .metamath import ast as mm
-from .metamath.composer import Proof
-from .metamath.auto.typecode import TypecodeProver
+from ml.metamath import ast as mm
+from ml.metamath.composer import Proof
+from ml.metamath.auto.typecode import TypecodeProver
 
 from .env import ProofGenerator, ProofEnvironment, ProvableClaim
 from .equality import EqualityProofGenerator

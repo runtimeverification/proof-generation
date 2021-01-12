@@ -2,11 +2,11 @@ from typing import TextIO, Optional, Set, Union
 
 from urllib.parse import quote_plus
 
-from .kore import ast as kore
-from .kore.ast import KoreVisitor
-from .kore.utils import KoreUtils
+from ml.kore import ast as kore
+from ml.kore.ast import KoreVisitor
+from ml.kore.utils import KoreUtils
 
-from .metamath import ast as mm
+from ml.metamath import ast as mm
 
 """
 Encode a kore pattern as a Term and collect all metavariables

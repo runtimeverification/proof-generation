@@ -6,7 +6,7 @@ from typing import List
 
 from .state import ProofState
 
-from proof.metamath.parser import parse_term_with_metavariables
+from ml.metamath.parser import parse_term_with_metavariables
 
 
 class BaseAST:

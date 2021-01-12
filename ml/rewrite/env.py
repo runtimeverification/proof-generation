@@ -4,13 +4,13 @@ from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO
 
 import re
 
-from .kore import ast as kore
-from .kore.utils import KoreUtils
+from ml.kore import ast as kore
+from ml.kore.utils import KoreUtils
 
-from .metamath import ast as mm
-from .metamath.visitors import SubstitutionVisitor
-from .metamath.composer import Composer, Theorem, Proof
-from .metamath.auto.substitution import SubstitutionProver
+from ml.metamath import ast as mm
+from ml.metamath.visitors import SubstitutionVisitor
+from ml.metamath.composer import Composer, Theorem, Proof
+from ml.metamath.auto.substitution import SubstitutionProver
 
 from .encoder import KorePatternEncoder
 

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import List, Optional, Mapping, NewType, Set, Callable, Tuple
 
-from proof.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
-from proof.metamath.composer import Composer, Proof, Theorem
+from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
+from ml.metamath.composer import Composer, Proof, Theorem
 
 from .extension import SchematicVariable, SubstitutionVisitor, CopyVisitor
 

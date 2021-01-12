@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import List, Union, Optional, Any, Mapping, Set
 
-from proof.utils.visitor import Visitor
+from ml.utils.visitor import Visitor
 
 """
 Visits a Kore AST in post-order traversal

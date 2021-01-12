@@ -1,9 +1,9 @@
 from typing import Mapping, Set, List, Tuple, Optional
 
-from .kore import ast as kore
-from .kore.utils import KoreUtils
+from ml.kore import ast as kore
+from ml.kore.utils import KoreUtils
 
-from .metamath.composer import Theorem, Proof
+from ml.metamath.composer import Theorem, Proof
 
 from .env import ProofGenerator, ProvableClaim
 from .encoder import KorePatternEncoder

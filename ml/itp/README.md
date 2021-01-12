@@ -7,7 +7,7 @@ for proving things in matching logic.
 ## Usage
 
 ```
-python3 -m itp <mm file> <statement to prove>
+python3 -m ml.itp <mm file> <statement to prove>
 ```
 
 ## Example 1
@@ -19,7 +19,7 @@ test $p |- ( \imp ph0 ph0 ) $= ? $.
 
 Then run
 ```
-python3 -m itp theory/matching-logic.mm test
+python3 -m ml.itp theory/matching-logic.mm test
 ```
 
 `itp` will print the current goal and wait for input

@@ -4,10 +4,10 @@ Extensions to the metamath AST as in proof.metamath.ast
 
 from typing import Optional
 
-from proof.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
-from proof.metamath.composer import Composer, Proof
-from proof.metamath.visitors import SubstitutionVisitor as OldSubstitutionVisitor
-from proof.metamath.visitors import CopyVisitor as OldCopyVisitor
+from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
+from ml.metamath.composer import Composer, Proof
+from ml.metamath.visitors import SubstitutionVisitor as OldSubstitutionVisitor
+from ml.metamath.visitors import CopyVisitor as OldCopyVisitor
 
 
 class SchematicVariable(Metavariable):

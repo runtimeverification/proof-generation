@@ -1,11 +1,11 @@
 from typing import Mapping, Optional, List
 
-from proof.metamath.parser import parse_term_with_metavariables, parse_terms_with_metavariables
-from proof.metamath.ast import Term, StructuredStatement, Statement, Application
-from proof.metamath.composer import Theorem, Proof
-from proof.metamath.visitors import CopyVisitor
+from ml.metamath.parser import parse_term_with_metavariables, parse_terms_with_metavariables
+from ml.metamath.ast import Term, StructuredStatement, Statement, Application
+from ml.metamath.composer import Theorem, Proof
+from ml.metamath.visitors import CopyVisitor
 
-from proof.metamath.auto.unification import Unification
+from ml.metamath.auto.unification import Unification
 
 from .state import ProofState, Goal
 from .extension import SchematicVariable, SubstitutionVisitor

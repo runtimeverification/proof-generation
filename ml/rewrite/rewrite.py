@@ -1,12 +1,12 @@
 from typing import Optional, List, Tuple, Mapping, Union
 
-from .kore import ast as kore
-from .kore.utils import KoreUtils, PatternPath
-from .kore.visitors import KoreVisitor, PatternOnlyVisitorStructure
+from ml.kore import ast as kore
+from ml.kore.utils import KoreUtils, PatternPath
+from ml.kore.visitors import KoreVisitor, PatternOnlyVisitorStructure
 
-from .metamath import ast as mm
-from .metamath.composer import Proof, Theorem
-from .metamath.auto.sorting import SortingProver
+from ml.metamath import ast as mm
+from ml.metamath.composer import Proof, Theorem
+from ml.metamath.auto.sorting import SortingProver
 
 from .encoder import KorePatternEncoder
 
