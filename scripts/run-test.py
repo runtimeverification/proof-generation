@@ -125,7 +125,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None):
 
     snapshot_0 = os.path.join(snapshot_dir, f"snapshot-0.kore")
 
-    if check_dependency_change([ snapshot_0 ], [ kompile_timestamp ]):
+    if check_dependency_change([ snapshot_0 ], [ kompile_timestamp, pgm ]):
         # generate the initial configuration
         # TODO: technically initial configuration is also generated through equations
         # in the kore definition, but we are skipping that since we don't support map yet.

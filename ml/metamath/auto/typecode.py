@@ -7,6 +7,9 @@ from .unification import Unification
 
 
 class TypecodeProver:
+    # TODO: this is a bit too casual
+    cache = {} # (typecode, Term) -> proof
+
     """
     Try to prove a statement of the form
     <typecode> <term>
@@ -14,6 +17,9 @@ class TypecodeProver:
     """
     @staticmethod
     def prove_typecode(composer, typecode: str, term: Term):
+        if (typecode, term) in TypecodeProver.cache:
+            return TypecodeProver.cache[typecode, term]
+
         # try to find a matching floating statement first if the term is a metavariable
         if isinstance(term, Metavariable):
             for _, theorem in composer.theorems.items():
@@ -22,7 +28,9 @@ class TypecodeProver:
 
                     if other_typecode.symbol == typecode and metavar.name == term.name:
                         # found a direct proof
-                        return theorem.apply()
+                        proof = theorem.apply()
+                        TypecodeProver.cache[typecode, term] = proof
+                        return proof
             # otherwise treat the metavariable as a term
 
         expected_statement = StructuredStatement(Statement.PROVABLE, [ Application(typecode), term ])
@@ -75,6 +83,8 @@ class TypecodeProver:
 
                 # found a proof
                 if not failed:
-                    return theorem.apply(*subproofs, **meta_subst)
-        
+                    proof = theorem.apply(*subproofs, **meta_subst)
+                    TypecodeProver.cache[typecode, term] = proof
+                    return proof
+
         return None
