@@ -10,6 +10,10 @@ class TypecodeProver:
     # TODO: this is a bit too casual
     cache = {} # (typecode, Term) -> proof
 
+    @staticmethod
+    def add_cache(typecode: str, term: Term, proof):
+        TypecodeProver.cache[typecode, term] = proof
+
     """
     Try to prove a statement of the form
     <typecode> <term>
@@ -29,7 +33,7 @@ class TypecodeProver:
                     if other_typecode.symbol == typecode and metavar.name == term.name:
                         # found a direct proof
                         proof = theorem.apply()
-                        TypecodeProver.cache[typecode, term] = proof
+                        TypecodeProver.add_cache(typecode, term, proof)
                         return proof
             # otherwise treat the metavariable as a term
 
@@ -84,7 +88,7 @@ class TypecodeProver:
                 # found a proof
                 if not failed:
                     proof = theorem.apply(*subproofs, **meta_subst)
-                    TypecodeProver.cache[typecode, term] = proof
+                    TypecodeProver.add_cache(typecode, term, proof)
                     return proof
 
         return None

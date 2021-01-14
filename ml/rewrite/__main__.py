@@ -64,25 +64,9 @@ the environment
 def prove_rewriting(env: ProofEnvironment, snapshots: List[Pattern]):
     gen = RewriteProofGenerator(env)
 
-    step_theorems = []
-
-    for step, (from_pattern, to_pattern) in enumerate(zip(snapshots[:-1], snapshots[1:])):
-        print("==================")
-        print("proving rewriting step {}".format(step))
-        # search for the axiom to use and try to get a proof
-        proof = gen.prove_rewrite_step(from_pattern, to_pattern)
-        proof.statement.label = f"step-{step}"
-
-        env.load_comment(f"\nrewriting step {step}:\n{from_pattern}\n=>\n{to_pattern}\n")
-        step_theorems.append(env.load_metamath_statement(proof.statement))
-
-    print("==================")
-    print("chaining steps to prove the final goal")
-    multiple_steps_proof = gen.chain_rewrite_steps(step_theorems)
-    multiple_steps_proof.statement.label = "goal"
-
+    final_claim = gen.prove_multiple_rewrite_steps(snapshots)
     env.load_comment(f"\nfinal goal:\n{snapshots[0]}\n=>\n{snapshots[-1]}\n")
-    env.load_metamath_statement(multiple_steps_proof.statement)
+    env.load_provable_claim_as_theorem("goal", final_claim)
 
 
 """
@@ -92,12 +76,12 @@ multiple interdepdent theories
 def output_theory(composer: Composer, prelude: Optional[str], output: str, standalone=False, include_rewrite_proof=False):
     if standalone:
         assert not os.path.isdir(output), f"path {output} exists and is a directory"
-        print(f"dumping to standalone metamath theory {output}")
+        print(f"dumping standalone metamath theory to {output}")
         with open(output, "w") as out:
             composer.encode(out)
     else:
         assert not os.path.isfile(output), f"path {output} exists and is a file"
-        print(f"dumping to multiple metamath theories in {output}")
+        print(f"dumping multiple metamath theories to {output}")
 
         if not os.path.isdir(output):
             os.mkdir(output)

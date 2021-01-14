@@ -222,6 +222,21 @@ class ProofEnvironment:
         return self.load_metamath_statement(mm.Comment(comment))
 
     """
+    Given a proof of some statement, turns it into a theorem
+    """
+    def load_proof_as_theorem(self, label: str, proof: Proof) -> Theorem:
+        proof.statement.label = label
+        return self.load_metamath_statement(proof.statement)
+
+    """
+    Returns a new provable claim with the proof using the loaded theorem
+    """
+    def load_provable_claim_as_theorem(self, label: str, provable: ProvableClaim) -> ProvableClaim:
+        new_proof = self.load_proof_as_theorem(label, provable.proof).as_proof()
+        return ProvableClaim(provable.claim, new_proof)
+
+
+    """
     Encode and load a Kore axiom into the generator
     and return the corresponding theorem object
     """

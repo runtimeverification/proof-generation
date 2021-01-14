@@ -163,7 +163,6 @@ class SortingProver:
 
         return proof
 
-
     r"""
     Prove a statement of the form:
     |- ( \imp <hypotheses> ( conjunction of the form of either ( \in-sort ph0 ph1 ) or ( \kore-is-sort ph0 ) ) )

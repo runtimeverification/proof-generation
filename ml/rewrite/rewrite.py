@@ -24,6 +24,8 @@ class RewriteProofGenerator(ProofGenerator):
     def __init__(self, env: ProofEnvironment):
         super().__init__(env)
         self.owise_axiom_counter = 0
+        self.rewrite_claim_counter = 0
+        self.simplification_counter = 0
         self.hooked_symbol_evaluators = {
             "Lbl'UndsPlus'Int'Unds'": IntegerAdditionEvaluator(env),
             "Lbl'Unds'-Int'Unds'": IntegerSubtractionEvaluator(env),
@@ -50,7 +52,8 @@ class RewriteProofGenerator(ProofGenerator):
         rewrite_pattern = KoreUtils.strip_forall(pattern)
 
         assert isinstance(rewrite_pattern, kore.MLPattern) and \
-               rewrite_pattern.construct == kore.MLPattern.REWRITES
+               (rewrite_pattern.construct == kore.MLPattern.REWRITES or
+                rewrite_pattern.construct == kore.MLPattern.REWRITES_STAR)
 
         lhs, rhs = rewrite_pattern.arguments
 
@@ -67,10 +70,20 @@ class RewriteProofGenerator(ProofGenerator):
         return lhs_body, lhs_requires, rhs_body, rhs_ensures
 
     """
+    Given a provable claim of the form
+    ph1 => ph2 or ph1 =>* ph2,
+    return (ph1, ph2)
+    """
+    def decompose_concrete_rewrite_claim(self, provable: ProvableClaim) -> Tuple[kore.Pattern, kore.Pattern]:
+        rewrite_pattern = provable.claim.pattern
+        lhs, _, rhs, _ = self.decompose_rewrite_axiom(rewrite_pattern)
+        return lhs, rhs
+
+    """
     Find and instantiate a rewrite axiom for the given pattern,
     and then resolve all the functions in the RHS
     """
-    def find_rewrite_axiom_for_pattern(self, pattern: kore.Pattern) -> ProvableClaim:
+    def rewrite_from_pattern(self, pattern: kore.Pattern) -> ProvableClaim:
         unification_gen = UnificationProofGenerator(self.env)
 
         for _, rewrite_axiom in self.env.rewrite_axioms.items():
@@ -123,7 +136,26 @@ class RewriteProofGenerator(ProofGenerator):
                 print("> applying unification equation", equation)
                 concrete_rewrite_claim = equation.prove_validity(concrete_rewrite_claim, [ 0, 0 ] + path)
 
-            concrete_rewrite_claim = self.simplify_pattern(concrete_rewrite_claim, [ 0, 1 ])
+            concrete_rewrite_claim = self.apply_rewrite_star_intro(concrete_rewrite_claim)
+
+            # make each simplification its own rewrite step
+            # so that the proof will not grow too large
+            while True:
+                _, rhs = self.decompose_concrete_rewrite_claim(concrete_rewrite_claim)
+
+                simplification_step = self.simplify_pattern_as_rewrite(rhs, bound=1)
+                if simplification_step is None: break
+
+                simplification_step = self.env.load_provable_claim_as_theorem(
+                    f"rewrite-simplification-{self.simplification_counter}",
+                    simplification_step,
+                )
+                self.simplification_counter += 1
+
+                concrete_rewrite_claim = self.apply_rewrite_star_transitivity(
+                    concrete_rewrite_claim,
+                    simplification_step,
+                )
 
             return concrete_rewrite_claim
         
@@ -133,113 +165,138 @@ class RewriteProofGenerator(ProofGenerator):
         self,
         from_pattern: kore.Pattern,
         to_pattern: kore.Pattern,
-    ) -> Proof:
+    ) -> ProvableClaim:
         # strip the outermost inj
         # TODO: re-add these in the end
         from_pattern = self.strip_inj(from_pattern)
         to_pattern = self.strip_inj(to_pattern)
 
-        from_pattern_encoded = self.env.encode_pattern(from_pattern)
-        to_pattern_encoded = self.env.encode_pattern(to_pattern)
+        simplification_claim = None
 
-        if self.is_simplifiable(from_pattern):
-            from_pattern_sort = KoreUtils.infer_sort(from_pattern)
-            from_pattern_sort_encoded = self.env.encode_pattern(from_pattern_sort)
+        # TODO: this is a hack to load all domain values
+        self.env.encode_pattern(from_pattern)
+        self.env.encode_pattern(to_pattern)
 
-            # first, construct a claim of the form <from pattern> =>* <from pattern>
-            # then simplify the right hand side
-            reflexivity_claim = kore.Claim(
-                [],
-                kore.MLPattern(
-                    kore.MLPattern.REWRITES_STAR,
-                    [ from_pattern_sort ],
-                    [ from_pattern, from_pattern ]
-                ),
-                [],
+        while True:
+            simplification_step = self.simplify_pattern_as_rewrite(from_pattern, bound=1)
+            if simplification_step is None: break
+
+            simplification_step = self.env.load_provable_claim_as_theorem(
+                f"rewrite-simplification-{self.simplification_counter}",
+                simplification_step,
             )
-            reflexivity_claim.resolve(self.env.module)
+            self.simplification_counter += 1
 
-            simplification_claim = ProvableClaim(
-                reflexivity_claim,
-                self.env.get_theorem("kore-rewrites-star-reflexivity").apply(
-                    SortingProver.auto,
-                    ph0=from_pattern_sort_encoded,
-                    ph1=from_pattern_encoded,
+            if simplification_claim is None:
+                simplification_claim = simplification_step
+            else:
+                simplification_claim = self.apply_rewrite_star_transitivity(
+                    simplification_claim,
+                    simplification_step,
                 )
-            )
 
-            simplification_claim = self.simplify_pattern(simplification_claim, [ 0, 1 ])
+            _, rhs = self.decompose_concrete_rewrite_claim(simplification_claim)
 
             # if the RHS is already the same as to_pattern, no need to do more
-            rhs_concrete = simplification_claim.proof.statement.terms[1].subterms[1].subterms[2]
-            if rhs_concrete == to_pattern_encoded:
-                return simplification_claim.proof
+            if rhs == to_pattern:
+                return simplification_claim
 
-            # now update the from_pattern to the simplified one
-            from_pattern = simplification_claim.claim.pattern.arguments[1]
-            from_pattern_encoded = self.env.encode_pattern(from_pattern)
-        else:
-            simplification_claim = None
+            from_pattern = rhs
 
-        concrete_rewrite_claim = self.find_rewrite_axiom_for_pattern(from_pattern)
+        concrete_rewrite_claim = self.rewrite_from_pattern(from_pattern)
 
         # check that the proven statement is actually what we want
         # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )
-        assert concrete_rewrite_claim.proof.statement.terms[1].symbol == KorePatternEncoder.VALID
-        _, lhs_concrete, rhs_concrete = concrete_rewrite_claim.proof.statement.terms[1].subterms[1].subterms
+        _, rhs = self.decompose_concrete_rewrite_claim(concrete_rewrite_claim)
 
-        assert lhs_concrete == from_pattern_encoded, \
-                "unexpected LHS: {} vs {}".format(lhs_concrete, from_pattern_encoded)
-        assert rhs_concrete == to_pattern_encoded, \
-                "unexpected RHS: {} vs {}".format(rhs_concrete, to_pattern_encoded)
-
-        rewrite_proof = self.env.get_theorem("kore-rewrites-star-intro").apply(
-            SortingProver.auto,
-            SortingProver.auto,
-            concrete_rewrite_claim.proof,
-        )
+        assert rhs == to_pattern, "unexpected RHS: {} vs {}".format(rhs, to_pattern)
 
         # chain the simplification claim too
         if simplification_claim is not None:
-            rewrite_proof = self.env.get_theorem("kore-rewrites-star-transitivity").apply(
-                SortingProver.auto,
-                SortingProver.auto,
-                SortingProver.auto,
-                simplification_claim.proof,
-                rewrite_proof,
+            concrete_rewrite_claim = self.apply_rewrite_star_transitivity(
+                simplification_claim,
+                concrete_rewrite_claim,
             )
 
-        return rewrite_proof
+        return concrete_rewrite_claim
 
-    def rewrite_to_rewrite_star(self, theorem: Theorem) -> Proof:
-        if theorem.statement.terms[1].symbol == "\\kore-rewrites":
-            return self.env.get_theorem("kore-rewrites-star-intro").apply(
-                SortingProver.auto,
-                SortingProver.auto,
-                theorem.as_proof(),
+    """
+    Prove multiple rewrite steps
+    """
+    def prove_multiple_rewrite_steps(self, patterns: List[kore.Pattern]) -> ProvableClaim:
+        assert len(patterns) > 1, "expecting more than one patterns"
+
+        final_claim = None
+
+        for step, (from_pattern, to_pattern) in enumerate(zip(patterns[:-1], patterns[1:])):
+            print("==================")
+            print("proving rewriting step {}".format(step))
+
+            step_claim = self.prove_rewrite_step(from_pattern, to_pattern)
+
+            self.env.load_comment(f"\nrewriting step:\n{from_pattern}\n=>\n{to_pattern}\n")
+            step_claim = self.env.load_provable_claim_as_theorem(f"rewrite-step-{self.rewrite_claim_counter}", step_claim)
+            self.rewrite_claim_counter += 1
+
+            if final_claim is None:
+                final_claim = step_claim
+            else:
+                final_claim = self.apply_rewrite_star_transitivity(final_claim, step_claim)
+
+        return final_claim
+
+    """
+    Transform a rewrite claim to a rewrite-star claim
+    """
+    def apply_rewrite_star_intro(self, step: ProvableClaim) -> ProvableClaim:
+        lhs, rhs = self.decompose_concrete_rewrite_claim(step)
+        pattern_sort = KoreUtils.infer_sort(lhs)
+
+        new_claim = kore.Claim(
+            [],
+            kore.MLPattern(
+                kore.MLPattern.REWRITES_STAR,
+                [ pattern_sort ],
+                [ lhs, rhs ]
             ),
-        else:
-            return theorem.as_proof()
+            [],
+        )
+        new_claim.resolve(self.env.module)
+
+        return ProvableClaim(new_claim, self.env.get_theorem("kore-rewrites-star-intro").apply(
+            SortingProver.auto,
+            SortingProver.auto,
+            step.proof,
+        ))
 
     """
-    Convert rewrites to rewrites-star and 
-    then chain them together using transitivity
+    Connect two rewrite-star claims
     """
-    def chain_rewrite_steps(self, step_theorems: List[Theorem]) -> Proof:
-        assert len(step_theorems)
+    def apply_rewrite_star_transitivity(self, step1: ProvableClaim, step2: ProvableClaim) -> ProvableClaim:
+        lhs1, rhs1 = self.decompose_concrete_rewrite_claim(step1)
+        lhs2, rhs2 = self.decompose_concrete_rewrite_claim(step2)
+        assert rhs1 == lhs2, "unable to apply transitivity"
 
-        current_proof = self.rewrite_to_rewrite_star(step_theorems[0])
+        pattern_sort = KoreUtils.infer_sort(lhs1)
 
-        for next_step in step_theorems[1:]:
-            current_proof = self.env.get_theorem("kore-rewrites-star-transitivity").apply(
-                SortingProver.auto,
-                SortingProver.auto,
-                SortingProver.auto,
-                current_proof,
-                self.rewrite_to_rewrite_star(next_step),
-            )
-        
-        return current_proof
+        new_claim = kore.Claim(
+            [],
+            kore.MLPattern(
+                kore.MLPattern.REWRITES_STAR,
+                [ pattern_sort ],
+                [ lhs1, rhs2 ]
+            ),
+            [],
+        )
+        new_claim.resolve(self.env.module)
+
+        return ProvableClaim(new_claim, self.env.get_theorem("kore-rewrites-star-transitivity").apply(
+            SortingProver.auto,
+            SortingProver.auto,
+            SortingProver.auto,
+            step1.proof,
+            step2.proof,
+        ))
 
     def decompose_anywhere_axiom(self, pattern: kore.Pattern) -> Tuple[kore.Pattern, kore.Pattern, kore.Pattern, kore.Pattern]:
         inner_pattern = KoreUtils.strip_forall(pattern)
@@ -466,9 +523,14 @@ class RewriteProofGenerator(ProofGenerator):
     Simplify the subpattern indicated by the path by
       - resolving functions
       - simplify nested injections
+    at most <bound> times
     """
-    def simplify_pattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
-        while True:
+    def simplify_pattern(self, provable: ProvableClaim, path: PatternPath, bound: int=-1) -> ProvableClaim:
+        num_simplifications = 0
+
+        while bound == -1 or num_simplifications < bound:
+            num_simplifications += 1
+
             subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
 
             # simplify nested inj
@@ -498,6 +560,42 @@ class RewriteProofGenerator(ProofGenerator):
             break
 
         return provable
+
+    """
+    Given a pattern phi, simplify it to phi' and return a proof
+    of phi =>* phi'. If phi is not simplifiable, then return None
+    """
+    def simplify_pattern_as_rewrite(self, pattern: kore.Pattern, bound: int=-1) -> Optional[ProvableClaim]:
+        if not self.is_simplifiable(pattern): return None
+
+        pattern_encoded = self.env.encode_pattern(pattern)
+
+        pattern_sort = KoreUtils.infer_sort(pattern)
+        pattern_sort_encoded = self.env.encode_pattern(pattern_sort)
+
+        # first, construct a claim of the form <from pattern> =>* <from pattern>
+        # then simplify the right hand side
+        reflexivity_claim = kore.Claim(
+            [],
+            kore.MLPattern(
+                kore.MLPattern.REWRITES_STAR,
+                [ pattern_sort ],
+                [ pattern, pattern ]
+            ),
+            [],
+        )
+        reflexivity_claim.resolve(self.env.module)
+
+        simplification_claim = ProvableClaim(
+            reflexivity_claim,
+            self.env.get_theorem("kore-rewrites-star-reflexivity").apply(
+                SortingProver.auto,
+                ph0=pattern_sort_encoded,
+                ph1=pattern_encoded,
+            )
+        )
+
+        return self.simplify_pattern(simplification_claim, [ 0, 1 ], bound=bound)
 
 
 class InnermostNestedInjectionPathVisitor(KoreVisitor):
