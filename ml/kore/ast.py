@@ -198,7 +198,7 @@ class ImportStatement(Sentence):
         return visitor.proxy_visit_import_statement(self)
 
     def __str__(self) -> str:
-        module_name = self.module.name if isinstance(self.module, Module) else "<?" + self.module + ">"
+        module_name = self.module.name if isinstance(self.module, Module) else self.module
         return "import {}".format(module_name)
 
 
@@ -250,7 +250,7 @@ class SortInstance(BaseAST):
         return hash(self.definition) ^ hash(tuple(self.arguments))
 
     def __str__(self) -> str:
-        sort_id = self.definition.sort_id if isinstance(self.definition, SortDefinition) else "<?" + self.definition + ">"
+        sort_id = self.definition.sort_id if isinstance(self.definition, SortDefinition) else self.definition
         return "{}{{{}}}".format(sort_id, ", ".join(map(str, self.arguments)))
 
 
@@ -335,7 +335,7 @@ class SymbolInstance(BaseAST):
         return visitor.proxy_visit_symbol_instance(self)
 
     def __str__(self) -> str:
-        symbol = self.definition.symbol if isinstance(self.definition, SymbolDefinition) else "<?" + self.definition + ">"
+        symbol = self.definition.symbol if isinstance(self.definition, SymbolDefinition) else self.definition
         return "{}{{{}}}".format(symbol, ", ".join(map(str, self.sort_arguments)))
 
     def __eq__(self, other):
@@ -513,6 +513,7 @@ class MLPattern(Pattern):
 
     NEXT = "\\next"
     REWRITES = "\\rewrites"
+    REWRITES_STAR = "\\rewrites-star"
 
     DV = "\\dv"
 

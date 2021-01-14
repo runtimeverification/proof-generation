@@ -24,6 +24,7 @@ class KorePatternEncoder(KoreVisitor):
     EQUALS = "\\kore-equals"
     IN = "\\kore-in"
     REWRITES = "\\kore-rewrites"
+    REWRITES_STAR = "\\kore-rewrites-star"
     DV = "\\kore-dv"
     IS_SORT = "\\kore-is-sort"
     STRING = "\\kore-string"
@@ -69,6 +70,7 @@ class KorePatternEncoder(KoreVisitor):
             kore.MLPattern.EQUALS: KorePatternEncoder.EQUALS,
             kore.MLPattern.IN: KorePatternEncoder.IN,
             kore.MLPattern.REWRITES: KorePatternEncoder.REWRITES,
+            kore.MLPattern.REWRITES_STAR: KorePatternEncoder.REWRITES_STAR,
             kore.MLPattern.DV: KorePatternEncoder.DV,
             kore.MLPattern.FORALL: KorePatternEncoder.FORALL,
             kore.MLPattern.EXISTS: KorePatternEncoder.EXISTS,

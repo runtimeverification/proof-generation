@@ -162,6 +162,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
             kore.MLPattern.EQUALS: "substitution-kore-equals",
             kore.MLPattern.IN: "substitution-kore-in",
             kore.MLPattern.REWRITES: "substitution-kore-rewrites",
+            kore.MLPattern.REWRITES_STAR: "substitution-kore-rewrites-star",
             kore.MLPattern.DV: "substitution-kore-dv",
             kore.MLPattern.IMPLIES: "substitution-kore-implies",
         }

@@ -35,7 +35,7 @@ def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
     max_step = 0
 
     for file_name in os.listdir(snapshot_dir):
-        match = re.match(r".*_(\d+)\.kore", file_name)
+        match = re.match(r".*\b(\d+)\.kore", file_name)
         if match is not None:
             step = int(match.group(1))
             assert step not in snapshots, "duplicated snapshot for step {}".format(step)
