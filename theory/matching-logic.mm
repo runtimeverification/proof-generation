@@ -348,29 +348,34 @@ $}
 $( Proof System Part 2 (8 rules) $)
 $( Frame Reasoning $)
 
-proof-rule-propagation-bot-left  $a |- ( \imp ( \app \bot ph0 ) \bot ) $.
-proof-rule-propagation-bot-right $a |- ( \imp ( \app ph0 \bot ) \bot ) $.
-proof-rule-propagation-or-left  $a |- ( \imp ( \app ( \or ph0 ph1 ) ph2 ) 
-                                             ( \or ( \app ph0 ph1 ) ( \app ph1 ph2 ) ) ) $.
-proof-rule-propagation-or-right $a |- ( \imp ( \app ph0 ( \or ph1 ph2 ) ) 
-                                             ( \or ( \app ph0 ph1 ) ( \app ph0 ph2 ) ) ) $.
 ${
-    proof-rule-propagation-exists-left.0 $e #Fresh x ph1 $.
-    proof-rule-propagation-exists-left   $a |- ( \imp ( \app ( \exists x ph0 ) ph1 )
-                                                      ( \exists x ( \app ph0 ph1 ) ) ) $.
+    proof-rule-propagation-bot.0 $e #ApplicationContext xX ph0 $.
+    proof-rule-propagation-bot.1 $e #Substitution ph1 ph0 \bot xX $.
+    proof-rule-propagation-bot $a |- ( \imp ph1 \bot ) $.
 $}
+
 ${
-    proof-rule-propagation-exists-right.0 $e #Fresh x ph0 $.
-    proof-rule-propagation-exists-right   $a |- ( \imp ( \app ph0 ( \exists x ph1 ) )
-                                                       ( \exists x ( \app ph0 ph1 ) ) ) $.
+    proof-rule-propagation-or.0 $e #ApplicationContext xX ph0 $.
+    proof-rule-propagation-or.1 $e #Substitution ph1 ph0 ( \or ph4 ph5 ) xX $.
+    proof-rule-propagation-or.2 $e #Substitution ph2 ph0 ph4 xX $.
+    proof-rule-propagation-or.3 $e #Substitution ph3 ph0 ph5 xX $.
+    proof-rule-propagation-or $a |- ( \imp ph1 ( \or ph2 ph3 ) ) $.
 $}
+
 ${
-    proof-rule-frame-left.0 $e |- ( \imp ph0 ph1 ) $.
-    proof-rule-frame-left   $a |- ( \imp ( \app ph0 ph2 ) ( \app ph1 ph2 ) ) $.
+    proof-rule-propagation-exists.0 $e #ApplicationContext xX ph0 $.
+    proof-rule-propagation-exists.1 $e #Substitution ph1 ph0 ( \exists y ph3 ) xX $.
+    proof-rule-propagation-exists.2 $e #Substitution ph2 ph0 ph3 xX $.
+    proof-rule-propagation-exists.3 $e #Fresh y ph0 $.
+    proof-rule-propagation-exists $a |- ( \imp ph1 ( \exists y ph2 ) ) $.
 $}
+
 ${
-    proof-rule-frame-right.0 $e |- ( \imp ph1 ph2 ) $.
-    proof-rule-frame-right   $a |- ( \imp ( \app ph0 ph1 ) ( \app ph0 ph2 ) ) $.
+    proof-rule-frame.0 $e #ApplicationContext xX ph0 $.
+    proof-rule-frame.1 $e #Substitution ph1 ph0 ph3 xX $.
+    proof-rule-frame.2 $e #Substitution ph2 ph0 ph4 xX $.
+    proof-rule-frame.3 $e |- ( \imp ph3 ph4 ) $.
+    proof-rule-frame   $a |- ( \imp ph1 ph2 ) $.
 $}
 
 $( Proof System Part 3 (2 rules) $)
