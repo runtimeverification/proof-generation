@@ -1,6 +1,7 @@
 import re
 import os
 import sys
+import time
 import argparse
 
 from typing import List, Optional
@@ -126,6 +127,7 @@ def main():
     parser.add_argument("-o", "--output", help="directory to store the translated module and proof object")
     parser.add_argument("--prelude", help="prelude mm file")
     parser.add_argument("--snapshots", help="directory containing all snapshots in the format *-<step number>.kore")
+    parser.add_argument("--benchmark", action="store_const", const=True, default=False, help="output the time spent for translating module and proving rewriting")
     args = parser.parse_args()
 
     composer = Composer()
@@ -141,9 +143,13 @@ def main():
     module = definition.module_map[args.module]
     env = ProofEnvironment(composer)
 
+    module_begin = time.time()
+
     composer.start_segment("module")
     env.load_module(module)
     composer.end_segment()
+
+    module_elapsed = time.time() - module_begin
 
     print("loading snapshots")
 
@@ -152,14 +158,21 @@ def main():
         snapshots = load_snapshots(module, args.snapshots)
 
         if len(snapshots) >= 2:
+            rewrite_begin = time.time()
             composer.start_segment("rewrite")
             prove_rewriting(env, snapshots)
             composer.end_segment()
+            rewrite_elapsed = time.time() - rewrite_begin
         else:
+            rewrite_elapsed = 0
             print("only one snapshot, nothing to prove")
 
     if args.output is not None:
         output_theory(composer, args.prelude, args.output, standalone=args.standalone, include_rewrite_proof=args.snapshots is not None)
+
+    if args.benchmark:
+        print("==================")
+        print(f"module: {module_elapsed}s, rewrite: {rewrite_elapsed}s, total: {module_elapsed + rewrite_elapsed}s")
 
 
 if __name__ == "__main__":

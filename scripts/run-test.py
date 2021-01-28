@@ -2,6 +2,7 @@ from typing import List, Optional, Mapping
 
 import os
 import re
+import sys
 import shlex
 import argparse
 import subprocess
@@ -15,7 +16,7 @@ from ml.utils.ansi import ANSI
 
 def run_command(command: List[str], **kwargs) -> subprocess.Popen:
     command_str = " ".join([ shlex.quote(frag) for frag in command ])
-    print(f"{ANSI.COLOR_GREY}+ {command_str}{ANSI.RESET}")
+    print(f"{ANSI.COLOR_GREY}+ {command_str}{ANSI.RESET}", file=sys.stderr)
     return subprocess.Popen(command, **kwargs)
 
 
@@ -78,7 +79,7 @@ def gen_init_config(kore_def_path: str, module: str, pgm_src: str) -> str:
     return f"inj{{SortGeneratedTopCell{{}}, SortKItem{{}}}}({init_config_pattern})"
 
 
-def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None):
+def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benchmark: bool=False, cpython: bool=False):
     kdef = os.path.realpath(kdef)
     pgm = os.path.realpath(pgm)
 
@@ -119,7 +120,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None):
     print(f"- generating snapshots")
     original_kore_definition = os.path.join(kompiled_dir, "definition.kore")
 
-    snapshot_dir = os.path.join(cache_dir, "snapshots")
+    snapshot_dir = os.path.join(cache_dir, f"snapshots-{pgm_name}")
     if not os.path.isdir(snapshot_dir):
         os.mkdir(snapshot_dir)
 
@@ -199,14 +200,14 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None):
     ### step 4. generate proof object
     if output is not None:
         proc = run_command([
-            "pypy3",
+            "python3" if cpython else "pypy3",
             "-m", "ml.rewrite",
             patched_kore_definition,
             module,
             "--prelude", "theory/kore-lemmas.mm",
             "--snapshots", snapshot_dir,
             "--output", output,
-        ])
+        ] + ([ "--benchmark" ] if benchmark else []))
         exit_code = proc.wait()
         assert exit_code == 0, f"ml.rewrite failed with exit code {exit_code}"
 
@@ -217,13 +218,11 @@ def main():
     parser.add_argument("module", help="The main module")
     parser.add_argument("pgm", help="The program to run")
     parser.add_argument("-o", "--output", help="output directory for the proof object")
+    parser.add_argument("--cpython", action="store_const", const=True, default=False, help="use CPython instead of PyPy")
+    parser.add_argument("--benchmark", action="store_const", const=True, default=False, help="output the time spent for translating module and proving rewriting")
     args = parser.parse_args()
 
-    # kompile (and prepare .kore file)
-    # generate snapshots
-    # generate proof objects
-
-    gen_proof(args.kdef, args.module, args.pgm, output=args.output)
+    gen_proof(args.kdef, args.module, args.pgm, output=args.output, benchmark=args.benchmark, cpython=args.cpython)
 
 
 if __name__ == "__main__":
