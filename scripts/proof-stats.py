@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, BinaryIO, Tuple
 
 import os
 import sys
@@ -10,43 +10,126 @@ import subprocess
 from ml.utils.ansi import ANSI
 
 
+def debug(msg: str):
+    print(msg, file=sys.stderr)
+
+
 def run_command(command: List[str], **kwargs) -> subprocess.Popen:
     command_str = " ".join([ shlex.quote(frag) for frag in command ])
-    print(f"{ANSI.COLOR_GREY}+ {command_str}{ANSI.RESET}", file=sys.stderr)
+    debug(f"{ANSI.COLOR_GREY}+ {command_str}{ANSI.RESET}")
     return subprocess.Popen(command, **kwargs)
 
 
-def verify_theorems(entry_database: str, label_patterns: List[str]) -> float:
-    begin = time.time()
+def read_until(stream: BinaryIO, keyword: bytes) -> str:
+    buf = b""
+    while True:
+        buf += stream.read(1)
+        # print(buf.decode())
+        if buf.endswith(keyword):
+            return buf
 
-    proc = run_command([
-            "metamath",
-            f"read \"{entry_database}\"",
-        ] +
-        [ f"verify proof {pattern}" for pattern in label_patterns ] +
-        [ "exit" ],
-        stdout=subprocess.DEVNULL)
+
+def verify_theorems(entry_database: str, label_patterns: List[str]) -> Tuple[float, List[float]]:
+    proc = run_command([ "metamath", "set scroll continuous", f"read \"{entry_database}\"" ], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+
+    begin = time.time()
+    read_until(proc.stdout, b"read into the source buffer.")
+    read_until(proc.stdout, b"MM> ")
+    loading_time = time.time() - begin
+
+    verify_time = []
+
+    for pattern in label_patterns:
+        begin = time.time()
+        proc.stdin.write(f"verify proof {pattern}\n".encode())
+        proc.stdin.flush()
+        debug(f"verifying {pattern}")
+        read_until(proc.stdout, b"MM> ")
+        verify_time.append(time.time() - begin)
+
+    proc.stdin.write(b"exit\n")
+    proc.stdin.close()
+
     exit_code = proc.wait()
     assert exit_code == 0, f"failed to verify database {entry_database}: exit code {exit_code}"
 
-    return time.time() - begin
+    return loading_time, verify_time
 
 
-def measure(proof_object: str, prelude_theory: str):
+def count_lines_wrapped(path: str, wrap: int) -> int:
+    lines = 0
+
+    with open(path) as f:
+        while True:
+            line = f.readline()
+            if line == "":
+                break
+
+            if line.strip() != "":
+                lines += max(1, len(line) // wrap)
+
+    return lines
+
+
+def measure(proof_object: str, prelude_theory: str, line_wrap: int=80):
     # measure base loading time
-    base_po_time = verify_theorems(os.path.join(proof_object, "goal.mm"), [])
-    base_prelude_time = verify_theorems(os.path.join(prelude_theory, "kore-lemmas.mm"), [])
+    loading_time1, (goal_time, rewrite_time, total_time) = verify_theorems(
+        os.path.join(proof_object, "goal.mm"),
+        [ "goal", "rewrite-*", "*" ]
+    )
 
-    prelude_time = verify_theorems(os.path.join(prelude_theory, "kore-lemmas.mm"), [ "*" ]) - base_prelude_time
-    task_time = verify_theorems(os.path.join(proof_object, "goal.mm"), [ "goal", "rewrite-*" ]) - base_po_time
-    total_time = verify_theorems(os.path.join(proof_object, "goal.mm"), [ "*" ]) - base_po_time
+    loading_time2, (prelude_time,) = verify_theorems(
+        os.path.join(prelude_theory, "kore-lemmas.mm"),
+        [ "*" ]
+    )
 
-    return {
-        "prelude-ver-time": prelude_time,
-        "task-ver-time": task_time,
-        "module-ver-time": total_time - task_time - prelude_time,
-        "total-ver-time": total_time,
-    }
+    # count number of lines
+    prelude_lines = 0
+    module_lines = 0
+    task_lines = 0
+
+    for fname in os.listdir(proof_object):
+        path = os.path.join(proof_object, fname)
+        lines = count_lines_wrapped(path, line_wrap)
+
+        # if fname == "dv.mm":
+        #     dv_lines += lines
+        # el
+        if fname in { "dv.mm", "goal.mm", "variable.mm", "substitution.mm" }:
+            task_lines += lines
+        else:
+            module_lines += lines
+
+    for fname in os.listdir(prelude_theory):
+        path = os.path.join(prelude_theory, fname)
+        prelude_lines += count_lines_wrapped(path, line_wrap)
+
+    print(f"mm-loading {loading_time1}")
+    print(f"mm-prelude {prelude_time}")
+    print(f"mm-rewrite {goal_time + rewrite_time}")
+    print(f"mm-total {prelude_time + goal_time + rewrite_time}")
+
+    print(f"loc-prelude {prelude_lines}")
+    print(f"loc-module {module_lines}")
+    print(f"loc-rewrite {task_lines}")
+    print(f"loc-total {prelude_lines + module_lines + task_lines}")
+
+    # return {
+    #     "mm-loading-time": loading_time1,
+    #     "mm-prelude-time": prelude_time,
+    #     "mm-task-time": goal_time + rewrite_time,
+    #     "mm-total-time": total_time,
+
+    #     # "prelude-ver-time": prelude_time,
+    #     # "task-ver-time": task_time,
+    #     # "module-ver-time": total_time - task_time - prelude_time,
+    #     # "total-ver-time": total_time,
+
+    #     "prelude-lines": prelude_lines,
+    #     "module-lines": module_lines,
+    #     "dv-lines": dv_lines,
+    #     "task-lines": task_lines,
+    # }
 
 
 def main():
@@ -55,7 +138,7 @@ def main():
     parser.add_argument("proof", help="path to the proof object directory")
     args = parser.parse_args()
 
-    print(measure(args.proof, args.theory))
+    measure(args.proof, args.theory)
 
 
 if __name__ == "__main__":

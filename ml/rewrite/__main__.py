@@ -172,7 +172,9 @@ def main():
 
     if args.benchmark:
         print("==================")
-        print(f"module: {module_elapsed}s, rewrite: {rewrite_elapsed}s, total: {module_elapsed + rewrite_elapsed}s")
+        print(f"gen-module {module_elapsed}")
+        print(f"gen-rewrite {rewrite_elapsed}")
+        print(f"gen-total {module_elapsed + rewrite_elapsed}")
 
 
 if __name__ == "__main__":
