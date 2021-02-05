@@ -56,8 +56,10 @@ def verify_theorems(entry_database: str, label_patterns: List[str]) -> Tuple[flo
     return loading_time, verify_time
 
 
-def count_lines_wrapped(path: str, wrap: int) -> int:
+def get_file_size(path: str, wrap: int) -> Tuple[int, int, int]:
     lines = 0
+    wrapped_lines = 0
+    size_in_bytes = 0
 
     with open(path) as f:
         while True:
@@ -65,10 +67,13 @@ def count_lines_wrapped(path: str, wrap: int) -> int:
             if line == "":
                 break
 
-            if line.strip() != "":
-                lines += max(1, len(line) // wrap)
+            size_in_bytes += len(line)
 
-    return lines
+            if line.strip() != "":
+                lines += 1
+                wrapped_lines += max(1, len(line) // wrap)
+
+    return lines, wrapped_lines, size_in_bytes
 
 
 def measure(proof_object: str, prelude_theory: str, line_wrap: int=80):
@@ -88,21 +93,36 @@ def measure(proof_object: str, prelude_theory: str, line_wrap: int=80):
     module_lines = 0
     task_lines = 0
 
+    prelude_lines_wrapped = 0
+    module_lines_wrapped = 0
+    task_lines_wrapped = 0
+
+    prelude_size = 0
+    module_size = 0
+    task_size = 0
+
     for fname in os.listdir(proof_object):
         path = os.path.join(proof_object, fname)
-        lines = count_lines_wrapped(path, line_wrap)
+        lines, wrapped_lines, size = get_file_size(path, line_wrap)
 
         # if fname == "dv.mm":
         #     dv_lines += lines
         # el
         if fname in { "dv.mm", "goal.mm", "variable.mm", "substitution.mm" }:
             task_lines += lines
+            task_lines_wrapped += wrapped_lines
+            task_size += size
         else:
             module_lines += lines
+            module_lines_wrapped += wrapped_lines
+            module_size += size
 
     for fname in os.listdir(prelude_theory):
         path = os.path.join(prelude_theory, fname)
-        prelude_lines += count_lines_wrapped(path, line_wrap)
+        lines, wrapped_lines, size = get_file_size(path, line_wrap)
+        prelude_lines += lines
+        prelude_lines_wrapped += wrapped_lines
+        prelude_size += size
 
     print(f"mm-loading {loading_time1}")
     print(f"mm-prelude {prelude_time}")
@@ -113,6 +133,16 @@ def measure(proof_object: str, prelude_theory: str, line_wrap: int=80):
     print(f"loc-module {module_lines}")
     print(f"loc-rewrite {task_lines}")
     print(f"loc-total {prelude_lines + module_lines + task_lines}")
+
+    print(f"loc-prelude-wrapped {prelude_lines_wrapped}")
+    print(f"loc-module-wrapped {module_lines_wrapped}")
+    print(f"loc-rewrite-wrapped {task_lines_wrapped}")
+    print(f"loc-total-wrapped {prelude_lines_wrapped + module_lines_wrapped + task_lines_wrapped}")
+
+    print(f"size-prelude {prelude_size}")
+    print(f"size-module {module_size}")
+    print(f"size-rewrite {task_size}")
+    print(f"size-total {prelude_size + module_size + task_size}")
 
     # return {
     #     "mm-loading-time": loading_time1,

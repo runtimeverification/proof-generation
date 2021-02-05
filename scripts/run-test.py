@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import shlex
+import shutil
 import argparse
 import subprocess
 
@@ -122,11 +123,18 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
 
     snapshot_dir = os.path.join(cache_dir, f"snapshots-{pgm_name}")
     if not os.path.isdir(snapshot_dir):
+        new_snapshots = True
         os.mkdir(snapshot_dir)
+    else:
+        new_snapshots = False
 
     snapshot_0 = os.path.join(snapshot_dir, f"snapshot-0.kore")
 
     if check_dependency_change([ snapshot_0 ], [ kompile_timestamp, pgm ]):
+        if not new_snapshots:
+            shutil.rmtree(snapshot_dir)
+            os.mkdir(snapshot_dir)
+
         # generate the initial configuration
         # TODO: technically initial configuration is also generated through equations
         # in the kore definition, but we are skipping that since we don't support map yet.

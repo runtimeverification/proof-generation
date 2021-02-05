@@ -11,16 +11,33 @@ from ml.utils.ansi import ANSI
 
 
 TESTS = [
-    ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-10.two-counters", "examples/cav/two-counters-pgm-10"),
-    ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-20.two-counters", "examples/cav/two-counters-pgm-20"),
-    ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-50.two-counters", "examples/cav/two-counters-pgm-50"),
-    ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-100.two-counters", "examples/cav/two-counters-pgm-100"),
+    # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-10.two-counters", "examples/cav/two-counters-pgm-10"),
+    # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-20.two-counters", "examples/cav/two-counters-pgm-20"),
+    # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-50.two-counters", "examples/cav/two-counters-pgm-50"),
+    # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-100.two-counters", "examples/cav/two-counters-pgm-100"),
+] + [
+    (f"examples/cav/rec-k-unconditional/{rec_module}.k", rec_module.upper(), f"examples/cav/rec-k-unconditional/pgm.{rec_module}", f"examples/cav/rec-k-unconditional/{rec_module}-pgm")
+    for rec_module in [
+        # "add8",
+        # "factorial5",
+        "fibonacci05",
+        "benchexpr10",
+        "benchsym10",
+        "benchtree10",
+        "langton6",
+        "mul8",
+        "revelt",
+        "revnat100",
+        "tautologyhard",
+    ]
 ]
 
 STATS_LABELS = [
     "gen-module", "gen-rewrite", "gen-total",
     "mm-loading", "mm-prelude", "mm-rewrite", "mm-total",
     "loc-prelude", "loc-module", "loc-rewrite", "loc-total",
+    "loc-prelude-wrapped", "loc-module-wrapped", "loc-rewrite-wrapped", "loc-total-wrapped",
+    "size-prelude", "size-module", "size-rewrite", "size-total",
 ]
 
 PRELUDE_THEORY = "theory"
@@ -52,12 +69,15 @@ def read_stats(stream: BinaryIO, stats):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("output", help="output csv file")
+    parser.add_argument("--append", action="store_const", const=True, default=False, help="append to the output file instead of overwriting")
     args = parser.parse_args()
 
-    with open(args.output, "w") as output:
+    with open(args.output, "a" if args.append else "w") as output:
         writer = csv.DictWriter(output, [ "module-name", "pgm" ] + STATS_LABELS)
-        writer.writeheader()
-        output.flush()
+
+        if not args.append:
+            writer.writeheader()
+            output.flush()
 
         for module_path, module_name, pgm_path, output_path in TESTS:
             debug(f"## collecting stats on {module_path} on program {pgm_path}")
