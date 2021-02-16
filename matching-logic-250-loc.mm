@@ -1,3 +1,5 @@
+$( Matching Logic Proof Checker in 250 LOC $)
+
 $c #Pattern #ElementVariable #SetVariable #Variable #Symbol $.
 $c #Positive #Negative #Fresh #ApplicationContext #Substitution #Notation |- $.
 $c \bot \imp \app \exists \mu ( ) $.
