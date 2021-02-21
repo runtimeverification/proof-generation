@@ -134,7 +134,7 @@ class RewriteProofGenerator(ProofGenerator):
             # get a correct left hand side
             for equation, path in unification_result.applied_equations:
                 print("> applying unification equation", equation)
-                concrete_rewrite_claim = equation.prove_validity(concrete_rewrite_claim, [ 0, 0 ] + path)
+                concrete_rewrite_claim = equation.replace_equal_subpattern(concrete_rewrite_claim, [ 0, 0 ] + path)
 
             concrete_rewrite_claim = self.apply_rewrite_star_intro(concrete_rewrite_claim)
 
@@ -471,7 +471,7 @@ class RewriteProofGenerator(ProofGenerator):
         instantiated_axiom = ProvableClaim(instantiated_axiom_claim, and_eliminated)
 
         for equation, path in unification_result.applied_equations:
-            instantiated_axiom = equation.prove_validity(instantiated_axiom, [ 0, 0 ] + path)
+            instantiated_axiom = equation.replace_equal_subpattern(instantiated_axiom, [ 0, 0 ] + path)
 
         return instantiated_axiom
 
@@ -537,7 +537,7 @@ class RewriteProofGenerator(ProofGenerator):
             nested_inj_path = InnermostNestedInjectionPathVisitor(self.env).visit(subpattern)
             if nested_inj_path is not None:
                 print(f"> simplifying nested inj")
-                provable = InjectionCombine(self.env).prove_validity(provable, path + nested_inj_path)
+                provable = InjectionCombine(self.env).replace_equal_subpattern(provable, path + nested_inj_path)
                 continue
 
             # resolve unresolved functions
@@ -554,7 +554,7 @@ class RewriteProofGenerator(ProofGenerator):
                     axiom = self.find_anywhere_axiom_for_pattern(function_subpattern)
 
                 # finish up the rewriting by substituting in the rhs
-                provable = EqualityProofGenerator(self.env).prove_validity_with_equation(provable, path + function_path, axiom)
+                provable = EqualityProofGenerator(self.env).replace_equal_subpattern_with_equation(provable, path + function_path, axiom)
                 continue
 
             break

@@ -49,7 +49,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
     Additional to proof, also return a actual substituted pattern/sort
     """
     def visit_and_substitute(self, pattern_or_sort: Union[kore.Pattern, kore.Sort]) -> Tuple[Proof, Union[kore.Pattern, kore.Sort]]:
-        proof = super().visit(pattern_or_sort)
+        proof = self.env.cache_proof("substitution-proof-cache", super().visit(pattern_or_sort))
         if isinstance(pattern_or_sort, kore.Pattern):
             substituted = KoreUtils.copy_and_substitute_pattern(pattern_or_sort, { self.var: self.substitute })
         else:

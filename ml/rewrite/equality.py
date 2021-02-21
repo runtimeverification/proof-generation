@@ -1,12 +1,14 @@
 from typing import Tuple, Union
 
 from ml.kore import ast as kore
-from ml.kore.visitors import PatternVariableVisitor
+from ml.kore.visitors import PatternVariableVisitor, SortVariableVisitor
 from ml.kore.utils import KoreUtils, PatternPath
 
 from ml.metamath import ast as mm
 from ml.metamath.composer import Proof
+from ml.metamath.visitors import SubstitutionVisitor
 from ml.metamath.auto.sorting import SortingProver
+from ml.metamath.auto.substitution import SubstitutionProver
 
 from .encoder import KorePatternEncoder
 
@@ -31,7 +33,7 @@ class EqualityProofGenerator(ProofGenerator):
     Returns phi with psi replaced by psi',
     and a proof for it using (primarily) `kore-equality`
     """
-    def prove_validity(
+    def replace_equal_subpattern(
         self,
         provable: ProvableClaim,
         path: PatternPath,
@@ -55,6 +57,29 @@ class EqualityProofGenerator(ProofGenerator):
         subst_proof1 = SingleSubstitutionProofGenerator(self.env, var, original).visit(template_pattern)
         subst_proof2 = SingleSubstitutionProofGenerator(self.env, var, replacement).visit(template_pattern)
 
+        # kore-equality requires that the sort variable in the equation
+        # should be disjoint from the main statement being substituted
+        # (due to meta-incompleteness and other issues)
+        # so we need to do an alpha renaming on the sort variable
+        all_sort_metavars = { KorePatternEncoder.encode_sort_variable(var) for var in SortVariableVisitor().visit(provable.claim) }
+        # equation_proof is expected to be of the form
+        # |- ( \kore-forall-sort z ... )
+        current_sort_var = equation_proof.statement.terms[1].subterms[0].name
+
+        if current_sort_var in all_sort_metavars:
+            fresh_sort_var, = self.env.gen_fresh_metavariables("#ElementVariable", 1, all_sort_metavars.union(all_metavars).union({ fresh_var }))
+
+            equation_body = equation_proof.statement.terms[1].subterms[1]
+            equation_body_subst = SubstitutionVisitor({ current_sort_var: mm.Metavariable(fresh_sort_var) }).visit(equation_body)
+
+            # apply alpha renaming
+            equation_proof = self.env.get_theorem("alpha-kore-forall-sort-alt").apply(
+                SubstitutionProver.auto,
+                equation_proof,
+                y=mm.Metavariable(fresh_sort_var),
+                ph1=equation_body_subst,
+            )
+
         final_proof = self.env.get_theorem("kore-equality").apply(
             equation_proof,
             provable.proof,
@@ -65,13 +90,15 @@ class EqualityProofGenerator(ProofGenerator):
             SortingProver.auto,
         )
 
+        final_proof = self.env.cache_proof("equality-cache", final_proof)
+
         return ProvableClaim(final_axiom, final_proof)
 
     """
     Same as above but using a provable claim,
     so that we can extract the replacement automatically
     """
-    def prove_validity_with_equation(
+    def replace_equal_subpattern_with_equation(
         self,
         provable: ProvableClaim,
         path: PatternPath,
@@ -80,4 +107,4 @@ class EqualityProofGenerator(ProofGenerator):
         assert isinstance(equation.claim.pattern, kore.MLPattern) and \
                equation.claim.pattern.construct == kore.MLPattern.EQUALS
         rhs = equation.claim.pattern.arguments[1]
-        return self.prove_validity(provable, path, rhs, equation.proof)
+        return self.replace_equal_subpattern(provable, path, rhs, equation.proof)

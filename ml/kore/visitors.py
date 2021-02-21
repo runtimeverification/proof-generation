@@ -247,6 +247,14 @@ class PatternVariableVisitor(UnionVisitor, PatternOnlyVisitorStructure):
 
 
 """
+Collect all sort variables used in a pattern
+"""
+class SortVariableVisitor(UnionVisitor, PatternAndSortVisitorStructure):
+    def postvisit_sort_variable(self, var) -> Set[SortVariable]:
+        return { var }
+
+
+"""
 Collect all variables used in a pattern (in order of visit)
 """
 class OrderedPatternVariableVisitor(UnionVisitor, PatternOnlyVisitorStructure):

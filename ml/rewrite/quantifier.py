@@ -79,6 +79,8 @@ class QuantifierProofGenerator(ProofGenerator):
                 SortingProver.auto,
             )
 
+            new_proof = self.env.cache_proof("quant-forall-elim-cache", new_proof)
+
             provable = ProvableClaim(new_claim, new_proof)
             eliminated += 1
 
@@ -138,7 +140,7 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
         # we need to substitute current_argument for X in the equation
         inj_axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim_single(inj_axiom_instance, argument)
 
-        return EqualityProofGenerator(self.env).prove_validity(
+        return EqualityProofGenerator(self.env).replace_equal_subpattern(
             reduced_injection_is_functional,
             [ 0, 1, 1 ], # this is the path of the LHS of the equation in reduced_injection_axiom
             application,

@@ -1,7 +1,7 @@
 from typing import List
 
 from ..ast import Metavariable, Term, Application, StructuredStatement, Statement
-from ..composer import Composer, Proof, Theorem
+from ..composer import Composer, Proof, Theorem, MethodAutoProof
 
 from .notation import NotationProver
 from .typecode import TypecodeProver
@@ -127,3 +127,18 @@ class SubstitutionProver:
             expansion_subproof2,
             expansion_subproof3,
         )
+
+    """
+    A wrapper for an auto proof method
+    """
+    @staticmethod
+    def prove_substitution_statement(composer: Composer, statement: Statement, hypotheses: List[Theorem]=[],):
+        assert len(statement.terms) == 5 and statement.terms[0] == Application("#Substitution"), f"not a substitution goal {statement}"
+        _, after, before, pattern, var = statement.terms
+        return SubstitutionProver.prove_substitution(
+            composer,
+            after, before, pattern, var,
+            hypotheses=hypotheses,
+        )
+
+    auto = MethodAutoProof(prove_substitution_statement.__func__)

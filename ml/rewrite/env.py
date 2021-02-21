@@ -86,15 +86,13 @@ class SubsortRelation:
 
 """
 ProofEnvironment holds a composer
-and current status of a database
-
-This should be independent of the
-type of proof one wants to build
+and useful information in the module
 """
 class ProofEnvironment:
     def __init__(self, composer: Composer=Composer()):
         self.module = None
         self.loaded_modules = {}
+        self.composer = composer
 
         #################################
         # some axioms that will be used later
@@ -113,8 +111,6 @@ class ProofEnvironment:
         self.subsort_relation = SubsortRelation()
 
         self.domain_values = set() # set of (sort, string literal)
-
-        self.composer = composer
 
     """
     Expand all aliases and quantify all free variables
@@ -217,6 +213,9 @@ class ProofEnvironment:
 
     def load_metamath_statement(self, statement: mm.Statement) -> Optional[Theorem]:
         return self.composer.load(statement)
+
+    def cache_proof(self, *args, **kwargs) -> Proof:
+        return self.composer.cache_proof(*args, **kwargs)
 
     def load_comment(self, comment: str):
         return self.load_metamath_statement(mm.Comment(comment))
@@ -362,6 +361,7 @@ class ProofEnvironment:
 
             # TODO: check the literal is actually correct
 
+            # generate the functinoal axiom for the domain value
             sort_var, functional_var = self.gen_metavariables("#ElementVariable", 2)
 
             functional_axiom = kore.Axiom(

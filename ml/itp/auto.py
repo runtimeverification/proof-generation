@@ -263,13 +263,8 @@ Prove a statement about substitution
 class SubstitutionTactic(Tactic):
     def apply(self, state: ProofState):
         goal = state.resolve_current_goal(self)
-        statement = goal.statement
-        assert len(statement.terms) == 5 and statement.terms[0] == Application("#Substitution"), f"not a substitution goal {statement}"
-
-        _, after, before, pattern, var = statement.terms
-        self.proof = SubstitutionProver.prove_substitution(
-            state.composer,
-            after, before, pattern, var,
+        self.proof = SubstitutionProver.prove_substitution_statement(
+            goal.statement,
             hypotheses=state.composer.get_all_essentials(),
         )
 

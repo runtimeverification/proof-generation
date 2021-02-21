@@ -234,6 +234,94 @@ class Theorem:
 
 
 """
+Proof cache holds a list of generated proofs
+and their corresponding statements.
+
+When a new proof is generated, if one passes
+the proof through the `cache` method, it would
+return a proof with the same statement except that:
+  - if the proof is already in the cache, return the
+    original proof
+  - if not, load this proof into the composer as a theorem
+    and return a proof using the theorem
+
+TODO: add cache eviction when the cache map gets too large
+TODO: add heuristics to not cache "small" and "infrequent" proofs
+"""
+class ProofCache:
+    # if the proof script size exceeds this
+    # number of labels, the proof will be cached
+    # as a theorem in the database
+    THEOREM_CACHE_THRESHOLD = 8
+
+    # certain tools (e.g. itp) would need all cache disabled
+    DISABLED = False
+
+    def __init__(self, composer: Composer):
+        self.composer = composer
+        self.cache_map = {} # tuple of terms -> proof
+        self.label_map = {} # label prefix -> next index
+
+        self.stat_cache_hit = 0
+        self.stat_cache_miss = 0
+        self.stat_theorem_cache = 0
+
+    """
+    Get the next available label with the given prefix
+    """
+    def get_next_label(self, label_prefix: str) -> str:
+        if label_prefix not in self.label_map:
+            self.label_map[label_prefix] = 0
+
+        idx = self.label_map[label_prefix]
+        self.label_map[label_prefix] += 1
+        return f"{label_prefix}-{idx}"
+
+    """
+    Find an existing cached proof by looking up the statement
+    """
+    def lookup(self, statement: Union[StructuredStatement, List[Term]]) -> Optional[Proof]:
+        if isinstance(statement, StructuredStatement):
+            statement = statement.terms
+        terms = tuple(statement)
+        return self.cache_map.get(terms, None)
+
+    def cache(self, label_prefix: str, proof: Proof, no_theorem_cache: bool=False) -> Proof:
+        if ProofCache.DISABLED:
+            return proof
+
+        terms = tuple(proof.statement.terms)
+        cached_proof = self.cache_map.get(terms, None)
+
+        # print(self.stat_cache_hit, self.stat_cache_miss, self.stat_theorem_cache)
+
+        if cached_proof is not None:
+            self.stat_cache_hit += 1
+            assert cached_proof.statement.terms == list(terms)
+            return cached_proof
+
+        self.stat_cache_miss += 1
+
+        # cache the proof as a theorem
+        if not no_theorem_cache and len(proof.script) > ProofCache.THEOREM_CACHE_THRESHOLD:
+            self.stat_theorem_cache += 1
+
+            theorem_statement = StructuredStatement(
+                Statement.PROVABLE,
+                proof.statement.terms,
+                label=self.get_next_label(label_prefix),
+                proof=proof.script,
+            )
+
+            theorem = self.composer.load(theorem_statement)
+            proof = theorem.match_and_apply(proof.statement)
+
+        self.cache_map[terms] = proof
+
+        return proof
+
+
+"""
 A linked list recording the current theorem context
 """
 class Context:
@@ -301,6 +389,7 @@ class Composer(MetamathVisitor):
         self.context = Context() # outermost context for a database
         self.theorems = {} # label -> Theorem
         self.statements = [] # all statements at the top level
+        self.proof_cache = ProofCache(self)
 
         # mark each statement with a unique "segment label"
         # so that we can selectively encode certain set of
@@ -354,6 +443,12 @@ class Composer(MetamathVisitor):
         for stmt in self.statements if segment is None else self.get_segment(segment):
             stmt.encode(stream)
             stream.write("\n")
+
+    def cache_proof(self, *args, **kwargs) -> Proof:
+        return self.proof_cache.cache(*args, **kwargs)
+
+    def lookup_proof_cache(self, statement: Union[StructuredStatement, List[Term]]) -> Proof:
+        return self.proof_cache.lookup(statement)
 
     # """
     # This implements simple segmentation mechanism. To start a segment,

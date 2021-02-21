@@ -7,13 +7,6 @@ from .unification import Unification
 
 
 class TypecodeProver:
-    # TODO: this is a bit too casual
-    cache = {} # (typecode, Term) -> proof
-
-    @staticmethod
-    def add_cache(typecode: str, term: Term, proof):
-        TypecodeProver.cache[typecode, term] = proof
-
     """
     Try to prove a statement of the form
     <typecode> <term>
@@ -21,8 +14,13 @@ class TypecodeProver:
     """
     @staticmethod
     def prove_typecode(composer, typecode: str, term: Term):
-        if (typecode, term) in TypecodeProver.cache:
-            return TypecodeProver.cache[typecode, term]
+        # don't cache metavariable statements
+        # otherwise it may be caught in infinite recursion in the proof cache
+        if not isinstance(term, Metavariable):
+            cached_proof = composer.lookup_proof_cache([ Application(typecode), term ])
+
+            if cached_proof is not None:
+                return cached_proof
 
         # try to find a matching floating statement first if the term is a metavariable
         if isinstance(term, Metavariable):
@@ -33,7 +31,8 @@ class TypecodeProver:
                     if other_typecode.symbol == typecode and metavar.name == term.name:
                         # found a direct proof
                         proof = theorem.apply()
-                        TypecodeProver.add_cache(typecode, term, proof)
+                        if not isinstance(term, Metavariable):
+                            proof = composer.cache_proof("typecode-cache", proof)
                         return proof
             # otherwise treat the metavariable as a term
 
@@ -88,7 +87,8 @@ class TypecodeProver:
                 # found a proof
                 if not failed:
                     proof = theorem.apply(*subproofs, **meta_subst)
-                    TypecodeProver.add_cache(typecode, term, proof)
+                    if not isinstance(term, Metavariable):
+                        proof = composer.cache_proof("typecode-cache", proof)
                     return proof
 
         return None

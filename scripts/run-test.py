@@ -182,7 +182,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
             current_depth += 1
 
     ### step 3. patch the kore file with missing axioms
-    print(f"- generating proof")
+    print(f"- patching definition")
     patched_kore_definition = os.path.join(cache_dir, f"{kdef_name}.k.kore")
 
     # TODO: this is bit of a hack
@@ -207,6 +207,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
 
     ### step 4. generate proof object
     if output is not None:
+        print(f"- generating proof")
         proc = run_command([
             "python3" if cpython else "pypy3",
             "-m", "ml.rewrite",

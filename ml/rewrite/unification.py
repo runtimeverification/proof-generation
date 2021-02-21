@@ -75,7 +75,7 @@ class Equation:
     apply the equation to the subpattern to get an equivalent patten phi'
     and return phi' and the proof of it
     """
-    def prove_validity(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
+    def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         raise NotImplementedError()
 
 
@@ -83,7 +83,7 @@ r"""
 phi /\ phi = phi
 """
 class DuplicateConjunction(Equation):
-    def prove_validity(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
+    def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
 
         assert isinstance(subpattern, kore.MLPattern) and subpattern.construct == kore.MLPattern.AND
@@ -93,7 +93,7 @@ class DuplicateConjunction(Equation):
         encoded_pattern = self.env.encode_pattern(subpattern.arguments[0])
 
         equal_gen = EqualityProofGenerator(self.env)
-        return equal_gen.prove_validity(
+        return equal_gen.replace_equal_subpattern(
             provable,
             path,
             subpattern.arguments[0],
@@ -110,7 +110,7 @@ If A < B < C
 inj{B, C}(inj{A, B}(X)) === inj{A, C}(X)
 """
 class InjectionCombine(Equation):
-    def prove_validity(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
+    def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
         assert isinstance(subpattern, kore.Application) and \
                subpattern.symbol.definition == self.env.sort_injection_symbol
@@ -128,7 +128,7 @@ class InjectionCombine(Equation):
         inj_axiom_instance = SortProofGenerator(self.env).get_inj_instance(sort_a, sort_b, sort_c)
         inj_axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim_single(inj_axiom_instance, subsubpattern.arguments[0])
         
-        return EqualityProofGenerator(self.env).prove_validity(
+        return EqualityProofGenerator(self.env).replace_equal_subpattern(
             provable, path,
             inj_axiom_instance.claim.pattern.arguments[1], # RHS of the inj axiom
             inj_axiom_instance.proof,
