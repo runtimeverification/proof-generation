@@ -91,7 +91,7 @@ class Module(BaseAST):
         super().__init__(attributes)
         
         self.name = name
-        self.all_sentences = sentences
+        self.all_sentences = []
 
         # sort out different sentences
         self.imports: Set[ImportStatement] = set()
@@ -101,18 +101,7 @@ class Module(BaseAST):
         self.axioms: List[Axiom] = []
 
         for sentence in sentences:
-            if isinstance(sentence, ImportStatement):
-                self.imports.add(sentence)
-            elif isinstance(sentence, SortDefinition):
-                self.sort_map[sentence.sort_id] = sentence
-            elif isinstance(sentence, SymbolDefinition):
-                self.symbol_map[sentence.symbol] = sentence
-            elif isinstance(sentence, AliasDefinition):
-                self.alias_map[sentence.definition.symbol] = sentence
-            elif isinstance(sentence, Axiom):
-                self.axioms.append(sentence)
-            else:
-                raise Exception("unknown sentence type {}".format(type(sentence)))
+            self.add_sentence(sentence)
 
     def get_sort_by_id(self, sort_id: str) -> Optional[SortDefinition]:
         if sort_id in self.sort_map:
@@ -139,6 +128,22 @@ class Module(BaseAST):
                 return found
 
         return None
+
+    def add_sentence(self, sentence: Sentence):
+        self.all_sentences.append(sentence)
+
+        if isinstance(sentence, ImportStatement):
+            self.imports.add(sentence)
+        elif isinstance(sentence, SortDefinition):
+            self.sort_map[sentence.sort_id] = sentence
+        elif isinstance(sentence, SymbolDefinition):
+            self.symbol_map[sentence.symbol] = sentence
+        elif isinstance(sentence, AliasDefinition):
+            self.alias_map[sentence.definition.symbol] = sentence
+        elif isinstance(sentence, Axiom):
+            self.axioms.append(sentence)
+        else:
+            raise Exception("unknown sentence type {}".format(type(sentence)))
 
     def remove_sentence(self, sentence: Sentence):
         assert sentence in self.all_sentences

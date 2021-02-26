@@ -13,6 +13,7 @@ from ml.metamath.composer import Composer, Theorem, Proof
 from ml.metamath.auto.substitution import SubstitutionProver
 
 from .encoder import KorePatternEncoder
+from .templates import KoreTemplates
 
 
 class ProofGenerator:
@@ -113,26 +114,12 @@ class ProofEnvironment:
         self.domain_values = set() # set of (sort, string literal)
 
     """
-    Expand all aliases and quantify all free variables
-    """
-    def preprocess_module(self, module: kore.Module):
-        print("preprocessing module {}".format(module.name))
-
-        for import_stmt in module.imports:
-            self.preprocess_module(import_stmt.module)
-
-        KoreUtils.instantiate_all_alias_uses(module)
-        KoreUtils.quantify_all_free_variables(module)
-
-    """
     Translate all axioms in the kore module
     """
     def load_module(self, module: kore.Module):
         assert self.module is None, "loading multiple modules"
 
         self.module = module
-
-        self.preprocess_module(self.module)
         self.load_module_sentences(self.module)
 
         # load INJ module for the sort injection axiom
@@ -510,84 +497,6 @@ class ProofEnvironment:
             current_extra += 1 
         return list(metavars.difference(other_than))
 
-    def is_rewrite_axiom(self, axiom: kore.Axiom) -> bool:
-        inner_pattern = KoreUtils.strip_forall(axiom.pattern)
-        return isinstance(inner_pattern, kore.MLPattern) and inner_pattern.construct == kore.MLPattern.REWRITES
-
-    def is_anywhere_rule_axiom(self, axiom: kore.Axiom) -> bool:
-        inner_pattern = KoreUtils.strip_forall(axiom.pattern)
-        return isinstance(inner_pattern, kore.MLPattern) and \
-               inner_pattern.construct == kore.MLPattern.IMPLIES and \
-               isinstance(inner_pattern.arguments[1], kore.MLPattern) and \
-               inner_pattern.arguments[1].construct == kore.MLPattern.AND and \
-               isinstance(inner_pattern.arguments[1].arguments[0], kore.Pattern) and \
-               inner_pattern.arguments[1].arguments[0].construct == kore.MLPattern.EQUALS
-
-    def is_functional_axiom(self, axiom: kore.Axiom) -> bool:
-        return axiom.get_attribute_by_symbol("functional") is not None or \
-               axiom.get_attribute_by_symbol("subsort") is not None
-
-    def is_equational_axiom(self, axiom: kore.Axiom) -> Optional[kore.SymbolInstance]:
-        inner_pattern = KoreUtils.strip_forall(axiom.pattern)
-        if not (isinstance(inner_pattern, kore.MLPattern) and inner_pattern.construct == kore.MLPattern.IMPLIES):
-            return None
-
-        rhs = inner_pattern.arguments[1]
-        if not (isinstance(rhs, kore.MLPattern) and rhs.construct == kore.MLPattern.AND):
-            return None
-
-        equation = rhs.arguments[0]
-        if not (isinstance(equation, kore.MLPattern) and equation.construct == kore.MLPattern.EQUALS):
-            return None
-
-        eqn_lhs = equation.arguments[0]
-        if not isinstance(eqn_lhs, kore.Application):
-            return None
-
-        return eqn_lhs.symbol
-
-    def is_subsort_axiom(self, axiom: kore.Axiom) -> Optional[Tuple[kore.SortInstance, kore.SortInstance]]:
-        attribute = axiom.get_attribute_by_symbol("subsort")
-        if attribute is None: return None
-
-        sort1, sort2 = attribute.symbol.sort_arguments
-        sort1.resolve(axiom.get_parent())
-        sort2.resolve(axiom.get_parent())
-
-        return sort1, sort2
-
-    """
-    Get the content of the attribute UNIQUE'Unds'ID{}(...)
-    """
-    def get_axiom_unique_id(self, axiom: kore.Axiom) -> Optional[str]:
-        id_term = axiom.get_attribute_by_symbol("UNIQUE'Unds'ID")
-        if id_term is None: return None
-        assert len(id_term.arguments) == 1 and isinstance(id_term.arguments[0], kore.StringLiteral)
-        return id_term.arguments[0].content
-
-    """
-    Get the corresponding symbol instance of the given functional axiom
-    """
-    def get_functional_axiom_symbol(self, axiom: kore.Axiom) -> kore.SymbolInstance:
-        assert isinstance(axiom.pattern, kore.MLPattern)
-
-        inner_existential = axiom.pattern
-
-        # get to the inner existential pattern
-        while inner_existential.construct == kore.MLPattern.FORALL:
-            inner_existential = inner_existential.arguments[1]
-            assert isinstance(inner_existential, kore.MLPattern)
-
-        assert inner_existential.construct == kore.MLPattern.EXISTS
-
-        equality = inner_existential.arguments[1]
-        assert isinstance(equality, kore.MLPattern) and equality.construct == kore.MLPattern.EQUALS
-
-        rhs = equality.arguments[1]
-        assert isinstance(rhs, kore.Application)
-
-        return rhs.symbol
-
     """
     Load all relavent sentences
     """
@@ -612,21 +521,20 @@ class ProofEnvironment:
         self.composer.end_segment()
 
         for index, axiom in enumerate(module.axioms):
-            is_functional = self.is_functional_axiom(axiom)
-            is_rewrite = self.is_rewrite_axiom(axiom)
-            is_anywhere = self.is_anywhere_rule_axiom(axiom)
-            equation_head_symbol = self.is_equational_axiom(axiom)
-            subsort_tuple = self.is_subsort_axiom(axiom)
+            functional_symbol = KoreTemplates.get_symbol_of_functional_axiom(axiom)
+            is_rewrite = KoreTemplates.is_rewrite_axiom(axiom)
+            is_anywhere = KoreTemplates.is_anywhere_rule_axiom(axiom)
+            equation_head_symbol = KoreTemplates.get_symbol_of_equational_axiom(axiom)
+            subsort_tuple = KoreTemplates.get_sorts_of_subsort_axiom(axiom)
 
-            if is_functional or is_rewrite or is_anywhere or equation_head_symbol is not None or subsort_tuple is not None:
+            if functional_symbol is not None or is_rewrite or is_anywhere or equation_head_symbol is not None or subsort_tuple is not None:
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
 
                 # record these statements for later use
-                if is_functional:
-                    symbol = self.get_functional_axiom_symbol(axiom)
-                    self.functional_axioms[symbol] = ProvableClaim(axiom, theorem.as_proof())
+                if functional_symbol is not None:
+                    self.functional_axioms[functional_symbol] = ProvableClaim(axiom, theorem.as_proof())
                 elif is_rewrite:
-                    uid = self.get_axiom_unique_id(axiom)
+                    uid = KoreTemplates.get_axiom_unique_id(axiom)
                     self.rewrite_axioms[uid] = ProvableClaim(axiom, theorem.as_proof())
                 elif is_anywhere:
                     self.anywhere_axioms.append(ProvableClaim(axiom, theorem.as_proof()))
@@ -635,7 +543,7 @@ class ProofEnvironment:
                     if equation_head_symbol not in self.equational_axioms:
                         self.equational_axioms[equation_head_symbol] = []
                     self.equational_axioms[equation_head_symbol].append(ProvableClaim(axiom, theorem.as_proof()))
-                
+
                 # subsort axioms have the same form as functional axioms
                 if subsort_tuple is not None:
                     sort1, sort2 = subsort_tuple

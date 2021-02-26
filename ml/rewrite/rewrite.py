@@ -15,6 +15,7 @@ from .substitution import SingleSubstitutionProofGenerator
 from .equality import EqualityProofGenerator
 from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
 from .unification import UnificationProofGenerator, InjectionCombine
+from .templates import KoreTemplates
 
 
 """
@@ -87,7 +88,7 @@ class RewriteProofGenerator(ProofGenerator):
         unification_gen = UnificationProofGenerator(self.env)
 
         for _, rewrite_axiom in self.env.rewrite_axioms.items():
-            print(f"> trying axiom {self.env.get_axiom_unique_id(rewrite_axiom.claim)}")
+            print(f"> trying axiom {KoreTemplates.get_axiom_unique_id(rewrite_axiom.claim)}")
 
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
             unification_result = unification_gen.unify_patterns(lhs, pattern)

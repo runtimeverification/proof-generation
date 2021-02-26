@@ -18,6 +18,7 @@ from ml.metamath.composer import Composer
 
 from .env import ProofEnvironment
 from .rewrite import RewriteProofGenerator
+from .preprocessor import KorePreprocessor
 
 
 def load_prelude(composer: Composer, args):
@@ -139,6 +140,10 @@ def main():
 
     if args.prelude is not None:
         load_prelude(composer, args)
+
+    # do some preliminary transformations
+    # and add missing axioms
+    KorePreprocessor().preprocess(definition)
 
     module = definition.module_map[args.module]
     env = ProofEnvironment(composer)

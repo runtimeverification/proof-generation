@@ -112,6 +112,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
             "--backend", "llvm",
             "--directory", cache_dir,
             "--main-module", module,
+            "--debug",
             kdef,
         ])
         exit_code = proc.wait()
@@ -119,7 +120,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
 
     ### step 2. generate snapshots
     print(f"- generating snapshots")
-    original_kore_definition = os.path.join(kompiled_dir, "definition.kore")
+    kore_definition = os.path.join(kompiled_dir, "definition.kore")
 
     snapshot_dir = os.path.join(cache_dir, f"snapshots-{pgm_name}")
     if not os.path.isdir(snapshot_dir):
@@ -148,7 +149,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
         exit_code = proc.wait()
         assert exit_code == 0, f"kast failed with exit code {exit_code}"
 
-        init_config = gen_init_config(original_kore_definition, module, stdout)
+        init_config = gen_init_config(kore_definition, module, stdout)
         with open(snapshot_0, "w") as f:
             f.write(init_config)
 
@@ -181,37 +182,13 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
 
             current_depth += 1
 
-    ### step 3. patch the kore file with missing axioms
-    print(f"- patching definition")
-    patched_kore_definition = os.path.join(cache_dir, f"{kdef_name}.k.kore")
-
-    # TODO: this is bit of a hack
-    if check_dependency_change([ patched_kore_definition ], [ original_kore_definition ]):
-        additional_axioms = r"""
-  // TODO: these are manually added, need a fix
-  axiom{R} \exists{R} (Val:SortK{}, \equals{SortK{}, R} (Val:SortK{}, kseq{}(K1:SortKItem{},K2:SortK{}))) [functional{}()] // functional
-  axiom{R} \exists{R} (Val:SortK{}, \equals{SortK{}, R} (Val:SortK{}, dotk{}())) [functional{}()] // functional
-        """
-
-        with open(original_kore_definition) as f:
-            original_def = f.read()
-
-        match = re.search(r"kseq{}\(K1:SortKItem{},append{}\(K2:SortK{},K3:SortK{}\)\)\)\n\s+\[\]\n", original_def)
-        assert match is not None, "unable to patch the kore definition"
-
-        end_pos = match.end()
-        new_def = original_def[:end_pos] + additional_axioms + original_def[end_pos:]
-
-        with open(patched_kore_definition, "w") as f:
-            f.write(new_def)
-
     ### step 4. generate proof object
     if output is not None:
         print(f"- generating proof")
         proc = run_command([
             "python3" if cpython else "pypy3",
             "-m", "ml.rewrite",
-            patched_kore_definition,
+            kore_definition,
             module,
             "--prelude", "theory/kore-lemmas.mm",
             "--snapshots", snapshot_dir,
