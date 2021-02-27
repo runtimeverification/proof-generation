@@ -16,10 +16,6 @@ to separate from the rest of the code for clarity.
 """
 class KorePreprocessor:
     def preprocess(self, definition: kore.Definition):
-        for module in definition.module_map.values():
-            KoreUtils.instantiate_all_alias_uses(module)
-            KoreUtils.quantify_all_free_variables(module)
-
         # add the functional axiom of kseq and dotk if missing
         if "KSEQ" in definition.module_map:
             kseq_module = definition.module_map["KSEQ"]
@@ -47,5 +43,9 @@ class KorePreprocessor:
                 axiom = parse_axiom(r"axiom{R} \exists{R} (Val:SortK{}, \equals{SortK{}, R} (Val:SortK{}, dotk{}())) [functional{}()]")
                 kseq_module.add_sentence(axiom)
                 axiom.resolve(kseq_module)
+
+        for module in definition.module_map.values():
+            KoreUtils.instantiate_all_alias_uses(module)
+            KoreUtils.quantify_all_free_variables(module)
 
     # TODO: add missing no confusion & no junk axioms
