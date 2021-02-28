@@ -107,6 +107,11 @@ class ProofEnvironment:
         self.sorting_lemmas = {} # constant symbol (in metamath) -> theorem
         self.equational_axioms = {} # symbol instance -> provable claim
 
+        # constructor axioms
+        self.no_junk_axioms = {} # sort symbol -> provable claim
+        self.no_confusion_same_constructor = {} # symbol instance -> provable claim
+        self.no_confusion_diff_constructor = {} # (symbol instance 1, symbol instance 2) -> provable claim
+
         self.sort_injection_symbol = None
         self.sort_injection_axiom = None
         self.subsort_relation = SubsortRelation()
@@ -121,18 +126,21 @@ class ProofEnvironment:
 
         self.module = module
         self.load_module_sentences(self.module)
+        self.load_axioms_for_injection()
 
-        # load INJ module for the sort injection axiom
-        if "INJ" in self.loaded_modules:
-            inj_module = self.loaded_modules["INJ"]
-            assert "inj" in inj_module.symbol_map, "cannot find sort injection function symbol"
-            self.sort_injection_symbol = inj_module.symbol_map["inj"]
+    def load_axioms_for_injection(self):
+        if "INJ" not in self.loaded_modules:
+            return
 
-            assert len(inj_module.axioms) == 1, "unexpected INJ module content"
-            self.sort_injection_axiom = ProvableClaim(
-                inj_module.axioms[0],
-                self.load_axiom(inj_module.axioms[0], "kore-inj-axiom").as_proof(),
-            )
+        inj_module = self.loaded_modules["INJ"]
+        assert "inj" in inj_module.symbol_map, "cannot find sort injection function symbol"
+        self.sort_injection_symbol = inj_module.symbol_map["inj"]
+
+        assert len(inj_module.axioms) == 1, "unexpected INJ module content"
+        self.sort_injection_axiom = ProvableClaim(
+            inj_module.axioms[0],
+            self.load_axiom(inj_module.axioms[0], "kore-inj-axiom").as_proof(),
+        )
 
     def sanitize_label_name(self, label):
         # metamath does not allow some characters in the label
@@ -526,7 +534,17 @@ class ProofEnvironment:
             equation_head_symbol = KoreTemplates.get_symbol_of_equational_axiom(axiom)
             subsort_tuple = KoreTemplates.get_sorts_of_subsort_axiom(axiom)
 
-            if functional_symbol is not None or is_rewrite or is_anywhere or equation_head_symbol is not None or subsort_tuple is not None:
+            no_junk_symbol = KoreTemplates.get_sort_symbol_of_no_junk_axiom(axiom)
+            no_confusion_same_constructor_symbol = KoreTemplates.get_symbol_for_no_confusion_same_constructor_axiom(axiom)
+            no_confusion_different_constructor_symbols = KoreTemplates.get_symbols_for_no_confusion_different_constructor_axiom(axiom)
+
+            if functional_symbol is not None or \
+               is_rewrite or is_anywhere or \
+               equation_head_symbol is not None or \
+               subsort_tuple is not None or \
+               no_junk_symbol is not None or \
+               no_confusion_same_constructor_symbol is not None or \
+               no_confusion_different_constructor_symbols is not None:
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
 
                 # record these statements for later use
@@ -547,3 +565,10 @@ class ProofEnvironment:
                 if subsort_tuple is not None:
                     sort1, sort2 = subsort_tuple
                     self.subsort_relation.add_subsort(sort1, sort2, theorem)
+
+                if no_junk_symbol is not None:
+                    self.no_junk_axioms[no_junk_symbol] = ProvableClaim(axiom, theorem.as_proof())
+                elif no_confusion_same_constructor_symbol is not None:
+                    self.no_confusion_same_constructor[no_confusion_same_constructor_symbol] = ProvableClaim(axiom, theorem.as_proof())
+                elif no_confusion_different_constructor_symbols is not None:
+                    self.no_confusion_diff_constructor[no_confusion_different_constructor_symbols] = ProvableClaim(axiom, theorem.as_proof())
