@@ -264,6 +264,7 @@ class SubstitutionTactic(Tactic):
     def apply(self, state: ProofState):
         goal = state.resolve_current_goal(self)
         self.proof = SubstitutionProver.prove_substitution_statement(
+            state.composer,
             goal.statement,
             hypotheses=state.composer.get_all_essentials(),
         )
