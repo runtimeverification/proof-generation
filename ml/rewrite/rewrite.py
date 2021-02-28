@@ -399,6 +399,13 @@ class RewriteProofGenerator(ProofGenerator):
         # TODO: currently we don't have enough axioms in the kore definition
         # to show this condition, so we will just assume it being true
 
+        # TODO: test code, remove me
+        # try:
+        #     left, right = condition.arguments[0].arguments[0].arguments[0].arguments[1].arguments[1].arguments[0].arguments[0].arguments
+        #     print(left, right)
+        # except Exception as exc:
+        #     print(exc)
+
         claim = kore.Claim([ output_sort ], condition, [])
         claim.resolve(self.env.module)
 

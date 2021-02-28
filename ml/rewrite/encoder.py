@@ -37,11 +37,13 @@ class KorePatternEncoder(KoreVisitor):
     @staticmethod
     def encode_symbol(symbol: Union[kore.SymbolInstance, str]) -> str:
         if type(symbol) is str:
-            return r"\kore-symbol-" + symbol
+            symbol_str = symbol
         elif type(symbol.definition) is str:
-            return r"\kore-symbol-" + symbol.definition
+            symbol_str = symbol.definition
         else:
-            return r"\kore-symbol-" + symbol.definition.symbol
+            symbol_str = symbol.definition.symbol
+
+        return r"\kore-symbol-" + symbol_str
 
     @staticmethod
     def encode_sort(sort: Union[kore.SortInstance, str]) -> str:

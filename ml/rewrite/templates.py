@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 import ml.kore.ast as kore
 from ml.kore.utils import KoreUtils
@@ -97,3 +97,60 @@ class KoreTemplates:
             return None
 
         return rhs.symbol
+
+    """
+    A no junk axiom should be a disjunction of existential patterns
+    """
+    @staticmethod
+    def get_sort_symbol_of_no_junk_axiom(axiom: kore.Axiom) -> Optional[kore.SortInstance]:
+        axiom_body = KoreUtils.strip_forall(axiom.pattern)
+        patterns = KoreUtils.decompose_disjunction(axiom_body)
+
+        if len(patterns) <= 1:
+            return None
+
+        for pattern in patterns:
+            if not KoreUtils.is_existential(pattern):
+                return None
+
+        return KoreUtils.infer_sort(axiom.pattern)
+
+    r"""
+    Axiom of the form
+    f(ph1, ..., phn) /\ f(ph1', ..., phn') => f(ph1 /\ ph1', ..., phn /\ phn')
+    """
+    @staticmethod
+    def get_symbol_for_no_confusion_same_constructor_axiom(axiom: kore.Axiom) -> Optional[kore.SymbolInstance]:
+        axiom_body  = KoreUtils.strip_forall(axiom.pattern)
+        if not (isinstance(axiom_body, kore.MLPattern) and \
+                axiom_body.construct == kore.MLPattern.IMPLIES and \
+                isinstance(axiom_body.arguments[0], kore.MLPattern) and \
+                axiom_body.arguments[0].construct == kore.MLPattern.AND and \
+                isinstance(axiom_body.arguments[0].arguments[0], kore.Application) and \
+                isinstance(axiom_body.arguments[0].arguments[1], kore.Application) and \
+                isinstance(axiom_body.arguments[1], kore.Application) and \
+                axiom_body.arguments[0].arguments[0].symbol == \
+                axiom_body.arguments[0].arguments[1].symbol == \
+                axiom_body.arguments[1].symbol):
+            return None
+
+        return axiom_body.arguments[1].symbol
+
+    @staticmethod
+    def get_symbols_for_no_confusion_different_constructor_axiom(axiom: kore.Axiom) -> Optional[Tuple[kore.SymbolInstance, kore.SymbolInstance]]:
+        axiom_body  = KoreUtils.strip_forall(axiom.pattern)
+        if not (isinstance(axiom_body, kore.MLPattern) and \
+                axiom_body.construct == kore.MLPattern.NOT and \
+                isinstance(axiom_body.arguments[0], kore.MLPattern) and \
+                axiom_body.arguments[0].construct == kore.MLPattern.AND):
+            return None
+
+        left, right = axiom_body.arguments[0].arguments
+        left = KoreUtils.strip_exists(left)
+        right = KoreUtils.strip_exists(right)
+
+        if not isinstance(left, kore.Application) or \
+           not isinstance(right, kore.Application):
+            return None
+
+        return left.symbol, right.symbol

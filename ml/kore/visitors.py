@@ -268,6 +268,34 @@ class OrderedPatternVariableVisitor(UnionVisitor, PatternOnlyVisitorStructure):
 
 
 """
+Tests if every node satisfy certain condition
+"""
+class ConjunctionVisitor(KoreVisitor):
+    def postvisit_default(self, x, *args) -> bool:
+        result = True
+
+        for arg in args:
+            if type(arg) is bool:
+                result = result and arg
+            elif type(arg) is list:
+                result = result and self.postvisit_default(None, *arg)
+
+        return result
+
+
+"""
+Tests if a given pattern is quantifier free
+"""
+class QuantifierTester(ConjunctionVisitor, PatternOnlyVisitorStructure):
+    def postvisit_ml_pattern(self, pattern: MLPattern, arguments: List[bool]) -> bool:
+        if pattern.construct == MLPattern.FORALL or \
+           pattern.construct == MLPattern.EXISTS:
+            return False
+        else:
+            return self.postvisit_default(None, *arguments)
+
+
+"""
 In place substitution of pattern variables
 Note: this visitor does not detect free variable capturing
 """
