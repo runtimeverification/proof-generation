@@ -221,7 +221,6 @@ class ProofEnvironment:
         new_proof = self.load_proof_as_theorem(label, provable.proof).as_proof()
         return ProvableClaim(provable.claim, new_proof)
 
-
     """
     Encode and load a Kore axiom into the generator
     and return the corresponding theorem object

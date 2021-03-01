@@ -638,6 +638,16 @@ Return a path of an application subpattern with a function-like head such that
 it doesn't have any (sub-)subpattern with a function-like head
 """
 class InnermostFunctionPathVisitor(KoreVisitor):
+    """
+    These symbols are marked as hooked function symbols
+    but for the purpose of proof generation they should
+    be constructors
+    """
+    EXCEPTIONS = {
+        r"Lbl'UndsPipe'-'-GT-Unds'",
+        r"Lbl'Unds'Map'Unds'",
+    }
+
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
         return None
 
@@ -651,7 +661,8 @@ class InnermostFunctionPathVisitor(KoreVisitor):
                 return [ i ] + path
 
         # if the application itself is a function, return the empty path (pointing to itself)
-        if application.symbol.definition.get_attribute_by_symbol("function") is not None:
+        if application.symbol.definition.get_attribute_by_symbol("function") is not None and \
+           application.symbol.definition.symbol not in InnermostFunctionPathVisitor.EXCEPTIONS:
             return []
 
         return None
