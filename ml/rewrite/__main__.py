@@ -155,23 +155,6 @@ def main():
     env.load_module(module)
     composer.end_segment()
 
-    pattern1 = r"""kseq{}(inj{SortExp{}, SortKItem{}}(Lbladd'LParUndsCommUndsRParUnds'ARITH-SYNTAX'Unds'Exp'Unds'Exp'Unds'Exp{}(inj{SortInt{}, SortExp{}}(\dv{SortInt{}}("1")), inj{SortInt{}, SortExp{}}(\dv{SortInt{}}("2")))), dotk{}())"""
-    pattern2 = r"""kseq{}(inj{SortKResult{}, SortKItem{}}(Var'Unds'1:SortKResult{}), dotk{}())"""
-    pattern1 = parse_pattern(pattern1)
-    pattern2 = parse_pattern(pattern2)
-
-    pattern1.resolve(module)
-    pattern2.resolve(module)
-
-    print("hacky dev mode: trying to prove the following patterns are disjoint")
-    print("-", pattern1)
-    print("-", pattern2)
-
-    disjointness_proof = DisjointnessProofGenerator(env).prove_disjointness(pattern1, pattern2)
-    print(disjointness_proof.claim)
-
-    exit()
-
     module_elapsed = time.time() - module_begin
 
     print("loading snapshots")
