@@ -6,6 +6,7 @@ from ml.kore.utils import KoreUtils
 from ml.kore.visitors import FreePatternVariableVisitor
 
 from ml.metamath import ast as mm
+from ml.metamath.composer import Proof
 
 from .env import ProofEnvironment, ProofGenerator, ProvableClaim
 
@@ -45,70 +46,64 @@ class DisjointnessProofGenerator(ProofGenerator):
         return pattern
 
     r"""
-    Return the kore pattern
+    Return the metamath term
     not (<left> /\ exists x1, ..., xn. <right>)
     all free variables should be exitentially quantified
     """
-    def get_disjointness_pattern(self, left: kore.Pattern, right: kore.Pattern) -> kore.Pattern:
+    def get_disjointness_pattern(self, left: kore.Pattern, right: kore.Pattern) -> mm.Term:
         left = self.existentially_quantify_free_variables(left)
         right = self.existentially_quantify_free_variables(right)
 
-        sort = KoreUtils.infer_sort(left)
+        left_term = self.env.encode_pattern(left)
+        right_term = self.env.encode_pattern(right)
 
-        disjointness = kore.MLPattern(kore.MLPattern.NOT, [ sort ], [
-            kore.MLPattern(kore.MLPattern.AND, [ sort ], [ left, right ])
+        return mm.Application("\\not", [
+            mm.Application("\\and", [
+                left_term,
+                right_term
+            ])
         ])
 
-        disjointness.resolve(left.get_module())
-
-        return disjointness
-
     """
-    Same as above but wraps it in a kore claim
+    Same as above but wraps it in a metamath statement
     """
-    def get_disjointness_claim(self, left: kore.Pattern, right: kore.Pattern) -> kore.Pattern:
+    def get_disjointness_statement(self, left: kore.Pattern, right: kore.Pattern, label: str) -> mm.StructuredStatement:
         disjointness = self.get_disjointness_pattern(left, right)
-        disjointness_claim = kore.Claim([], disjointness, [])
-        disjointness_claim.resolve(left.get_module())
-        return disjointness_claim
+        return mm.StructuredStatement(
+            mm.Statement.PROVABLE,
+            [ mm.Application("|-"), disjointness ],
+            label=label,
+        )
 
     """
     Given an integer i, left and right (applicatoin) patterns f(...), g(...)
     and a proof that the ith argument is disjoint, return a proof that
     f(...) and exists x1, ..., xn. g(...) are disjoint
     """
-    def prove_argument_disjointness(self, left: kore.Application, right: kore.Application, i: int, argument_disjointness: ProvableClaim) -> ProvableClaim:
+    def prove_argument_disjointness(self, left: kore.Application, right: kore.Application, i: int, argument_disjointness: Proof) -> ProvableClaim:
         assert left.symbol == right.symbol
 
-        # TODO: actually prove this from the no confusion axiom for same constructors
-        assumption = argument_disjointness.proof.statement
-
-        disjointness_claim = self.get_disjointness_claim(left, right)
+        # TODO: actually prove this
 
         label = f"arg-disjointness-assumption-{self.arg_disjointness_counter}"
+        disjointness_stmt = self.get_disjointness_statement(left, right, label)
 
         assumption = mm.StructuredStatement(
             mm.Statement.ESSENTITAL,
-            assumption.terms,
+            argument_disjointness.statement.terms,
             label=f"{label}.0",
-        )
-
-        disjointness_claim_mm = mm.StructuredStatement(
-            mm.Statement.PROVABLE,
-            [ mm.Application("|-"), self.env.encode_pattern(disjointness_claim) ],
-            label=label,
         )
 
         self.arg_disjointness_counter += 1
 
-        full_statement = mm.Block([ assumption, disjointness_claim_mm ])
+        full_statement = mm.Block([ assumption, disjointness_stmt ])
 
         self.env.load_metamath_statement(full_statement)
         theorem = self.env.get_theorem(label)
 
-        proof = theorem.apply(argument_disjointness.proof)
+        proof = theorem.apply(argument_disjointness)
 
-        return ProvableClaim(disjointness_claim, proof)
+        return proof
 
     r"""
     Prove that the given patterns are disjoint, that is
@@ -117,7 +112,7 @@ class DisjointnessProofGenerator(ProofGenerator):
     Currently only <right> is allowed to have free variables
     which are existentially quantified
     """
-    def prove_disjointness(self, left: kore.Pattern, right: kore.Pattern) -> Optional[ProvableClaim]:
+    def prove_disjointness(self, left: kore.Pattern, right: kore.Pattern) -> Proof:
         assert KoreUtils.is_concrete(left), \
                f"currently only supports concrete left pattern, but {left} is given"
 
@@ -135,6 +130,32 @@ class DisjointnessProofGenerator(ProofGenerator):
         else:
             right_symbol = None
 
+        # if both symbols are injections
+        # it's enough to prove that the inner patterns are disjoint
+        if left_symbol.definition == self.env.sort_injection_symbol and \
+           right_symbol.definition == self.env.sort_injection_symbol:
+            assert len(left.arguments) == 1 and len(right.arguments) == 1
+            subproof = self.prove_disjointness(left.arguments[0], right.arguments[0])
+            
+            left_input_sort, left_output_sort = left_symbol.sort_arguments
+            right_input_sort, right_output_sort = right_symbol.sort_arguments
+
+            proof = self.env.get_theorem("eq-lemma-for-disjointness").apply(
+                self.env.get_theorem("kore-inj-id").apply(
+                    ph0=self.env.encode_pattern(left_input_sort),
+                    ph1=self.env.encode_pattern(left_output_sort),
+                    ph2=self.env.encode_pattern(self.existentially_quantify_free_variables(left.arguments[0])),
+                ),
+                self.env.get_theorem("kore-inj-id").apply(
+                    ph0=self.env.encode_pattern(right_input_sort),
+                    ph1=self.env.encode_pattern(right_output_sort),
+                    ph2=self.env.encode_pattern(self.existentially_quantify_free_variables(right.arguments[0])),
+                ),
+                subproof,
+            )
+
+            return proof
+
         if left_symbol == right_symbol:
             # same symbol, try to find a argument pair that is disjoint
             # then use no confusion to show that the full patterns are disjoint
@@ -143,23 +164,26 @@ class DisjointnessProofGenerator(ProofGenerator):
                    f"same head but different numbers of arguments: {left} vs {right}"
 
             for i, (left_arg, right_arg) in enumerate(zip(left.arguments, right.arguments)):
-                subproof = self.prove_disjointness(left_arg, right_arg)
-                if subproof is not None:
+                try:
+                    subproof = self.prove_disjointness(left_arg, right_arg)
+                except:
+                    continue
+                else:
                     return self.prove_argument_disjointness(left, right, i, subproof)
+
+            assert False, f"failed to show disjointness of {left} and {right}"
 
         elif right_symbol is not None:
             # different symbols, use no confusion axiom for different constructors
             # TODO: for now we just assume that it's true...
-            disjointness_claim = self.get_disjointness_claim(left, right)
-            disjointness_claim_theorem = self.env.load_axiom(
-                disjointness_claim,
+            disjointness_stmt = self.get_disjointness_statement(
+                left, right,
                 f"diff-constructor-disjointness-assumption-{self.diff_constructor_disjointness_counter}",
-                comment=False, provable=True,
             )
-
             self.diff_constructor_disjointness_counter += 1
 
-            return ProvableClaim(disjointness_claim, disjointness_claim_theorem.as_proof())
+            theorem = self.env.load_metamath_statement(disjointness_stmt)
+            return theorem.as_proof()
 
         else:
             assert isinstance(right, kore.Variable)
@@ -167,13 +191,11 @@ class DisjointnessProofGenerator(ProofGenerator):
             # to decompose it to multiple queries
 
             # TODO: assumes it for now as well
-            disjointness_claim = self.get_disjointness_claim(left, right)
-            disjointness_claim_theorem = self.env.load_axiom(
-                disjointness_claim,
+            disjointness_stmt = self.get_disjointness_statement(
+                left, right,
                 f"var-disjointness-assumption-{self.var_disjointness_assumption}",
-                comment=False, provable=True,
             )
-
             self.var_disjointness_assumption += 1
 
-            return ProvableClaim(disjointness_claim, disjointness_claim_theorem.as_proof())
+            theorem = self.env.load_metamath_statement(disjointness_stmt)
+            return theorem.as_proof()

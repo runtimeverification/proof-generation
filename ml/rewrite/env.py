@@ -200,6 +200,14 @@ class ProofEnvironment:
         self.load_domain_values(encoder.domain_values)
         return term
 
+    def encode_axiom(self, stmt_type: str, axiom: kore.Axiom, **kwargs) -> mm.StructuredStatement:
+        term = self.encode_pattern(axiom)
+        return mm.StructuredStatement(
+            stmt_type,
+            [ mm.Application("|-"), term ],
+            **kwargs,
+        )
+
     def get_theorem(self, label: str) -> Theorem:
         return self.composer.theorems[label]
 
@@ -393,6 +401,11 @@ class ProofEnvironment:
     and generate appropriate axioms (e.g. substitution rule)
     """
     def load_constant(self, symbol: str, arity: int, label: str):
+        # skip axioms for kore-inj
+        if symbol == "\\kore-inj":
+            self.substitution_axioms["\\kore-inj"] = self.composer.theorems["substitution-kore-inj"]
+            return
+
         # allocate all required metavariable at once
         subst_var, = self.gen_metavariables("#Variable", 1)
         pattern_var, *subpattern_vars = self.gen_metavariables("#Pattern", arity * 2 + 1)

@@ -43,16 +43,19 @@ class KorePatternEncoder(KoreVisitor):
         else:
             symbol_str = symbol.definition.symbol
 
-        return r"\kore-symbol-" + symbol_str
+        if symbol_str == "inj":
+            return "\\kore-inj"
+
+        return "\\kore-symbol-" + symbol_str
 
     @staticmethod
     def encode_sort(sort: Union[kore.SortInstance, str]) -> str:
         if type(sort) is str:
-            return r"\kore-sort-" + sort
+            return "\\kore-sort-" + sort
         elif type(sort.definition) is str:
-            return r"\kore-sort-" + sort.definition
+            return "\\kore-sort-" + sort.definition
         else:
-            return r"\kore-sort-" + sort.definition.sort_id
+            return "\\kore-sort-" + sort.definition.sort_id
 
     @staticmethod
     def encode_string_literal(literal: kore.StringLiteral) -> str:

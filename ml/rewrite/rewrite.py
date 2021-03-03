@@ -1,5 +1,7 @@
 from typing import Optional, List, Tuple, Mapping, Union
 
+from traceback import print_exc
+
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils, PatternPath
 from ml.kore.visitors import KoreVisitor, PatternOnlyVisitorStructure
@@ -16,6 +18,7 @@ from .equality import EqualityProofGenerator
 from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
 from .unification import UnificationProofGenerator, InjectionCombine
 from .templates import KoreTemplates
+from .disjointness import DisjointnessProofGenerator
 
 
 """
@@ -24,7 +27,7 @@ Generate proofs for one or multiple rewrite steps
 class RewriteProofGenerator(ProofGenerator):
     def __init__(self, env: ProofEnvironment):
         super().__init__(env)
-        self.owise_axiom_counter = 0
+        self.owise_assumption_counter = 0
         self.rewrite_claim_counter = 0
         self.simplification_counter = 0
         self.hooked_symbol_evaluators = {
@@ -36,6 +39,7 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'Unds'andBool'Unds'": BooleanAndEvaluator(env),
             "LblnotBool'Unds'": BooleanNotEvaluator(env),
         }
+        self.disjoint_gen = DisjointnessProofGenerator(env)
 
     """
     Strip call outermost injection calls
@@ -399,20 +403,26 @@ class RewriteProofGenerator(ProofGenerator):
         # TODO: currently we don't have enough axioms in the kore definition
         # to show this condition, so we will just assume it being true
 
-        # TODO: test code, remove me
-        # try:
-        #     left, right = condition.arguments[0].arguments[0].arguments[0].arguments[1].arguments[1].arguments[0].arguments[0].arguments
-        #     print(left, right)
-        # except Exception as exc:
-        #     print(exc)
-
         claim = kore.Claim([ output_sort ], condition, [])
         claim.resolve(self.env.module)
 
-        theorem = self.env.load_axiom(claim, f"owise-assumption-{self.owise_axiom_counter}", provable=True)
-        self.owise_axiom_counter += 1
+        try:
+            # trying to prove the simplest case with 1 other rule and 1 free variable
+            left, right = condition.arguments[0].arguments[0].arguments[0].arguments[1].arguments[1].arguments[0].arguments[0].arguments
+            disjoint_proof = self.disjoint_gen.prove_disjointness(left, right)
 
-        return theorem.as_proof()
+            proof = self.env.get_theorem("owise-lemma-1-rule-1-var").match_and_apply(
+                self.env.encode_axiom(mm.Statement.PROVABLE, claim),
+                disjoint_proof,
+            )
+
+            return proof
+        except:
+            print("failed to prove owise condition, leavinig it as an assumption")
+            print_exc()
+            theorem = self.env.load_axiom(claim, f"owise-assumption-{self.owise_assumption_counter}", provable=True)
+            self.owise_assumption_counter += 1
+            return theorem.as_proof()
 
     def match_and_instantiate_anywhere_axiom(self, axiom: ProvableClaim, pattern: kore.Pattern, is_owise=False) -> Optional[ProvableClaim]:
         # unify the LHS
