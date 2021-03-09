@@ -106,11 +106,14 @@ class ProofEnvironment:
         self.sort_axioms = {} # constant symbol (in metamath) -> theorem
         self.sorting_lemmas = {} # constant symbol (in metamath) -> theorem
         self.equational_axioms = {} # symbol instance -> provable claim
+        self.app_ctx_lemmas = {} # constant_symbol -> list of theorems, one for each argument
 
         # constructor axioms
-        self.no_junk_axioms = {} # sort symbol -> provable claim
-        self.no_confusion_same_constructor = {} # symbol instance -> provable claim
-        self.no_confusion_diff_constructor = {} # (symbol instance 1, symbol instance 2) -> provable claim
+        # self.no_junk_axioms = {} # sort symbol -> provable claim
+        # self.no_confusion_same_constructor = {} # symbol instance -> provable claim
+        # self.no_confusion_diff_constructor = {} # (symbol instance 1, symbol instance 2) -> provable claim
+
+        self.no_confusion_same_constructor = {} # constant symbol -> theorem
 
         self.sort_injection_symbol = None
         self.sort_injection_axiom = None
@@ -315,6 +318,50 @@ class ProofEnvironment:
             label=f"{label}-sorting",
         ))
 
+    """
+    Generate constructor axioms for symbols marked with `constructor{}()` attribute
+    """
+    def load_symbol_constructor_axiom(self, symbol_definition: kore.SymbolDefinition, label: str):
+        if symbol_definition.get_attribute_by_symbol("constructor") is None:
+            return
+
+        # generate noconfusion axiom for the same symbol
+        encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
+        num_sort_vars = len(symbol_definition.sort_variables)
+        num_arguments =  len(symbol_definition.input_sorts)
+
+        if num_arguments == 0:
+            return
+
+        pattern_vars = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments * 2)
+        pattern_vars = [ mm.Metavariable(v) for v in pattern_vars ]
+
+        sort_pattern_vars = pattern_vars[:num_sort_vars]
+        arg_pattern_vars_left = pattern_vars[num_sort_vars:num_sort_vars + num_arguments]
+        arg_pattern_vars_right = pattern_vars[num_sort_vars + num_arguments:]
+
+        left_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_left)
+        right_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_right)
+
+        left_conj_pattern = mm.Application("\\and", [ left_pattern, right_pattern ])
+
+        right_conj_pattern = mm.Application(encoded_symbol, sort_pattern_vars + [
+            mm.Application("\\and", [ left_arg, right_arg ])
+            for left_arg, right_arg in zip(arg_pattern_vars_left, arg_pattern_vars_right)
+        ])
+
+        statement = mm.StructuredStatement(
+            mm.Statement.AXIOM,
+            [
+                mm.Application("|-"),
+                mm.Application("\\imp", [ left_conj_pattern, right_conj_pattern ]),
+            ],
+            label=f"{label}-no-confusion",
+        )
+
+        theorem = self.load_metamath_statement(statement)
+        self.no_confusion_same_constructor[encoded_symbol] = theorem
+
     def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition, label: str):
         encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
         arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
@@ -323,6 +370,7 @@ class ProofEnvironment:
         self.load_constant(encoded_symbol, arity, label)
 
         self.load_symbol_sorting_lemma(symbol_definition, label)
+        self.load_symbol_constructor_axiom(symbol_definition, label)
 
     def load_sort_definition(self, sort_definition: kore.SortDefinition, label: str):
         encoded_sort = KorePatternEncoder.encode_sort(sort_definition.sort_id)
@@ -397,51 +445,12 @@ class ProofEnvironment:
         self.composer.end_segment()
 
     """
-    Load a constant symbol into the composer
-    and generate appropriate axioms (e.g. substitution rule)
+    Generate and prove the substitution rule for the given symbol
     """
-    def load_constant(self, symbol: str, arity: int, label: str):
-        # skip axioms for kore-inj
-        if symbol == "\\kore-inj":
-            self.substitution_axioms["\\kore-inj"] = self.composer.theorems["substitution-kore-inj"]
-            return
-
-        # allocate all required metavariable at once
+    def load_constant_substitution_lemma(self, symbol: str, arity: int, label: str):
         subst_var, = self.gen_metavariables("#Variable", 1)
         pattern_var, *subpattern_vars = self.gen_metavariables("#Pattern", arity * 2 + 1)
-        pattern_vars = [ pattern_var ] + list(subpattern_vars)
 
-        # declare metamath constant
-        # this is the actual symbol at the matching logic level used for application
-        applicative_symbol = symbol + "-symbol"
-        self.load_metamath_statement(mm.RawStatement(mm.Statement.CONSTANT, [ symbol, applicative_symbol ]))
-
-        sugared_pattern = mm.Application(symbol, [ mm.Metavariable(v) for v in pattern_vars[:arity] ])
-
-        # declare #Symbol
-        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
-            mm.Application("#Symbol"),
-            mm.Application(applicative_symbol),
-        ], label=label + "-is-symbol"))
-
-        # declare #Pattern
-        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
-            mm.Application("#Pattern"),
-            sugared_pattern,
-        ], label=label + "-is-pattern"))
-
-        # declare syntax sugar
-        desugared = mm.Application(applicative_symbol)
-        for var in pattern_vars[:arity]:
-            desugared = mm.Application("\\app", [ desugared, mm.Metavariable(var) ])
-
-        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
-            mm.Application("#Notation"),
-            sugared_pattern,
-            desugared,
-        ], label=label + "-is-sugar"))
-
-        # generate substitution rule
         self.composer.start_segment("substitution")
 
         substitution_rule_name = label + "-substitution"
@@ -480,6 +489,94 @@ class ProofEnvironment:
 
         assert substitution_rule_name in self.composer.theorems
         self.substitution_axioms[symbol] = self.composer.theorems[substitution_rule_name]
+
+    def load_application_context_lemma(self, symbol: str, arity: int, label: str):
+        self.composer.start_segment("substitution")
+
+        hole_var, = self.gen_metavariables("#Variable", 1)
+        pattern_vars = self.gen_metavariables("#Pattern", arity)
+        pattern_vars = [ mm.Metavariable(v) for v in pattern_vars ]
+
+        # generate one lemma for each argument
+        lemmas = []
+
+        for i in range(arity):
+            app_ctx_rule_name = f"{label}-application-context-{i}"
+
+            disjoint_statements = [
+                mm.RawStatement(mm.Statement.DISJOINT, [ hole_var, pattern_vars[j].name ])
+                for j in range(arity) if i != j
+            ]
+
+            assumption = mm.StructuredStatement(
+                mm.Statement.ESSENTITAL,
+                [ mm.Application("#ApplicationContext"), mm.Metavariable(hole_var), pattern_vars[i] ],
+                label=f"{app_ctx_rule_name}.0",
+            )
+
+            conclusion = mm.StructuredStatement(
+                mm.Statement.PROVABLE,
+                [ mm.Application("#ApplicationContext"), mm.Metavariable(hole_var), mm.Application(symbol, pattern_vars) ],
+                label=app_ctx_rule_name,
+            )
+
+            block = mm.Block(disjoint_statements + [ assumption, conclusion ])
+            self.load_metamath_statement(block)
+
+            lemmas.append(self.get_theorem(app_ctx_rule_name))
+        
+        self.app_ctx_lemmas[symbol] = lemmas
+
+        self.composer.end_segment()
+
+    """
+    Load a constant symbol into the composer
+    and generate appropriate axioms (e.g. substitution rule)
+    """
+    def load_constant(self, symbol: str, arity: int, label: str):
+        # skip axioms for kore-inj
+        if symbol == "\\kore-inj":
+            self.substitution_axioms["\\kore-inj"] = self.composer.theorems["substitution-kore-inj"]
+            # TODO: prove this separately
+            self.load_application_context_lemma("\\kore-inj", 3, "kore-inj")
+            return
+
+        # allocate all required metavariable at once
+        pattern_vars = self.gen_metavariables("#Pattern", arity)
+
+        # declare metamath constant
+        # this is the actual symbol at the matching logic level used for application
+        applicative_symbol = symbol + "-symbol"
+        self.load_metamath_statement(mm.RawStatement(mm.Statement.CONSTANT, [ symbol, applicative_symbol ]))
+
+        sugared_pattern = mm.Application(symbol, [ mm.Metavariable(v) for v in pattern_vars ])
+
+        # declare #Symbol
+        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
+            mm.Application("#Symbol"),
+            mm.Application(applicative_symbol),
+        ], label=label + "-is-symbol"))
+
+        # declare #Pattern
+        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
+            mm.Application("#Pattern"),
+            sugared_pattern,
+        ], label=label + "-is-pattern"))
+
+        # declare syntax sugar
+        desugared = mm.Application(applicative_symbol)
+        for var in pattern_vars:
+            desugared = mm.Application("\\app", [ desugared, mm.Metavariable(var) ])
+
+        self.load_metamath_statement(mm.StructuredStatement(mm.Statement.AXIOM, [
+            mm.Application("#Notation"),
+            sugared_pattern,
+            desugared,
+        ], label=label + "-is-sugar"))
+
+        # generate substitution rule
+        self.load_constant_substitution_lemma(symbol, arity, label)
+        self.load_application_context_lemma(symbol, arity, label)
 
     """
     Get the name for the nth metavariable of the given typecode
@@ -547,17 +644,17 @@ class ProofEnvironment:
             equation_head_symbol = KoreTemplates.get_symbol_of_equational_axiom(axiom)
             subsort_tuple = KoreTemplates.get_sorts_of_subsort_axiom(axiom)
 
-            no_junk_symbol = KoreTemplates.get_sort_symbol_of_no_junk_axiom(axiom)
-            no_confusion_same_constructor_symbol = KoreTemplates.get_symbol_for_no_confusion_same_constructor_axiom(axiom)
-            no_confusion_different_constructor_symbols = KoreTemplates.get_symbols_for_no_confusion_different_constructor_axiom(axiom)
+            # no_junk_symbol = KoreTemplates.get_sort_symbol_of_no_junk_axiom(axiom)
+            # no_confusion_same_constructor_symbol = KoreTemplates.get_symbol_for_no_confusion_same_constructor_axiom(axiom)
+            # no_confusion_different_constructor_symbols = KoreTemplates.get_symbols_for_no_confusion_different_constructor_axiom(axiom)
 
             if functional_symbol is not None or \
                is_rewrite or is_anywhere or \
                equation_head_symbol is not None or \
-               subsort_tuple is not None or \
-               no_junk_symbol is not None or \
-               no_confusion_same_constructor_symbol is not None or \
-               no_confusion_different_constructor_symbols is not None:
+               subsort_tuple is not None:
+            #    no_junk_symbol is not None or \
+            #    no_confusion_same_constructor_symbol is not None or \
+            #    no_confusion_different_constructor_symbols is not None:
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
 
                 # record these statements for later use
@@ -579,9 +676,9 @@ class ProofEnvironment:
                     sort1, sort2 = subsort_tuple
                     self.subsort_relation.add_subsort(sort1, sort2, theorem)
 
-                if no_junk_symbol is not None:
-                    self.no_junk_axioms[no_junk_symbol] = ProvableClaim(axiom, theorem.as_proof())
-                elif no_confusion_same_constructor_symbol is not None:
-                    self.no_confusion_same_constructor[no_confusion_same_constructor_symbol] = ProvableClaim(axiom, theorem.as_proof())
-                elif no_confusion_different_constructor_symbols is not None:
-                    self.no_confusion_diff_constructor[no_confusion_different_constructor_symbols] = ProvableClaim(axiom, theorem.as_proof())
+                # if no_junk_symbol is not None:
+                #     self.no_junk_axioms[no_junk_symbol] = ProvableClaim(axiom, theorem.as_proof())
+                # elif no_confusion_same_constructor_symbol is not None:
+                #     self.no_confusion_same_constructor[no_confusion_same_constructor_symbol] = ProvableClaim(axiom, theorem.as_proof())
+                # elif no_confusion_different_constructor_symbols is not None:
+                #     self.no_confusion_diff_constructor[no_confusion_different_constructor_symbols] = ProvableClaim(axiom, theorem.as_proof())
