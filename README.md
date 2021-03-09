@@ -11,10 +11,13 @@ This repository contains:
 
 ## Dependencies
 
-The itp and rewrite prover use Python (3.7+), so some dependencies are required:
+The itp and rewrite prover use Python (3.7+). Some dependencies are required:
 ```
 python3 -m pip install -r requirements.txt
 ```
+
+Note that we have been using the K version at tag `v5.0.0-bbc70cb` or commit hash `bbc70cb`.
+The newer version might generate different axioms for rewriting.
 
 ## Examples of generating proofs for concrete rewriting
 
