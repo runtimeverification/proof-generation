@@ -113,7 +113,9 @@ class ProofEnvironment:
         # self.no_confusion_same_constructor = {} # symbol instance -> provable claim
         # self.no_confusion_diff_constructor = {} # (symbol instance 1, symbol instance 2) -> provable claim
 
+        self.constructors = [] # symbol definitions
         self.no_confusion_same_constructor = {} # constant symbol -> theorem
+        self.no_confusion_diff_constructor = {} # (symbol, symbol) -> theorem
 
         self.sort_injection_symbol = None
         self.sort_injection_axiom = None
@@ -325,42 +327,66 @@ class ProofEnvironment:
         if symbol_definition.get_attribute_by_symbol("constructor") is None:
             return
 
-        # generate noconfusion axiom for the same symbol
         encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
         num_sort_vars = len(symbol_definition.sort_variables)
-        num_arguments =  len(symbol_definition.input_sorts)
+        num_arguments = len(symbol_definition.input_sorts)
 
-        if num_arguments == 0:
-            return
+        # generate noconfusion axiom for the same symbol
+        if num_arguments != 0:
+            pattern_vars = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments * 2)
+            pattern_vars = [ mm.Metavariable(v) for v in pattern_vars ]
 
-        pattern_vars = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments * 2)
-        pattern_vars = [ mm.Metavariable(v) for v in pattern_vars ]
+            sort_pattern_vars = pattern_vars[:num_sort_vars]
+            arg_pattern_vars_left = pattern_vars[num_sort_vars:num_sort_vars + num_arguments]
+            arg_pattern_vars_right = pattern_vars[num_sort_vars + num_arguments:]
 
-        sort_pattern_vars = pattern_vars[:num_sort_vars]
-        arg_pattern_vars_left = pattern_vars[num_sort_vars:num_sort_vars + num_arguments]
-        arg_pattern_vars_right = pattern_vars[num_sort_vars + num_arguments:]
+            left_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_left)
+            right_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_right)
 
-        left_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_left)
-        right_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_right)
+            left_conj_pattern = mm.Application("\\and", [ left_pattern, right_pattern ])
 
-        left_conj_pattern = mm.Application("\\and", [ left_pattern, right_pattern ])
+            right_conj_pattern = mm.Application(encoded_symbol, sort_pattern_vars + [
+                mm.Application("\\and", [ left_arg, right_arg ])
+                for left_arg, right_arg in zip(arg_pattern_vars_left, arg_pattern_vars_right)
+            ])
 
-        right_conj_pattern = mm.Application(encoded_symbol, sort_pattern_vars + [
-            mm.Application("\\and", [ left_arg, right_arg ])
-            for left_arg, right_arg in zip(arg_pattern_vars_left, arg_pattern_vars_right)
-        ])
+            statement = mm.StructuredStatement(
+                mm.Statement.AXIOM,
+                [
+                    mm.Application("|-"),
+                    mm.Application("\\imp", [ left_conj_pattern, right_conj_pattern ]),
+                ],
+                label=f"{label}-no-confusion",
+            )
 
-        statement = mm.StructuredStatement(
-            mm.Statement.AXIOM,
-            [
-                mm.Application("|-"),
-                mm.Application("\\imp", [ left_conj_pattern, right_conj_pattern ]),
-            ],
-            label=f"{label}-no-confusion",
-        )
+            theorem = self.load_metamath_statement(statement)
+            self.no_confusion_same_constructor[encoded_symbol] = theorem
 
-        theorem = self.load_metamath_statement(statement)
-        self.no_confusion_same_constructor[encoded_symbol] = theorem
+        # generate no confusion axioms for different symbols
+        for other_constructor in self.constructors:
+            other_encoded_symbol = KorePatternEncoder.encode_symbol(other_constructor.symbol)
+            other_num_sort_vars = len(other_constructor.sort_variables)
+            other_num_arguments = len(other_constructor.input_sorts)
+
+            pattern_vars = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments + other_num_sort_vars + other_num_arguments)
+            pattern_vars = [ mm.Metavariable(v) for v in pattern_vars ]
+
+            left_pattern = mm.Application(encoded_symbol, pattern_vars[:num_sort_vars + num_arguments])
+            right_pattern = mm.Application(other_encoded_symbol, pattern_vars[num_sort_vars + num_arguments:])
+
+            statement = mm.StructuredStatement(
+                mm.Statement.AXIOM,
+                [
+                    mm.Application("|-"),
+                    mm.Application("\\not", [ mm.Application("\\and", [ left_pattern, right_pattern ]) ]),
+                ],
+                label=f"{label}-no-confusion-with-{self.sanitize_label_name(other_encoded_symbol)}",
+            )
+
+            theorem = self.load_metamath_statement(statement)
+            self.no_confusion_diff_constructor[encoded_symbol, other_encoded_symbol] = theorem
+
+        self.constructors.append(symbol_definition)
 
     def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition, label: str):
         encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
