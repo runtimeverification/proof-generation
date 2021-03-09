@@ -1,5 +1,5 @@
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from traceback import print_exc
 
@@ -35,15 +35,18 @@ class DisjointnessProofGenerator(ProofGenerator):
         self.diff_constructor_disjointness_counter = 0
         self.var_disjointness_assumption = 0
 
+    def get_free_vars_in_pattern(self, pattern: kore.Pattern) -> List[kore.Variable]:
+        free_vars = FreePatternVariableVisitor().visit(pattern)
+        free_vars = list(free_vars)
+        free_vars.sort(key=lambda v: v.name, reverse=True)
+        return free_vars
+
     r"""
     Given a Kore pattern, existentially quantify all free variables using \sorted-exists
     then return the encoded metamath pattern
     """
     def existentially_quantify_free_variables(self, pattern: kore.Pattern) -> mm.Term:
-        free_vars = FreePatternVariableVisitor().visit(pattern)
-        free_vars = list(free_vars)
-        free_vars.sort(key=lambda v: v.name, reverse=True)
-
+        free_vars = self.get_free_vars_in_pattern(pattern)
         encoded_pattern = self.env.encode_pattern(pattern)
 
         for var in free_vars:
@@ -63,9 +66,9 @@ class DisjointnessProofGenerator(ProofGenerator):
     not (<left> /\ exists x1, ..., xn. <right>)
     all free variables should be exitentially quantified
     """
-    def get_disjointness_pattern(self, left: kore.Pattern, right: kore.Pattern) -> mm.Term:
-        left_term = self.existentially_quantify_free_variables(left)
-        right_term = self.existentially_quantify_free_variables(right)
+    def get_disjointness_pattern(self, left: kore.Pattern, right: kore.Pattern, quantify: bool=True) -> mm.Term:
+        left_term = self.existentially_quantify_free_variables(left) if quantify else self.env.encode_pattern(left)
+        right_term = self.existentially_quantify_free_variables(right) if quantify else self.env.encode_pattern(right)
 
         return mm.Application("\\not", [
             mm.Application("\\and", [
@@ -77,8 +80,14 @@ class DisjointnessProofGenerator(ProofGenerator):
     """
     Same as above but wraps it in a metamath statement
     """
-    def get_disjointness_statement(self, left: kore.Pattern, right: kore.Pattern, label: str) -> mm.StructuredStatement:
-        disjointness = self.get_disjointness_pattern(left, right)
+    def get_disjointness_statement(
+        self,
+        left: kore.Pattern,
+        right: kore.Pattern,
+        label: Optional[str]=None,
+        quantify: bool=True,
+    ) -> mm.StructuredStatement:
+        disjointness = self.get_disjointness_pattern(left, right, quantify)
         return mm.StructuredStatement(
             mm.Statement.PROVABLE,
             [ mm.Application("|-"), disjointness ],
@@ -292,6 +301,33 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         return disjointness_proof
 
+    """
+    Prove that two patterns with different heads are disjoint
+    """
+    def prove_diff_constructor_disjointness(self, left: kore.Application, right: kore.Application) -> Proof:
+        encoded_left_symbol = KorePatternEncoder.encode_symbol(left.symbol)
+        encoded_right_symbol = KorePatternEncoder.encode_symbol(right.symbol)
+
+        # symmetry
+        if (encoded_right_symbol, encoded_left_symbol) in self.env.no_confusion_diff_constructor:
+            return self.env.get_theorem("disjointness-symmetry").apply(self.prove_diff_constructor_disjointness(right, left))
+
+        assert (encoded_left_symbol, encoded_right_symbol) in self.env.no_confusion_diff_constructor, \
+               f"unable to find no confusion axiom for {encoded_left_symbol} and {encoded_right_symbol}"
+
+        no_confusion = self.env.no_confusion_diff_constructor[encoded_left_symbol, encoded_right_symbol]
+        disjointness_proof = no_confusion.match_and_apply(self.get_disjointness_statement(left, right, quantify=False))
+
+        # need to quantify all free vars in the rhs
+        for var in self.get_free_vars_in_pattern(right):
+            disjointness_proof = self.env.get_theorem("disjointness-quantify").apply(
+                disjointness_proof,
+                x=self.env.encode_pattern(var),
+                ph2=self.env.encode_pattern(var.sort),
+            )
+        
+        return disjointness_proof
+
     r"""
     Prove that the given patterns are disjoint, that is
     not (<left> /\ exists x. <right>)
@@ -369,15 +405,19 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         elif right_symbol is not None:
             # different symbols, use no confusion axiom for different constructors
-            # TODO: for now we just assume that it's true...
-            disjointness_stmt = self.get_disjointness_statement(
-                left, right,
-                f"diff-constructor-disjointness-assumption-{self.diff_constructor_disjointness_counter}",
-            )
-            self.diff_constructor_disjointness_counter += 1
+            return self.prove_diff_constructor_disjointness(left, right)
 
-            theorem = self.env.load_metamath_statement(disjointness_stmt)
-            return theorem.as_proof()
+            # print(disjointness_proof.statement.terms)
+
+            # # TODO: for now we just assume that it's true...
+            # disjointness_stmt = self.get_disjointness_statement(
+            #     left, right,
+            #     f"diff-constructor-disjointness-assumption-{self.diff_constructor_disjointness_counter}",
+            # )
+            # self.diff_constructor_disjointness_counter += 1
+
+            # theorem = self.env.load_metamath_statement(disjointness_stmt)
+            # return theorem.as_proof()
 
         else:
             assert isinstance(right, kore.Variable)
