@@ -411,7 +411,7 @@ class RewriteProofGenerator(ProofGenerator):
             left, right = condition.arguments[0].arguments[0].arguments[0].arguments[1].arguments[1].arguments[0].arguments[0].arguments
             disjoint_proof = self.disjoint_gen.prove_disjointness(left, right)
 
-            proof = self.env.get_theorem("owise-lemma-1-rule-1-var").match_and_apply(
+            proof = self.env.get_theorem("owise-1-rule-1-var").match_and_apply(
                 self.env.encode_axiom(mm.Statement.PROVABLE, claim),
                 disjoint_proof,
             )
