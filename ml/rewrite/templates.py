@@ -27,6 +27,14 @@ class KoreTemplates:
     @staticmethod
     def is_functional_axiom(axiom: kore.Axiom) -> bool:
         return KoreTemplates.get_symbol_of_functional_axiom(axiom) is not None
+    
+    @staticmethod
+    def is_map_commutativity_axiom(axiom: kore.Axiom) -> bool:
+        return axiom.pattern == 
+    
+    @staticmethod
+    def is_map_associativity_axiom(axiom: kore.Axiom) -> bool:
+        return False
 
     @staticmethod
     def get_symbol_of_equational_axiom(axiom: kore.Axiom) -> Optional[kore.SymbolInstance]:

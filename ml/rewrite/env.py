@@ -525,6 +525,8 @@ class ProofEnvironment:
             is_anywhere = KoreTemplates.is_anywhere_rule_axiom(axiom)
             equation_head_symbol = KoreTemplates.get_symbol_of_equational_axiom(axiom)
             subsort_tuple = KoreTemplates.get_sorts_of_subsort_axiom(axiom)
+            is_map_commutativity = KoreTemplates.is_map_commutativity_axiom(axiom)
+            is_map_associativity = KoreTemplates.is_map_associativity_axiom(axiom)
 
             if functional_symbol is not None or is_rewrite or is_anywhere or equation_head_symbol is not None or subsort_tuple is not None:
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
