@@ -12,7 +12,7 @@ from ml.metamath.composer import Proof
 from ml.metamath.visitors import CopyVisitor
 from ml.metamath.auto.substitution import SubstitutionProver
 
-from .env import ProofEnvironment, ProofGenerator
+from .env import ProofGenerator
 from .encoder import KorePatternEncoder
 
 
@@ -294,7 +294,7 @@ class DisjointnessProofGenerator(ProofGenerator):
         _, rhs = not_conj.statement.terms[1].subterms[0].subterms
         exists_propagation = self.propagate_exists_out(rhs, i)
 
-        disjointness_proof = self.env.get_theorem("simpl-lemma-for-disjointness").apply(
+        disjointness_proof = self.env.get_theorem("disjointness-simplify").apply(
             not_conj,
             exists_propagation,
         )
@@ -327,6 +327,51 @@ class DisjointnessProofGenerator(ProofGenerator):
             )
         
         return disjointness_proof
+
+    """
+    Prove that the left pattern is disjoint from
+    any of the components given
+    """
+    def prove_disjointness_with_disjunction(self, left: kore.Application, components: List[kore.Application]) -> Proof:
+        assert len(components) != 0
+
+        if len(components) == 1:
+            return self.prove_disjointness(left, components[0])
+        
+        return self.env.get_theorem("disjointness-case").apply(
+            self.prove_disjointness(left, components[0]),
+            self.prove_disjointness_with_disjunction(left, components[1:]),
+        )
+
+    """
+    Prove that a (concrete) pattern is not in a sort
+    """
+    def prove_sort_disjointness(self, left: kore.Application, right: kore.Variable) -> Proof:
+        assert right.sort in self.env.no_junk_axioms and \
+               right.sort in self.env.sort_components, \
+               f"unable to find no junk axiom for sort {right.sort}"
+
+        no_junk_axiom = self.env.no_junk_axioms[right.sort]
+
+        # no junk axiom is of the form
+        # |- ( \eq ( \inh <sort> ) ( <disjunction> ) )
+
+        components = self.env.sort_components[right.sort]
+        disjoint_with_disjunction = self.prove_disjointness_with_disjunction(left, components)
+
+        disjoint_with_sort = self.env.get_theorem("disjointness-simplify").apply(
+            disjoint_with_disjunction,
+            self.env.get_theorem("rule-iff-elim-left").apply(
+                self.env.get_theorem("rule-eq-to-iff").apply(no_junk_axiom.as_proof()),
+            ),
+        )
+
+        disjoint_with_sort_alt = self.env.get_theorem("disjointnesss-sort").match_and_apply(
+            self.get_disjointness_statement(left, right),
+            disjoint_with_sort,
+        )
+
+        return disjoint_with_sort_alt
 
     r"""
     Prove that the given patterns are disjoint, that is
@@ -363,7 +408,7 @@ class DisjointnessProofGenerator(ProofGenerator):
             left_input_sort, left_output_sort = left_symbol.sort_arguments
             right_input_sort, right_output_sort = right_symbol.sort_arguments
 
-            disjointness_proof = self.env.get_theorem("eq-lemma-for-disjointness").apply(
+            disjointness_proof = self.env.get_theorem("disjointness-eq").apply(
                 self.env.get_theorem("kore-inj-id").apply(
                     ph0=self.env.encode_pattern(left_input_sort),
                     ph1=self.env.encode_pattern(left_output_sort),
@@ -381,7 +426,7 @@ class DisjointnessProofGenerator(ProofGenerator):
             rhs = disjointness_proof.statement.terms[1].subterms[0].subterms[1]
             exists_propagation = self.propagate_exists_out(rhs, 2)
 
-            return self.env.get_theorem("simpl-lemma-for-disjointness").apply(
+            return self.env.get_theorem("disjointness-simplify").apply(
                 disjointness_proof,
                 exists_propagation,
             )
@@ -406,25 +451,15 @@ class DisjointnessProofGenerator(ProofGenerator):
         elif right_symbol is not None:
             # different symbols, use no confusion axiom for different constructors
             return self.prove_diff_constructor_disjointness(left, right)
-
-            # print(disjointness_proof.statement.terms)
-
-            # # TODO: for now we just assume that it's true...
-            # disjointness_stmt = self.get_disjointness_statement(
-            #     left, right,
-            #     f"diff-constructor-disjointness-assumption-{self.diff_constructor_disjointness_counter}",
-            # )
-            # self.diff_constructor_disjointness_counter += 1
-
-            # theorem = self.env.load_metamath_statement(disjointness_stmt)
-            # return theorem.as_proof()
-
         else:
             assert isinstance(right, kore.Variable)
-            # right is a variable use no junk of the sort
-            # to decompose it to multiple queries
+            
+            # right is a variable: use no junk of the sort
+            if right.sort in self.env.sort_components:
+                return self.prove_sort_disjointness(left, right)
 
-            # TODO: assumes it for now as well
+            # TODO: handle hooked sorts and parametric sorts
+
             disjointness_stmt = self.get_disjointness_statement(
                 left, right,
                 f"var-disjointness-assumption-{self.var_disjointness_assumption}",

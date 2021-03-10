@@ -6,6 +6,7 @@ import re
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
+from ml.kore.visitors import FreePatternVariableVisitor
 
 from ml.metamath import ast as mm
 from ml.metamath.visitors import SubstitutionVisitor
@@ -45,6 +46,15 @@ class SubsortRelation:
         self.adj_list: \
             Mapping[kore.SortInstance, List[Tuple[kore.SortInstance, Theorem]]] = {}
         # SortInstance -> [ ( supersort, subsorting lemma ) ... ]
+
+    def get_immediate_subsort_of(self, sort: kore.SortInstance) -> List[kore.SortInstance]:
+        subsorts = []
+        for other, supersorts in self.adj_list.items():
+            for supersort, _ in supersorts:
+                if supersort == sort:
+                    subsorts.append(other)
+                    break
+        return subsorts
 
     """
     Return a chain of immediate subsorting: sort1 < A < B < ... < sort2,
@@ -98,6 +108,9 @@ class ProofEnvironment:
         #################################
         # some axioms that will be used later
         #################################
+        
+        self.all_sorts = [] # sort definitions
+
         self.functional_axioms = {} # symbol instance -> provable claim
         self.domain_value_functional_axioms = {} # (sort, string literal) -> provable claim
         self.rewrite_axioms = {} # unique id -> provable claim
@@ -114,8 +127,11 @@ class ProofEnvironment:
         # self.no_confusion_diff_constructor = {} # (symbol instance 1, symbol instance 2) -> provable claim
 
         self.constructors = [] # symbol definitions
+        self.sort_to_constructors = {} # sort instance -> [ symbol definitions ]
         self.no_confusion_same_constructor = {} # constant symbol -> theorem
         self.no_confusion_diff_constructor = {} # (symbol, symbol) -> theorem
+        self.no_junk_axioms = {} # sort instance -> theorem
+        self.sort_components = {} # sort instance -> [ patterns (without existential quantifier) ]
 
         self.sort_injection_symbol = None
         self.sort_injection_axiom = None
@@ -132,6 +148,7 @@ class ProofEnvironment:
         self.module = module
         self.load_module_sentences(self.module)
         self.load_axioms_for_injection()
+        self.load_sort_constructor_axioms()
 
     def load_axioms_for_injection(self):
         if "INJ" not in self.loaded_modules:
@@ -323,7 +340,7 @@ class ProofEnvironment:
     """
     Generate constructor axioms for symbols marked with `constructor{}()` attribute
     """
-    def load_symbol_constructor_axiom(self, symbol_definition: kore.SymbolDefinition, label: str):
+    def load_symbol_constructor_axioms(self, symbol_definition: kore.SymbolDefinition, label: str):
         if symbol_definition.get_attribute_by_symbol("constructor") is None:
             return
 
@@ -386,7 +403,12 @@ class ProofEnvironment:
             theorem = self.load_metamath_statement(statement)
             self.no_confusion_diff_constructor[encoded_symbol, other_encoded_symbol] = theorem
 
-        self.constructors.append(symbol_definition)
+        # add the constructor if it's not sort-parametric
+        # TODO: what do we do if it's sort-parametric
+        if len(symbol_definition.sort_variables) == 0:
+            if symbol_definition.output_sort not in self.sort_to_constructors:
+                self.sort_to_constructors[symbol_definition.output_sort] = []
+            self.sort_to_constructors[symbol_definition.output_sort].append(symbol_definition)
 
     def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition, label: str):
         encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
@@ -396,7 +418,7 @@ class ProofEnvironment:
         self.load_constant(encoded_symbol, arity, label)
 
         self.load_symbol_sorting_lemma(symbol_definition, label)
-        self.load_symbol_constructor_axiom(symbol_definition, label)
+        self.load_symbol_constructor_axioms(symbol_definition, label)
 
     def load_sort_definition(self, sort_definition: kore.SortDefinition, label: str):
         encoded_sort = KorePatternEncoder.encode_sort(sort_definition.sort_id)
@@ -415,6 +437,8 @@ class ProofEnvironment:
             ],
             label=f"{label}-sort",
         ))
+
+        self.all_sorts.append(sort_definition)
 
     """
     Load a domain value and generate the corresponding functional axiom
@@ -639,6 +663,91 @@ class ProofEnvironment:
             metavars = set(self.gen_metavariables(typecode, current_extra + n))
             current_extra += 1 
         return list(metavars.difference(other_than))
+
+    # TODO: find a better place for this method
+    def existentially_quantify_free_variables(self, pattern: kore.Pattern) -> mm.Term:
+        free_vars = FreePatternVariableVisitor().visit(pattern)
+        free_vars = list(free_vars)
+        free_vars.sort(key=lambda v: v.name, reverse=True)
+
+        encoded_pattern = self.encode_pattern(pattern)
+
+        for var in free_vars:
+            encoded_pattern = mm.Application(
+                "\\sorted-exists",
+                [
+                    self.encode_pattern(var),
+                    self.encode_pattern(var.sort),
+                    encoded_pattern,
+                ],
+            )
+
+        return encoded_pattern
+
+    """
+    Add no-junk axioms for sorts
+    """
+    def load_sort_constructor_axioms(self):
+        # for usual user defined sort
+        # if there is at least a constructor or a subsort
+        # add the axiom that
+        # [S] = ph0 \/ ... \/ phn
+        # where each ph0 is of one of the following forms:
+        #   - exists x1:S1 ... xn:Sn. f(x1, ..., xn)
+        #   - exists x:R. x
+        
+        # TODO: what to do with domain values/hooked sorts
+
+        for i, sort_definition in enumerate(self.all_sorts):
+            if len(sort_definition.sort_variables) != 0:
+                continue
+
+            sort_instance = kore.SortInstance(sort_definition, [])
+            sort_instance.resolve(self.module)
+
+            subsorts = self.subsort_relation.get_immediate_subsort_of(sort_instance)
+            constructors = self.sort_to_constructors.get(sort_instance, [])
+
+            if len(subsorts) + len(constructors) != 0:
+
+                # collect all components of the sort and make a no junk axiom
+                components = []
+
+                for subsort in subsorts:
+                    var, = self.gen_metavariables("#ElementVariable", 1)
+                    components.append(kore.Variable(var, subsort))
+
+                for constructor in constructors:
+                    assert len(constructor.sort_variables) == 0, "sort-parametric constructor is not supported"
+                    variables = self.gen_metavariables("#ElementVariable", len(constructor.input_sorts))
+
+                    application = kore.Application(
+                        kore.SymbolInstance(constructor, []),
+                        [ kore.Variable(var, sort) for var, sort in zip(variables, constructor.input_sorts) ],
+                    )
+
+                    components.append(application)
+
+                assert len(components) != 0
+
+                if len(components) == 1:
+                    rhs = self.existentially_quantify_free_variables(components[0])
+                else:
+                    rhs = self.existentially_quantify_free_variables(components[-1])
+                    for component in components[:-1][::-1]:
+                        rhs = mm.Application("\\or", [ self.existentially_quantify_free_variables(component), rhs ])
+
+                lhs = mm.Application("\\inh", [ self.encode_pattern(sort_instance) ])
+                axiom = mm.StructuredStatement(
+                    mm.Statement.AXIOM,
+                    [ mm.Application("|-"), mm.Application("\\eq", [ lhs, rhs ]) ],
+                    label=f"no-junk-axiom-{i}",
+                )
+
+                theorem = self.load_metamath_statement(axiom)
+
+                self.no_junk_axioms[sort_instance] = theorem
+                self.sort_components[sort_instance] = components
 
     """
     Load all relavent sentences

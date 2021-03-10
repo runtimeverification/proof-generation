@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Mapping, List, Tuple, Optional, NewType
 
 from .ast import *
-from .visitors import PatternSubstitutionVisitor, SortSubstitutionVisitor, CopyVisitor, FreePatternVariableVisitor, QuantifierTester, PatternVariableVisitor
+from .visitors import PatternSubstitutionVisitor, SortSubstitutionVisitor, CopyVisitor, FreePatternVariableVisitor, QuantifierTester, PatternVariableVisitor, SortVariableVisitor
 
 
 """
@@ -262,3 +262,20 @@ class KoreUtils:
     @staticmethod
     def is_concrete(pattern: Pattern) -> bool:
         return len(PatternVariableVisitor().visit(pattern)) == 0
+
+    """
+    Have no sort variable
+    """
+    @staticmethod
+    def is_concrete_sort(sort: Sort) -> bool:
+        return len(SortVariableVisitor().visit(sort)) == 0
+
+    """
+    Tests that the given symbol definition is not parametric in any sort variable
+    """
+    @staticmethod
+    def is_non_sort_parametric_symbol(symbol_definition: SymbolDefinition) -> bool:
+        for input_sort in symbol_definition.input_sorts:
+            if not KoreUtils.is_concrete_sort(input_sort):
+                return False
+        return KoreUtils.is_concrete_sort(symbol_definition.output_sort)
