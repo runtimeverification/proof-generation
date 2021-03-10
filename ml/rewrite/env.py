@@ -110,6 +110,7 @@ class ProofEnvironment:
         #################################
         
         self.all_sorts = [] # sort definitions
+        self.constructors = [] # symbol definitions
 
         self.functional_axioms = {} # symbol instance -> provable claim
         self.domain_value_functional_axioms = {} # (sort, string literal) -> provable claim
@@ -126,7 +127,6 @@ class ProofEnvironment:
         # self.no_confusion_same_constructor = {} # symbol instance -> provable claim
         # self.no_confusion_diff_constructor = {} # (symbol instance 1, symbol instance 2) -> provable claim
 
-        self.constructors = [] # symbol definitions
         self.sort_to_constructors = {} # sort instance -> [ symbol definitions ]
         self.no_confusion_same_constructor = {} # constant symbol -> theorem
         self.no_confusion_diff_constructor = {} # (symbol, symbol) -> theorem
@@ -402,6 +402,8 @@ class ProofEnvironment:
 
             theorem = self.load_metamath_statement(statement)
             self.no_confusion_diff_constructor[encoded_symbol, other_encoded_symbol] = theorem
+
+        self.constructors.append(symbol_definition)
 
         # add the constructor if it's not sort-parametric
         # TODO: what do we do if it's sort-parametric
