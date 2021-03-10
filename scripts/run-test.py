@@ -190,7 +190,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
             "-m", "ml.rewrite",
             kore_definition,
             module,
-            "--prelude", "theory/kore-lemmas.mm",
+            "--prelude", "theory/prelude.mm",
             "--snapshots", snapshot_dir,
             "--output", output,
         ] + ([ "--benchmark" ] if benchmark else []))

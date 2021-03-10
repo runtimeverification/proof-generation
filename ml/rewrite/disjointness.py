@@ -152,6 +152,14 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         subproof = self.propagate_exists_out(lhs_body, i)
 
+        # some substitutions required by the theorem (due to meta-incompleteness)
+        # see the statement of sorted-exists-propagation-converse for more info
+        subst1 = CopyVisitor().visit(app)
+        subst1.subterms[i] = mm.Application("\\and", [ mm.Application("\\in-sort", [ ith_arg.subterms[0], ith_arg.subterms[1] ]), ith_arg_body ])
+
+        subst2 = CopyVisitor().visit(app)
+        subst2.subterms[i] = mm.Application("\\and", [ mm.Application("\\top"), ith_arg_body ])
+
         next_step = self.env.get_theorem("sorted-exists-propagation-converse").match_and_apply(
             mm.StructuredStatement(
                 mm.Statement.PROVABLE,
@@ -160,7 +168,11 @@ class DisjointnessProofGenerator(ProofGenerator):
             app_ctx_proof,
             SubstitutionProver.auto,
             SubstitutionProver.auto,
-            ph3=ith_arg_body,
+            SubstitutionProver.auto,
+            SubstitutionProver.auto,
+            ph3=subst1,
+            ph4=subst2,
+            ph5=ith_arg_body,
         )
 
         # build the desired statement for the previous step

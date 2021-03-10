@@ -703,6 +703,21 @@ ${
         ph0-is-pattern ph0-is-pattern not-is-pattern ph1-is-pattern rule-case.0 rule-case.1 ph0-is-pattern not-is-pattern ph0-is-pattern not-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern not-is-pattern or-is-pattern ph0-is-pattern not-is-pattern imp-reflexivity ph0-is-pattern ph0-is-pattern not-is-pattern or-is-pattern ph0-is-pattern not-is-pattern ph0-is-pattern not-is-pattern imp-is-pattern ph0-is-pattern not-is-pattern ph0-is-pattern not-is-pattern imp-is-pattern ph0-is-pattern ph0-is-pattern not-is-pattern or-is-sugar ph0-is-pattern not-is-pattern ph0-is-pattern not-is-pattern imp-is-pattern ph0-is-pattern not-is-pattern ph0-is-pattern not-is-pattern imp-is-pattern ph0-is-pattern not-is-pattern ph0-is-pattern not-is-pattern imp-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof rule-or-elim-alt-sugar $.
 $}
 
+${
+    rule-case-alt.0 $e |- ( \or ph0 ph1 ) $.
+    rule-case-alt.1 $e |- ( \imp ph0 ph2 ) $.
+    rule-case-alt.2 $e |- ( \imp ph1 ph2 ) $.
+    rule-case-alt $p |- ph2 $=
+        $(
+            apply "proof-rule-mp"
+            apply "rule-or-elim-sugar"
+            apply "rule-case-alt.1"
+            apply "rule-case-alt.2"
+            apply "rule-case-alt.0"
+        $)
+        ph0-is-pattern ph1-is-pattern or-is-pattern ph2-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern rule-case-alt.1 rule-case-alt.2 rule-or-elim-sugar rule-case-alt.0 proof-rule-mp $.
+$}
+
 $(
     Lemmas used for the `tautology` auto tactic
 $)

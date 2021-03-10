@@ -165,6 +165,12 @@ ${
     fresh-in-substitution.1 $e #Substitution ph2 ph0 ph1 xX $.
     fresh-in-substitution $a #Fresh xX ph2 $.
 $}
+${
+    fresh-after-substitution.0 $e #Fresh xX ph0 $.
+    fresh-after-substitution.1 $e #Fresh xX ph1 $.
+    fresh-after-substitution.2 $e #Substitution ph2 ph0 ph1 yY $.
+    fresh-after-substitution $a #Fresh xX ph2 $.
+$}
 
 $( Substitution $)
 $( #Substitution ph0 ph1 ph2 xX means ph0 === ph1[ph2/xX] $)
