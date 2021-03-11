@@ -36,6 +36,7 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'UndsStar'Int'Unds'": IntegerMultiplicationEvaluator(env),
             "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(env),
             "Lbl'Unds-LT-Eqls'Int'Unds'": IntegerLessThanOrEqualToEvaluator(env),
+            "Lbl'UndsEqlsEqls'Int'Unds'": IntegerEqualityEvaluator(env),
             "Lbl'Unds'andBool'Unds'": BooleanAndEvaluator(env),
             "LblnotBool'Unds'": BooleanNotEvaluator(env),
         }
@@ -408,7 +409,10 @@ class RewriteProofGenerator(ProofGenerator):
 
         try:
             # trying to prove the simplest case with 1 other rule and 1 free variable
+            # TODO: make this more general
             left, right = condition.arguments[0].arguments[0].arguments[0].arguments[1].arguments[1].arguments[0].arguments[0].arguments
+
+            print("> proving disjointness claim")
             disjoint_proof = self.disjoint_gen.prove_disjointness(left, right)
 
             proof = self.env.get_theorem("owise-1-rule-1-var").match_and_apply(
@@ -792,6 +796,12 @@ class IntegerLessThanOrEqualToEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) <= self.parse_int(b))
+
+
+class IntegerEqualityEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, self.parse_int(a) == self.parse_int(b))
 
 
 class BooleanAndEvaluator(BuiltinFunctionEvaluator):

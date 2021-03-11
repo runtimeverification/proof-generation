@@ -322,13 +322,13 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         # symmetry
         if (encoded_right_symbol, encoded_left_symbol) in self.env.no_confusion_diff_constructor:
-            return self.env.get_theorem("disjointness-symmetry").apply(self.prove_diff_constructor_disjointness(right, left))
+            disjointness_proof = self.env.get_theorem("disjointness-symmetry").apply(self.prove_diff_constructor_disjointness(right, left))
+        else:
+            assert (encoded_left_symbol, encoded_right_symbol) in self.env.no_confusion_diff_constructor, \
+                f"unable to find no confusion axiom for {encoded_left_symbol} and {encoded_right_symbol}"
 
-        assert (encoded_left_symbol, encoded_right_symbol) in self.env.no_confusion_diff_constructor, \
-               f"unable to find no confusion axiom for {encoded_left_symbol} and {encoded_right_symbol}"
-
-        no_confusion = self.env.no_confusion_diff_constructor[encoded_left_symbol, encoded_right_symbol]
-        disjointness_proof = no_confusion.match_and_apply(self.get_disjointness_statement(left, right, quantify=False))
+            no_confusion = self.env.no_confusion_diff_constructor[encoded_left_symbol, encoded_right_symbol]
+            disjointness_proof = no_confusion.match_and_apply(self.get_disjointness_statement(left, right, quantify=False))
 
         # need to quantify all free vars in the rhs
         for var in self.get_free_vars_in_pattern(right):
@@ -347,11 +347,13 @@ class DisjointnessProofGenerator(ProofGenerator):
     def prove_disjointness_with_disjunction(self, left: kore.Application, components: List[kore.Application]) -> Proof:
         assert len(components) != 0
 
+        first_disjointness = self.prove_disjointness(left, components[0])
+
         if len(components) == 1:
-            return self.prove_disjointness(left, components[0])
+            return first_disjointness
         
         return self.env.get_theorem("disjointness-case").apply(
-            self.prove_disjointness(left, components[0]),
+            first_disjointness,
             self.prove_disjointness_with_disjunction(left, components[1:]),
         )
 
