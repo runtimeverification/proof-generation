@@ -2,6 +2,7 @@ from typing import Optional, Tuple
 
 import ml.kore.ast as kore
 from ml.kore.utils import KoreUtils
+from ml.kore.parser import parse_axiom, parse_pattern
 
 
 """
@@ -30,10 +31,18 @@ class KoreTemplates:
     
     @staticmethod
     def is_map_commutativity_axiom(axiom: kore.Axiom) -> bool:
-        return axiom.pattern == 
+        inner_pattern = KoreUtils.strip_forall(axiom.pattern)
+        if axiom.has_attribute("comm") and \
+            isinstance(inner_pattern, kore.MLPattern) and \
+            inner_pattern.construct == kore.MLPattern.EQUALS and \
+            str(inner_pattern.sorts[0]) == r"SortMap{}":
+            return True
+        else:
+            return False
     
     @staticmethod
     def is_map_associativity_axiom(axiom: kore.Axiom) -> bool:
+        # TODO
         return False
 
     @staticmethod

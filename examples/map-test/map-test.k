@@ -5,6 +5,7 @@ module MAP-TEST
 
     syntax KItem ::= select(Map, KItem)
 
-    rule select(Key |-> Val _:Map, Key) => Val
+    // Select by key. 
+    rule select(Key |-> Val M:Map, Key) => Val
 
 endmodule

@@ -45,6 +45,12 @@ class BaseAST:
                 return attr
         return None
 
+    def has_attribute(self, name: str) -> bool:
+        if self.get_attribute_by_symbol(name) is not None:
+            return True
+        else:
+            return False
+
     def error_with_position(self, msg: str, *args, **kwargs):
         err_msg = "at line {}, column {}: {}".format(self.meta_line, self.meta_column, msg.format(*args, **kwargs))
         raise Exception(err_msg)

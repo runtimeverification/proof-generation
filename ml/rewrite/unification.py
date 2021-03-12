@@ -152,10 +152,19 @@ class UnificationProofGenerator(ProofGenerator):
             self.unify_string_literals,
             self.unify_left_duplicate_conjunction,
             self.unify_right_splittable_inj,
+            self.unify_concrete_map_patterns,
         ]
+
+        print("=====")
+        print("LHS:")
+        print(pattern1)
+        print("TERM:")
+        print(pattern2)
 
         for algo in algorithms:
             result = algo(pattern1, pattern2)
+            print("trying" + str(algo) + "result is" + str(result))
+            print("-----")
             if result is not None:
                 return result
 
@@ -296,3 +305,13 @@ class UnificationProofGenerator(ProofGenerator):
                 return result.prepend_path(0).append_equation(InjectionCombine(self.env), [])
 
         return None
+    
+    r"""
+    Unify two concrete map patterns. 
+    """
+    def unify_concrete_map_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        if isinstance(pattern1, kore.Application) and \
+           isinstance(pattern2, kore.Application):
+           print("DEBUG")
+           print(pattern1.symbol.definition)
+           return None
