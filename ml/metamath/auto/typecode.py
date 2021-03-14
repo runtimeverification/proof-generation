@@ -24,11 +24,11 @@ class TypecodeProver:
 
         # try to find a matching floating statement first if the term is a metavariable
         if isinstance(term, Metavariable):
-            for _, theorem in composer.theorems.items():
+            for theorem in composer.get_theorems_of_typecode(typecode):
                 if theorem.statement.statement_type == Statement.FLOATING:
-                    other_typecode, metavar = theorem.statement.terms
+                    _, metavar = theorem.statement.terms
 
-                    if other_typecode.symbol == typecode and metavar.name == term.name:
+                    if metavar.name == term.name:
                         # found a direct proof
                         proof = theorem.apply()
                         if not isinstance(term, Metavariable):
@@ -41,7 +41,7 @@ class TypecodeProver:
         # TODO: check if this may loop infinitely
 
         # try to find a non-floating statement without hypotheses and unify
-        for _, theorem in composer.theorems.items():
+        for theorem in composer.get_theorems_of_typecode(typecode):
             if len(theorem.essentials) <= 1 and theorem.statement.statement_type != Statement.FLOATING:
                 # check that expected_statement is an instance of theorem.statement
                 solution = Unification.match_statements_as_instance(theorem.statement, expected_statement)

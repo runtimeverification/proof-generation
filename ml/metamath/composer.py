@@ -388,6 +388,7 @@ class Composer(MetamathVisitor):
     def __init__(self):
         self.context = Context() # outermost context for a database
         self.theorems = {} # label -> Theorem
+        self.theorems_by_typecode = {} # typecode -> [ Theorem ], sorted theorems by typecode
         self.statements = [] # all statements at the top level
         self.proof_cache = ProofCache(self)
 
@@ -425,9 +426,30 @@ class Composer(MetamathVisitor):
     def find_theorem(self, name: str) -> Optional[Theorem]:
         return self.theorems.get(name)
 
+    def get_theorems_of_typecode(self, typecode: str) -> List[Theorem]:
+        return self.theorems_by_typecode.get(typecode, [])
+
     def remove_theorem(self, name: str):
         assert name in self.theorems
+        theorem = self.theorems[name]
+
         del self.theorems[name]
+
+        # also delete it from the typecode map
+        stmt = theorem.statement
+        if len(stmt.terms) != 0 and \
+           isinstance(stmt.terms[0], Application) and \
+           len(stmt.terms[0].subterms) == 0 and \
+           stmt.terms[0].symbol in self.theorems_by_typecode:
+            for i, theorem in enumerate(self.theorems_by_typecode[stmt.terms[0].symbol]):
+                if theorem.statement.label == name:
+                    self.theorems_by_typecode[stmt.terms[0].symbol].pop(i)
+                    break
+
+    def add_theorem_for_typecode(self, typecode: str, theorem: Theorem):
+        if typecode not in self.theorems_by_typecode:
+            self.theorems_by_typecode[typecode] = []
+        self.theorems_by_typecode[typecode].append(theorem)
 
     def find_essential(self, name: str) -> Optional[Theorem]:
         essential = self.context.find_essential(name)
@@ -511,6 +533,8 @@ class Composer(MetamathVisitor):
 
             # any floating statement is also a theorem
             self.theorems[stmt.label] = Theorem(self, stmt, [], [])
+            self.add_theorem_for_typecode(typecode.symbol, self.theorems[stmt.label])
+
         elif stmt.statement_type == Statement.ESSENTITAL:
             self.context.add_essential(stmt)
         elif stmt.statement_type in { Statement.PROVABLE, Statement.AXIOM }:
@@ -529,3 +553,7 @@ class Composer(MetamathVisitor):
                    "some metavariables not found in {}, only found {}".format(metavariables, floatings)
 
             self.theorems[stmt.label] = Theorem(self, stmt, floatings, essentials)
+
+            # add it to the corresponding typecode map
+            if len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0:
+                self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])

@@ -28,10 +28,9 @@ class NotationProver:
     """
     @staticmethod
     def find_sugar_axiom(composer: Composer, symbol: str) -> Optional[Theorem]:
-        for theorem in composer.theorems.values():
+        for theorem in composer.get_theorems_of_typecode(NotationProver.SYMBOL):
             condition = len(theorem.statement.terms) == 3 and \
                         len(theorem.essentials) == 0 and \
-                        theorem.statement.terms[0] == Application(NotationProver.SYMBOL) and \
                         isinstance(theorem.statement.terms[1], Application) and \
                         theorem.statement.terms[1].symbol == symbol
             if not condition: continue
@@ -66,9 +65,8 @@ class NotationProver:
     """
     @staticmethod
     def find_congruence_lemma(composer: Composer, symbol: str) -> Optional[Tuple[Theorem, List[int]]]:
-        for theorem in composer.theorems.values():
+        for theorem in composer.get_theorems_of_typecode(NotationProver.SYMBOL):
             condition = len(theorem.statement.terms) == 3 and \
-                        theorem.statement.terms[0] == Application(NotationProver.SYMBOL) and \
                         isinstance(theorem.statement.terms[1], Application) and \
                         isinstance(theorem.statement.terms[2], Application) and \
                         theorem.statement.terms[1].symbol == symbol and \
@@ -138,7 +136,7 @@ class NotationProver:
         symmetric_target = NotationProver.format_target(right, left)
 
         if left == right:
-            return composer.theorems[NotationProver.REFL].match_and_apply(target)
+            return composer.find_theorem(NotationProver.REFL).match_and_apply(target)
 
         # different metavariables
         if isinstance(left, Metavariable) and isinstance(right, Metavariable):
@@ -147,7 +145,7 @@ class NotationProver:
                 if theorem.statement.terms == target.terms:
                     return theorem.apply()
                 elif theorem.statement.terms == symmetric_target.terms:
-                    return composer.theorems[NotationProver.SYM].apply(theorem.apply())
+                    return composer.find_theorem(NotationProver.SYM).apply(theorem.apply())
             assert False, f"unable to show {left} === {right}"
 
         # TODO: add this case
@@ -189,16 +187,20 @@ class NotationProver:
             # that we don't produce a proof that's too long
             proof = NotationProver.prove_notation(composer, right, new_left)
 
-            return composer.theorems[NotationProver.TRANS].apply(
-                reduction_proof,
-                composer.theorems[NotationProver.SYM].apply(proof),
+            return composer.cache_proof("notation-cache",
+                composer.find_theorem(NotationProver.TRANS).apply(
+                    reduction_proof,
+                    composer.find_theorem(NotationProver.SYM).apply(proof),
+                ),
             )
 
         sugar_axiom = NotationProver.find_sugar_axiom(composer, right.symbol)
         if sugar_axiom:
             # TODO: just being lazy here
-            return composer.theorems[NotationProver.SYM].apply(
-                NotationProver.prove_notation(composer, right, left),
+            return composer.cache_proof("notation-cache",
+                composer.find_theorem(NotationProver.SYM).apply(
+                    NotationProver.prove_notation(composer, right, left),
+                ),
             )
 
         assert False, f"ran out of tricks, cannot show {left} === {right}"

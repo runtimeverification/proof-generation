@@ -85,7 +85,7 @@ class SortingProver:
 
     @staticmethod
     def find_sorting_lemma_for_symbol(composer: Composer, symbol: str) -> Optional[Theorem]:
-        for theorem in composer.theorems.values():
+        for theorem in composer.get_theorems_of_typecode("|-"):
             if len(theorem.essentials) != 0: continue
 
             term = SortingProver.is_provability_statement(theorem.statement)
@@ -139,7 +139,7 @@ class SortingProver:
         assert isinstance(term, Application) and term.symbol == "\\kore-is-sort" and len(term.subterms) == 1, \
                f"unexpected kore-is-sort claim {statement}"
 
-        for theorem in composer.theorems.values():
+        for theorem in composer.get_theorems_of_typecode("|-"):
             if len(theorem.essentials) != 0: continue
 
             theorem_term = SortingProver.is_provability_statement(theorem.statement)
