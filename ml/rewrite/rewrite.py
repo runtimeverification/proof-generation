@@ -13,7 +13,6 @@ from ml.metamath.auto.sorting import SortingProver
 from .encoder import KorePatternEncoder
 
 from .env import ProofEnvironment, ProofGenerator, ProvableClaim
-from .substitution import SingleSubstitutionProofGenerator
 from .equality import EqualityProofGenerator
 from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
 from .unification import UnificationProofGenerator, InjectionCombine

@@ -53,7 +53,7 @@ class BaseAST:
         self.meta_module = module
 
     def get_module(self) -> Module:
-        assert self.meta_module is not None, "does not have a parent module"
+        assert self.meta_module is not None, f"{self} does not have a parent module"
         return self.meta_module
 
 
@@ -329,7 +329,7 @@ class SymbolInstance(BaseAST):
         if type(self.definition) is str:
             resolved_definition = module.get_symbol_by_name(self.definition)
             if resolved_definition is None:
-                self.error_with_position("unable to find symbol {}", self.definition)
+                self.error_with_position("unable to find symbol {} in module {}", self.definition, module.name)
 
             self.definition = resolved_definition
 

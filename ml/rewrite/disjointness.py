@@ -482,7 +482,7 @@ class DisjointnessProofGenerator(ProofGenerator):
             for i, (left_arg, right_arg) in enumerate(zip(left.arguments, right.arguments)):
                 try:
                     subproof = self.prove_disjointness(left_arg, right_arg)
-                except:
+                except Exception:
                     print_exc()
                 else:
                     return self.prove_argument_disjointness(left, right, i, subproof)

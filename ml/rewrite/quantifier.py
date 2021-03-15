@@ -50,41 +50,60 @@ class QuantifierProofGenerator(ProofGenerator):
 
         eliminated = 0
 
-        while isinstance(provable.claim.pattern, kore.MLPattern) and \
-              provable.claim.pattern.construct == kore.MLPattern.FORALL and \
-              eliminated < len(substitution):
+        # first compute intermediate sstatements after eliminating each quantifier
+        # lits of (body after substitution, body before substitution, substitution pattern, substitution variable)
+        # (all in kore ast)
+        intermediate_instances = []
 
-            var = provable.claim.pattern.get_binding_variable()
-            body = provable.claim.pattern.arguments[1]
+        claim_pattern = provable.claim.pattern
+
+        while isinstance(claim_pattern, kore.MLPattern) and \
+              claim_pattern.construct == kore.MLPattern.FORALL and \
+              eliminated < len(substitution):
+            var = claim_pattern.get_binding_variable()
+            body = claim_pattern.arguments[1]
 
             assert var in substitution, f"variable {var} not found in substitution {substitution}"
 
             pattern = substitution[var]
+            substituted_body = KoreUtils.copy_and_substitute_pattern(body, { var: pattern })
+            substituted_body.resolve(self.env.module)
 
+            intermediate_instances.append((substituted_body, body, pattern, var))
+
+            claim_pattern = substituted_body
+            eliminated += 1
+
+        final_claim = kore.Claim(provable.claim.sort_variables, claim_pattern, [])
+        final_claim.resolve(self.env.module)
+
+        # test if the final claim has already been proved
+        final_mm_statement = self.env.encode_axiom(mm.Statement.PROVABLE, final_claim)
+        cached_proof = self.env.composer.lookup_proof_cache(final_mm_statement)
+        if cached_proof is not None:
+            return ProvableClaim(final_claim, cached_proof)
+
+        current_proof = provable.proof
+
+        # apply forall elimination repeatedly
+        for substituted_body, body, pattern, var in intermediate_instances:
             # prove that the term is interpreted to a singleton in some domain
             pattern_is_functional = FunctionalProofGenerator(self.env).visit(pattern)
 
             # prove the substitution
-            subst_proof, subst_pattern = \
-                SingleSubstitutionProofGenerator(self.env, var, pattern).visit_and_substitute(body)
+            subst_proof = SingleSubstitutionProofGenerator(self.env, var, pattern).prove_substitution(body)
 
-            new_claim = kore.Claim(provable.claim.sort_variables, subst_pattern, [])
-            new_claim.resolve(self.env.module)
-
-            new_proof = self.env.get_theorem(thm).apply(
-                provable.proof,
+            current_proof = self.env.get_theorem(thm).apply(
+                current_proof,
                 pattern_is_functional.proof,
                 subst_proof,
                 SortingProver.auto,
                 SortingProver.auto,
             )
 
-            new_proof = self.env.cache_proof("quant-forall-elim-cache", new_proof)
+            current_proof = self.env.cache_proof("quant-forall-elim-cache", current_proof)
 
-            provable = ProvableClaim(new_claim, new_proof)
-            eliminated += 1
-
-        return provable
+        return ProvableClaim(final_claim, current_proof)
 
 
 r"""
