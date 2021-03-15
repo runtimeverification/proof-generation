@@ -123,13 +123,10 @@ class ProofEnvironment:
         self.app_ctx_lemmas = {} # constant_symbol -> list of theorems, one for each argument
 
         # constructor axioms
-        # self.no_junk_axioms = {} # sort symbol -> provable claim
-        # self.no_confusion_same_constructor = {} # symbol instance -> provable claim
-        # self.no_confusion_diff_constructor = {} # (symbol instance 1, symbol instance 2) -> provable claim
-
         self.sort_to_constructors = {} # sort instance -> [ symbol definitions ]
         self.no_confusion_same_constructor = {} # constant symbol -> theorem
         self.no_confusion_diff_constructor = {} # (symbol, symbol) -> theorem
+        self.no_confusion_hooked_sort = {} # (kore symbol string, kore sort) -> theorem
         self.no_junk_axioms = {} # sort instance -> theorem
         self.sort_components = {} # sort instance -> [ patterns (without existential quantifier) ]
 
@@ -341,6 +338,7 @@ class ProofEnvironment:
     Generate constructor axioms for symbols marked with `constructor{}()` attribute
     """
     def load_symbol_constructor_axioms(self, symbol_definition: kore.SymbolDefinition, label: str):
+        # skip if not a constructor
         if symbol_definition.get_attribute_by_symbol("constructor") is None:
             return
 
@@ -711,7 +709,6 @@ class ProofEnvironment:
             constructors = self.sort_to_constructors.get(sort_instance, [])
 
             if len(subsorts) + len(constructors) != 0:
-
                 # collect all components of the sort and make a no junk axiom
                 components = []
 
@@ -751,6 +748,34 @@ class ProofEnvironment:
                 self.no_junk_axioms[sort_instance] = theorem
                 self.sort_components[sort_instance] = components
 
+            # since we don't have information on any hooked sort
+            # we will assume that any constructor is disjoint from
+            # their domain
+            if sort_definition.hooked:
+                for j, symbol_definition in enumerate(self.constructors):
+                    num_sort_vars = len(symbol_definition.sort_variables)
+                    num_arguments = len(symbol_definition.input_sorts)
+
+                    encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
+
+                    pattern_vars = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments)
+                    pattern_vars = [ mm.Metavariable(v) for v in pattern_vars ]
+
+                    left_pattern = mm.Application(encoded_symbol, pattern_vars[:num_sort_vars + num_arguments])
+                    right_pattern = mm.Application("\\inh", [ self.encode_pattern(sort_instance) ])
+
+                    axiom = mm.StructuredStatement(
+                        mm.Statement.AXIOM,
+                        [
+                            mm.Application("|-"),
+                            mm.Application("\\not", [ mm.Application("\\and", [ left_pattern, right_pattern ]) ]),
+                        ],
+                        label=f"hooked-sort-no-confusion-{i}-{j}",
+                    )
+
+                    theorem = self.load_metamath_statement(axiom)
+                    self.no_confusion_hooked_sort[symbol_definition.symbol, sort_instance] = theorem
+
     """
     Load all relavent sentences
     """
@@ -781,17 +806,10 @@ class ProofEnvironment:
             equation_head_symbol = KoreTemplates.get_symbol_of_equational_axiom(axiom)
             subsort_tuple = KoreTemplates.get_sorts_of_subsort_axiom(axiom)
 
-            # no_junk_symbol = KoreTemplates.get_sort_symbol_of_no_junk_axiom(axiom)
-            # no_confusion_same_constructor_symbol = KoreTemplates.get_symbol_for_no_confusion_same_constructor_axiom(axiom)
-            # no_confusion_different_constructor_symbols = KoreTemplates.get_symbols_for_no_confusion_different_constructor_axiom(axiom)
-
             if functional_symbol is not None or \
                is_rewrite or is_anywhere or \
                equation_head_symbol is not None or \
                subsort_tuple is not None:
-            #    no_junk_symbol is not None or \
-            #    no_confusion_same_constructor_symbol is not None or \
-            #    no_confusion_different_constructor_symbols is not None:
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
 
                 # record these statements for later use
@@ -812,10 +830,3 @@ class ProofEnvironment:
                 if subsort_tuple is not None:
                     sort1, sort2 = subsort_tuple
                     self.subsort_relation.add_subsort(sort1, sort2, theorem)
-
-                # if no_junk_symbol is not None:
-                #     self.no_junk_axioms[no_junk_symbol] = ProvableClaim(axiom, theorem.as_proof())
-                # elif no_confusion_same_constructor_symbol is not None:
-                #     self.no_confusion_same_constructor[no_confusion_same_constructor_symbol] = ProvableClaim(axiom, theorem.as_proof())
-                # elif no_confusion_different_constructor_symbols is not None:
-                #     self.no_confusion_diff_constructor[no_confusion_different_constructor_symbols] = ProvableClaim(axiom, theorem.as_proof())

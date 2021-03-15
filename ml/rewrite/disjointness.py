@@ -387,6 +387,60 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         return disjoint_with_sort_alt
 
+    def prove_inj_disjointness(self, left: kore.Application, right: kore.Application) -> Proof:
+        assert len(left.arguments) == 1 and len(right.arguments) == 1
+        subproof = self.prove_disjointness(left.arguments[0], right.arguments[0])
+        
+        left_input_sort, left_output_sort = left.symbol.sort_arguments
+        right_input_sort, right_output_sort = right.symbol.sort_arguments
+
+        disjointness_proof = self.env.get_theorem("disjointness-eq").apply(
+            self.env.get_theorem("kore-inj-id").apply(
+                ph0=self.env.encode_pattern(left_input_sort),
+                ph1=self.env.encode_pattern(left_output_sort),
+                ph2=self.existentially_quantify_free_variables(left.arguments[0]),
+            ),
+            self.env.get_theorem("kore-inj-id").apply(
+                ph0=self.env.encode_pattern(right_input_sort),
+                ph1=self.env.encode_pattern(right_output_sort),
+                ph2=self.existentially_quantify_free_variables(right.arguments[0]),
+            ),
+            subproof,
+        )
+
+        # propagate out the existential quantifiers at the body of the injection
+        rhs = disjointness_proof.statement.terms[1].subterms[0].subterms[1]
+        exists_propagation = self.propagate_exists_out(rhs, 2)
+
+        return self.env.get_theorem("disjointness-simplify").apply(
+            disjointness_proof,
+            exists_propagation,
+        )
+
+    def prove_hooked_sort_disjointness(self, left: kore.Application, var: kore.Variable) -> Proof:
+        assert (left.symbol.definition.symbol, var.sort) in self.env.no_confusion_hooked_sort
+
+        no_confusion = self.env.no_confusion_hooked_sort[left.symbol.definition.symbol, var.sort]
+
+        encoded_left = self.env.encode_pattern(left)
+        encoded_sort = self.env.encode_pattern(var.sort)
+        instance = mm.StructuredStatement(
+            mm.Statement.PROVABLE,
+            [
+                mm.Application("|-"),
+                mm.Application("\\not", [
+                    mm.Application("\\and", [
+                        encoded_left, mm.Application("\\inh", [ encoded_sort ]),
+                    ]),
+                ]),
+            ],
+        )
+
+        return self.env.get_theorem("disjointnesss-sort").match_and_apply(
+            self.get_disjointness_statement(left, var),
+            no_confusion.match_and_apply(instance),
+        )
+
     r"""
     Prove that the given patterns are disjoint, that is
     not (<left> /\ exists x. <right>)
@@ -416,34 +470,7 @@ class DisjointnessProofGenerator(ProofGenerator):
         # it's enough to prove that the inner patterns are disjoint
         if left_symbol.definition == self.env.sort_injection_symbol and \
            right_symbol.definition == self.env.sort_injection_symbol:
-            assert len(left.arguments) == 1 and len(right.arguments) == 1
-            subproof = self.prove_disjointness(left.arguments[0], right.arguments[0])
-            
-            left_input_sort, left_output_sort = left_symbol.sort_arguments
-            right_input_sort, right_output_sort = right_symbol.sort_arguments
-
-            disjointness_proof = self.env.get_theorem("disjointness-eq").apply(
-                self.env.get_theorem("kore-inj-id").apply(
-                    ph0=self.env.encode_pattern(left_input_sort),
-                    ph1=self.env.encode_pattern(left_output_sort),
-                    ph2=self.existentially_quantify_free_variables(left.arguments[0]),
-                ),
-                self.env.get_theorem("kore-inj-id").apply(
-                    ph0=self.env.encode_pattern(right_input_sort),
-                    ph1=self.env.encode_pattern(right_output_sort),
-                    ph2=self.existentially_quantify_free_variables(right.arguments[0]),
-                ),
-                subproof,
-            )
-
-            # propagate out the existential quantifiers at the body of the injection
-            rhs = disjointness_proof.statement.terms[1].subterms[0].subterms[1]
-            exists_propagation = self.propagate_exists_out(rhs, 2)
-
-            return self.env.get_theorem("disjointness-simplify").apply(
-                disjointness_proof,
-                exists_propagation,
-            )
+            return self.prove_inj_disjointness(left, right)
 
         if left_symbol == right_symbol:
             # same symbol, try to find a argument pair that is disjoint
@@ -472,13 +499,10 @@ class DisjointnessProofGenerator(ProofGenerator):
             if right.sort in self.env.sort_components:
                 return self.prove_sort_disjointness(left, right)
 
-            # TODO: handle hooked sorts and parametric sorts
+            # right is a variable of a hooked sort
+            if (left.symbol.definition.symbol, right.sort) in self.env.no_confusion_hooked_sort:
+                return self.prove_hooked_sort_disjointness(left, right)
 
-            disjointness_stmt = self.get_disjointness_statement(
-                left, right,
-                f"var-disjointness-assumption-{self.var_disjointness_assumption}",
-            )
-            self.var_disjointness_assumption += 1
+            # TODO: handle parametric sorts
 
-            theorem = self.env.load_metamath_statement(disjointness_stmt)
-            return theorem.as_proof()
+            assert False, f"unable to prove that {left} is not in sort {right.sort}"
