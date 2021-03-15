@@ -12,6 +12,7 @@ from ml.metamath import ast as mm
 from ml.metamath.visitors import SubstitutionVisitor
 from ml.metamath.composer import Composer, Theorem, Proof
 from ml.metamath.auto.substitution import SubstitutionProver
+from ml.metamath.auto.context import ApplicationContextProver
 
 from .encoder import KorePatternEncoder
 from .templates import KoreTemplates
@@ -569,6 +570,11 @@ class ProofEnvironment:
                 [ mm.Application("#ApplicationContext"), mm.Metavariable(hole_var), mm.Application(symbol, pattern_vars) ],
                 label=app_ctx_rule_name,
             )
+
+            proof = ApplicationContextProver.prove_application_context_statement(
+                self.composer, conclusion, [ Theorem(self.composer, assumption, [], []) ],
+            )
+            conclusion.proof = proof.script
 
             block = mm.Block(disjoint_statements + [ assumption, conclusion ])
             self.load_metamath_statement(block)

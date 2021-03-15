@@ -194,7 +194,7 @@ class SubstitutionProver:
     A wrapper for an auto proof method
     """
     @staticmethod
-    def prove_substitution_statement(composer: Composer, statement: Statement, hypotheses: List[Theorem]=[],):
+    def prove_substitution_statement(composer: Composer, statement: Statement, hypotheses: List[Theorem]=[]):
         assert len(statement.terms) == 5 and statement.terms[0] == Application("#Substitution"), f"not a substitution goal {statement}"
         _, after, before, pattern, var = statement.terms
         return SubstitutionProver.prove_substitution(
