@@ -216,11 +216,8 @@ class NotationProver:
 
     @staticmethod
     def expand_sugar_with_proof(composer: Composer, term: Term, target_symbol: Optional[str]=None) -> Tuple[Term, Proof]:
-        # expanded = NotationProver.expand_sugar(composer, term, *args, **kwargs)
-        # return expanded, NotationProver.prove_notation(composer, term, expanded)
-
         if isinstance(term, Metavariable):
-            return term, composer.find_theorem(NotationProver.REFL).match_and_apply(NotationProver.format_target(term, term))
+            return term, composer.find_theorem(NotationProver.REFL).apply(ph0=term)
 
         assert isinstance(term, Application)
 
@@ -242,6 +239,9 @@ class NotationProver:
                 expanded, proof = NotationProver.expand_sugar_with_proof(composer, expanded, target_symbol=target_symbol)
                 proof = composer.find_theorem(NotationProver.TRANS).apply(reduction_proof, proof)
                 return expanded, composer.cache_proof("notation-cache", proof)
+
+        if len(term.subterms) == 0:
+            return term, composer.find_theorem(NotationProver.REFL).apply(ph0=term)
 
         expanded_subterms = []
         subproofs = []

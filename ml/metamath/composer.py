@@ -620,7 +620,7 @@ class TypecodeProver:
                 
                 # try to recursively prove that each of the subterms in the solution
                 # also have the suitable typecode
-                metavar_proofs = []
+                proof_script = essential_proof.script if essential_proof is not None else []
                 failed = False
 
                 for expected_typecode, metavar, _ in theorem.floatings:
@@ -631,16 +631,12 @@ class TypecodeProver:
                         failed = True
                         break
 
-                    metavar_proofs.append(metavar_proof)
+                    proof_script.extend(metavar_proof.script)
 
                 # found a proof
                 if not failed:
                     # directly construct the proof here for performance
-                    proof_script = essential_proof.script if essential_proof is not None else []
-                    for proof in metavar_proofs:
-                        proof_script.extend(proof.script)
                     proof_script.append(theorem.statement.label)
-
                     proof = Proof(expected_statement, proof_script)
                     if not isinstance(term, Metavariable):
                         proof = composer.cache_proof("typecode-cache", proof)

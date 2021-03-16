@@ -1,7 +1,7 @@
 from typing import Mapping, Optional, Tuple, List
 
 from ..ast import Metavariable, Term, Application, Statement, StructuredStatement
-from ..composer import Composer, Theorem, Proof, MethodAutoProof
+from ..composer import Composer, Theorem, Proof, MethodAutoProof, ProofCache
 
 from .unification import Unification
 
@@ -83,8 +83,14 @@ class SortingProver:
     def is_kore_is_sort(term: Term) -> bool:
         return isinstance(term, Application) and term.symbol == "\\kore-is-sort" and len(term.subterms) == 1
 
+    # TODO: this cache is quite unsafe
+    sorting_lemma_cache = {}
+
     @staticmethod
     def find_sorting_lemma_for_symbol(composer: Composer, symbol: str) -> Optional[Theorem]:
+        if not ProofCache.DISABLED and symbol in SortingProver.sorting_lemma_cache:
+            return SortingProver.sorting_lemma_cache[symbol]
+
         for theorem in composer.get_theorems_of_typecode("|-"):
             if len(theorem.essentials) != 0: continue
 
@@ -123,6 +129,7 @@ class SortingProver:
                     failed = True
             if failed: continue
 
+            SortingProver.sorting_lemma_cache[symbol] = theorem
             return theorem
 
     r"""

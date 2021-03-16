@@ -61,13 +61,13 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         substituted = self.get_substituted_ast(pattern_or_sort)
         
         # look up proof cache
-        cache_key = [
+        cache_key = (
             mm.Application("#Substitution"),
             self.env.encode_pattern(substituted),
             self.env.encode_pattern(pattern_or_sort),
             self.substitute_encoded,
             self.var_encoded,
-        ]
+        )
         cached_proof = self.env.composer.lookup_proof_cache("substitution-cache", cache_key)
         if cached_proof is not None:
             return cached_proof, substituted
@@ -130,7 +130,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         symbol = KorePatternEncoder.encode_sort(sort_instance)
         return self.env.substitution_axioms[symbol].match_and_apply(
             self.target,
-            *[ self.visit(arg) for arg in sort_instance.arguments ],
+            *( self.visit(arg) for arg in sort_instance.arguments ),
         )
 
     def postvisit_sort_variable(self, sort_variable: kore.SortVariable) -> Proof:
@@ -167,7 +167,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         symbol = KorePatternEncoder.encode_symbol(application.symbol)
         return self.env.substitution_axioms[symbol].match_and_apply(
             self.target,
-            *[ self.visit(arg) for arg in application.symbol.sort_arguments + application.arguments ],
+            *( self.visit(arg) for arg in application.symbol.sort_arguments + application.arguments ),
         )
 
     ML_PATTERN_SUBST_MAP = {
@@ -190,7 +190,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         if ml_pattern.construct in SingleSubstitutionProofGenerator.ML_PATTERN_SUBST_MAP:
             theorem_label = SingleSubstitutionProofGenerator.ML_PATTERN_SUBST_MAP[ml_pattern.construct]
             return self.env.get_theorem(theorem_label).apply(
-                *[ self.visit(arg) for arg in ml_pattern.sorts + ml_pattern.arguments ],
+                *( self.visit(arg) for arg in ml_pattern.sorts + ml_pattern.arguments ),
             )
         elif ml_pattern.construct == kore.MLPattern.FORALL or \
              ml_pattern.construct == kore.MLPattern.EXISTS:

@@ -81,7 +81,9 @@ class Metavariable(Term):
         return { self.name }
 
     def visit(self, visitor: MetamathVisitor):
-        return visitor.proxy_visit_metavariable(self)
+        visitor.previsit_metavariable(self)
+        children = visitor.visit_children_of_metavariable(self)
+        return visitor.postvisit_metavariable(self, *children)
 
     def __eq__(self, other):
         if isinstance(other, Metavariable):
@@ -97,6 +99,7 @@ class Application(Term):
         super().__init__()
         self.symbol = symbol
         self.subterms = subterms
+        self.hash_cache = None
 
     def encode(self, stream: TextIO):
         if len(self.subterms):
@@ -117,17 +120,44 @@ class Application(Term):
         return metavars
 
     def visit(self, visitor: MetamathVisitor):
-        return visitor.proxy_visit_application(self)
+        visitor.previsit_application(self)
+        children = visitor.visit_children_of_application(self)
+        return visitor.postvisit_application(self, *children)
 
     def __eq__(self, other):
-        if isinstance(other, Application):
-            return self.symbol == other.symbol and self.subterms == other.subterms
-        return False
+        # this function is specifically rewritten
+        # to not use recursion since it's used
+        # too many times and has become a performance
+        # bottleneck
+        if not isinstance(other, Application): return False
+
+        comparison_left = [ self ]
+        comparison_right = [ other ]
+
+        while comparison_left:
+            left = comparison_left.pop()
+            right = comparison_right.pop()
+
+            if type(left) == type(right) == Application:
+                if len(left.subterms) == len(right.subterms):
+                    comparison_left.extend(left.subterms)
+                    comparison_right.extend(right.subterms)
+                else:
+                    return False
+            elif left != right:
+                # fall back to default equality
+                return False
+        
+        return True
 
     def __hash__(self) -> int:
-        children_hash = 0
-        for subterm in self.subterms: children_hash ^= hash(subterm)
-        return hash(self.symbol) ^ children_hash
+        if self.hash_cache is not None: return self.hash_cache
+
+        final_hash = hash(self.symbol)
+        for subterm in self.subterms: final_hash ^= hash(subterm)
+
+        self.hash_cache = final_hash
+        return final_hash
 
 
 class Statement(BaseAST):
@@ -164,7 +194,9 @@ class Comment(Statement):
         stream.write("$)")
 
     def visit(self, visitor: MetamathVisitor):
-        return visitor.proxy_visit_comment(self)
+        visitor.previsit_comment(self)
+        children = visitor.visit_children_of_comment(self)
+        return visitor.postvisit_comment(self, *children)
 
 
 class IncludeStatement(Statement):
@@ -178,7 +210,9 @@ class IncludeStatement(Statement):
         stream.write(" $]")
 
     def visit(self, visitor: MetamathVisitor):
-        return visitor.proxy_visit_include_statement(self)
+        visitor.previsit_include_statement(self)
+        children = visitor.visit_children_of_include_statement(self)
+        return visitor.postvisit_include_statement(self, *children)
 
 
 """
@@ -207,7 +241,9 @@ class RawStatement(Statement):
         stream.write(" $.")
 
     def visit(self, visitor: MetamathVisitor):
-        return visitor.proxy_visit_raw_statement(self)
+        visitor.previsit_raw_statement(self)
+        children = visitor.visit_children_of_raw_statement(self)
+        return visitor.postvisit_raw_statement(self, *children)
 
 
 """
@@ -251,7 +287,9 @@ class StructuredStatement(Statement):
         return metavars
 
     def visit(self, visitor: MetamathVisitor):
-        return visitor.proxy_visit_structured_statement(self)
+        visitor.previsit_structured_statement(self)
+        children = visitor.visit_children_of_structured_statement(self)
+        return visitor.postvisit_structured_statement(self, *children)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, StructuredStatement):
@@ -278,7 +316,9 @@ class Block(Statement):
         stream.write("$}")
 
     def visit(self, visitor: MetamathVisitor):
-        return visitor.proxy_visit_block(self)
+        visitor.previsit_block(self)
+        children = visitor.visit_children_of_block(self)
+        return visitor.postvisit_block(self, *children)
 
 
 """
@@ -296,4 +336,6 @@ class Database(BaseAST):
             stream.write("\n")
 
     def visit(self, visitor: MetamathVisitor):
-        return visitor.proxy_visit_database(self)
+        visitor.previsit_database(self)
+        children = visitor.visit_children_of_database(self)
+        return visitor.postvisit_database(self, *children)
