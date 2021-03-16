@@ -61,12 +61,18 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         substituted = self.get_substituted_ast(pattern_or_sort)
         
         # look up proof cache
-        cache_key = [ mm.Application("#Substitution"), self.env.encode_pattern(substituted), self.env.encode_pattern(pattern_or_sort), self.substitute_encoded, self.var_encoded ]
-        cached_proof = self.env.composer.lookup_proof_cache(cache_key)
+        cache_key = [
+            mm.Application("#Substitution"),
+            self.env.encode_pattern(substituted),
+            self.env.encode_pattern(pattern_or_sort),
+            self.substitute_encoded,
+            self.var_encoded,
+        ]
+        cached_proof = self.env.composer.lookup_proof_cache("substitution-cache", cache_key)
         if cached_proof is not None:
             return cached_proof, substituted
 
-        proof = self.env.cache_proof("substitution-proof-cache", self.visit(pattern_or_sort))
+        proof = self.env.cache_proof("substitution-cache", self.visit(pattern_or_sort))
 
         return proof, substituted
 

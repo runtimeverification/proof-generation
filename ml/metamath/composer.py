@@ -4,7 +4,6 @@ from traceback import print_exc
 
 from typing import List, Tuple, Mapping, Callable
 
-from .auto.typecode import TypecodeProver
 from .auto.unification import Unification
 
 from .ast import *
@@ -65,13 +64,21 @@ class Theorem:
         else:
             return substituted == term
 
+    def get_conclusion_instance(self, substitution: Mapping[str, Term]) -> StructuredStatement:
+        instance = SubstitutionVisitor(substitution).visit(self.statement)
+        instance.label = None
+        instance.statement_type = Statement.PROVABLE
+        return instance
+
     """
     Treat the theorem itself as a proof of itself, provided
     no essential is needed
     """
     def as_proof(self):
         assert len(self.essentials) == 0
-        return self.match_and_apply(self.statement)
+        script = [ label for _, _, label in self.floatings ]
+        script.append(self.statement.label)
+        return Proof(self.statement, script)
 
     """
     Unify the theorem statement with a target,
@@ -177,14 +184,7 @@ class Theorem:
                     print_exc()
                     assert False, f"unable to automatically generate proof for {essential_instance}"
 
-
         return floating_proofs + essential_proofs, substitution
-
-    def get_conclusion_instance(self, substitution: Mapping[str, Term]) -> StructuredStatement:
-        instance = SubstitutionVisitor(substitution).visit(self.statement)
-        instance.label = None
-        instance.statement_type = Statement.PROVABLE
-        return instance
 
     """
     Applies the theorem, given the following arguments:
@@ -197,7 +197,10 @@ class Theorem:
         subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
 
         assert self.statement.label is not None, f"applying a theorem without label: {self.statement}"
-        proof_script = sum([ subproof.script for subproof in subproofs ], []) + [ self.statement.label ]
+        proof_script = []
+        for subproof in subproofs:
+            proof_script.extend(subproof.script)
+        proof_script.append(self.statement.label)
 
         instance = self.get_conclusion_instance(substitution)
         instance.proof = proof_script
@@ -252,14 +255,14 @@ class ProofCache:
     # if the proof script size exceeds this
     # number of labels, the proof will be cached
     # as a theorem in the database
-    THEOREM_CACHE_THRESHOLD = 128
+    THEOREM_CACHE_THRESHOLD = 64
 
     # certain tools (e.g. itp) would need all cache disabled
     DISABLED = False
 
     def __init__(self, composer: Composer):
         self.composer = composer
-        self.cache_map = {} # tuple of terms -> proof
+        self.cache_map = {} # label prefix -> (terms -> proof)
         self.label_map = {} # label prefix -> next index
 
         self.stat_cache_hit = 0
@@ -269,29 +272,29 @@ class ProofCache:
     """
     Get the next available label with the given prefix
     """
-    def get_next_label(self, label_prefix: str) -> str:
-        if label_prefix not in self.label_map:
-            self.label_map[label_prefix] = 0
+    def get_next_label(self, domain: str) -> str:
+        if domain not in self.label_map:
+            self.label_map[domain] = 0
 
-        idx = self.label_map[label_prefix]
-        self.label_map[label_prefix] += 1
-        return f"{label_prefix}-{idx}"
+        idx = self.label_map[domain]
+        self.label_map[domain] += 1
+        return f"{domain}-{idx}"
 
     """
     Find an existing cached proof by looking up the statement
     """
-    def lookup(self, statement: Union[StructuredStatement, List[Term]]) -> Optional[Proof]:
+    def lookup(self, domain: str, statement: Union[StructuredStatement, List[Term]]) -> Optional[Proof]:
         if isinstance(statement, StructuredStatement):
             statement = statement.terms
         terms = tuple(statement)
-        return self.cache_map.get(terms, None)
+        return self.cache_map.get(domain, {}).get(terms, None)
 
-    def cache(self, label_prefix: str, proof: Proof, no_theorem_cache: bool=False) -> Proof:
+    def cache(self, domain: str, proof: Proof, no_theorem_cache: bool=False) -> Proof:
         if ProofCache.DISABLED:
             return proof
 
         terms = tuple(proof.statement.terms)
-        cached_proof = self.cache_map.get(terms, None)
+        cached_proof = self.cache_map.get(domain, {}).get(terms, None)
 
         # print(self.stat_cache_hit, self.stat_cache_miss, self.stat_theorem_cache)
 
@@ -309,14 +312,16 @@ class ProofCache:
             theorem_statement = StructuredStatement(
                 Statement.PROVABLE,
                 proof.statement.terms,
-                label=self.get_next_label(label_prefix),
+                label=self.get_next_label(domain),
                 proof=proof.script,
             )
 
             theorem = self.composer.load(theorem_statement)
-            proof = theorem.match_and_apply(proof.statement)
+            proof = theorem.as_proof()
 
-        self.cache_map[terms] = proof
+        if domain not in self.cache_map:
+            self.cache_map[domain] = {}
+        self.cache_map[domain][terms] = proof
 
         return proof
 
@@ -469,8 +474,8 @@ class Composer(MetamathVisitor):
     def cache_proof(self, *args, **kwargs) -> Proof:
         return self.proof_cache.cache(*args, **kwargs)
 
-    def lookup_proof_cache(self, statement: Union[StructuredStatement, List[Term]]) -> Proof:
-        return self.proof_cache.lookup(statement)
+    def lookup_proof_cache(self, *args, **kwargs) -> Proof:
+        return self.proof_cache.lookup(*args, **kwargs)
 
     # """
     # This implements simple segmentation mechanism. To start a segment,
@@ -557,3 +562,88 @@ class Composer(MetamathVisitor):
             # add it to the corresponding typecode map
             if len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0:
                 self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])
+
+
+class TypecodeProver:
+    """
+    Try to prove a statement of the form
+    <typecode> <term>
+    by recursively unify the target with a theorem of this form
+    """
+    @staticmethod
+    def prove_typecode(composer, typecode: str, term: Term):
+        expected_statement = StructuredStatement(Statement.PROVABLE, [ Application(typecode), term ])
+
+        # don't cache metavariable statements
+        # otherwise it may be caught in infinite recursion in the proof cache
+        if not isinstance(term, Metavariable):
+            cached_proof = composer.lookup_proof_cache("typecode-cache", expected_statement.terms)
+            if cached_proof is not None:
+                return cached_proof
+
+        # try to find a matching floating statement first if the term is a metavariable
+        if isinstance(term, Metavariable):
+            for theorem in composer.get_theorems_of_typecode(typecode):
+                if theorem.statement.statement_type == Statement.FLOATING:
+                    _, metavar = theorem.statement.terms
+
+                    if metavar.name == term.name:
+                        # found a direct proof
+                        proof = Proof(expected_statement, [ theorem.statement.label ])
+                        if not isinstance(term, Metavariable):
+                            proof = composer.cache_proof("typecode-cache", proof)
+                        return proof
+            # otherwise treat the metavariable as a term
+
+        # TODO: check if this may loop infinitely
+
+        # try to find a non-floating statement without hypotheses and unify
+        for theorem in composer.get_theorems_of_typecode(typecode):
+            if len(theorem.essentials) <= 1 and \
+               theorem.statement.statement_type != Statement.FLOATING and \
+               len(theorem.statement.terms) == 2:
+                # check that expected_statement is an instance of theorem.statement
+                solution = Unification.match_terms_as_instance(theorem.statement.terms[1], term)
+                if solution is None: continue
+
+                essential_proof = None
+
+                # try to find an exact essential that matches the hypotheses
+                if len(theorem.essentials):
+                    hypothesis = SubstitutionVisitor(solution).visit(theorem.essentials[0])
+                    for essential in composer.get_all_essentials():
+                        if hypothesis.terms == essential.statement.terms:
+                            essential_proof = essential.apply()
+                            break
+                    else:
+                        continue
+                
+                # try to recursively prove that each of the subterms in the solution
+                # also have the suitable typecode
+                metavar_proofs = []
+                failed = False
+
+                for expected_typecode, metavar, _ in theorem.floatings:
+                    assert metavar in solution, f"unable to determine metavarible {metavar} in theorem {theorem}"
+
+                    metavar_proof = TypecodeProver.prove_typecode(composer, expected_typecode, solution[metavar])
+                    if metavar_proof is None:
+                        failed = True
+                        break
+
+                    metavar_proofs.append(metavar_proof)
+
+                # found a proof
+                if not failed:
+                    # directly construct the proof here for performance
+                    proof_script = essential_proof.script if essential_proof is not None else []
+                    for proof in metavar_proofs:
+                        proof_script.extend(proof.script)
+                    proof_script.append(theorem.statement.label)
+
+                    proof = Proof(expected_statement, proof_script)
+                    if not isinstance(term, Metavariable):
+                        proof = composer.cache_proof("typecode-cache", proof)
+                    return proof
+
+        return None

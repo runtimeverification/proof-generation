@@ -7,8 +7,7 @@ from ml.kore.visitors import FreePatternVariableVisitor
 from ml.kore.utils import KoreUtils, PatternPath
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Proof
-from ml.metamath.auto.typecode import TypecodeProver
+from ml.metamath.composer import Proof, TypecodeProver
 
 from .env import ProofGenerator, ProofEnvironment, ProvableClaim
 from .equality import EqualityProofGenerator

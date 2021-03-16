@@ -3,7 +3,6 @@ from typing import List, Optional
 from ..ast import Metavariable, Term, Application, Statement, StructuredStatement
 from ..composer import Composer, Proof, Theorem, MethodAutoProof
 
-from .typecode import TypecodeProver
 from .notation import NotationProver
 
 

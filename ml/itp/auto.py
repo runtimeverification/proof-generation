@@ -155,10 +155,12 @@ class DesugarTactic(Tactic):
         if self.tactic_name == "desugar-kore":
             return self.desugar_kore(state, term)
         else:
+            if self.tactic_name == "desugar-all":
+                assert target_symbol is None, "desugar-all takes no argument"
+
             return NotationProver.expand_sugar(
                 state.composer, term, 
                 target_symbol=target_symbol,
-                desugar_all=self.tactic_name == "desugar-all",
             )
 
     def apply(self, state: ProofState, target_symbol: Optional[str]=None):

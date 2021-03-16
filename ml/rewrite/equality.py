@@ -33,7 +33,6 @@ class EqualityProofGenerator(ProofGenerator):
     Returns phi with psi replaced by psi',
     and a proof for it using (primarily) `kore-equality`
     """
-
     def replace_equal_subpattern(
         self,
         provable: ProvableClaim,
@@ -44,7 +43,7 @@ class EqualityProofGenerator(ProofGenerator):
         final_claim = KoreUtils.copy_and_replace_path_by_pattern(provable.claim, path, replacement)
 
         # check for proof cache
-        cached_proof = self.env.composer.lookup_proof_cache(self.env.encode_axiom(mm.Statement.PROVABLE, final_claim))
+        cached_proof = self.env.composer.lookup_proof_cache("equality-cache", self.env.encode_axiom(mm.Statement.PROVABLE, final_claim))
         if cached_proof is not None:
             return ProvableClaim(final_claim, cached_proof)
 

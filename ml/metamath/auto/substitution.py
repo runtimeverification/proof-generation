@@ -1,10 +1,9 @@
 from typing import List, Optional
 
 from ..ast import Metavariable, Term, Application, StructuredStatement, Statement
-from ..composer import Composer, Proof, Theorem, MethodAutoProof
+from ..composer import Composer, Proof, Theorem, MethodAutoProof, TypecodeProver
 
 from .notation import NotationProver
-from .typecode import TypecodeProver
 from .unification import Unification
 
 
@@ -167,9 +166,9 @@ class SubstitutionProver:
         # desugar everything first
         # TODO: there might be a more efficient way
 
-        expanded_after_pattern, expansion_subproof1 = NotationProver.expand_sugar_with_proof(composer, after_pattern, desugar_all=True)
-        expanded_before_pattern, expansion_subproof2 = NotationProver.expand_sugar_with_proof(composer, before_pattern, desugar_all=True)
-        expanded_subst_pattern, expansion_subproof3 = NotationProver.expand_sugar_with_proof(composer, subst_pattern, desugar_all=True)
+        expanded_after_pattern, expansion_subproof1 = NotationProver.expand_sugar_with_proof(composer, after_pattern)
+        expanded_before_pattern, expansion_subproof2 = NotationProver.expand_sugar_with_proof(composer, before_pattern)
+        expanded_subst_pattern, expansion_subproof3 = NotationProver.expand_sugar_with_proof(composer, subst_pattern)
 
         subst_proof = SubstitutionProver.prove_desugared_substitution(
             composer,

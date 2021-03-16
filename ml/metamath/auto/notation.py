@@ -210,39 +210,63 @@ class NotationProver:
     expand all of them in the given term
     """
     @staticmethod
-    def expand_sugar(composer: Composer, term: Term, *_, target_symbol: Optional[str]=None, desugar_all=False) -> Term:
+    def expand_sugar(composer: Composer, term: Term, target_symbol: Optional[str]=None) -> Term:
+        expanded, _ = NotationProver.expand_sugar_with_proof(composer, term, target_symbol)
+        return expanded
+
+    @staticmethod
+    def expand_sugar_with_proof(composer: Composer, term: Term, target_symbol: Optional[str]=None) -> Tuple[Term, Proof]:
+        # expanded = NotationProver.expand_sugar(composer, term, *args, **kwargs)
+        # return expanded, NotationProver.prove_notation(composer, term, expanded)
+
         if isinstance(term, Metavariable):
-            return term
+            return term, composer.find_theorem(NotationProver.REFL).match_and_apply(NotationProver.format_target(term, term))
 
         assert isinstance(term, Application)
 
-        # expand all subterms
-        expanded_subterm = [
-            NotationProver.expand_sugar(composer, subterm, target_symbol=target_symbol, desugar_all=desugar_all)
-            for subterm in term.subterms
-        ]
-        new_term = Application(term.symbol, expanded_subterm)
+        proof = None
 
-        if target_symbol is not None and new_term.symbol != target_symbol:
-            return new_term
+        # find a axiom to desugar the current head
+        if target_symbol is None or term.symbol == target_symbol:
+            sugar_axiom = NotationProver.find_sugar_axiom(composer, term.symbol)
 
-        sugar_axiom = NotationProver.find_sugar_axiom(composer, new_term.symbol)
-        if sugar_axiom:
-            _, left, right = sugar_axiom.statement.terms
-            substitution = Unification.match_terms_as_instance(left, new_term)
-            assert substitution is not None, f"ill-formed sugar axiom"
-            new_term = SubstitutionVisitor(substitution).visit(right)
-            
-            if desugar_all:
-                new_term = NotationProver.expand_sugar(
-                    composer, new_term,
-                    target_symbol=target_symbol,
-                    desugar_all=desugar_all,
-                )
+            if sugar_axiom is not None:
+                substitution = Unification.match_terms_as_instance(sugar_axiom.statement.terms[1], term)
+                assert substitution is not None, f"ill-formed sugar axiom {sugar_axiom.statement}"
 
-        return new_term
+                reduction_proof = sugar_axiom.apply(**substitution)
+                expanded = reduction_proof.statement.terms[2]
 
-    @staticmethod
-    def expand_sugar_with_proof(composer: Composer, term: Term, *args, **kwargs) -> Tuple[Term, Proof]:
-        expanded = NotationProver.expand_sugar(composer, term, *args, **kwargs)
-        return expanded, NotationProver.prove_notation(composer, term, expanded)
+                # switching the order here in the hope
+                # that we don't produce a proof that's too long
+                expanded, proof = NotationProver.expand_sugar_with_proof(composer, expanded, target_symbol=target_symbol)
+                proof = composer.find_theorem(NotationProver.TRANS).apply(reduction_proof, proof)
+                return expanded, composer.cache_proof("notation-cache", proof)
+
+        expanded_subterms = []
+        subproofs = []
+
+        # recurse to expand each subterm
+        for subterm in term.subterms:
+            expanded_subterm, subproof = NotationProver.expand_sugar_with_proof(composer, subterm, target_symbol=target_symbol)
+            expanded_subterms.append(expanded_subterm)
+            subproofs.append(subproof)
+
+        final_term = Application(term.symbol, expanded_subterms)
+
+        congruence = NotationProver.find_congruence_lemma(composer, term.symbol)
+        if congruence is not None:
+            # if we are lucky enough to find a congruence lemma for the current symbol
+            # apply it to get the final result
+            congruence, order = congruence
+            reordered_subproofs = []
+            for n in order:
+                assert n < len(subproofs), f"ill-formed congruence axiom {congruence.statement.label}"
+                reordered_subproofs.append(subproofs[n])
+
+            target = NotationProver.format_target(term, final_term)
+            proof = congruence.match_and_apply(target, *reordered_subproofs)
+            return final_term, composer.cache_proof("notation-cache", proof)
+        else:
+            # otherwise resort to the dumb way
+            return final_term, NotationProver.prove_notation(composer, term, final_term)

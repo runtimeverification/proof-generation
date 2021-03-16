@@ -79,7 +79,7 @@ class QuantifierProofGenerator(ProofGenerator):
 
         # test if the final claim has already been proved
         final_mm_statement = self.env.encode_axiom(mm.Statement.PROVABLE, final_claim)
-        cached_proof = self.env.composer.lookup_proof_cache(final_mm_statement)
+        cached_proof = self.env.composer.lookup_proof_cache("quant-forall-elim-cache", final_mm_statement)
         if cached_proof is not None:
             return ProvableClaim(final_claim, cached_proof)
 

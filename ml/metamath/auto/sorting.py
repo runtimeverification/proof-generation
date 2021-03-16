@@ -264,7 +264,7 @@ class SortingProver:
     @staticmethod
     def prove_multiple_sorting_judgements(composer: Composer, hypothesis: Term, conclusion: Term) -> Proof:
         # see if we have already cached the result
-        cached_proof = composer.lookup_proof_cache(SortingProver.construct_imp_goal(hypothesis, conclusion))
+        cached_proof = composer.lookup_proof_cache("sorting-cache", SortingProver.construct_imp_goal(hypothesis, conclusion))
         if cached_proof is not None:
             return cached_proof
 
@@ -275,7 +275,6 @@ class SortingProver:
                 SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion.subterms[1]),
             ))
 
-        # now assume len(right_conjuncts) == 1:
         return composer.cache_proof("sorting-cache", SortingProver.prove_single_sorting_judgement(composer, hypothesis, conclusion))
 
     r"""
