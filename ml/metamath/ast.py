@@ -139,12 +139,12 @@ class Application(Term):
             right = comparison_right.pop()
 
             if type(left) == type(right) == Application:
-                if len(left.subterms) == len(right.subterms):
+                if left.symbol == right.symbol and len(left.subterms) == len(right.subterms):
                     comparison_left.extend(left.subterms)
                     comparison_right.extend(right.subterms)
                 else:
                     return False
-            elif left != right:
+            elif not (left == right):
                 # fall back to default equality
                 return False
         

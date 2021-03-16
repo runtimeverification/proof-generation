@@ -7,7 +7,7 @@ from typing import List, Tuple, Mapping, Callable
 from .auto.unification import Unification
 
 from .ast import *
-from .visitors import SubstitutionVisitor
+from .visitors import SubstitutionVisitor, CopyVisitor
 
 
 """
@@ -78,7 +78,10 @@ class Theorem:
         assert len(self.essentials) == 0
         script = [ label for _, _, label in self.floatings ]
         script.append(self.statement.label)
-        return Proof(self.statement, script)
+        copied_statement = CopyVisitor().visit(self.statement)
+        copied_statement.label = None
+        copied_statement.statement_type = Statement.PROVABLE
+        return Proof(copied_statement, script)
 
     """
     Unify the theorem statement with a target,
@@ -620,7 +623,7 @@ class TypecodeProver:
                 
                 # try to recursively prove that each of the subterms in the solution
                 # also have the suitable typecode
-                proof_script = essential_proof.script if essential_proof is not None else []
+                proof_script = []
                 failed = False
 
                 for expected_typecode, metavar, _ in theorem.floatings:
@@ -632,6 +635,9 @@ class TypecodeProver:
                         break
 
                     proof_script.extend(metavar_proof.script)
+
+                if essential_proof is not None:
+                    proof_script.extend(essential_proof.script)
 
                 # found a proof
                 if not failed:
