@@ -25,7 +25,7 @@ syntax Bool ::= isFreeIn(Int, Term) [function, functional]
 syntax Int ::= maxVarIn(Term) [function, functional]
              | max(Int, Int) [function, functional]
 
-rule (lambda X T) S => substitute(T, X, S)
+rule (lambda X T) S:Value => substitute(T, X, S)
 
 rule substitute(X, X, T) => T
 rule substitute(X, Y, _) => X requires X =/=Int Y
