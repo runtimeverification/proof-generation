@@ -38,6 +38,8 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'UndsEqlsEqls'Int'Unds'": IntegerEqualityEvaluator(env),
             "Lbl'Unds'andBool'Unds'": BooleanAndEvaluator(env),
             "LblnotBool'Unds'": BooleanNotEvaluator(env),
+            "Lbl'UndsEqlsEqls'K'Unds'": KEqualityEvaluator(env),
+            "Lbl'UndsEqlsSlshEqls'K'Unds'": KNotEqualityEvaluator(env),
         }
         self.disjoint_gen = DisjointnessProofGenerator(env)
 
@@ -393,8 +395,8 @@ class RewriteProofGenerator(ProofGenerator):
 
             return proof
         except:
-            print("failed to prove owise condition, leavinig it as an assumption")
             print_exc()
+            print("failed to prove owise condition, leavinig it as an assumption")
             theorem = self.env.load_axiom(claim, f"owise-assumption-{self.owise_assumption_counter}", provable=True)
             self.owise_assumption_counter += 1
             return theorem.as_proof()
@@ -770,3 +772,16 @@ class BooleanNotEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, = application.arguments
         return self.build_arithmetic_equation(application, not self.parse_bool(a))
+
+
+# TODO: we may need to define this in the prelude
+class KEqualityEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, a == b)
+
+
+class KNotEqualityEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, a != b)

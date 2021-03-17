@@ -31,9 +31,6 @@ does NOT unify with a pattern.
 class DisjointnessProofGenerator(ProofGenerator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.arg_disjointness_counter = 0
-        self.diff_constructor_disjointness_counter = 0
-        self.var_disjointness_assumption = 0
 
     def get_free_vars_in_pattern(self, pattern: kore.Pattern) -> List[kore.Variable]:
         free_vars = FreePatternVariableVisitor().visit(pattern)
