@@ -1,6 +1,8 @@
+from typing import Tuple, List
 from lark import Lark, Transformer
 from lark.visitors import v_args
 from .ast import *
+
 
 
 """
@@ -295,3 +297,9 @@ def parse_axiom(src: str) -> Axiom:
 def parse_module(src: str) -> Axiom:
     tree = module_parser.parse(src)
     return ASTTransformer().transform(tree)
+
+def parse_substitution(str: str) -> List[Tuple[Pattern, Pattern]]:
+    bindings_str = str.split(';;;')
+    tuples_str = map((lambda b: (b.split('==>')[0], b.split('==>')[1])), bindings_str)
+    tuples = map((lambda tp: (parse_pattern(tp[0]), parse_pattern(tp[1]))), tuples_str)
+    return tuples

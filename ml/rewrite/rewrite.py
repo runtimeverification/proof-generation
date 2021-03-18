@@ -224,7 +224,7 @@ class RewriteProofGenerator(ProofGenerator):
     """
     Prove multiple rewrite steps
     """
-    def prove_multiple_rewrite_steps(self, patterns: List[kore.Pattern]) -> ProvableClaim:
+    def prove_multiple_rewrite_steps(self, patterns: List[kore.Pattern], rewriting_info_list: List[List[Tuple[kore.Pattern, kore.Pattern]]]) -> ProvableClaim:
         assert len(patterns) > 1, "expecting more than one patterns"
 
         final_claim = None

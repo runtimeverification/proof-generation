@@ -118,11 +118,13 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
         exit_code = proc.wait()
         assert exit_code == 0, f"kompiled failed with exit code {exit_code}"
 
-    ### step 2. generate snapshots
+    ### step 2. generate snapshots and rewriting information
     print(f"- generating snapshots")
     kore_definition = os.path.join(kompiled_dir, "definition.kore")
 
     snapshot_dir = os.path.join(cache_dir, f"snapshots-{pgm_name}")
+    rewriting_info_dir = os.path.join(cache_dir, f"rewriting-info-{pgm_name}")
+    
     if not os.path.isdir(snapshot_dir):
         new_snapshots = True
         os.mkdir(snapshot_dir)
@@ -181,6 +183,10 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
                 break
 
             current_depth += 1
+        
+        # generate rewriting information from step 1 to the end
+        # (TODO:: get rewriting information from K debugger)
+        # (For now, it is added separately.)
 
     ### step 4. generate proof object
     if output is not None:
@@ -192,6 +198,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
             module,
             "--prelude", "theory/kore-lemmas.mm",
             "--snapshots", snapshot_dir,
+            "--rewriting-info", rewriting_info_dir,
             "--output", output,
         ] + ([ "--benchmark" ] if benchmark else []))
         exit_code = proc.wait()

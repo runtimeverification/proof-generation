@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import List, Union, Tuple
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
@@ -210,3 +210,4 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
                 
         else:
             raise Exception("unsupported construct {}".format(ml_pattern))
+
