@@ -66,7 +66,9 @@ def load_rewriting_info(module: Module, rewriting_info_dir: str) -> List[List[Tu
     max_step = 0
 
     for file_name in os.listdir(rewriting_info_dir):
-        match = re.match(r"[^\d]*(\d+)\.ekore", file_name)
+        print("----")
+        print(file_name)
+        match = re.match(r"\D*(\d+)\.ekore", file_name)
         if match is not None:
             step = int(match.group(1))
             assert step not in rewriting_info_list, "duplicated rewriting information for step {}".format(step)
@@ -78,14 +80,12 @@ def load_rewriting_info(module: Module, rewriting_info_dir: str) -> List[List[Tu
                 # parse each rewriting information
                 # note that we read all lines (also removing new lines)
                 subst = parse_substitution(rewriting_info.read().replace('\n', ' '))
-
                 # resolve all references in the specified module
                 for (p, q) in subst:
                     p.resolve(module)
                     q.resolve(module)
                 rewriting_info_list[step] = subst
-    rewriting_info_list = [ rewriting_info_list[i] for i in range(max_step) ]
-
+    rewriting_info_list = [ rewriting_info_list[i] for i in range(max_step + 1) ]
     return rewriting_info_list
 
 
@@ -191,10 +191,11 @@ def main():
     print("loading snapshots and rewriting information")
 
     # emit claims about each rewriting step if shapshots are given
-    if args.snapshots is not None:
-        snapshots = load_snapshots(module, args.snapshots)
     if args.rewriting_info is not None:
         rewriting_info = load_rewriting_info(module, args.rewriting_info)
+    
+    if args.snapshots is not None:
+        snapshots = load_snapshots(module, args.snapshots)
 
         if len(snapshots) >= 2:
             rewrite_begin = time.time()

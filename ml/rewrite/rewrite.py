@@ -229,6 +229,8 @@ class RewriteProofGenerator(ProofGenerator):
 
         final_claim = None
 
+        print("Break A")
+
         for step, (from_pattern, to_pattern) in enumerate(zip(patterns[:-1], patterns[1:])):
             print("==================")
             print("proving rewriting step {}".format(step))
