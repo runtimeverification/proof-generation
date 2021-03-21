@@ -84,14 +84,14 @@ class RewriteProofGenerator(ProofGenerator):
     Find and instantiate a rewrite axiom for the given pattern,
     and then resolve all the functions in the RHS
     """
-    def rewrite_from_pattern(self, pattern: kore.Pattern) -> ProvableClaim:
+    def rewrite_from_pattern(self, pattern: kore.Pattern, rewriting_info: List[Tuple[kore.Pattern, kore.Pattern]]) -> ProvableClaim:
         unification_gen = UnificationProofGenerator(self.env)
 
         for _, rewrite_axiom in self.env.rewrite_axioms.items():
             print(f"> trying axiom {KoreTemplates.get_axiom_unique_id(rewrite_axiom.claim)}")
 
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
-            unification_result = unification_gen.unify_patterns(lhs, pattern)
+            unification_result = unification_gen.unify_patterns(lhs, pattern, rewriting_info)
             if unification_result is None: continue
 
             substitution = unification_result.get_lhs_substitution_as_instance()
@@ -166,6 +166,7 @@ class RewriteProofGenerator(ProofGenerator):
         self,
         from_pattern: kore.Pattern,
         to_pattern: kore.Pattern,
+        rewriting_info: List[Tuple[kore.Pattern, kore.Pattern]],
     ) -> ProvableClaim:
         # strip the outermost inj
         # TODO: re-add these in the end
@@ -203,8 +204,8 @@ class RewriteProofGenerator(ProofGenerator):
                 return simplification_claim
 
             from_pattern = rhs
-
-        concrete_rewrite_claim = self.rewrite_from_pattern(from_pattern)
+        
+        concrete_rewrite_claim = self.rewrite_from_pattern(from_pattern, rewriting_info)
 
         # check that the proven statement is actually what we want
         # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )
@@ -229,13 +230,14 @@ class RewriteProofGenerator(ProofGenerator):
 
         final_claim = None
 
-        print("Break A")
-
         for step, (from_pattern, to_pattern) in enumerate(zip(patterns[:-1], patterns[1:])):
             print("==================")
             print("proving rewriting step {}".format(step))
 
-            step_claim = self.prove_rewrite_step(from_pattern, to_pattern)
+            rewriting_info = rewriting_info_list[step]
+            print("subst is", rewriting_info)
+
+            step_claim = self.prove_rewrite_step(from_pattern, to_pattern, rewriting_info)
 
             self.env.load_comment(f"\nrewriting step:\n{from_pattern}\n=>\n{to_pattern}\n")
             step_claim = self.env.load_provable_claim_as_theorem(f"rewrite-step-{self.rewrite_claim_counter}", step_claim)

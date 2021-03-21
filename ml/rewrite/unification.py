@@ -144,7 +144,7 @@ class UnificationProofGenerator(ProofGenerator):
     """
     Losely following https://github.com/kframework/kore/blob/master/docs/2018-11-12-Unification.md
     """
-    def unify_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+    def unify_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern, rewriting_info = []) -> Optional[UnificationResult]:
         algorithms = [
             self.unify_vars,
             self.unify_applications,
@@ -152,21 +152,30 @@ class UnificationProofGenerator(ProofGenerator):
             self.unify_string_literals,
             self.unify_left_duplicate_conjunction,
             self.unify_right_splittable_inj,
-            self.unify_concrete_map_patterns,
+            # self.unify_concrete_map_patterns,
         ]
+        for algo in algorithms:
+            result = algo(pattern1, pattern2)
+            print("-----")
+            print("trying" + str(algo) + "result is" + str(result))
+            if result is not None:
+                return result
+        
+        # pattern matching modulo maps
+
+        # print("---- try pattern matching ----")
 
         print("=====")
         print("LHS:")
         print(pattern1)
         print("TERM:")
         print(pattern2)
+        print("SUBST:")
+        print(rewriting_info)
 
-        for algo in algorithms:
-            result = algo(pattern1, pattern2)
-            print("trying" + str(algo) + "result is" + str(result))
-            print("-----")
-            if result is not None:
-                return result
+        result = self.unify_concrete_map_patterns(pattern1, pattern2, rewriting_info)
+        if result is not None:
+            return result
 
         return None
 
@@ -309,9 +318,9 @@ class UnificationProofGenerator(ProofGenerator):
     r"""
     Unify two concrete map patterns. 
     """
-    def unify_concrete_map_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+    def unify_concrete_map_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern, rewriting_info: List[Tuple[kore.Pattern, kore.Pattern]]) -> Optional[UnificationResult]:
         if isinstance(pattern1, kore.Application) and \
            isinstance(pattern2, kore.Application):
            print("DEBUG")
            print(pattern1.symbol.definition)
-           return None
+        return None

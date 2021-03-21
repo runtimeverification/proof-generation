@@ -1,0 +1,1 @@
+python3 -m scripts.run-test examples/map-test/map-test.k MAP-TEST examples/map-test/pgm-comm.map-test --output tmp
