@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Tuple, NewType, Optional, Mapping
+from typing import List, Tuple, NewType, Optional, Dict
 
 from ml.kore import ast as kore
 from ml.kore.visitors import FreePatternVariableVisitor
@@ -18,14 +18,24 @@ from .quantifier import QuantifierProofGenerator
 class UnificationResult:
     def __init__(
         self,
-        substitution: List[Tuple[kore.Pattern, kore.Pattern]]=[],
+        substitution: Dict[kore.Variable, kore.Pattern]={},
         applied_equations: List[Tuple[Equation, PatternPath]]=[]):
         self.substitution = substitution
         self.applied_equations = applied_equations
 
-    def merge(self, other: UnificationResult) -> UnificationResult:
+    def merge(self, other: UnificationResult) -> Optional[UnificationResult]:
         # check consistency of the substitution
-        return UnificationResult(self.substitution + other.substitution, self.applied_equations + other.applied_equations)
+
+        new_subst = self.substitution.copy()
+
+        for k, v in other.substitution.items():
+            if k in new_subst:
+                if v != new_subst[k]:
+                    return None
+            else:
+                new_subst[k] = v
+
+        return UnificationResult(new_subst, self.applied_equations + other.applied_equations)
 
     def prepend_path(self, prefix: int) -> UnificationResult:
         return UnificationResult(self.substitution, [ (eqn, [ prefix ] + path) for eqn, path in self.applied_equations ])
@@ -33,31 +43,9 @@ class UnificationResult:
     def append_equation(self, equation: Equation, path: PatternPath) -> UnificationResult:
         return UnificationResult(self.substitution, self.applied_equations + [ (equation, path) ])
 
-    """
-    Check consistency and check if in the original
-    unification problem, the rhs is an instance of lhs;
-    if so, return the substitution
-
-    Otherwise return None
-    """
-    def get_lhs_substitution_as_instance(self) -> Optional[Mapping[kore.Variable, kore.Pattern]]:
-        substitution_map = {}
-
-        for lhs, rhs in self.substitution:
-            if not isinstance(lhs, kore.Variable):
-                return None
-
-            if lhs in substitution_map:
-                if substitution_map[lhs] != rhs:
-                    return None
-            else:
-                substitution_map[lhs] = rhs
-        
-        return substitution_map
-
     def __str__(self):
         return "sigma = {{ {} }}, T = [ {} ]".format(
-            ", ".join([ f"{a} = {b}" for a, b in self.substitution ]),
+            ", ".join([ f"{a} = {b}" for a, b in self.substitution.items() ]),
             ", ".join([ f"({e}, {p})" for e, p in self.applied_equations ])
         )
 
@@ -174,11 +162,13 @@ class UnificationProofGenerator(ProofGenerator):
         if isinstance(pattern1, kore.Variable):
             if pattern1 in FreePatternVariableVisitor().visit(pattern2):
                 return None
+
+            return UnificationResult({ pattern1: pattern2 })
         else:
             if pattern2 in FreePatternVariableVisitor().visit(pattern1):
                 return None
-
-        return UnificationResult([ (pattern1, pattern2) ])
+            
+            return UnificationResult({ pattern2: pattern1 })
 
     """
     Try to unify two applications, expecting symbols and the number
@@ -199,7 +189,10 @@ class UnificationProofGenerator(ProofGenerator):
             subunification = self.unify_patterns(subpattern1, subpattern2)
             if subunification is None:
                 return None
+
             unification = unification.merge(subunification.prepend_path(index))
+            if unification is None:
+                return None
         
         return unification
 
@@ -230,7 +223,10 @@ class UnificationProofGenerator(ProofGenerator):
             subunification = self.unify_patterns(subpattern1, subpattern2)
             if subunification is None:
                 return None
+
             unification = unification.merge(subunification.prepend_path(index))
+            if unification is None:
+                return None
         
         return unification
 

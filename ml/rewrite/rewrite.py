@@ -4,7 +4,7 @@ from traceback import print_exc
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils, PatternPath
-from ml.kore.visitors import KoreVisitor, PatternOnlyVisitorStructure
+from ml.kore.visitors import KoreVisitor
 
 from ml.metamath import ast as mm
 from ml.metamath.composer import Proof, Theorem
@@ -100,11 +100,8 @@ class RewriteProofGenerator(ProofGenerator):
             unification_result = unification_gen.unify_patterns(lhs, pattern)
             if unification_result is None: continue
 
-            substitution = unification_result.get_lhs_substitution_as_instance()
-            if substitution is None: continue
-
             # eliminate all universal quantifiers
-            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(rewrite_axiom, substitution)
+            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(rewrite_axiom, unification_result.substitution)
             lhs, requires, rhs, ensures = self.decompose_rewrite_axiom(instantiated_axiom.claim.pattern)
 
             assert ensures.construct == kore.MLPattern.TOP, f"non-top ensures clause is not supported: {ensures}"
@@ -407,12 +404,8 @@ class RewriteProofGenerator(ProofGenerator):
         unification_result = UnificationProofGenerator(self.env).unify_patterns(lhs, pattern)
         if unification_result is None: return None
 
-        # get substitution
-        substitution = unification_result.get_lhs_substitution_as_instance()
-        if substitution is None: return None
-
         # eliminate all universal quantifiers
-        instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(axiom, substitution)
+        instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(axiom, unification_result.substitution)
 
         lhs, requires, _, ensures = self.decompose_anywhere_axiom(instantiated_axiom.claim.pattern)
 

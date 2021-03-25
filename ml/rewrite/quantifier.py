@@ -2,7 +2,6 @@ from typing import List, Tuple, Mapping
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
-from ml.kore.visitors import PatternVariableVisitor
 
 from ml.metamath import ast as mm
 from ml.metamath.composer import Proof

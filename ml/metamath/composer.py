@@ -4,6 +4,8 @@ from traceback import print_exc
 
 from typing import List, Tuple, Mapping, Callable
 
+import re
+
 from .auto.unification import Unification
 
 from .ast import *
@@ -114,15 +116,17 @@ class Theorem:
     def infer_hypotheses(self, *essential_proofs: Proof, **metavar_substitution) -> Tuple[List[Proof], Mapping[str, Term]]:
         substitution = {}
         floating_proofs = []
+        auto_proofs = []
 
         assert len(essential_proofs) == len(self.essentials), \
                "unmatched number of subproofs for " \
                "essential statements, expecting {}, {} given".format(len(self.essentials), len(essential_proofs))
 
         # TODO: check proofs for essential statements
-        for essential, essential_proof in zip(self.essentials, essential_proofs):
+        for i, (essential, essential_proof) in enumerate(zip(self.essentials, essential_proofs)):
             # auto proofs will be resolved later
             if isinstance(essential_proof, AutoProof):
+                auto_proofs.append((i, essential_proof))
                 continue
 
             assert isinstance(essential_proof, Proof), f"wrong proof {essential_proof} of {essential}"
@@ -178,14 +182,13 @@ class Theorem:
         essential_proofs = list(essential_proofs)
         subst_visitor = SubstitutionVisitor(substitution)
 
-        for i, proof in enumerate(essential_proofs):
-            if isinstance(proof, AutoProof):
-                essential_instance = subst_visitor.visit(self.essentials[i])
-                try:
-                    essential_proofs[i] = proof.prove(self.composer, essential_instance)
-                except Exception:
-                    print_exc()
-                    assert False, f"unable to automatically generate proof for {essential_instance}"
+        for i, proof in auto_proofs:
+            essential_instance = subst_visitor.visit(self.essentials[i])
+            try:
+                essential_proofs[i] = proof.prove(self.composer, essential_instance)
+            except Exception:
+                print_exc()
+                assert False, f"unable to automatically generate proof for {essential_instance}"
 
         return floating_proofs + essential_proofs, substitution
 
@@ -276,6 +279,8 @@ class ProofCache:
     Get the next available label with the given prefix
     """
     def get_next_label(self, domain: str) -> str:
+        domain = re.sub(r"[^a-zA-Z0-9_\-.]", "", domain)
+
         if domain not in self.label_map:
             self.label_map[domain] = 0
 
@@ -290,7 +295,11 @@ class ProofCache:
         if isinstance(statement, StructuredStatement):
             statement = statement.terms
         terms = tuple(statement)
-        return self.cache_map.get(domain, {}).get(terms, None)
+
+        domain_cache = self.cache_map.get(domain, None)
+        if domain_cache is None: return None
+
+        return domain_cache.get(terms, None)
 
     def cache(self, domain: str, proof: Proof, no_theorem_cache: bool=False) -> Proof:
         if ProofCache.DISABLED:
@@ -319,7 +328,8 @@ class ProofCache:
                 proof=proof.script,
             )
 
-            theorem = self.composer.load(theorem_statement)
+            # do not index the cached statements
+            theorem = self.composer.load(theorem_statement, index=False)
             proof = theorem.as_proof()
 
         if domain not in self.cache_map:
@@ -392,7 +402,7 @@ class Context:
 Composer is a utility class used for
 emitting metamath statements and proofs
 """
-class Composer(MetamathVisitor):
+class Composer:
     def __init__(self):
         self.context = Context() # outermost context for a database
         self.theorems = {} # label -> Theorem
@@ -408,28 +418,6 @@ class Composer(MetamathVisitor):
         # segment
         self.segment_stack = [] # a stack of current segments
         self.segments = {} # name -> [indices]
-
-    def load(self, database_or_statement: Union[Database, Statement]):
-        if isinstance(database_or_statement, Database):
-            assert self.context.prev is None, "loading a database at non-top level"
-
-        self.visit(database_or_statement)
-
-        if isinstance(database_or_statement, Database):
-            self.add_indices_to_current_segment(list(range(len(self.statements), len(self.statements) + len(database_or_statement.statements))))
-            self.statements += database_or_statement.statements
-        else:
-            self.add_indices_to_current_segment([ len(self.statements) ])
-            self.statements.append(database_or_statement)
-
-            # return the corresponding theorem
-            if isinstance(database_or_statement, StructuredStatement):
-                if database_or_statement.statement_type in { Statement.AXIOM, Statement.FLOATING, Statement.PROVABLE }:
-                    assert database_or_statement.label in self.theorems
-                    return self.theorems[database_or_statement.label]
-
-                if database_or_statement.statement_type == Statement.ESSENTITAL:
-                    return Theorem(self, database_or_statement, [], [])
 
     def find_theorem(self, name: str) -> Optional[Theorem]:
         return self.theorems.get(name)
@@ -477,8 +465,8 @@ class Composer(MetamathVisitor):
     def cache_proof(self, *args, **kwargs) -> Proof:
         return self.proof_cache.cache(*args, **kwargs)
 
-    def lookup_proof_cache(self, *args, **kwargs) -> Proof:
-        return self.proof_cache.lookup(*args, **kwargs)
+    def lookup_proof_cache(self, domain: str, key) -> Optional[Proof]:
+        return self.proof_cache.lookup(domain, key)
 
     # """
     # This implements simple segmentation mechanism. To start a segment,
@@ -523,28 +511,61 @@ class Composer(MetamathVisitor):
     def get_all_metavariables(self) -> List[str]:
         return [ var for _, var, _ in self.context.get_all_floatings() ]
 
-    ####################################
-    # Composer as a metamath AST visitor
-    ####################################
+    """
+    Index the statement for more efficient search later
+    """
+    def index_statement(self, stmt: StructuredStatement):
+        # index by the typecode
+        if len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0:
+            self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])
 
-    def previsit_block(self, block: Block):
-        self.context = Context(self.context)
+    """
+    Add a structured statement/block/database to the composer
+    Optionally return a theorem corresponding to the given statement
+    """
+    def load(self, database_or_statement: Union[Database, Statement], index: bool=True) -> Optional[Theorem]:
+        if isinstance(database_or_statement, Database):
+            assert self.context.prev is None, "loading a database at non-top level"
+            for statement in database_or_statement.statements:
+                self.load(statement, index)
+    
+        elif isinstance(database_or_statement, Statement):
+            if self.context.prev is None:
+                # add top level statements
+                self.add_indices_to_current_segment([ len(self.statements) ])
+                self.statements.append(database_or_statement)
 
-    def postvisit_block(self, block: Block, *args):
-        self.context = self.context.prev
-        assert self.context is not None
+            if isinstance(database_or_statement, Block):
+                self.context = Context(self.context)
+                for statement in database_or_statement.statements:
+                    self.load(statement, index)
+                self.context = self.context.prev
+            else:
+                return self.load_statement(database_or_statement, index)
 
-    def postvisit_structured_statement(self, stmt: StructuredStatement, *args):
+        else:
+            assert False, f"unable to load {database_or_statement}"
+
+    def load_statement(self, stmt: Statement, index: bool=True) -> Optional[Theorem]:
+        if not isinstance(stmt, StructuredStatement):
+            return None
+
+        theorem = None
+
         if stmt.statement_type == Statement.FLOATING:
             typecode, variable = stmt.terms
             self.context.add_floating(typecode.symbol, variable.name, stmt.label)
 
             # any floating statement is also a theorem
-            self.theorems[stmt.label] = Theorem(self, stmt, [], [])
-            self.add_theorem_for_typecode(typecode.symbol, self.theorems[stmt.label])
+            self.theorems[stmt.label] = theorem = Theorem(self, stmt, [], [])
+
+            if index:
+                self.index_statement(stmt)
 
         elif stmt.statement_type == Statement.ESSENTITAL:
             self.context.add_essential(stmt)
+            theorem = Theorem(self, stmt, [], [])
+
         elif stmt.statement_type in { Statement.PROVABLE, Statement.AXIOM }:
             # find all mandatory hypotheses of a statement
             # and build a Theorem object
@@ -560,11 +581,12 @@ class Composer(MetamathVisitor):
             assert len(floatings) == len(metavariables), \
                    "some metavariables not found in {}, only found {}".format(metavariables, floatings)
 
-            self.theorems[stmt.label] = Theorem(self, stmt, floatings, essentials)
+            self.theorems[stmt.label] = theorem = Theorem(self, stmt, floatings, essentials)
 
-            # add it to the corresponding typecode map
-            if len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0:
-                self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])
+            if index:
+                self.index_statement(stmt)
+
+        return theorem
 
 
 class TypecodeProver:
@@ -574,15 +596,21 @@ class TypecodeProver:
     by recursively unify the target with a theorem of this form
     """
     @staticmethod
-    def prove_typecode(composer, typecode: str, term: Term):
+    def prove_typecode(composer: Composer, typecode: str, term: Term) -> Optional[Proof]:
+        # TODO: these checks are a bit too specialized
+        if (typecode == "#Variable" or typecode == "#ElementVariable" or typecode == "#SetVariable") and \
+           not isinstance(term, Metavariable):
+                return None
+
+        if typecode == "#Symbol" and \
+           (not isinstance(term, Application) or len(term.subterms) != 0):
+                return None
+
         expected_statement = StructuredStatement(Statement.PROVABLE, [ Application(typecode), term ])
 
-        # don't cache metavariable statements
-        # otherwise it may be caught in infinite recursion in the proof cache
-        if not isinstance(term, Metavariable):
-            cached_proof = composer.lookup_proof_cache("typecode-cache", expected_statement.terms)
-            if cached_proof is not None:
-                return cached_proof
+        cached_proof = composer.lookup_proof_cache("typecode-cache-" + typecode, expected_statement.terms)
+        if cached_proof is not None:
+            return cached_proof
 
         # try to find a matching floating statement first if the term is a metavariable
         if isinstance(term, Metavariable):
@@ -593,8 +621,7 @@ class TypecodeProver:
                     if metavar.name == term.name:
                         # found a direct proof
                         proof = Proof(expected_statement, [ theorem.statement.label ])
-                        if not isinstance(term, Metavariable):
-                            proof = composer.cache_proof("typecode-cache", proof)
+                        proof = composer.cache_proof("typecode-cache-" + typecode, proof)
                         return proof
             # otherwise treat the metavariable as a term
 
@@ -644,8 +671,7 @@ class TypecodeProver:
                     # directly construct the proof here for performance
                     proof_script.append(theorem.statement.label)
                     proof = Proof(expected_statement, proof_script)
-                    if not isinstance(term, Metavariable):
-                        proof = composer.cache_proof("typecode-cache", proof)
+                    proof = composer.cache_proof("typecode-cache-" + typecode, proof)
                     return proof
 
         return None
