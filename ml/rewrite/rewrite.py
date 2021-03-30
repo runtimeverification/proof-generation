@@ -91,13 +91,18 @@ class RewriteProofGenerator(ProofGenerator):
             print(f"> trying axiom {KoreTemplates.get_axiom_unique_id(rewrite_axiom.claim)}")
 
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
-            unification_result = unification_gen.unify_patterns(lhs, pattern, rewriting_info)
+            print("rewrite_from_pattern", rewriting_info)
+
+            rewriting_info_map = dict(rewriting_info)
+            lhs_instance = KoreUtils.copy_and_substitute_pattern(lhs, rewriting_info_map)
+            unification_result = unification_gen.unify_patterns(lhs_instance, pattern)
             if unification_result is None: continue
 
             substitution = unification_result.get_lhs_substitution_as_instance()
             if substitution is None: continue
 
             # eliminate all universal quantifiers
+            substitution.update(rewriting_info_map)
             instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(rewrite_axiom, substitution)
             lhs, requires, rhs, ensures = self.decompose_rewrite_axiom(instantiated_axiom.claim.pattern)
 
@@ -205,6 +210,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             from_pattern = rhs
         
+        print("one-step-rewriting-info: ", rewriting_info)
         concrete_rewrite_claim = self.rewrite_from_pattern(from_pattern, rewriting_info)
 
         # check that the proven statement is actually what we want

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+
 from typing import List, Tuple, NewType, Optional, Mapping
 
 from ml.kore import ast as kore
@@ -15,6 +17,8 @@ from .equality import EqualityProofGenerator
 from .sort import SortProofGenerator
 from .quantifier import QuantifierProofGenerator
 
+# AppliedEquation = List[Tuple[Equation, PatternPath]]
+
 
 class UnificationResult:
     def __init__(
@@ -24,9 +28,22 @@ class UnificationResult:
         self.substitution = substitution
         self.applied_equations = applied_equations
 
-    def merge(self, other: UnificationResult) -> UnificationResult:
+    def merge(self, other: UnificationResult) -> Optional[UnificationResult]:
         # check consistency of the substitution
-        return UnificationResult(self.substitution + other.substitution, self.applied_equations + other.applied_equations)
+        merged_subst = self.substitution + other.substitution
+        if not self.is_consistent_substitution(merged_subst):
+            return None
+        return UnificationResult(merged_subst, self.applied_equations + other.applied_equations)
+
+    @staticmethod
+    def is_consistent_substitution(subst: List[Tuple[kore.Pattern, kore.Pattern]]) -> bool:
+        dictionary = { }
+        for p, q in subst:
+            if p in dictionary and q != dictionary[p]:
+                return False
+            else:
+                dictionary[p] = q
+        return True
 
     def prepend_path(self, prefix: int) -> UnificationResult:
         return UnificationResult(self.substitution, [ (eqn, [ prefix ] + path) for eqn, path in self.applied_equations ])
@@ -134,7 +151,26 @@ class InjectionCombine(Equation):
             inj_axiom_instance.proof,
         )
 
+r"""
+mapmerge(M1, M2) === mapmerge(M2, M1)
+"""
+class MapCommutativity(Equation):
+    def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
+        subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
+        # TODO:: assert here that subpattern is a mapmerge
 
+        # get the two variable (names) in the commutativity axiom
+        comm_axiom = self.env.map_commutativity_axiom
+        var1, var2 = KoreUtils.strip_forall(comm_axiom.claim).arguments[0].arguments
+
+        subst = { var1 : subpattern.arguments[0] , var2 : subpattern.arguments[1] }
+        axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(self.env.map_commutativity_axiom, subst)
+
+        return EqualityProofGenerator(self.env).replace_equal_subpattern_with_equation(
+            provable, 
+            path, 
+            axiom_instance,
+        )
 """
 Unify two patterns modulo certain equations
 NOTE: this generator currently only supports
@@ -144,7 +180,14 @@ class UnificationProofGenerator(ProofGenerator):
     """
     Losely following https://github.com/kframework/kore/blob/master/docs/2018-11-12-Unification.md
     """
-    def unify_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern, rewriting_info = []) -> Optional[UnificationResult]:
+    def unify_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+
+        # print("\n")
+        # print("unify_patterns begins")
+        # print("pattern1", pattern1)
+        # print("pattern2", pattern2)
+        # print("\n")
+
         algorithms = [
             self.unify_vars,
             self.unify_applications,
@@ -152,30 +195,14 @@ class UnificationProofGenerator(ProofGenerator):
             self.unify_string_literals,
             self.unify_left_duplicate_conjunction,
             self.unify_right_splittable_inj,
-            # self.unify_concrete_map_patterns,
+            self.unify_concrete_map_patterns,
         ]
         for algo in algorithms:
+            # print("trying algo", algo, "\n")
             result = algo(pattern1, pattern2)
-            print("-----")
-            print("trying" + str(algo) + "result is" + str(result))
+            # print("tried" + str(algo) + "result is" + str(result), "\n")
             if result is not None:
                 return result
-        
-        # pattern matching modulo maps
-
-        # print("---- try pattern matching ----")
-
-        print("=====")
-        print("LHS:")
-        print(pattern1)
-        print("TERM:")
-        print(pattern2)
-        print("SUBST:")
-        print(rewriting_info)
-
-        result = self.unify_concrete_map_patterns(pattern1, pattern2, rewriting_info)
-        if result is not None:
-            return result
 
         return None
 
@@ -314,13 +341,65 @@ class UnificationProofGenerator(ProofGenerator):
                 return result.prepend_path(0).append_equation(InjectionCombine(self.env), [])
 
         return None
+
+    def swap_map_pattern(self, pattern: kore.Pattern) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+        # TODO::
+        # check that pattern has the form merge(pattern1, pattern2)
+
+        if isinstance(pattern, kore.Application) and pattern.symbol.definition.symbol == "Lbl'UndsPipe'-'-GT-Unds'":
+            # print("----")
+            # print("swap_map_pattern:", pattern)
+            swapped_pattern = copy.deepcopy(pattern)
+            swapped_pattern.arguments[0] = pattern.arguments[1]
+            swapped_pattern.arguments[1] = pattern.arguments[0]
+            # print("swapped:", swapped_pattern)
+            return (swapped_pattern, [(MapCommutativity(self.env), [])])
+
+
     
+    def sort_map_pattern(self, pattern: kore.Pattern) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+
+        self.swap_map_pattern(pattern)
+
+        # We sort @pattern using merge sort.
+
+        # if pattern.symbol.definition.symbol != "Lbl'Unds'Map'Unds'":
+
+        # return merge( pattern1 pattern2 ) 
+
+        # applied_eqs1 applied_eqs2
+
+        # applied_eqs = 
+
+        # merge(kv, merge(kv', merge(...)))
+
+        # merge(merge(p1,p2),p3) =assoc=> merge(p1, merge(p2,p3)) =*=> merge(k_min, merge(p2',p3'))
+
     r"""
     Unify two concrete map patterns. 
     """
-    def unify_concrete_map_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern, rewriting_info: List[Tuple[kore.Pattern, kore.Pattern]]) -> Optional[UnificationResult]:
+    def unify_concrete_map_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        print("unify_concrete_map_patterns:", pattern1, pattern2, "\n")
         if isinstance(pattern1, kore.Application) and \
-           isinstance(pattern2, kore.Application):
-           print("DEBUG")
-           print(pattern1.symbol.definition)
+           isinstance(pattern2, kore.Application) and \
+           pattern1.symbol.definition.symbol == "Lbl'Unds'Map'Unds'" and \
+           pattern2.symbol.definition.symbol == "Lbl'Unds'Map'Unds'":
+
+           self.swap_map_pattern(pattern1)
+           return None
+
+           # 2. sort pattern1 and pattern2
+           # pattern1_sorted, applied_eqs1 = self.sort_map_pattern(pattern1)
+           # pattern2_sorted, applied_eqs2 = self.sort_map_pattern(pattern2)
+           # applied_eqs2_rev = self.reverse_equations(applied_eqs2)
+
+           # applied_eqs = applied_eqs1 + applied_eqs2
+
+           # return UnificationResult([], applied_eqs)
+           return None
+
+        print("unify_concrete_map_patterns, else branch")
         return None
+
+
+        

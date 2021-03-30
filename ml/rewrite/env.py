@@ -106,6 +106,7 @@ class ProofEnvironment:
         self.sort_axioms = {} # constant symbol (in metamath) -> theorem
         self.sorting_lemmas = {} # constant symbol (in metamath) -> theorem
         self.equational_axioms = {} # symbol instance -> provable claim
+        self.map_commutativity_axiom = None # provable claim
 
         self.sort_injection_symbol = None
         self.sort_injection_axiom = None
@@ -526,7 +527,12 @@ class ProofEnvironment:
             equation_head_symbol = KoreTemplates.get_symbol_of_equational_axiom(axiom)
             subsort_tuple = KoreTemplates.get_sorts_of_subsort_axiom(axiom)
             is_map_commutativity = KoreTemplates.is_map_commutativity_axiom(axiom)
-            is_map_associativity = KoreTemplates.is_map_associativity_axiom(axiom)
+            # is_map_associativity = KoreTemplates.is_map_associativity_axiom(axiom)
+
+            if is_map_commutativity:
+                assert self.map_commutativity_axiom is None
+                theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
+                self.map_commutativity_axiom = ProvableClaim(axiom, theorem.as_proof())
 
             if functional_symbol is not None or is_rewrite or is_anywhere or equation_head_symbol is not None or subsort_tuple is not None:
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
