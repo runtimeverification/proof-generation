@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Mapping, List, Tuple, Optional, NewType
 
 from .ast import *
-from .visitors import PatternSubstitutionVisitor, SortSubstitutionVisitor, CopyVisitor, FreePatternVariableVisitor
+from .visitors import PatternSubstitutionVisitor, SortSubstitutionVisitor, CopyVisitor, FreePatternVariableVisitor, QuantifierTester, PatternVariableVisitor, SortVariableVisitor
 
 
 """
@@ -216,3 +216,66 @@ class KoreUtils:
         while isinstance(pattern, MLPattern) and pattern.construct == MLPattern.FORALL:
             pattern = pattern.arguments[1]
         return pattern
+
+    @staticmethod
+    def strip_exists(pattern: Pattern) -> Pattern:
+        while isinstance(pattern, MLPattern) and pattern.construct == MLPattern.EXISTS:
+            pattern = pattern.arguments[1]
+        return pattern
+
+    """
+    NOTE: here a single pattern that doesn't start with the specified construct
+    is also considered a junction (of a single clause)
+    """
+    @staticmethod
+    def decompose_junction(pattern: Pattern, construct: str) -> List[Pattern]:
+        if not isinstance(pattern, MLPattern) or \
+           pattern.construct != construct:
+            return [ pattern ]
+
+        junction = []
+
+        for arg in pattern.arguments:
+            junction += KoreUtils.decompose_junction(arg, construct)
+
+        return junction
+
+    @staticmethod
+    def decompose_disjunction(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.decompose_junction(pattern, MLPattern.OR)
+
+    @staticmethod
+    def is_quantifier_free(pattern: Pattern) -> bool:
+        return QuantifierTester().visit(pattern)
+
+    """
+    Tests if a pattern starts with existential quantifier(s)
+    and the innermost pattern is a quantifier free pattern
+    """
+    @staticmethod
+    def is_existential(pattern: Pattern) -> bool:
+        return KoreUtils.is_quantifier_free(KoreUtils.strip_exists(pattern))
+
+    """
+    Have no pattern variable
+    """
+    @staticmethod
+    def is_concrete(pattern: Pattern) -> bool:
+        return len(PatternVariableVisitor().visit(pattern)) == 0
+
+    """
+    Have no sort variable
+    """
+    @staticmethod
+    def is_concrete_sort(sort: Sort) -> bool:
+        return len(SortVariableVisitor().visit(sort)) == 0
+
+    """
+    Tests that the given symbol definition is not parametric in any sort variable
+    """
+    @staticmethod
+    def is_non_sort_parametric_symbol(symbol_definition: SymbolDefinition) -> bool:
+        for input_sort in symbol_definition.input_sorts:
+            if not KoreUtils.is_concrete_sort(input_sort):
+                return False
+        return KoreUtils.is_concrete_sort(symbol_definition.output_sort)

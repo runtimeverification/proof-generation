@@ -34,23 +34,46 @@ class KorePatternEncoder(KoreVisitor):
     FORALL_SORT = "\\kore-forall-sort"
     VALID = "\\kore-valid"
 
+    LOGIC_CONSTRUCT_MAP = {
+        kore.MLPattern.TOP: TOP,
+        kore.MLPattern.BOTTOM: BOTTOM,
+        kore.MLPattern.NOT: NOT,
+        kore.MLPattern.AND: AND,
+        kore.MLPattern.OR: OR,
+        kore.MLPattern.IMPLIES: IMPLIES,
+        kore.MLPattern.CEIL: CEIL,
+        kore.MLPattern.FLOOR: FLOOR,
+        kore.MLPattern.EQUALS: EQUALS,
+        kore.MLPattern.IN: IN,
+        kore.MLPattern.REWRITES: REWRITES,
+        kore.MLPattern.REWRITES_STAR: REWRITES_STAR,
+        kore.MLPattern.DV: DV,
+        kore.MLPattern.FORALL: FORALL,
+        kore.MLPattern.EXISTS: EXISTS,
+    }
+
     @staticmethod
     def encode_symbol(symbol: Union[kore.SymbolInstance, str]) -> str:
         if type(symbol) is str:
-            return r"\kore-symbol-" + symbol
+            symbol_str = symbol
         elif type(symbol.definition) is str:
-            return r"\kore-symbol-" + symbol.definition
+            symbol_str = symbol.definition
         else:
-            return r"\kore-symbol-" + symbol.definition.symbol
+            symbol_str = symbol.definition.symbol
+
+        if symbol_str == "inj":
+            return "\\kore-inj"
+
+        return "\\kore-symbol-" + symbol_str
 
     @staticmethod
     def encode_sort(sort: Union[kore.SortInstance, str]) -> str:
         if type(sort) is str:
-            return r"\kore-sort-" + sort
+            return "\\kore-sort-" + sort
         elif type(sort.definition) is str:
-            return r"\kore-sort-" + sort.definition
+            return "\\kore-sort-" + sort.definition
         else:
-            return r"\kore-sort-" + sort.definition.sort_id
+            return "\\kore-sort-" + sort.definition.sort_id
 
     @staticmethod
     def encode_string_literal(literal: kore.StringLiteral) -> str:
@@ -58,23 +81,7 @@ class KorePatternEncoder(KoreVisitor):
 
     @staticmethod
     def encode_logical_construct(construct: str) -> str:
-        return {
-            kore.MLPattern.TOP: KorePatternEncoder.TOP,
-            kore.MLPattern.BOTTOM: KorePatternEncoder.BOTTOM,
-            kore.MLPattern.NOT: KorePatternEncoder.NOT,
-            kore.MLPattern.AND: KorePatternEncoder.AND,
-            kore.MLPattern.OR: KorePatternEncoder.OR,
-            kore.MLPattern.IMPLIES: KorePatternEncoder.IMPLIES,
-            kore.MLPattern.CEIL: KorePatternEncoder.CEIL,
-            kore.MLPattern.FLOOR: KorePatternEncoder.FLOOR,
-            kore.MLPattern.EQUALS: KorePatternEncoder.EQUALS,
-            kore.MLPattern.IN: KorePatternEncoder.IN,
-            kore.MLPattern.REWRITES: KorePatternEncoder.REWRITES,
-            kore.MLPattern.REWRITES_STAR: KorePatternEncoder.REWRITES_STAR,
-            kore.MLPattern.DV: KorePatternEncoder.DV,
-            kore.MLPattern.FORALL: KorePatternEncoder.FORALL,
-            kore.MLPattern.EXISTS: KorePatternEncoder.EXISTS,
-        }[construct]
+        return KorePatternEncoder.LOGIC_CONSTRUCT_MAP[construct]
 
     @staticmethod
     def encode_variable(var: kore.Variable) -> str:

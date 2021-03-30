@@ -28,6 +28,7 @@ $c \kore-rewrites-star $.
 $c \kore-dv $.
 $c \kore-valid $.
 $c \kore-is-sort $.
+$c \kore-inj $.
 
 kore-exists-is-pattern $a #Pattern ( \kore-exists ph0 ph1 x ph2 ) $.
 kore-exists-is-sugar $a #Notation ( \kore-exists ph0 ph1 x ph2 ) ( \and ( \sorted-exists x ph0 ph2 ) ( \inh ph1 ) ) $.
@@ -104,3 +105,10 @@ $}
 
 kore-forall-is-pattern $a #Pattern ( \kore-forall ph0 ph1 x ph2 ) $.
 kore-forall-is-sugar $a #Notation ( \kore-forall ph0 ph1 x ph2 ) ( \kore-not ph1 ( \kore-exists ph0 ph1 x ( \kore-not ph1 ph2 ) ) ) $.
+
+$c \kore-inj-symbol $.
+kore-inj-is-symbol $a #Symbol \kore-inj-symbol $.
+kore-inj-is-pattern $a #Pattern ( \kore-inj ph0 ph1 ph2 ) $.
+kore-inj-is-sugar $a #Notation ( \kore-inj ph0 ph1 ph2 ) ( \app ( \app ( \app \kore-inj-symbol ph0 ) ph1 ) ph2 ) $.
+
+kore-inj-id $a |- ( \eq ( \kore-inj ph0 ph1 ph2 ) ph2 ) $.

@@ -11,6 +11,7 @@ from ml.metamath.auto.unification import Unification
 from ml.metamath.auto.notation import NotationProver
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.sorting import SortingProver
+from ml.metamath.auto.context import ApplicationContextProver
 
 from .state import ProofState, Goal, NoStateChangeException
 from .tactics import Tactic, ApplyTactic
@@ -154,10 +155,12 @@ class DesugarTactic(Tactic):
         if self.tactic_name == "desugar-kore":
             return self.desugar_kore(state, term)
         else:
+            if self.tactic_name == "desugar-all":
+                assert target_symbol is None, "desugar-all takes no argument"
+
             return NotationProver.expand_sugar(
                 state.composer, term, 
                 target_symbol=target_symbol,
-                desugar_all=self.tactic_name == "desugar-all",
             )
 
     def apply(self, state: ProofState, target_symbol: Optional[str]=None):
@@ -280,6 +283,17 @@ class SortingTactic(Tactic):
         statement = goal.statement
         assert len(statement.terms) == 2 and statement.terms[0] == Application("|-"), f"not a provability goal {statement}"
         self.proof = SortingProver.prove_sorting_statement(state.composer, statement)
+
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        return self.proof
+
+
+@ProofState.register_tactic("context")
+class ApplicationContextTactic(Tactic):
+    def apply(self, state: ProofState):
+        goal = state.resolve_current_goal(self)
+        statement = goal.statement
+        self.proof = ApplicationContextProver.prove_application_context_statement(state.composer, statement)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         return self.proof

@@ -48,7 +48,7 @@ class Initializer(KoreVisitor, PatternOnlyVisitorStructure):
         if symbol_name in self.initializer_axioms:
             return self.visit(self.initializer_axioms[symbol_name])
 
-        if symbol_name == "Lblproject'Coln'KItem":
+        if symbol_name.startswith("Lblproject'Coln'"):
             return self.pgm_pattern
 
         application.arguments = arguments
@@ -196,7 +196,7 @@ def gen_proof(kdef: str, module: str, pgm: str, output: Optional[str]=None, benc
             "-m", "ml.rewrite",
             kore_definition,
             module,
-            "--prelude", "theory/kore-lemmas.mm",
+            "--prelude", "theory/prelude.mm",
             "--snapshots", snapshot_dir,
             "--rewriting-info", rewriting_info_dir,
             "--output", output,

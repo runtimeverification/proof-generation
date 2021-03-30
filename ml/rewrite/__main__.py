@@ -19,6 +19,7 @@ from ml.metamath.composer import Composer
 from .env import ProofEnvironment
 from .rewrite import RewriteProofGenerator
 from .preprocessor import KorePreprocessor
+from .disjointness import DisjointnessProofGenerator
 
 
 def load_prelude(composer: Composer, args):

@@ -11,26 +11,36 @@ This repository contains:
 
 ## Dependencies
 
-The itp and rewrite prover use Python (3.7+), so some dependencies are required:
+The itp and rewrite prover use Python (3.7+). Some dependencies are required:
 ```
 python3 -m pip install -r requirements.txt
 ```
 
+Note that we have been using the K version at tag `v5.0.0-bbc70cb` or commit hash `bbc70cb`.
+The newer version might generate different axioms for rewriting.
+
 ## Examples of generating proofs for concrete rewriting
 
-### Foo (`examples/foo/foo.k`)
-```
-python3 -m ml.rewrite examples/foo/foo.k.kore FOO --prelude theory/kore-lemmas.mm --snapshots examples/foo/snapshots --output tmp
-```
+Suppose you have a K definition `def.k` with the main module `MAIN`,
+and a program `pgm.txt`, you can use
 
-### Nat (`examples/nat-dv/nat-dv.k`)
 ```
-python3 -m ml.rewrite examples/nat-dv/nat-dv.k.kore NAT-DV --prelude theory/kore-lemmas.mm --snapshots examples/nat-dv/snapshots --output tmp
+python3 -m scripts.run-test def.k MAIN pgm.txt --output rewriting-proof
 ```
+to generate the (concrete) rewriting proof for the program `pgm.txt` and output to the `rewriting-proof` directory.
 
-### Fib (`examples/fib/fib.k`)
+Once that's done, you can use Metamath to verify the proof:
 ```
-python3 -m ml.rewrite examples/fib/fib.k.kore FIB --prelude theory/kore-lemmas.mm --snapshots examples/fib/snapshots --output tmp
+$ metamath rewriting-proof/goal.mm
+...
+77192945 bytes were read into the source buffer.
+The source has 9148 statements; 4352 are $a and 1776 are $p.
+No errors were found.  However, proofs were not checked.  Type VERIFY PROOF *
+if you want to check them.
+MM> verify proof *
+0 10%  20%  30%  40%  50%  60%  70%  80%  90% 100%
+..................................................
+MM>
 ```
 
 ## Unification

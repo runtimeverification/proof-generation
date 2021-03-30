@@ -59,7 +59,7 @@ class BaseAST:
         self.meta_module = module
 
     def get_module(self) -> Module:
-        assert self.meta_module is not None, "does not have a parent module"
+        assert self.meta_module is not None, f"{self} does not have a parent module"
         return self.meta_module
 
 
@@ -86,7 +86,9 @@ class Definition(BaseAST):
         return self.module_map.get(name)
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_definition(self)
+        visitor.previsit_definition(self)
+        children = visitor.visit_children_of_definition(self)
+        return visitor.postvisit_definition(self, *children)
 
     def __str__(self) -> str:
         return "definition {{\n{}\n}}".format("\n".join(map(str, self.module_map.values())))
@@ -179,7 +181,9 @@ class Module(BaseAST):
             sentence.resolve(self)
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_module(self)
+        visitor.previsit_module(self)
+        children = visitor.visit_children_of_module(self)
+        return visitor.postvisit_module(self, *children)
 
     def __str__(self) -> str:
         return "module {} {{\n{}\n}}".format(self.name, "\n".join(map(str, self.all_sentences)))
@@ -206,7 +210,9 @@ class ImportStatement(Sentence):
             self.module = resolved_module
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_import_statement(self)
+        visitor.previsit_import_statement(self)
+        children = visitor.visit_children_of_import_statement(self)
+        return visitor.postvisit_import_statement(self, *children)
 
     def __str__(self) -> str:
         module_name = self.module.name if isinstance(self.module, Module) else self.module
@@ -221,7 +227,9 @@ class SortDefinition(Sentence):
         self.hooked = hooked
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_sort_definition(self)
+        visitor.previsit_sort_definition(self)
+        children = visitor.visit_children_of_sort_definition(self)
+        return visitor.postvisit_sort_definition(self, *children)
 
     def __str__(self) -> str:
         return "sort {}({})".format(self.sort_id, ", ".join(map(str, self.sort_variables)))
@@ -247,7 +255,9 @@ class SortInstance(BaseAST):
             arg.resolve(module)
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_sort_instance(self)
+        visitor.previsit_sort_instance(self)
+        children = visitor.visit_children_of_sort_instance(self)
+        return visitor.postvisit_sort_instance(self, *children)
 
     def __eq__(self, other):
         if isinstance(other, SortInstance):
@@ -270,7 +280,9 @@ class SortVariable(BaseAST):
         self.name = name
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_sort_variable(self)
+        visitor.previsit_sort_variable(self)
+        children = visitor.visit_children_of_sort_variable(self)
+        return visitor.postvisit_sort_variable(self, *children)
 
     def __eq__(self, other):
         if isinstance(other, SortVariable):
@@ -317,7 +329,9 @@ class SymbolDefinition(Sentence):
         self.output_sort.resolve(module)
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_symbol_definition(self)
+        visitor.previsit_symbol_definition(self)
+        children = visitor.visit_children_of_symbol_definition(self)
+        return visitor.postvisit_symbol_definition(self, *children)
 
     def __str__(self):
         return "symbol {}({}): {}".format(self.symbol, ", ".join(map(str, self.input_sorts)), self.output_sort)
@@ -335,7 +349,7 @@ class SymbolInstance(BaseAST):
         if type(self.definition) is str:
             resolved_definition = module.get_symbol_by_name(self.definition)
             if resolved_definition is None:
-                self.error_with_position("unable to find symbol {}", self.definition)
+                self.error_with_position("unable to find symbol {} in module {}", self.definition, module.name)
 
             self.definition = resolved_definition
 
@@ -343,7 +357,9 @@ class SymbolInstance(BaseAST):
             arg.resolve(module)
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_symbol_instance(self)
+        visitor.previsit_symbol_instance(self)
+        children = visitor.visit_children_of_symbol_instance(self)
+        return visitor.postvisit_symbol_instance(self, *children)
 
     def __str__(self) -> str:
         symbol = self.definition.symbol if isinstance(self.definition, SymbolDefinition) else self.definition
@@ -376,7 +392,9 @@ class Axiom(Sentence):
         self.pattern.resolve(module)
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_axiom(self)
+        visitor.previsit_axiom(self)
+        children = visitor.visit_children_of_axiom(self)
+        return visitor.postvisit_axiom(self, *children)
 
     def __str__(self) -> str:
         return "axiom {{{}}} {}".format(", ".join(map(str, self.sort_variables)), self.pattern)
@@ -410,7 +428,9 @@ class AliasDefinition(Sentence):
         return list(self.lhs.arguments)
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_alias_definition(self)
+        visitor.previsit_alias_definition(self)
+        children = visitor.visit_children_of_alias_definition(self)
+        return visitor.postvisit_alias_definition(self, *children)
 
     def __str__(self) -> str:
         return "alias {} where {} := {}".format(self.definition, self.lhs, self.rhs)
@@ -436,7 +456,9 @@ class Variable(Pattern):
         self.sort.resolve(module)
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_variable(self)
+        visitor.previsit_variable(self)
+        children = visitor.visit_children_of_variable(self)
+        return visitor.postvisit_variable(self, *children)
 
     def __eq__(self, other):
         if isinstance(other, Variable):
@@ -458,7 +480,9 @@ class StringLiteral(Pattern):
         self.content = content
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_string_literal(self)
+        visitor.previsit_string_literal(self)
+        children = visitor.visit_children_of_string_literal(self)
+        return visitor.postvisit_string_literal(self, *children)
 
     def __eq__(self, other):
         if isinstance(other, StringLiteral):
@@ -490,7 +514,9 @@ class Application(Pattern):
             arg.resolve(module)
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_application(self)
+        visitor.previsit_application(self)
+        children = visitor.visit_children_of_application(self)
+        return visitor.postvisit_application(self, *children)
 
     def __eq__(self, other):
         if isinstance(other, Application):
@@ -555,7 +581,9 @@ class MLPattern(Pattern):
             return None
 
     def visit(self, visitor: KoreVisitor) -> Any:
-        return visitor.proxy_visit_ml_pattern(self)
+        visitor.previsit_ml_pattern(self)
+        children = visitor.visit_children_of_ml_pattern(self)
+        return visitor.postvisit_ml_pattern(self, *children)
 
     def __eq__(self, other):
         if isinstance(other, MLPattern):

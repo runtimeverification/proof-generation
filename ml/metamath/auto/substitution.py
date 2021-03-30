@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Optional
 
 from ..ast import Metavariable, Term, Application, StructuredStatement, Statement
-from ..composer import Composer, Proof, Theorem, MethodAutoProof
+from ..composer import Composer, Proof, Theorem, MethodAutoProof, TypecodeProver
 
 from .notation import NotationProver
-from .typecode import TypecodeProver
+from .unification import Unification
 
 
 """
@@ -39,7 +39,7 @@ class SubstitutionProver:
         subst_pattern: Term,
         subst_var: Metavariable,
         hypotheses: List[Theorem]=[],
-    ) -> Proof:
+    ) -> Optional[Proof]:
         target = SubstitutionProver.get_target(after_pattern, before_pattern, subst_pattern, subst_var)
 
         is_variable_metavar = TypecodeProver.prove_typecode(composer, "#Variable", before_pattern) is not None
@@ -85,7 +85,7 @@ class SubstitutionProver:
                 return composer.find_theorem(theorem_label).match_and_apply(target, *subproofs)
 
         assert False, f"unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}"
-    
+
     """
     Prove statement of the form
     #Substitution ph0 ph1 ph2 xX
@@ -101,13 +101,74 @@ class SubstitutionProver:
         subst_pattern: Term,
         subst_var: Metavariable,
         hypotheses: List[Theorem]=[],
-    ) -> Proof:
+    ) -> Optional[Proof]:
+        # if the heads are the same and there exists a substitution for the head symbol
+        if isinstance(after_pattern, Application) and \
+           isinstance(before_pattern, Application) and \
+           after_pattern.symbol == before_pattern.symbol and \
+           len(after_pattern.subterms) == len(before_pattern.subterms):
+            target = SubstitutionProver.get_target(after_pattern, before_pattern, subst_pattern, subst_var)
+
+            for theorem in composer.get_theorems_of_typecode("#Substitution"):
+                if not (len(theorem.statement.terms) > 1 and \
+                        isinstance(theorem.statement.terms[1], Application) and \
+                        theorem.statement.terms[1].symbol == after_pattern.symbol):
+                    continue
+
+                instantiation = Unification.match_statements_as_instance(theorem.statement, target)
+                if instantiation is None: continue
+
+                failed = True
+                subgoals = [] # list of tuples (after_pattern, before_pattern, subst_pattern, subst_var)
+
+                # determine the subgoals
+                for essential in theorem.essentials:
+                    if len(essential.terms) == 5 and essential.terms[0] == Application("#Substitution"):
+                        _, after_subpattern, before_subpattern, subst_subpattern, sub_subst_var = essential.terms
+
+                        if isinstance(after_subpattern, Metavariable) and \
+                           isinstance(before_subpattern, Metavariable) and \
+                           isinstance(subst_subpattern, Metavariable) and \
+                           isinstance(sub_subst_var, Metavariable) and \
+                           after_subpattern.name in instantiation and \
+                           before_subpattern.name in instantiation and \
+                           subst_subpattern.name in instantiation and \
+                           sub_subst_var.name in instantiation:
+
+                            subgoals.append((
+                                instantiation[after_subpattern.name],
+                                instantiation[before_subpattern.name],
+                                instantiation[subst_subpattern.name],
+                                instantiation[sub_subst_var.name],
+                            ))
+                            continue
+
+                    failed = False
+                    break
+
+                if not failed: continue
+
+                subproofs = []
+                for subgoal in subgoals:
+                    subproof = SubstitutionProver.prove_substitution(composer, *subgoal, hypotheses)
+                    if subproof is None:
+                        failed = True
+                        break
+
+                    subproofs.append(subproof)
+
+                if not failed: continue
+
+                return theorem.match_and_apply(target, *subproofs)
+
+        # otherwise fall back to the default prover
+
         # desugar everything first
         # TODO: there might be a more efficient way
 
-        expanded_after_pattern, expansion_subproof1 = NotationProver.expand_sugar_with_proof(composer, after_pattern, desugar_all=True)
-        expanded_before_pattern, expansion_subproof2 = NotationProver.expand_sugar_with_proof(composer, before_pattern, desugar_all=True)
-        expanded_subst_pattern, expansion_subproof3 = NotationProver.expand_sugar_with_proof(composer, subst_pattern, desugar_all=True)
+        expanded_after_pattern, expansion_subproof1 = NotationProver.expand_sugar_with_proof(composer, after_pattern)
+        expanded_before_pattern, expansion_subproof2 = NotationProver.expand_sugar_with_proof(composer, before_pattern)
+        expanded_subst_pattern, expansion_subproof3 = NotationProver.expand_sugar_with_proof(composer, subst_pattern)
 
         subst_proof = SubstitutionProver.prove_desugared_substitution(
             composer,
@@ -132,7 +193,7 @@ class SubstitutionProver:
     A wrapper for an auto proof method
     """
     @staticmethod
-    def prove_substitution_statement(composer: Composer, statement: Statement, hypotheses: List[Theorem]=[],):
+    def prove_substitution_statement(composer: Composer, statement: Statement, hypotheses: List[Theorem]=[]):
         assert len(statement.terms) == 5 and statement.terms[0] == Application("#Substitution"), f"not a substitution goal {statement}"
         _, after, before, pattern, var = statement.terms
         return SubstitutionProver.prove_substitution(

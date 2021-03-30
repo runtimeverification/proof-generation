@@ -1,8 +1,10 @@
 from typing import Optional, List, Tuple, Mapping, Union
 
+from traceback import print_exc
+
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils, PatternPath
-from ml.kore.visitors import KoreVisitor, PatternOnlyVisitorStructure
+from ml.kore.visitors import KoreVisitor
 
 from ml.metamath import ast as mm
 from ml.metamath.composer import Proof, Theorem
@@ -11,11 +13,11 @@ from ml.metamath.auto.sorting import SortingProver
 from .encoder import KorePatternEncoder
 
 from .env import ProofEnvironment, ProofGenerator, ProvableClaim
-from .substitution import SingleSubstitutionProofGenerator
 from .equality import EqualityProofGenerator
 from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
 from .unification import UnificationProofGenerator, InjectionCombine
 from .templates import KoreTemplates
+from .disjointness import DisjointnessProofGenerator
 
 
 """
@@ -24,7 +26,7 @@ Generate proofs for one or multiple rewrite steps
 class RewriteProofGenerator(ProofGenerator):
     def __init__(self, env: ProofEnvironment):
         super().__init__(env)
-        self.owise_axiom_counter = 0
+        self.owise_assumption_counter = 0
         self.rewrite_claim_counter = 0
         self.simplification_counter = 0
         self.hooked_symbol_evaluators = {
@@ -33,9 +35,13 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'UndsStar'Int'Unds'": IntegerMultiplicationEvaluator(env),
             "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(env),
             "Lbl'Unds-LT-Eqls'Int'Unds'": IntegerLessThanOrEqualToEvaluator(env),
+            "Lbl'UndsEqlsEqls'Int'Unds'": IntegerEqualityEvaluator(env),
             "Lbl'Unds'andBool'Unds'": BooleanAndEvaluator(env),
             "LblnotBool'Unds'": BooleanNotEvaluator(env),
+            "Lbl'UndsEqlsEqls'K'Unds'": KEqualityEvaluator(env),
+            "Lbl'UndsEqlsSlshEqls'K'Unds'": KNotEqualityEvaluator(env),
         }
+        self.disjoint_gen = DisjointnessProofGenerator(env)
 
     """
     Strip call outermost injection calls
@@ -98,12 +104,8 @@ class RewriteProofGenerator(ProofGenerator):
             unification_result = unification_gen.unify_patterns(lhs_instance, pattern)
             if unification_result is None: continue
 
-            substitution = unification_result.get_lhs_substitution_as_instance()
-            if substitution is None: continue
-
             # eliminate all universal quantifiers
-            substitution.update(rewriting_info_map)
-            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(rewrite_axiom, substitution)
+            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(rewrite_axiom, unification_result.substitution)
             lhs, requires, rhs, ensures = self.decompose_rewrite_axiom(instantiated_axiom.claim.pattern)
 
             assert ensures.construct == kore.MLPattern.TOP, f"non-top ensures clause is not supported: {ensures}"
@@ -144,24 +146,8 @@ class RewriteProofGenerator(ProofGenerator):
 
             concrete_rewrite_claim = self.apply_rewrite_star_intro(concrete_rewrite_claim)
 
-            # make each simplification its own rewrite step
-            # so that the proof will not grow too large
-            while True:
-                _, rhs = self.decompose_concrete_rewrite_claim(concrete_rewrite_claim)
-
-                simplification_step = self.simplify_pattern_as_rewrite(rhs, bound=1)
-                if simplification_step is None: break
-
-                simplification_step = self.env.load_provable_claim_as_theorem(
-                    f"rewrite-simplification-{self.simplification_counter}",
-                    simplification_step,
-                )
-                self.simplification_counter += 1
-
-                concrete_rewrite_claim = self.apply_rewrite_star_transitivity(
-                    concrete_rewrite_claim,
-                    simplification_step,
-                )
+            # apply simplification to the rhs of the rewriting claim
+            concrete_rewrite_claim = self.simplify_pattern(concrete_rewrite_claim, [ 0, 1 ])
 
             return concrete_rewrite_claim
         
@@ -172,6 +158,7 @@ class RewriteProofGenerator(ProofGenerator):
         from_pattern: kore.Pattern,
         to_pattern: kore.Pattern,
         rewriting_info: List[Tuple[kore.Pattern, kore.Pattern]],
+        simplify_initial_pattern: bool=True,
     ) -> ProvableClaim:
         # strip the outermost inj
         # TODO: re-add these in the end
@@ -184,23 +171,10 @@ class RewriteProofGenerator(ProofGenerator):
         self.env.encode_pattern(from_pattern)
         self.env.encode_pattern(to_pattern)
 
-        while True:
-            simplification_step = self.simplify_pattern_as_rewrite(from_pattern, bound=1)
-            if simplification_step is None: break
-
-            simplification_step = self.env.load_provable_claim_as_theorem(
-                f"rewrite-simplification-{self.simplification_counter}",
-                simplification_step,
-            )
-            self.simplification_counter += 1
-
-            if simplification_claim is None:
-                simplification_claim = simplification_step
-            else:
-                simplification_claim = self.apply_rewrite_star_transitivity(
-                    simplification_claim,
-                    simplification_step,
-                )
+        if simplify_initial_pattern:
+            # simplify before rewriting
+            simplification_claim = self.apply_reflexivity(from_pattern)
+            simplification_claim = self.simplify_pattern(simplification_claim, [ 0, 1 ])
 
             _, rhs = self.decompose_concrete_rewrite_claim(simplification_claim)
 
@@ -219,8 +193,8 @@ class RewriteProofGenerator(ProofGenerator):
 
         assert rhs == to_pattern, "unexpected RHS: {} vs {}".format(rhs, to_pattern)
 
-        # chain the simplification claim too
-        if simplification_claim is not None:
+        # connect the simplification claim too
+        if simplify_initial_pattern:
             concrete_rewrite_claim = self.apply_rewrite_star_transitivity(
                 simplification_claim,
                 concrete_rewrite_claim,
@@ -243,7 +217,7 @@ class RewriteProofGenerator(ProofGenerator):
             rewriting_info = rewriting_info_list[step]
             print("subst is", rewriting_info)
 
-            step_claim = self.prove_rewrite_step(from_pattern, to_pattern, rewriting_info)
+            step_claim = self.prove_rewrite_step(from_pattern, to_pattern, rewriting_info, simplify_initial_pattern=step == 0)
 
             self.env.load_comment(f"\nrewriting step:\n{from_pattern}\n=>\n{to_pattern}\n")
             step_claim = self.env.load_provable_claim_as_theorem(f"rewrite-step-{self.rewrite_claim_counter}", step_claim)
@@ -412,24 +386,35 @@ class RewriteProofGenerator(ProofGenerator):
         claim = kore.Claim([ output_sort ], condition, [])
         claim.resolve(self.env.module)
 
-        theorem = self.env.load_axiom(claim, f"owise-assumption-{self.owise_axiom_counter}", provable=True)
-        self.owise_axiom_counter += 1
+        try:
+            # trying to prove the simplest case with 1 other rule and 1 free variable
+            # TODO: make this more general
+            left, right = condition.arguments[0].arguments[0].arguments[0].arguments[1].arguments[1].arguments[0].arguments[0].arguments
 
-        return theorem.as_proof()
+            print("> proving disjointness claim")
+            disjoint_proof = self.disjoint_gen.prove_disjointness(left, right)
+
+            proof = self.env.get_theorem("owise-1-rule-1-var").match_and_apply(
+                self.env.encode_axiom(mm.Statement.PROVABLE, claim),
+                disjoint_proof,
+            )
+
+            return proof
+        except:
+            print_exc()
+            print("failed to prove owise condition, leavinig it as an assumption")
+            theorem = self.env.load_axiom(claim, f"owise-assumption-{self.owise_assumption_counter}", provable=True)
+            self.owise_assumption_counter += 1
+            return theorem.as_proof()
 
     def match_and_instantiate_anywhere_axiom(self, axiom: ProvableClaim, pattern: kore.Pattern, is_owise=False) -> Optional[ProvableClaim]:
         # unify the LHS
         lhs, _, _, _ = self.decompose_anywhere_axiom(axiom.claim.pattern)
         unification_result = UnificationProofGenerator(self.env).unify_patterns(lhs, pattern)
-
         if unification_result is None: return None
 
-        # get substitution
-        substitution = unification_result.get_lhs_substitution_as_instance()
-        if substitution is None: return None
-
         # eliminate all universal quantifiers
-        instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(axiom, substitution)
+        instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(axiom, unification_result.substitution)
 
         lhs, requires, _, ensures = self.decompose_anywhere_axiom(instantiated_axiom.claim.pattern)
 
@@ -572,21 +557,10 @@ class RewriteProofGenerator(ProofGenerator):
 
         return provable
 
-    """
-    Given a pattern phi, simplify it to phi' and return a proof
-    of phi =>* phi'. If phi is not simplifiable, then return None
-    """
-    def simplify_pattern_as_rewrite(self, pattern: kore.Pattern, bound: int=-1) -> Optional[ProvableClaim]:
-        if not self.is_simplifiable(pattern): return None
-
-        pattern_encoded = self.env.encode_pattern(pattern)
-
+    def apply_reflexivity(self, pattern: kore.Pattern) -> ProvableClaim:
         pattern_sort = KoreUtils.infer_sort(pattern)
-        pattern_sort_encoded = self.env.encode_pattern(pattern_sort)
 
-        # first, construct a claim of the form <from pattern> =>* <from pattern>
-        # then simplify the right hand side
-        reflexivity_claim = kore.Claim(
+        refl_claim = kore.Claim(
             [],
             kore.MLPattern(
                 kore.MLPattern.REWRITES_STAR,
@@ -595,18 +569,15 @@ class RewriteProofGenerator(ProofGenerator):
             ),
             [],
         )
-        reflexivity_claim.resolve(self.env.module)
+        refl_claim.resolve(self.env.module)
 
-        simplification_claim = ProvableClaim(
-            reflexivity_claim,
-            self.env.get_theorem("kore-rewrites-star-reflexivity").apply(
-                SortingProver.auto,
-                ph0=pattern_sort_encoded,
-                ph1=pattern_encoded,
-            )
+        refl_proof = self.env.get_theorem("kore-rewrites-star-reflexivity").apply(
+            SortingProver.auto,
+            ph0=self.env.encode_pattern(pattern_sort),
+            ph1=self.env.encode_pattern(pattern),
         )
 
-        return self.simplify_pattern(simplification_claim, [ 0, 1 ], bound=bound)
+        return ProvableClaim(refl_claim, refl_proof)
 
 
 class InnermostNestedInjectionPathVisitor(KoreVisitor):
@@ -787,6 +758,12 @@ class IntegerLessThanOrEqualToEvaluator(BuiltinFunctionEvaluator):
         return self.build_arithmetic_equation(application, self.parse_int(a) <= self.parse_int(b))
 
 
+class IntegerEqualityEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, self.parse_int(a) == self.parse_int(b))
+
+
 class BooleanAndEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
@@ -797,3 +774,16 @@ class BooleanNotEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, = application.arguments
         return self.build_arithmetic_equation(application, not self.parse_bool(a))
+
+
+# TODO: we may need to define this in the prelude
+class KEqualityEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, a == b)
+
+
+class KNotEqualityEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, a != b)

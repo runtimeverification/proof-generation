@@ -40,6 +40,13 @@ class EqualityProofGenerator(ProofGenerator):
         replacement: kore.Pattern,
         equation_proof: Proof,
     ) -> ProvableClaim:
+        final_claim = KoreUtils.copy_and_replace_path_by_pattern(provable.claim, path, replacement)
+
+        # check for proof cache
+        cached_proof = self.env.composer.lookup_proof_cache("equality-cache", self.env.encode_axiom(mm.Statement.PROVABLE, final_claim))
+        if cached_proof is not None:
+            return ProvableClaim(final_claim, cached_proof)
+
         original = KoreUtils.get_subpattern_by_path(provable.claim, path)
 
         # TODO: we are generating a mm fresh variable for a kore variable
@@ -50,12 +57,13 @@ class EqualityProofGenerator(ProofGenerator):
         sort = KoreUtils.infer_sort(original)
         assert sort == KoreUtils.infer_sort(replacement)
 
+        # make a template/context for the replacement
         var = kore.Variable(fresh_var, sort)
+        var.resolve(self.env.module)
         template_pattern = KoreUtils.copy_and_replace_path_by_pattern(provable.claim, path, var)
-        final_axiom = KoreUtils.copy_and_replace_path_by_pattern(provable.claim, path, replacement)
 
-        subst_proof1 = SingleSubstitutionProofGenerator(self.env, var, original).visit(template_pattern)
-        subst_proof2 = SingleSubstitutionProofGenerator(self.env, var, replacement).visit(template_pattern)
+        subst_proof1 = SingleSubstitutionProofGenerator(self.env, var, original).prove_substitution(template_pattern)
+        subst_proof2 = SingleSubstitutionProofGenerator(self.env, var, replacement).prove_substitution(template_pattern)
 
         # kore-equality requires that the sort variable in the equation
         # should be disjoint from the main statement being substituted
@@ -92,7 +100,7 @@ class EqualityProofGenerator(ProofGenerator):
 
         final_proof = self.env.cache_proof("equality-cache", final_proof)
 
-        return ProvableClaim(final_axiom, final_proof)
+        return ProvableClaim(final_claim, final_proof)
 
     """
     Same as above but using a provable claim,

@@ -31,7 +31,7 @@ class Unification:
 
                 if left.symbol != right.symbol: return None
                 if len(left.subterms) != len(right.subterms): return None
-                equations += list(zip(left.subterms, right.subterms))
+                equations.extend(zip(left.subterms, right.subterms))
                 continue
 
             if isinstance(left, variable_class):
@@ -82,7 +82,7 @@ class Unification:
                     if submatching is None:
                         return None
 
-                    matching += submatching
+                    matching.extend(submatching)
                 return matching
             else:
                 return None
@@ -106,7 +106,7 @@ class Unification:
             if submatching is None:
                 return None
 
-            matching += submatching
+            matching.extend(submatching)
 
         return matching
 
