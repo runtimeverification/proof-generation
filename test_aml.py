@@ -1,6 +1,6 @@
 from aml import *
 
-def test_free_variables():
+def test_free_variables() -> None:
     assert EVar("x").free_variables() == set([EVar("x")])
     assert SVar("x").free_variables() == set([SVar("x")])
     assert Symbol("s").free_variables() == set()
@@ -22,7 +22,3 @@ def test_free_variables():
 
     assert Forall(EVar("x"), SVar("x")).free_variables() == set([SVar("x")])
     assert Forall(EVar("x"), EVar("x")).free_variables() == set()
-
-    # TODO: This should not typecheck!
-    # assert Exists(SVar("x"), EVar("x")).free_variables() == set()
-    # assert Exists("x", EVar("x")).free_variables() == set()
