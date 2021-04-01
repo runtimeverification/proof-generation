@@ -2,5 +2,5 @@
 
 set -euo pipefail
 
-mypy --disallow-untyped-defs .
+mypy --strict .
 pytest
