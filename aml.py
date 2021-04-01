@@ -39,9 +39,9 @@ class Or(Pattern):
 
 @dataclass(frozen=True)
 class Not(Pattern):
-    subterm: Pattern
+    subpattern: Pattern
     def free_variables(self) -> set[Pattern]:
-        return self.subterm.free_variables()
+        return self.subpattern.free_variables()
 
 @dataclass(frozen=True)
 class App(Pattern):
@@ -53,13 +53,13 @@ class App(Pattern):
 @dataclass(frozen=True)
 class Exists(Pattern):
     bound: EVar
-    subterm: Pattern
+    subpattern: Pattern
     def free_variables(self) -> set[Pattern]:
-        return self.subterm.free_variables() - set([self.bound])
+        return self.subpattern.free_variables() - set([self.bound])
 
 @dataclass(frozen=True)
 class Forall(Pattern):
     bound: EVar
-    subterm: Pattern
+    subpattern: Pattern
     def free_variables(self) -> set[Pattern]:
-        return self.subterm.free_variables() - set([self.bound])
+        return self.subpattern.free_variables() - set([self.bound])
