@@ -63,3 +63,17 @@ class Forall(Pattern):
     subpattern: Pattern
     def free_variables(self) -> set[Pattern]:
         return self.subpattern.free_variables() - set([self.bound])
+
+@dataclass(frozen=True)
+class Mu(Pattern):
+    bound: SVar
+    subpattern: Pattern
+    def free_variables(self) -> set[Pattern]:
+        return self.subpattern.free_variables() - set([self.bound])
+
+@dataclass(frozen=True)
+class Nu(Pattern):
+    bound: SVar
+    subpattern: Pattern
+    def free_variables(self) -> set[Pattern]:
+        return self.subpattern.free_variables() - set([self.bound])

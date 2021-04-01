@@ -22,3 +22,9 @@ def test_free_variables() -> None:
 
     assert Forall(EVar("x"), SVar("x")).free_variables() == set([SVar("x")])
     assert Forall(EVar("x"), EVar("x")).free_variables() == set()
+
+    assert Mu(SVar("x"), EVar("x")).free_variables() == set([EVar("x")])
+    assert Mu(SVar("x"), SVar("x")).free_variables() == set()
+
+    assert Nu(SVar("x"), EVar("x")).free_variables() == set([EVar("x")])
+    assert Nu(SVar("x"), SVar("x")).free_variables() == set()
