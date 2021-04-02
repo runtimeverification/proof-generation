@@ -28,3 +28,44 @@ def test_free_variables() -> None:
 
     assert Nu(SVar("x"), EVar("x")).free_variables() == set([EVar("x")])
     assert Nu(SVar("x"), SVar("x")).free_variables() == set()
+
+def test_substitute() -> None:
+    assert Exists(EVar("x"), EVar("x")).substitute(EVar("x"), EVar("v")) == Exists(EVar("x"), EVar("x"))
+    assert Exists(EVar("x"), SVar("x")).substitute(EVar("x"), EVar("v")) == Exists(EVar("x"), SVar("x"))
+    assert Exists(EVar("y"), EVar("x")).substitute(EVar("x"), EVar("v")) == Exists(EVar("y"), EVar("v"))
+    assert Exists(EVar("y"), SVar("x")).substitute(EVar("x"), EVar("v")) == Exists(EVar("y"), SVar("x"))
+
+    assert Exists(EVar("x"), EVar("x")).substitute(SVar("x"), EVar("v")) == Exists(EVar("x"), EVar("x"))
+    assert Exists(EVar("x"), SVar("x")).substitute(SVar("x"), EVar("v")) == Exists(EVar("x"), EVar("v"))
+    assert Exists(EVar("y"), EVar("x")).substitute(SVar("x"), EVar("v")) == Exists(EVar("y"), EVar("x"))
+    assert Exists(EVar("y"), SVar("x")).substitute(SVar("x"), EVar("v")) == Exists(EVar("y"), EVar("v"))
+
+    assert Forall(EVar("x"), EVar("x")).substitute(EVar("x"), EVar("v")) == Forall(EVar("x"), EVar("x"))
+    assert Forall(EVar("x"), SVar("x")).substitute(EVar("x"), EVar("v")) == Forall(EVar("x"), SVar("x"))
+    assert Forall(EVar("y"), EVar("x")).substitute(EVar("x"), EVar("v")) == Forall(EVar("y"), EVar("v"))
+    assert Forall(EVar("y"), SVar("x")).substitute(EVar("x"), EVar("v")) == Forall(EVar("y"), SVar("x"))
+
+    assert Forall(EVar("x"), EVar("x")).substitute(SVar("x"), EVar("v")) == Forall(EVar("x"), EVar("x"))
+    assert Forall(EVar("x"), SVar("x")).substitute(SVar("x"), EVar("v")) == Forall(EVar("x"), EVar("v"))
+    assert Forall(EVar("y"), EVar("x")).substitute(SVar("x"), EVar("v")) == Forall(EVar("y"), EVar("x"))
+    assert Forall(EVar("y"), SVar("x")).substitute(SVar("x"), EVar("v")) == Forall(EVar("y"), EVar("v"))
+
+    assert Mu(SVar("x"), EVar("x")).substitute(EVar("x"), EVar("v")) == Mu(SVar("x"), EVar("v"))
+    assert Mu(SVar("x"), SVar("x")).substitute(EVar("x"), EVar("v")) == Mu(SVar("x"), SVar("x"))
+    assert Mu(SVar("y"), SVar("x")).substitute(EVar("x"), EVar("v")) == Mu(SVar("y"), SVar("x"))
+    assert Mu(SVar("y"), EVar("x")).substitute(EVar("x"), EVar("v")) == Mu(SVar("y"), EVar("v"))
+
+    assert Mu(SVar("x"), EVar("x")).substitute(SVar("x"), EVar("v")) == Mu(SVar("x"), EVar("x"))
+    assert Mu(SVar("x"), SVar("x")).substitute(SVar("x"), EVar("v")) == Mu(SVar("x"), SVar("x"))
+    assert Mu(SVar("y"), EVar("x")).substitute(SVar("x"), EVar("v")) == Mu(SVar("y"), EVar("x"))
+    assert Mu(SVar("y"), SVar("x")).substitute(SVar("x"), EVar("v")) == Mu(SVar("y"), EVar("v"))
+
+    assert Nu(SVar("x"), EVar("x")).substitute(EVar("x"), EVar("v")) == Nu(SVar("x"), EVar("v"))
+    assert Nu(SVar("x"), SVar("x")).substitute(EVar("x"), EVar("v")) == Nu(SVar("x"), SVar("x"))
+    assert Nu(SVar("y"), SVar("x")).substitute(EVar("x"), EVar("v")) == Nu(SVar("y"), SVar("x"))
+    assert Nu(SVar("y"), EVar("x")).substitute(EVar("x"), EVar("v")) == Nu(SVar("y"), EVar("v"))
+
+    assert Nu(SVar("x"), EVar("x")).substitute(SVar("x"), EVar("v")) == Nu(SVar("x"), EVar("x"))
+    assert Nu(SVar("x"), SVar("x")).substitute(SVar("x"), EVar("v")) == Nu(SVar("x"), SVar("x"))
+    assert Nu(SVar("y"), EVar("x")).substitute(SVar("x"), EVar("v")) == Nu(SVar("y"), EVar("x"))
+    assert Nu(SVar("y"), SVar("x")).substitute(SVar("x"), EVar("v")) == Nu(SVar("y"), EVar("v"))
