@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 from typing import Union
+from abc import abstractmethod
 
 Var = Union['SVar', 'EVar']
 
-@dataclass
 class Pattern:
+    @abstractmethod
     def free_variables(self) -> set[Var]:
        raise NotImplementedError
+    @abstractmethod
     def substitute(self, p: 'Var', v: 'Pattern') -> 'Pattern':
        raise NotImplementedError
 
@@ -45,28 +47,44 @@ class SVar(Pattern):
 class And(Pattern):
     left: Pattern
     right: Pattern
+
     def free_variables(self) -> set[Var]:
         return self.left.free_variables().union(self.right.free_variables())
+
+    def substitute(self, x: Var, v: Pattern) -> 'And':
+        return And(self.left.substitute(x, v), self.right.substitute(x, v))
 
 @dataclass(frozen=True)
 class Or(Pattern):
     left: Pattern
     right: Pattern
+
     def free_variables(self) -> set[Var]:
         return self.left.free_variables().union(self.right.free_variables())
+
+    def substitute(self, x: Var, v: Pattern) -> 'Or':
+        return Or(self.left.substitute(x, v), self.right.substitute(x, v))
 
 @dataclass(frozen=True)
 class Not(Pattern):
     subpattern: Pattern
+
     def free_variables(self) -> set[Var]:
         return self.subpattern.free_variables()
+
+    def substitute(self, x: Var, v: Pattern) -> 'Not':
+        return Not(self.subpattern.substitute(x, v))
 
 @dataclass(frozen=True)
 class App(Pattern):
     left: Pattern
     right: Pattern
+
     def free_variables(self) -> set[Var]:
         return self.left.free_variables().union(self.right.free_variables())
+
+    def substitute(self, x: Var, v: Pattern) -> 'App':
+        return App(self.left.substitute(x, v), self.right.substitute(x, v))
 
 @dataclass(frozen=True)
 class Exists(Pattern):
