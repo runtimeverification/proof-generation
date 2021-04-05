@@ -62,3 +62,15 @@ Var'Unds'DotVar1:SortK{} ==> dotk{}()
 Var'Unds'DotVar0:SortGeneratedCounterCell{} ==> Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))
 
 trying<bound method UnificationProofGenerator.unify_vars of <ml.rewrite.unification.UnificationProofGenerator object at 0x00007f52de50c8e0>>result isNone
+
+
+  axiom{R} 
+  
+  \equals{SortMap{}, R} 
+  
+  (Lbl'Unds'Map'Unds'{}(Lbl'Unds'Map'Unds'{}(K1:SortMap{},K2:SortMap{}),K3:SortMap{}),
+  
+  Lbl'Unds'Map'Unds'{}(K1:SortMap{},Lbl'Unds'Map'Unds'{}(K2:SortMap{},K3:SortMap{}))) [assoc{}()] // associativity
+
+
+  (merge(1,2),3) = merge(1, merge(2,3))

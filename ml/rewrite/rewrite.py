@@ -215,7 +215,7 @@ class RewriteProofGenerator(ProofGenerator):
             print("proving rewriting step {}".format(step))
 
             rewriting_info = rewriting_info_list[step]
-            print("subst is", rewriting_info)
+            print("subst is", str(rewriting_info))
 
             step_claim = self.prove_rewrite_step(from_pattern, to_pattern, rewriting_info, simplify_initial_pattern=step == 0)
 

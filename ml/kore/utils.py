@@ -21,6 +21,10 @@ class KoreUtils:
         copy_ast = ast.visit(CopyVisitor())
         copy_ast.resolve(module)
         return copy_ast
+    
+    @staticmethod
+    def copy_pattern(pattern: Pattern) -> Pattern:
+        return KoreUtils.copy_ast(pattern.get_module(), pattern)
 
     @staticmethod
     def copy_and_substitute_pattern(ast: Union[Pattern, Axiom], substitution: Mapping[Variable, Pattern]) -> Union[Pattern, Axiom]:
