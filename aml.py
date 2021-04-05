@@ -7,10 +7,13 @@ Var = Union['SVar', 'EVar']
 class Pattern:
     @abstractmethod
     def free_variables(self) -> set[Var]:
-       raise NotImplementedError
+        raise NotImplementedError
     @abstractmethod
     def substitute(self, p: 'Var', v: 'Pattern') -> 'Pattern':
-       raise NotImplementedError
+        raise NotImplementedError
+    @abstractmethod
+    def subpatterns(self) -> set['Pattern']:
+        raise NotImplementedError
 
 @dataclass(frozen=True)
 class Symbol(Pattern):
@@ -20,6 +23,9 @@ class Symbol(Pattern):
 
     def substitute(self, x: Var, v: Pattern) -> 'Symbol':
         return self
+
+    def subpatterns(self) -> set[Pattern]:
+        return set([self])
 
 @dataclass(frozen=True)
 class EVar(Pattern):
@@ -32,6 +38,9 @@ class EVar(Pattern):
         if x == self: return v
         else:         return self
 
+    def subpatterns(self) -> set[Pattern]:
+        return set([self])
+
 @dataclass(frozen=True)
 class SVar(Pattern):
     name: str
@@ -42,6 +51,9 @@ class SVar(Pattern):
     def substitute(self, x: Var, v: Pattern) -> Pattern:
         if x == self: return v
         else:         return self
+
+    def subpatterns(self) -> set[Pattern]:
+        return set([self])
 
 @dataclass(frozen=True)
 class And(Pattern):
@@ -54,6 +66,9 @@ class And(Pattern):
     def substitute(self, x: Var, v: Pattern) -> 'And':
         return And(self.left.substitute(x, v), self.right.substitute(x, v))
 
+    def subpatterns(self) -> set[Pattern]:
+        return self.left.subpatterns().union(set([self])).union(self.right.subpatterns())
+
 @dataclass(frozen=True)
 class Or(Pattern):
     left: Pattern
@@ -65,6 +80,9 @@ class Or(Pattern):
     def substitute(self, x: Var, v: Pattern) -> 'Or':
         return Or(self.left.substitute(x, v), self.right.substitute(x, v))
 
+    def subpatterns(self) -> set[Pattern]:
+        return self.left.subpatterns().union(set([self])).union(self.right.subpatterns())
+
 @dataclass(frozen=True)
 class Not(Pattern):
     subpattern: Pattern
@@ -74,6 +92,9 @@ class Not(Pattern):
 
     def substitute(self, x: Var, v: Pattern) -> 'Not':
         return Not(self.subpattern.substitute(x, v))
+
+    def subpatterns(self) -> set[Pattern]:
+        return self.subpattern.subpatterns().union(set([self]))
 
 @dataclass(frozen=True)
 class App(Pattern):
@@ -85,6 +106,9 @@ class App(Pattern):
 
     def substitute(self, x: Var, v: Pattern) -> 'App':
         return App(self.left.substitute(x, v), self.right.substitute(x, v))
+
+    def subpatterns(self) -> set[Pattern]:
+        return self.left.subpatterns().union(set([self])).union(self.right.subpatterns())
 
 @dataclass(frozen=True)
 class Exists(Pattern):
@@ -98,6 +122,9 @@ class Exists(Pattern):
         if x == self.bound: return self
         else:               return Exists(self.bound, self.subpattern.substitute(x, v))
 
+    def subpatterns(self) -> set[Pattern]:
+        return self.subpattern.subpatterns().union(set([self]))
+
 @dataclass(frozen=True)
 class Forall(Pattern):
     bound: EVar
@@ -109,6 +136,9 @@ class Forall(Pattern):
     def substitute(self, x: Var, v: Pattern) -> 'Forall':
         if x == self.bound: return self
         else:               return Forall(self.bound, self.subpattern.substitute(x, v))
+
+    def subpatterns(self) -> set[Pattern]:
+        return self.subpattern.subpatterns().union(set([self]))
 
 @dataclass(frozen=True)
 class Mu(Pattern):
@@ -122,6 +152,9 @@ class Mu(Pattern):
         if x == self.bound: return self
         else:               return Mu(self.bound, self.subpattern.substitute(x, v))
 
+    def subpatterns(self) -> set[Pattern]:
+        return self.subpattern.subpatterns().union(set([self]))
+
 @dataclass(frozen=True)
 class Nu(Pattern):
     bound: SVar
@@ -133,3 +166,6 @@ class Nu(Pattern):
     def substitute(self, x: Var, v: Pattern) -> 'Nu':
         if x == self.bound: return self
         else:               return Nu(self.bound, self.subpattern.substitute(x, v))
+
+    def subpatterns(self) -> set[Pattern]:
+        return self.subpattern.subpatterns().union(set([self]))
