@@ -1,6 +1,8 @@
 """
 A general visitor base class
 """
+
+
 class Visitor:
     def previsit_default(self, x):
         return x
@@ -29,10 +31,12 @@ class Visitor:
             return self.postvisit_default
         elif name.startswith("proxy_visit_"):
             name = name[12:]
+
             def f(node):
                 getattr(self, "previsit_" + name)(node)
                 children = getattr(self, "visit_children_of_" + name)(node)
                 return getattr(self, "postvisit_" + name)(node, *children)
+
             return f
         else:
             raise AttributeError(name)

@@ -1,6 +1,9 @@
 from typing import Mapping, Optional, List
 
-from ml.metamath.parser import parse_term_with_metavariables, parse_terms_with_metavariables
+from ml.metamath.parser import (
+    parse_term_with_metavariables,
+    parse_terms_with_metavariables,
+)
 from ml.metamath.ast import Term, StructuredStatement, Statement, Application
 from ml.metamath.composer import Theorem, Proof
 from ml.metamath.visitors import CopyVisitor
@@ -18,19 +21,25 @@ class Tactic:
     """
     Transforms the proof state
     """
+
     def apply(self, state: ProofState, *args, **kwargs):
         raise NotImplementedError()
 
     """
     Transforms the proof stack
     """
+
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         raise NotImplementedError()
 
     def parse_terms(self, state: ProofState, src: str) -> List[Term]:
-        return parse_terms_with_metavariables(src, set(state.composer.get_all_metavariables()))
+        return parse_terms_with_metavariables(
+            src, set(state.composer.get_all_metavariables())
+        )
 
-    def parse_substitution(self, state: ProofState, options: Mapping[str, str]) -> Mapping[str, Term]:
+    def parse_substitution(
+        self, state: ProofState, options: Mapping[str, str]
+    ) -> Mapping[str, Term]:
         substitution = {}
         all_metavars = set(state.composer.get_all_metavariables())
 
@@ -44,6 +53,8 @@ class Tactic:
 """
 Apply a theorem on the top of the goal stack
 """
+
+
 @ProofState.register_tactic("apply")
 class ApplyTactic(Tactic):
     def __init__(self, *args, **kwargs):
@@ -74,20 +85,27 @@ class ApplyTactic(Tactic):
             for essential in self.theorem.essentials:
                 metavars.update(essential.get_metavariables())
             metavars = list(metavars)
-            metavars.sort() # making things a bit more deterministic
+            metavars.sort()  # making things a bit more deterministic
 
             for metavar in metavars:
                 if metavar not in self.metavars_substitution:
                     typecode = state.composer.find_metavariable(metavar)
-                    self.metavars_substitution[metavar] = state.get_next_schematic_variable(typecode)
+                    self.metavars_substitution[
+                        metavar
+                    ] = state.get_next_schematic_variable(typecode)
 
             # replace all metavariables in the applied theorem
             # with distinct schematic variables
             metavars_subst_visitor = SubstitutionVisitor(self.metavars_substitution)
             copied_statement = metavars_subst_visitor.visit(copied_statement)
 
-            essentials = [ Goal.sanitize_goal_statement(essential) for essential in self.theorem.essentials ]
-            essentials = [ metavars_subst_visitor.visit(essential) for essential in essentials ]
+            essentials = [
+                Goal.sanitize_goal_statement(essential)
+                for essential in self.theorem.essentials
+            ]
+            essentials = [
+                metavars_subst_visitor.visit(essential) for essential in essentials
+            ]
 
         else:
             # try to find a hypotheses
@@ -97,14 +115,17 @@ class ApplyTactic(Tactic):
             essentials = []
 
         schematic_substitution = Unification.unify_statements(
-            top_goal_statement, copied_statement,
+            top_goal_statement,
+            copied_statement,
             variable_class=SchematicVariable,
             substitution_visitor_class=SubstitutionVisitor,
             # newer schematic variable are used as substitution variables
             # with higher priority than older schematic variables
             variable_order=lambda v1, v2: v1.num > v2.num,
         )
-        assert schematic_substitution is not None, f"unable to unify the goal {top_goal_statement} with {copied_statement}"
+        assert (
+            schematic_substitution is not None
+        ), f"unable to unify the goal {top_goal_statement} with {copied_statement}"
 
         for var, term in schematic_substitution.items():
             svar = state.get_schematic_variable_from_name(var)
@@ -116,23 +137,33 @@ class ApplyTactic(Tactic):
         # add all essentials to the goal stack
         state.push_derived_goals(top_goal, essentials)
 
-        state.transform_all_current_goals(lambda stmt: schematic_subst_visitor.visit(stmt))
+        state.transform_all_current_goals(
+            lambda stmt: schematic_subst_visitor.visit(stmt)
+        )
 
         # check if any schematic variables are killed before being assigned
         top_goal_statement = schematic_subst_visitor.visit(top_goal_statement)
         live_svars = state.get_live_schematic_variables()
         killed_svars = top_goal_statement.get_metavariables().difference(live_svars)
-        killed_svars = { var for var in killed_svars if state.get_schematic_variable_from_name(var) is not None }
-        assert not killed_svars, f"schematic variable(s) {killed_svars} killed before being assigned"
+        killed_svars = {
+            var
+            for var in killed_svars
+            if state.get_schematic_variable_from_name(var) is not None
+        }
+        assert (
+            not killed_svars
+        ), f"schematic variable(s) {killed_svars} killed before being assigned"
 
     """
     Construct a proof from given subproofs and the information inferred before
     """
+
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         num_essentials = len(self.theorem.essentials)
 
-        assert len(subproofs) >= num_essentials, \
-               f"theorem {self.theorem.statement.label} requires {num_essentials}, but only {len(subproofs)} are provided"
+        assert (
+            len(subproofs) >= num_essentials
+        ), f"theorem {self.theorem.statement.label} requires {num_essentials}, but only {len(subproofs)} are provided"
 
         # during apply(), we made a substitution from metavariables to schematic variables
         # now we attempt to resolve all the schematic variables to concrete terms (terms
@@ -147,7 +178,7 @@ class ApplyTactic(Tactic):
         if self.use_claim:
             # get an inline proof if the reference theorem is an inline claim
             return self.theorem.inline_apply(
-                *subproofs, # subproofs would include the proof of the claim as the first one since we added the dependency
+                *subproofs,  # subproofs would include the proof of the claim as the first one since we added the dependency
                 **full_substitution,
             )
         else:
@@ -160,6 +191,8 @@ class ApplyTactic(Tactic):
 """
 Set some schematic variables to concrete terms (without schematic variables)
 """
+
+
 @ProofState.register_tactic("let")
 class SetSchematicVariableTactic(Tactic):
     def apply(self, state: ProofState, **options):
@@ -167,13 +200,16 @@ class SetSchematicVariableTactic(Tactic):
 
         live_svars = state.get_live_schematic_variables()
         substituting_svars = set(substitution.keys())
-        assert substituting_svars.issubset(live_svars), \
-               f"assigning dead/nonexistent schematic variable(s) {substituting_svars.difference(live_svars)}"
+        assert substituting_svars.issubset(
+            live_svars
+        ), f"assigning dead/nonexistent schematic variable(s) {substituting_svars.difference(live_svars)}"
 
         for var, term in substitution.items():
-            assert state.is_concrete(term), f"non-concrete term {term} substituted for schematic variable {var}"
+            assert state.is_concrete(
+                term
+            ), f"non-concrete term {term} substituted for schematic variable {var}"
 
-            svar = state.get_schematic_variable_from_name(var)            
+            svar = state.get_schematic_variable_from_name(var)
             assert svar is not None, f"cannot substitute non-schematic variable {var}"
 
             state.assign_schematic_variable(svar, term)
@@ -181,23 +217,29 @@ class SetSchematicVariableTactic(Tactic):
         subst_visitor = SubstitutionVisitor(substitution)
         state.transform_all_current_goals(lambda stmt: subst_visitor.visit(stmt))
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof: pass
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        pass
 
 
 """
 Move the current goal to the last
 """
+
+
 @ProofState.register_tactic("meh")
 class ShuffleTactic(Tactic):
     def apply(self, state: ProofState):
-        state.current_goals = [ state.current_goals[-1] ] + state.current_goals[:-1]
+        state.current_goals = [state.current_goals[-1]] + state.current_goals[:-1]
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof: pass
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        pass
 
 
 """
 Make a temporary claim and use it in other parts of the proof
 """
+
+
 @ProofState.register_tactic("claim")
 class ClaimTactic(Tactic):
     def find_free_theorem_name(self, state: ProofState, prefix: str) -> str:
@@ -205,7 +247,10 @@ class ClaimTactic(Tactic):
         # TODO: well...
         while True:
             name = prefix + str(i)
-            if state.composer.find_theorem(name) is None and state.find_claim(name) is None:
+            if (
+                state.composer.find_theorem(name) is None
+                and state.find_claim(name) is None
+            ):
                 return name
             i += 1
 
@@ -227,7 +272,9 @@ class ClaimTactic(Tactic):
         for i, hypothesis in enumerate(hypotheses):
             terms = self.parse_terms(state, hypothesis)
             essential_label = f"{label}.{i}"
-            essential = StructuredStatement(Statement.ESSENTITAL, terms, label=essential_label)
+            essential = StructuredStatement(
+                Statement.ESSENTITAL, terms, label=essential_label
+            )
             essentials.append(essential)
 
         terms = self.parse_terms(state, conclusion)

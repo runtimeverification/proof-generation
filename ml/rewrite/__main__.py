@@ -33,6 +33,8 @@ def load_prelude(composer: Composer, args):
 Load all snapshots in a directory
 as patterns in the given module
 """
+
+
 def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
     snapshots = {}
     max_step = 0
@@ -54,7 +56,7 @@ def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
                 snapshot_pattern.resolve(module)
                 snapshots[step] = snapshot_pattern
 
-    snapshots = [ snapshots[i] for i in range(max_step + 1) ]
+    snapshots = [snapshots[i] for i in range(max_step + 1)]
 
     return snapshots
 
@@ -64,6 +66,8 @@ Given a list of snapshots, prove that the first snapshot
 rewrites to the second snapshot, and load all proofs into
 the environment
 """
+
+
 def prove_rewriting(env: ProofEnvironment, snapshots: List[Pattern]):
     gen = RewriteProofGenerator(env)
 
@@ -76,7 +80,15 @@ def prove_rewriting(env: ProofEnvironment, snapshots: List[Pattern]):
 Output to a standalone .mm file or a directory containing
 multiple interdepdent theories
 """
-def output_theory(composer: Composer, prelude: Optional[str], output: str, standalone=False, include_rewrite_proof=False):
+
+
+def output_theory(
+    composer: Composer,
+    prelude: Optional[str],
+    output: str,
+    standalone=False,
+    include_rewrite_proof=False,
+):
     if standalone:
         assert not os.path.isdir(output), f"path {output} exists and is a directory"
         print(f"dumping standalone metamath theory to {output}")
@@ -115,7 +127,7 @@ def output_theory(composer: Composer, prelude: Optional[str], output: str, stand
                     previous_path = abs_prelude_path
                 else:
                     previous_path = os.path.join(abs_output_path, output_list[i - 1][1])
-                
+
                 IncludeStatement(previous_path).encode(f)
                 f.write("\n")
                 composer.encode(f, segment)
@@ -125,11 +137,31 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("definition", help="a kore file")
     parser.add_argument("module", help="the entry module name")
-    parser.add_argument("-sa", "--standalone", action="store_const", const=True, default=False, help="output a standalone .mm file")
-    parser.add_argument("-o", "--output", help="directory to store the translated module and proof object")
+    parser.add_argument(
+        "-sa",
+        "--standalone",
+        action="store_const",
+        const=True,
+        default=False,
+        help="output a standalone .mm file",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="directory to store the translated module and proof object",
+    )
     parser.add_argument("--prelude", help="prelude mm file")
-    parser.add_argument("--snapshots", help="directory containing all snapshots in the format *-<step number>.kore")
-    parser.add_argument("--benchmark", action="store_const", const=True, default=False, help="output the time spent for translating module and proving rewriting")
+    parser.add_argument(
+        "--snapshots",
+        help="directory containing all snapshots in the format *-<step number>.kore",
+    )
+    parser.add_argument(
+        "--benchmark",
+        action="store_const",
+        const=True,
+        default=False,
+        help="output the time spent for translating module and proving rewriting",
+    )
     args = parser.parse_args()
 
     composer = Composer()
@@ -174,7 +206,13 @@ def main():
             print("only one snapshot, nothing to prove")
 
     if args.output is not None:
-        output_theory(composer, args.prelude, args.output, standalone=args.standalone, include_rewrite_proof=args.snapshots is not None)
+        output_theory(
+            composer,
+            args.prelude,
+            args.output,
+            standalone=args.standalone,
+            include_rewrite_proof=args.snapshots is not None,
+        )
 
     if args.benchmark:
         print("==================")

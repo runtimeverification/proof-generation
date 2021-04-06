@@ -11,7 +11,7 @@ class ASTTransformer(Transformer):
 
     def string(self, args):
         literal = args[0].value
-        assert literal.startswith("\"") and literal.endswith("\"")
+        assert literal.startswith('"') and literal.endswith('"')
         return literal[1:-1]
 
     def value(self, args):

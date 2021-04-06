@@ -26,22 +26,22 @@ with the only exception being metavariables.
 class MetamathVisitor(Visitor):
     def visit_children_of_application(self, application: Application):
         return [
-            [ subterm.visit(self) for subterm in application.subterms ],
+            [subterm.visit(self) for subterm in application.subterms],
         ]
 
     def visit_children_of_structured_statement(self, stmt: StructuredStatement):
         return [
-            [ term.visit(self) for term in stmt.terms ],
+            [term.visit(self) for term in stmt.terms],
         ]
 
     def visit_children_of_block(self, block: Block):
         return [
-            [ stmt.visit(self) for stmt in block.statements ],
+            [stmt.visit(self) for stmt in block.statements],
         ]
 
     def visit_children_of_database(self, database: Database):
         return [
-            [ stmt.visit(self) for stmt in database.statements ],
+            [stmt.visit(self) for stmt in database.statements],
         ]
 
 
@@ -78,7 +78,7 @@ class Metavariable(Term):
         stream.write(self.name)
 
     def get_metavariables(self) -> Set[str]:
-        return { self.name }
+        return {self.name}
 
     def visit(self, visitor: MetamathVisitor):
         visitor.previsit_metavariable(self)
@@ -95,7 +95,7 @@ class Metavariable(Term):
 
 
 class Application(Term):
-    def __init__(self, symbol: str, subterms: List[Term]=[]):
+    def __init__(self, symbol: str, subterms: List[Term] = []):
         super().__init__()
         self.symbol = symbol
         self.subterms = subterms
@@ -129,17 +129,20 @@ class Application(Term):
         # to not use recursion since it's used
         # too many times and has become a performance
         # bottleneck
-        if not isinstance(other, Application): return False
+        if not isinstance(other, Application):
+            return False
 
-        comparison_left = [ self ]
-        comparison_right = [ other ]
+        comparison_left = [self]
+        comparison_right = [other]
 
         while comparison_left:
             left = comparison_left.pop()
             right = comparison_right.pop()
 
             if type(left) == type(right) == Application:
-                if left.symbol == right.symbol and len(left.subterms) == len(right.subterms):
+                if left.symbol == right.symbol and len(left.subterms) == len(
+                    right.subterms
+                ):
                     comparison_left.extend(left.subterms)
                     comparison_right.extend(right.subterms)
                 else:
@@ -147,14 +150,16 @@ class Application(Term):
             elif not (left == right):
                 # fall back to default equality
                 return False
-        
+
         return True
 
     def __hash__(self) -> int:
-        if self.hash_cache is not None: return self.hash_cache
+        if self.hash_cache is not None:
+            return self.hash_cache
 
         final_hash = hash(self.symbol)
-        for subterm in self.subterms: final_hash ^= hash(subterm)
+        for subterm in self.subterms:
+            final_hash ^= hash(subterm)
 
         self.hash_cache = final_hash
         return final_hash
@@ -219,8 +224,12 @@ class IncludeStatement(Statement):
 A list of tokens without any structures.
 Constant and variable statements are of this kind
 """
+
+
 class RawStatement(Statement):
-    def __init__(self, statement_type: str, tokens: List[str], label: Optional[str]=None):
+    def __init__(
+        self, statement_type: str, tokens: List[str], label: Optional[str] = None
+    ):
         super().__init__()
         self.statement_type = statement_type
         self.tokens = tokens
@@ -249,8 +258,16 @@ class RawStatement(Statement):
 """
 Structured statement will be parsed as a list of S-expressions
 """
+
+
 class StructuredStatement(Statement):
-    def __init__(self, statement_type: str, terms: List[Term], label: Optional[str]=None, proof: Optional[List[str]]=None):
+    def __init__(
+        self,
+        statement_type: str,
+        terms: List[Term],
+        label: Optional[str] = None,
+        proof: Optional[List[str]] = None,
+    ):
         super().__init__()
         self.statement_type = statement_type
         self.terms = terms
@@ -264,7 +281,7 @@ class StructuredStatement(Statement):
 
         stream.write("$")
         stream.write(self.statement_type)
-        
+
         for term in self.terms:
             stream.write(" ")
             term.encode(stream)
@@ -277,7 +294,7 @@ class StructuredStatement(Statement):
         elif self.statement_type == Statement.PROVABLE:
             # the statement is marked provable but no proof is given
             stream.write(" $= ?")
-        
+
         stream.write(" $.")
 
     def get_metavariables(self) -> Set[str]:
@@ -293,10 +310,12 @@ class StructuredStatement(Statement):
 
     def __eq__(self, other) -> bool:
         if isinstance(other, StructuredStatement):
-            return self.statement_type == other.statement_type and \
-                   self.terms == other.terms and \
-                   self.label == other.label and \
-                   self.proof == other.proof
+            return (
+                self.statement_type == other.statement_type
+                and self.terms == other.terms
+                and self.label == other.label
+                and self.proof == other.proof
+            )
         return False
 
 
@@ -304,6 +323,8 @@ class StructuredStatement(Statement):
 A block is a list of statements,
 while itself is also a statement
 """
+
+
 class Block(Statement):
     def __init__(self, statements: List[Statement]):
         self.statements = statements
@@ -326,6 +347,8 @@ A database consists of a single outermost block
 and some auxiliary information
 e.g. set of variables and mapping from labels to statements
 """
+
+
 class Database(BaseAST):
     def __init__(self, statements: List[Statement]):
         self.statements = statements

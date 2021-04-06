@@ -23,8 +23,10 @@ class SchematicVariable(Metavariable):
 
 class SubstitutionVisitor(OldSubstitutionVisitor):
     def postvisit_schematic_variable(self, var: SchematicVariable) -> Term:
-        if var.name in self.substitution: return self.substitution[var.name]
+        if var.name in self.substitution:
+            return self.substitution[var.name]
         return SchematicVariable(var.typecode, var.num)
+
 
 class CopyVisitor(OldCopyVisitor):
     def postvisit_schematic_variable(self, var: SchematicVariable) -> SchematicVariable:

@@ -7,13 +7,21 @@ from .ast import *
 A decorator to attach extra info on each
 AST node when doing tranformation
 """
+
+
 def meta_info(f):
     @v_args(tree=True)
     def wrapper(self, tree):
         node = f(self, tree.children)
         if isinstance(node, BaseAST) and not tree.meta.empty:
-            node.set_position(tree.meta.line, tree.meta.column, tree.meta.end_line, tree.meta.end_column)
+            node.set_position(
+                tree.meta.line,
+                tree.meta.column,
+                tree.meta.end_line,
+                tree.meta.end_column,
+            )
         return node
+
     return wrapper
 
 
@@ -29,7 +37,7 @@ class ASTTransformer(Transformer):
 
     def string_literal(self, args):
         literal = args[0].value
-        assert literal.startswith("\"") and literal.endswith("\"")
+        assert literal.startswith('"') and literal.endswith('"')
         return literal[1:-1]
 
     def ml_symbols(self, args):
@@ -87,12 +95,16 @@ class ASTTransformer(Transformer):
     @meta_info
     def symbol_definition(self, args):
         symbol, sort_variables, input_sorts, output_sort, attributes = args
-        return SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, attributes, hooked=False)
+        return SymbolDefinition(
+            symbol, sort_variables, input_sorts, output_sort, attributes, hooked=False
+        )
 
     @meta_info
     def hooked_symbol_definition(self, args):
         symbol, sort_variables, input_sorts, output_sort, attributes = args
-        return SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, attributes, hooked=True)
+        return SymbolDefinition(
+            symbol, sort_variables, input_sorts, output_sort, attributes, hooked=True
+        )
 
     @meta_info
     def axiom(self, args):
@@ -112,7 +124,9 @@ class ASTTransformer(Transformer):
     @meta_info
     def alias_definition(self, args):
         symbol, sort_variables, input_sorts, output_sort, lhs, rhs, attributes = args
-        definition = SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, [], hooked=False)
+        definition = SymbolDefinition(
+            symbol, sort_variables, input_sorts, output_sort, [], hooked=False
+        )
         return AliasDefinition(definition, lhs, rhs, attributes)
 
     # patterns
