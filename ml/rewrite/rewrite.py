@@ -104,8 +104,13 @@ class RewriteProofGenerator(ProofGenerator):
             unification_result = unification_gen.unify_patterns(lhs_instance, pattern)
             if unification_result is None: continue
 
+            print("unification result", unification_result)
+
             # eliminate all universal quantifiers
-            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(rewrite_axiom, unification_result.substitution)
+            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(
+                rewrite_axiom, 
+                { **unification_result.substitution, **rewriting_info_map }  # this is the union of two dictionaries
+            )
             lhs, requires, rhs, ensures = self.decompose_rewrite_axiom(instantiated_axiom.claim.pattern)
 
             assert ensures.construct == kore.MLPattern.TOP, f"non-top ensures clause is not supported: {ensures}"

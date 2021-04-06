@@ -440,8 +440,11 @@ class Pattern(BaseAST):
     def __init__(self):
         super().__init__()
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         raise NotImplementedError()
+    
+    def __lt__(self, other) -> bool:
+        return NotImplementedError()
 
 
 class Variable(Pattern):
@@ -460,12 +463,15 @@ class Variable(Pattern):
         children = visitor.visit_children_of_variable(self)
         return visitor.postvisit_variable(self, *children)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, Variable):
             return (self.name == other.name and
                     self.is_set_variable == other.is_set_variable and
                     self.sort == other.sort)
         return False
+
+    def __lt__(self, other) -> bool:
+        return self.name < other.name
 
     def __hash__(self):
         return hash(self.name)
@@ -488,6 +494,9 @@ class StringLiteral(Pattern):
         if isinstance(other, StringLiteral):
             return self.content == other.content
         return False
+
+    def __lt__(self, other) -> bool:
+        return self.content < other.content
 
     def __hash__(self):
         return hash(self.content)
@@ -522,6 +531,9 @@ class Application(Pattern):
         if isinstance(other, Application):
             return self.symbol == other.symbol and self.arguments == other.arguments
         return False
+    
+    def __lt__(self, other) -> bool:
+        return str(self) < str(other)
 
     def __str__(self) -> str:
         return "{}({})".format(self.symbol, ", ".join(map(str, self.arguments)))
@@ -591,6 +603,9 @@ class MLPattern(Pattern):
                    self.sorts == other.sorts and \
                    self.arguments == other.arguments
         return False
+
+    def __lt__(self, other) -> bool:
+        return str(self) < str(other)
 
     def __str__(self) -> str:
         return "{}{{{}}}({})".format(self.construct, ", ".join(map(str, self.sorts)), ", ".join(map(str, self.arguments)))

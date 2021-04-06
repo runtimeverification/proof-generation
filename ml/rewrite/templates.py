@@ -247,10 +247,10 @@ class KoreTemplates:
             rhs = KoreTemplates.get_map_merge_right(pattern)
             p, lp = KoreTemplates.get_path_to_smallest_key_in_map_pattern(lhs)
             q, lq = KoreTemplates.get_path_to_smallest_key_in_map_pattern(rhs)
-            if hash(str(p.arguments[0])) < hash(str(q.arguments[0])):
+            if p.arguments[0] < q.arguments[0]:
                 # print("smallest:", p.arguments[0])
                 return (p, [LEFT] + lp)
-            elif hash(str(p.arguments[0])) > hash(str(q.arguments[0])):
+            elif p.arguments[0] > q.arguments[0]:
                 # print("smallest:", q.arguments[0])
                 return (q, [RIGHT] + lq)
             else:

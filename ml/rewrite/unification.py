@@ -42,6 +42,10 @@ class UnificationResult:
 
         return UnificationResult(new_subst, self.applied_equations + other.applied_equations)
 
+    @staticmethod
+    def prepend_path_to_applied_eqs(applied_eqs: List[Tuple[Equation, PatternPath]], prefix: int) -> List[Tuple[Equation, PatternPath]]:
+        return [ (eqn, [ prefix ] + path) for eqn, path in applied_eqs ]
+
     def prepend_path(self, prefix: int) -> UnificationResult:
         return UnificationResult(self.substitution, [ (eqn, [ prefix ] + path) for eqn, path in self.applied_equations ])
 
@@ -142,7 +146,8 @@ class MapCommutativity(Equation):
 
         # get the two variable (names) in the commutativity axiom
         comm_axiom = self.env.map_commutativity_axiom
-        var1, var2 = KoreUtils.strip_forall(comm_axiom.claim).arguments[0].arguments
+        print("comm_axiom", KoreUtils.strip_forall(comm_axiom.claim.pattern))
+        var1, var2 = KoreUtils.strip_forall(comm_axiom.claim.pattern).arguments[0].arguments
 
         subst = { var1 : subpattern.arguments[0] , var2 : subpattern.arguments[1] }
         axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(self.env.map_commutativity_axiom, subst)
@@ -436,7 +441,20 @@ class UnificationProofGenerator(ProofGenerator):
         return (ret_pattern, applied_eqs_comm + applied_eqs_assoc)
 
     def sort_map_pattern(self, pattern: kore.Pattern) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
-        return self.bubble_smallest_map_pattern(pattern)
+        assert KoreTemplates.is_map_pattern(pattern)
+        if KoreTemplates.is_map_mapsto_pattern(pattern):
+            return (pattern, [])
+        if KoreTemplates.is_map_merge_pattern(pattern):
+            pattern_bubbled, applied_eqs_bubbled = self.bubble_smallest_map_pattern(pattern)
+            pattern_bubbled_right = KoreTemplates.get_map_merge_right(pattern_bubbled)
+            pattern_bubbled_right_sorted, applied_eqs_right = self.sort_map_pattern(pattern_bubbled_right)
+            sorted_pattern = KoreUtils.copy_pattern(pattern)
+            sorted_pattern.arguments[0] = pattern_bubbled.arguments[0]
+            sorted_pattern.arguments[1] = pattern_bubbled_right_sorted
+            applied_eqs = applied_eqs_bubbled + UnificationResult.prepend_path_to_applied_eqs(applied_eqs_right, 1)
+            return (sorted_pattern, applied_eqs)
+        raise NotImplementedError("Unexpected. A map pattern is either a mapsto or a merge.")
+
 
     r"""
     Unify two concrete map patterns. 
@@ -445,17 +463,17 @@ class UnificationProofGenerator(ProofGenerator):
         print("\nunify_concrete_map_patterns:\n   ", pattern1, "\n   ", pattern2, "\n")
 
         if not KoreTemplates.is_map_pattern(pattern1) or not KoreTemplates.is_map_merge_pattern(pattern2):
-            print(">>> not map patterns")
+            # print(">>> not map patterns")
             return None
        
         if KoreTemplates.is_map_mapsto_pattern(pattern1):
             if not KoreTemplates.is_map_mapsto_pattern(pattern2):
                 return None
             if pattern1 == pattern2:
-                print(">>> both mapsto patterns, same")
-                return UnificationResult([], [])
+                # print(">>> both mapsto patterns, same")
+                return UnificationResult()
             else:
-                print(">>> both mapsto patterns, diff")
+                # print(">>> both mapsto patterns, diff")
                 return None
 
         assert KoreTemplates.is_map_merge_pattern(pattern1)
@@ -463,7 +481,6 @@ class UnificationProofGenerator(ProofGenerator):
 
         pattern1_sorted, applied_eqs1 = self.sort_map_pattern(pattern1)
         pattern2_sorted, applied_eqs2 = self.sort_map_pattern(pattern2)
-        
         
         print("pattern1_sorted:\n   ", pattern1_sorted)
         print("pattern2_sorted:\n   ", pattern2_sorted)
@@ -482,7 +499,7 @@ class UnificationProofGenerator(ProofGenerator):
                 eq.rotate_right = not eq.rotate_right
             applied_eqs2_reversed = applied_eqs2_reversed + [(eq, path)]
 
-        return UnificationResult([], applied_eqs1 + applied_eqs2_reversed)
+        return UnificationResult({}, applied_eqs1 + applied_eqs2_reversed)
 
 
         
