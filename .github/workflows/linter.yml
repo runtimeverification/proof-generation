@@ -23,7 +23,7 @@ jobs:
         pip install black flake8
     - name: Lint with black
       run: |
-        black --check ml
+        black --check ml scripts
     - name: Lint with flake8
       run: |
-        flake8 ml
+        flake8 ml scripts
