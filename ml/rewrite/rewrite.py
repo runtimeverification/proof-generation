@@ -94,17 +94,12 @@ class RewriteProofGenerator(ProofGenerator):
         unification_gen = UnificationProofGenerator(self.env)
 
         for _, rewrite_axiom in self.env.rewrite_axioms.items():
-            print(f"> trying axiom {KoreTemplates.get_axiom_unique_id(rewrite_axiom.claim)}")
-
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
-            print("rewrite_from_pattern", rewriting_info)
 
             rewriting_info_map = dict(rewriting_info)
             lhs_instance = KoreUtils.copy_and_substitute_pattern(lhs, rewriting_info_map)
             unification_result = unification_gen.unify_patterns(lhs_instance, pattern)
             if unification_result is None: continue
-
-            print("unification result", unification_result)
 
             # eliminate all universal quantifiers
             instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(
@@ -189,7 +184,6 @@ class RewriteProofGenerator(ProofGenerator):
 
             from_pattern = rhs
         
-        print("one-step-rewriting-info: ", rewriting_info)
         concrete_rewrite_claim = self.rewrite_from_pattern(from_pattern, rewriting_info)
 
         # check that the proven statement is actually what we want
@@ -216,14 +210,8 @@ class RewriteProofGenerator(ProofGenerator):
         final_claim = None
 
         for step, (from_pattern, to_pattern) in enumerate(zip(patterns[:-1], patterns[1:])):
-            print("==================")
-            print("proving rewriting step {}".format(step))
-
             rewriting_info = rewriting_info_list[step]
-            print("subst is", str(rewriting_info))
-
             step_claim = self.prove_rewrite_step(from_pattern, to_pattern, rewriting_info, simplify_initial_pattern=step == 0)
-
             self.env.load_comment(f"\nrewriting step:\n{from_pattern}\n=>\n{to_pattern}\n")
             step_claim = self.env.load_provable_claim_as_theorem(f"rewrite-step-{self.rewrite_claim_counter}", step_claim)
             self.rewrite_claim_counter += 1

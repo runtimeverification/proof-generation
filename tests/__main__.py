@@ -4,10 +4,10 @@ from scripts.runtest import gen_proof
 tests_run_counter = 0
 
 test_parameters = [
-    ("examples/two-counters/two-counters.k",
-     "TWO-COUNTERS",
-     "examples/two-counters/programs/10.two-counters",
-     "tmp"),
+    # ("examples/two-counters/two-counters.k",
+    #  "TWO-COUNTERS",
+    #  "examples/two-counters/programs/10.two-counters",
+    #  "tmp"),
     ("examples/map-test/map-test.k",
      "MAP-TEST",
      "examples/map-test/pgm-comm.map-test",

@@ -146,7 +146,6 @@ class MapCommutativity(Equation):
 
         # get the two variable (names) in the commutativity axiom
         comm_axiom = self.env.map_commutativity_axiom
-        print("comm_axiom", KoreUtils.strip_forall(comm_axiom.claim.pattern))
         var1, var2 = KoreUtils.strip_forall(comm_axiom.claim.pattern).arguments[0].arguments
 
         subst = { var1 : subpattern.arguments[0] , var2 : subpattern.arguments[1] }
@@ -196,12 +195,6 @@ class UnificationProofGenerator(ProofGenerator):
     """
     def unify_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
 
-        # print("\n")
-        # print("unify_patterns begins")
-        # print("pattern1", pattern1)
-        # print("pattern2", pattern2)
-        # print("\n")
-
         algorithms = [
             self.unify_vars,
             self.unify_applications,
@@ -212,9 +205,7 @@ class UnificationProofGenerator(ProofGenerator):
             self.unify_concrete_map_patterns,
         ]
         for algo in algorithms:
-            # print("trying algo", algo, "\n")
             result = algo(pattern1, pattern2)
-            # print("tried" + str(algo) + "result is" + str(result), "\n")
             if result is not None:
                 return result
 
@@ -396,16 +387,11 @@ class UnificationProofGenerator(ProofGenerator):
     def bubble_smallest_map_pattern(self, pattern: kore.Pattern) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
         assert KoreTemplates.is_map_pattern(pattern)
 
-        print("\n bubble_smallest\n")
-        print("pattern:\n", "   ", pattern)
-
         if KoreTemplates.is_map_mapsto_pattern(pattern):
             return (pattern, [])
 
         p, path = KoreTemplates.get_path_to_smallest_key_in_map_pattern(pattern)
-
-        print(">>> smallest_path is", path)
-        
+      
         # from path we can create applied_eqs
         create_comm = lambda depth, direction: (MapCommutativity(self.env), ([0] * depth))
         applied_eqs_comm = [ create_comm(d, direct) for d, direct in enumerate(path) if direct == 1 ]
@@ -433,10 +419,6 @@ class UnificationProofGenerator(ProofGenerator):
         while KoreTemplates.is_map_merge_pattern(ret_pattern) and \
               KoreTemplates.is_map_merge_pattern(KoreTemplates.get_map_merge_left(ret_pattern)):
             KoreTemplates.deep_rotate_right_map_merge_pattern(ret_pattern)
-        
-        print(">>> bubbled_pattern is:", ret_pattern)
-        print(">>> applied_eqs_comm:", applied_eqs_comm)
-        print(">>> applied_eqs_assoc:", applied_eqs_assoc)
 
         return (ret_pattern, applied_eqs_comm + applied_eqs_assoc)
 
@@ -460,20 +442,16 @@ class UnificationProofGenerator(ProofGenerator):
     Unify two concrete map patterns. 
     """
     def unify_concrete_map_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
-        print("\nunify_concrete_map_patterns:\n   ", pattern1, "\n   ", pattern2, "\n")
 
         if not KoreTemplates.is_map_pattern(pattern1) or not KoreTemplates.is_map_merge_pattern(pattern2):
-            # print(">>> not map patterns")
             return None
        
         if KoreTemplates.is_map_mapsto_pattern(pattern1):
             if not KoreTemplates.is_map_mapsto_pattern(pattern2):
                 return None
             if pattern1 == pattern2:
-                # print(">>> both mapsto patterns, same")
                 return UnificationResult()
             else:
-                # print(">>> both mapsto patterns, diff")
                 return None
 
         assert KoreTemplates.is_map_merge_pattern(pattern1)
@@ -481,17 +459,10 @@ class UnificationProofGenerator(ProofGenerator):
 
         pattern1_sorted, applied_eqs1 = self.sort_map_pattern(pattern1)
         pattern2_sorted, applied_eqs2 = self.sort_map_pattern(pattern2)
-        
-        print("pattern1_sorted:\n   ", pattern1_sorted)
-        print("pattern2_sorted:\n   ", pattern2_sorted)
-        
+               
         if pattern1_sorted != pattern2_sorted:
-            print("not equal.\n")
             return None
-        
-        print("applied_eqs1:\n    ", applied_eqs1)
-        print("applied_eqs2:\n    ", applied_eqs2)
-        
+               
         # reverse applied_eq2
         applied_eqs2_reversed = []
         for eq, path in reversed(applied_eqs2):
@@ -500,6 +471,4 @@ class UnificationProofGenerator(ProofGenerator):
             applied_eqs2_reversed = applied_eqs2_reversed + [(eq, path)]
 
         return UnificationResult({}, applied_eqs1 + applied_eqs2_reversed)
-
-
         

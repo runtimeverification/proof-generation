@@ -67,8 +67,6 @@ def load_rewriting_info(module: Module, rewriting_info_dir: str) -> List[List[Tu
     max_step = 0
 
     for file_name in os.listdir(rewriting_info_dir):
-        print("----")
-        print(file_name)
         match = re.match(r"\D*(\d+)\.ekore", file_name)
         if match is not None:
             step = int(match.group(1))
@@ -167,7 +165,6 @@ def main():
     composer = Composer()
 
     with open(args.definition) as f:
-        print("parsing kore definition")
         definition = parse_definition(f.read())
         definition.resolve()
 
@@ -188,8 +185,6 @@ def main():
     composer.end_segment()
 
     module_elapsed = time.time() - module_begin
-
-    print("loading snapshots and rewriting information")
 
     # emit claims about each rewriting step if shapshots are given
     if args.rewriting_info is not None:

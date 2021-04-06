@@ -250,10 +250,17 @@ class KoreTemplates:
             if p.arguments[0] < q.arguments[0]:
                 # print("smallest:", p.arguments[0])
                 return (p, [LEFT] + lp)
-            elif p.arguments[0] > q.arguments[0]:
+            elif q.arguments[0] < p.arguments[0]:
                 # print("smallest:", q.arguments[0])
                 return (q, [RIGHT] + lq)
             else:
+                print("\n")
+                print("  p0 is", p.arguments[0])
+                print("  q0 is", q.arguments[0])
+                print("  p0 < q0 is", p.arguments[0] < q.arguments[0])
+                print("  q0 < p0 is", q.arguments[0] < p.arguments[0])
+                print("  p0 __lt__ q0 is", p.arguments[0].__lt__(q.arguments[0]))
+                print("\n")
                 raise NotImplementedError("Should not be reachable because map patterns have distinct keys.")
 
 
