@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import List, Tuple, NewType, Optional, Dict
+import copy
+
+from typing import List, Tuple, NewType, Optional, Mapping, Dict
 
 from ml.kore import ast as kore
 from ml.kore.visitors import FreePatternVariableVisitor
@@ -13,6 +15,9 @@ from .env import ProofGenerator, ProofEnvironment, ProvableClaim
 from .equality import EqualityProofGenerator
 from .sort import SortProofGenerator
 from .quantifier import QuantifierProofGenerator
+from .templates import KoreTemplates
+
+# AppliedEquation = List[Tuple[Equation, PatternPath]]
 
 
 class UnificationResult:
@@ -39,6 +44,12 @@ class UnificationResult:
         return UnificationResult(
             new_subst, self.applied_equations + other.applied_equations
         )
+
+    @staticmethod
+    def prepend_path_to_applied_eqs(
+        applied_eqs: List[Tuple[Equation, PatternPath]], prefix: int
+    ) -> List[Tuple[Equation, PatternPath]]:
+        return [(eqn, [prefix] + path) for eqn, path in applied_eqs]
 
     def prepend_path(self, prefix: int) -> UnificationResult:
         return UnificationResult(
@@ -157,6 +168,76 @@ class InjectionCombine(Equation):
         )
 
 
+r"""
+mapmerge(M1, M2) === mapmerge(M2, M1)
+"""
+
+
+class MapCommutativity(Equation):
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     # If flag is true, apply the commutativity equation from left to right
+    #     # If flag is false, apply the equation from right to left
+    #     self.flag_left_to_right: bool = True
+
+    def replace_equal_subpattern(
+        self, provable: ProvableClaim, path: PatternPath
+    ) -> ProvableClaim:
+        subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
+        # TODO:: assert here that subpattern is a mapmerge
+
+        # get the two variable (names) in the commutativity axiom
+        comm_axiom = self.env.map_commutativity_axiom
+        var1, var2 = (
+            KoreUtils.strip_forall(comm_axiom.claim.pattern).arguments[0].arguments
+        )
+
+        subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
+        axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(
+            self.env.map_commutativity_axiom, subst
+        )
+
+        return EqualityProofGenerator(self.env).replace_equal_subpattern_with_equation(
+            provable,
+            path,
+            axiom_instance,
+        )
+
+
+r"""
+  mapmerge(mapmerge(M1, M2), M3) <==> mapmerge(M1, mapmerge(M2, M3))
+  We use a boolean rotate_right to control the direction. 
+"""
+
+
+class MapAssociativity(Equation):
+    def __init__(self, rotate_right, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.rotate_right: bool = rotate_right
+
+    def replace_equal_subpattern(
+        self, provable: ProvableClaim, path: PatternPath
+    ) -> ProvableClaim:
+        # TODO::
+        subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
+        # TODO:: assert here that subpattern is a mapmerge
+
+        # get the two variable (names) in the commutativity axiom
+        comm_axiom = self.env.map_commutativity_axiom
+        var1, var2 = KoreUtils.strip_forall(comm_axiom.claim).arguments[0].arguments
+
+        subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
+        axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(
+            self.env.map_commutativity_axiom, subst
+        )
+
+        return EqualityProofGenerator(self.env).replace_equal_subpattern_with_equation(
+            provable,
+            path,
+            axiom_instance,
+        )
+
+
 """
 Unify two patterns modulo certain equations
 NOTE: this generator currently only supports
@@ -179,8 +260,8 @@ class UnificationProofGenerator(ProofGenerator):
             self.unify_string_literals,
             self.unify_left_duplicate_conjunction,
             self.unify_right_splittable_inj,
+            self.unify_concrete_map_patterns,
         ]
-
         for algo in algorithms:
             result = algo(pattern1, pattern2)
             if result is not None:
@@ -380,3 +461,164 @@ class UnificationProofGenerator(ProofGenerator):
                 )
 
         return None
+
+    def swap_map_pattern(
+        self, pattern: kore.Pattern
+    ) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+        assert KoreTemplates.is_map_merge_pattern(pattern)
+        swapped_pattern = KoreUtils.copy_pattern(pattern)
+        swapped_pattern.arguments[0] = pattern.arguments[1]
+        swapped_pattern.arguments[1] = pattern.arguments[0]
+        return (swapped_pattern, [(MapCommutativity(self.env), [])])
+
+    r"""
+    merge(a, merge(b,c)) => merge(merge(a,b), c)
+    """
+
+    def rotate_left_map_pattern(
+        self, pattern: kore.Pattern
+    ) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+        assert KoreTemplates.is_map_merge_pattern(pattern)
+        assert KoreTemplates.is_map_merge_pattern(pattern.arguments[1])
+        rotated_pattern_left = kore.Application(
+            pattern.symbol, [pattern.arguments[0], pattern.arguments[1].arguments[0]]
+        )
+        rotated_pattern = kore.Application(
+            pattern.symbol, [rotated_pattern_left, pattern.arguments[1].arguments[1]]
+        )
+        rotated_pattern.resolve(self.env.module)
+        return (rotated_pattern, [(MapAssociativity(self.env, False), [])])
+
+    r"""
+    merge(merge(a,b), c) => merge(a, merge(b,c))
+    """
+
+    def rotate_right_map_pattern(
+        self, pattern: kore.Pattern
+    ) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+        assert KoreTemplates.is_map_merge_pattern(pattern)
+        assert KoreTemplates.is_map_merge_pattern(pattern.arguments[0])
+        rotated_pattern_right = kore.Application(
+            pattern.symbol, [pattern.arguments[0].arguments[1], pattern.arguments[1]]
+        )
+        rotated_pattern = kore.Application(
+            pattern.symbol, [pattern.arguments[0].arguments[0], rotated_pattern_right]
+        )
+        rotated_pattern.resolve(self.env.module)
+        return (rotated_pattern, [(MapAssociativity(self.env, True), [])])
+
+    def bubble_smallest_map_pattern(
+        self, pattern: kore.Pattern
+    ) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+        assert KoreTemplates.is_map_pattern(pattern)
+
+        if KoreTemplates.is_map_mapsto_pattern(pattern):
+            return (pattern, [])
+
+        _, path = KoreTemplates.get_path_to_smallest_key_in_map_pattern(pattern)
+
+        # from path we can create applied_eqs
+        create_comm = lambda depth, direction: (
+            MapCommutativity(self.env),
+            ([0] * depth),
+        )
+        applied_eqs_comm = [
+            create_comm(d, direct) for d, direct in enumerate(path) if direct == 1
+        ]
+
+        leftmost_depth = 0
+        pp = pattern
+        while KoreTemplates.is_map_merge_pattern(
+            pp
+        ) and KoreTemplates.is_map_merge_pattern(KoreTemplates.get_map_merge_left(pp)):
+            pp = KoreTemplates.get_map_merge_left(pp)
+            leftmost_depth = leftmost_depth + 1
+
+        applied_eqs_assoc = [(MapAssociativity(self.env, True), [])] * leftmost_depth
+
+        # create the return pattern
+
+        ret_pattern = KoreUtils.copy_pattern(pattern)
+        ret_pattern_pointer = ret_pattern
+        comm_depths = [len(lst) for _, lst in applied_eqs_comm]
+        for d in range(len(applied_eqs_comm)):
+            if d in comm_depths:
+                KoreTemplates.deep_swap_map_merge_pattern(ret_pattern_pointer)
+                ret_pattern_pointer = KoreTemplates.get_map_merge_left(
+                    ret_pattern_pointer
+                )
+
+        # Now, the leftmost leaf node of ret_pattern has the smallest key.
+        while KoreTemplates.is_map_merge_pattern(
+            ret_pattern
+        ) and KoreTemplates.is_map_merge_pattern(
+            KoreTemplates.get_map_merge_left(ret_pattern)
+        ):
+            KoreTemplates.deep_rotate_right_map_merge_pattern(ret_pattern)
+
+        return (ret_pattern, applied_eqs_comm + applied_eqs_assoc)
+
+    def sort_map_pattern(
+        self, pattern: kore.Pattern
+    ) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+        assert KoreTemplates.is_map_pattern(pattern)
+        if KoreTemplates.is_map_mapsto_pattern(pattern):
+            return (pattern, [])
+        if KoreTemplates.is_map_merge_pattern(pattern):
+            pattern_bubbled, applied_eqs_bubbled = self.bubble_smallest_map_pattern(
+                pattern
+            )
+            pattern_bubbled_right = KoreTemplates.get_map_merge_right(pattern_bubbled)
+            pattern_bubbled_right_sorted, applied_eqs_right = self.sort_map_pattern(
+                pattern_bubbled_right
+            )
+            sorted_pattern = KoreUtils.copy_pattern(pattern)
+            sorted_pattern.arguments[0] = pattern_bubbled.arguments[0]
+            sorted_pattern.arguments[1] = pattern_bubbled_right_sorted
+            applied_eqs = (
+                applied_eqs_bubbled
+                + UnificationResult.prepend_path_to_applied_eqs(applied_eqs_right, 1)
+            )
+            return (sorted_pattern, applied_eqs)
+        raise NotImplementedError(
+            "Unexpected. A map pattern is either a mapsto or a merge."
+        )
+
+    r"""
+    Unify two concrete map patterns. 
+    """
+
+    def unify_concrete_map_patterns(
+        self, pattern1: kore.Pattern, pattern2: kore.Pattern
+    ) -> Optional[UnificationResult]:
+
+        if not KoreTemplates.is_map_pattern(
+            pattern1
+        ) or not KoreTemplates.is_map_merge_pattern(pattern2):
+            return None
+
+        if KoreTemplates.is_map_mapsto_pattern(pattern1):
+            if not KoreTemplates.is_map_mapsto_pattern(pattern2):
+                return None
+            if pattern1 == pattern2:
+                return UnificationResult()
+            else:
+                return None
+
+        assert KoreTemplates.is_map_merge_pattern(pattern1)
+        assert KoreTemplates.is_map_merge_pattern(pattern2)
+
+        pattern1_sorted, applied_eqs1 = self.sort_map_pattern(pattern1)
+        pattern2_sorted, applied_eqs2 = self.sort_map_pattern(pattern2)
+
+        if pattern1_sorted != pattern2_sorted:
+            return None
+
+        # reverse applied_eq2
+        applied_eqs2_reversed = []
+        for eq, path in reversed(applied_eqs2):
+            if isinstance(eq, MapAssociativity):
+                eq.rotate_right = not eq.rotate_right
+            applied_eqs2_reversed = applied_eqs2_reversed + [(eq, path)]
+
+        return UnificationResult({}, applied_eqs1 + applied_eqs2_reversed)

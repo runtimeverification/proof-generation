@@ -48,6 +48,12 @@ class BaseAST:
                 return attr
         return None
 
+    def has_attribute(self, name: str) -> bool:
+        if self.get_attribute_by_symbol(name) is not None:
+            return True
+        else:
+            return False
+
     def error_with_position(self, msg: str, *args, **kwargs):
         err_msg = "at line {}, column {}: {}".format(
             self.meta_line, self.meta_column, msg.format(*args, **kwargs)
@@ -89,6 +95,9 @@ class Definition(BaseAST):
         visitor.previsit_definition(self)
         children = visitor.visit_children_of_definition(self)
         return visitor.postvisit_definition(self, *children)
+
+    def __lt__(self, other):
+        return self.module_map < other.module_map
 
     def __str__(self) -> str:
         return "definition {{\n{}\n}}".format(
@@ -245,6 +254,13 @@ class SortDefinition(Sentence):
         children = visitor.visit_children_of_sort_definition(self)
         return visitor.postvisit_sort_definition(self, *children)
 
+    def __lt__(self, other):
+        return [self.sort_id, self.sort_variables, self.hooked] < [
+            other.sort_id,
+            other.sort_variables,
+            other.hooked,
+        ]
+
     def __str__(self) -> str:
         return "sort {}({})".format(
             self.sort_id, ", ".join(map(str, self.sort_variables))
@@ -286,6 +302,9 @@ class SortInstance(BaseAST):
     def __hash__(self):
         return hash(self.definition) ^ hash(tuple(self.arguments))
 
+    def __lt__(self, other):
+        return [self.definition, self.arguments] < [other.definition, other.arguments]
+
     def __str__(self) -> str:
         sort_id = (
             self.definition.sort_id
@@ -311,6 +330,9 @@ class SortVariable(BaseAST):
 
     def __hash__(self):
         return hash(self.name)
+
+    def __lt__(self, other):
+        return self.name < other.name
 
     def __str__(self) -> str:
         return self.name
@@ -353,6 +375,14 @@ class SymbolDefinition(Sentence):
         children = visitor.visit_children_of_symbol_definition(self)
         return visitor.postvisit_symbol_definition(self, *children)
 
+    def __lt__(self, other):
+        return [
+            self.symbol,
+            self.sort_variables,
+            self.input_sorts,
+            self.output_sort,
+        ] < [other.symbol, other.sort_variables, other.input_sorts, other.output_sort]
+
     def __str__(self):
         return "symbol {}({}): {}".format(
             self.symbol, ", ".join(map(str, self.input_sorts)), self.output_sort
@@ -388,6 +418,12 @@ class SymbolInstance(BaseAST):
         visitor.previsit_symbol_instance(self)
         children = visitor.visit_children_of_symbol_instance(self)
         return visitor.postvisit_symbol_instance(self, *children)
+
+    def __lt__(self, other):
+        return [self.definition, self.sort_arguments] < [
+            other.definition,
+            other.sort_arguments,
+        ]
 
     def __str__(self) -> str:
         symbol = (
@@ -436,6 +472,13 @@ class Axiom(Sentence):
         children = visitor.visit_children_of_axiom(self)
         return visitor.postvisit_axiom(self, *children)
 
+    def __lt__(self, other):
+        return [self.sort_variables, self.pattern, self.is_claim] < [
+            other.sort_variables,
+            other.pattern,
+            other.is_claim,
+        ]
+
     def __str__(self) -> str:
         return "axiom {{{}}} {}".format(
             ", ".join(map(str, self.sort_variables)), self.pattern
@@ -480,6 +523,13 @@ class AliasDefinition(Sentence):
         children = visitor.visit_children_of_alias_definition(self)
         return visitor.postvisit_alias_definition(self, *children)
 
+    def __lt__(self, other):
+        return [self.definition, self.lhs, self.rhs] < [
+            other.definition,
+            other.lhs,
+            other.rhs,
+        ]
+
     def __str__(self) -> str:
         return "alias {} where {} := {}".format(self.definition, self.lhs, self.rhs)
 
@@ -488,7 +538,10 @@ class Pattern(BaseAST):
     def __init__(self):
         super().__init__()
 
-    def __eq__(self, other):
+    def __lt__(self, other):
+        raise NotImplementedError("__lt__ for ml.kore.ast.Pattern is not implemented.")
+
+    def __eq__(self, other) -> bool:
         raise NotImplementedError()
 
 
@@ -508,7 +561,7 @@ class Variable(Pattern):
         children = visitor.visit_children_of_variable(self)
         return visitor.postvisit_variable(self, *children)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, Variable):
             return (
                 self.name == other.name
@@ -516,6 +569,13 @@ class Variable(Pattern):
                 and self.sort == other.sort
             )
         return False
+
+    def __lt__(self, other) -> bool:
+        return [self.name, self.sort, self.is_set_variable] < [
+            other.name,
+            other.sort,
+            other.is_set_variable,
+        ]
 
     def __hash__(self):
         return hash(self.name)
@@ -538,6 +598,9 @@ class StringLiteral(Pattern):
         if isinstance(other, StringLiteral):
             return self.content == other.content
         return False
+
+    def __lt__(self, other) -> bool:
+        return self.content < other.content
 
     def __hash__(self):
         return hash(self.content)
@@ -572,6 +635,9 @@ class Application(Pattern):
         if isinstance(other, Application):
             return self.symbol == other.symbol and self.arguments == other.arguments
         return False
+
+    def __lt__(self, other) -> bool:
+        return [self.symbol, self.arguments] < [other.symbol, other.arguments]
 
     def __str__(self) -> str:
         return "{}({})".format(self.symbol, ", ".join(map(str, self.arguments)))
@@ -648,6 +714,13 @@ class MLPattern(Pattern):
                 and self.arguments == other.arguments
             )
         return False
+
+    def __lt__(self, other):
+        return [self.construct, self.sorts, self.arguments] < [
+            other.construct,
+            other.sorts,
+            other.arguments,
+        ]
 
     def __str__(self) -> str:
         return "{}{{{}}}({})".format(

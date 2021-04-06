@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import List, Union, Tuple
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils

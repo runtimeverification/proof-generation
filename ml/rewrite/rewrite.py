@@ -104,22 +104,34 @@ class RewriteProofGenerator(ProofGenerator):
     and then resolve all the functions in the RHS
     """
 
-    def rewrite_from_pattern(self, pattern: kore.Pattern) -> ProvableClaim:
+    def rewrite_from_pattern(
+        self,
+        pattern: kore.Pattern,
+        rewriting_info: List[Tuple[kore.Pattern, kore.Pattern]],
+    ) -> ProvableClaim:
         unification_gen = UnificationProofGenerator(self.env)
 
         for _, rewrite_axiom in self.env.rewrite_axioms.items():
             print(
                 f"> trying axiom {KoreTemplates.get_axiom_unique_id(rewrite_axiom.claim)}"
             )
-
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
-            unification_result = unification_gen.unify_patterns(lhs, pattern)
+
+            rewriting_info_map = dict(rewriting_info)
+            lhs_instance = KoreUtils.copy_and_substitute_pattern(
+                lhs, rewriting_info_map
+            )
+            unification_result = unification_gen.unify_patterns(lhs_instance, pattern)
             if unification_result is None:
                 continue
 
             # eliminate all universal quantifiers
             instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(
-                rewrite_axiom, unification_result.substitution
+                rewrite_axiom,
+                {
+                    **unification_result.substitution,
+                    **rewriting_info_map,
+                },  # this is the union of two dictionaries
             )
             lhs, requires, rhs, ensures = self.decompose_rewrite_axiom(
                 instantiated_axiom.claim.pattern
@@ -187,6 +199,7 @@ class RewriteProofGenerator(ProofGenerator):
         self,
         from_pattern: kore.Pattern,
         to_pattern: kore.Pattern,
+        rewriting_info: List[Tuple[kore.Pattern, kore.Pattern]],
         simplify_initial_pattern: bool = True,
     ) -> ProvableClaim:
         # strip the outermost inj
@@ -213,7 +226,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             from_pattern = rhs
 
-        concrete_rewrite_claim = self.rewrite_from_pattern(from_pattern)
+        concrete_rewrite_claim = self.rewrite_from_pattern(from_pattern, rewriting_info)
 
         # check that the proven statement is actually what we want
         # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )
@@ -235,7 +248,9 @@ class RewriteProofGenerator(ProofGenerator):
     """
 
     def prove_multiple_rewrite_steps(
-        self, patterns: List[kore.Pattern]
+        self,
+        patterns: List[kore.Pattern],
+        rewriting_info_list: List[List[Tuple[kore.Pattern, kore.Pattern]]],
     ) -> ProvableClaim:
         assert len(patterns) > 1, "expecting more than one patterns"
 
@@ -244,13 +259,15 @@ class RewriteProofGenerator(ProofGenerator):
         for step, (from_pattern, to_pattern) in enumerate(
             zip(patterns[:-1], patterns[1:])
         ):
+            rewriting_info = rewriting_info_list[step]
             print("==================")
             print("proving rewriting step {}".format(step))
-
             step_claim = self.prove_rewrite_step(
-                from_pattern, to_pattern, simplify_initial_pattern=step == 0
+                from_pattern,
+                to_pattern,
+                rewriting_info,
+                simplify_initial_pattern=step == 0,
             )
-
             self.env.load_comment(
                 f"\nrewriting step:\n{from_pattern}\n=>\n{to_pattern}\n"
             )

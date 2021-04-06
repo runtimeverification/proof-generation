@@ -4,10 +4,10 @@ import sys
 import time
 import argparse
 
-from typing import List, Optional
+from typing import List, Tuple, Optional
 from io import StringIO
 
-from ml.kore.parser import parse_definition, parse_pattern
+from ml.kore.parser import parse_definition, parse_pattern, parse_substitution
 from ml.kore.visitors import FreePatternVariableVisitor, PatternSubstitutionVisitor
 from ml.kore.ast import StringLiteral, MLPattern, Module, Pattern
 from ml.kore.utils import KoreUtils
@@ -62,16 +62,56 @@ def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
 
 
 """
+Load all rewriting information in a directory
+as substitutions (lists of tuples of patterns) in the given module
+"""
+
+
+def load_rewriting_info(
+    module: Module, rewriting_info_dir: str
+) -> List[List[Tuple[Pattern, Pattern]]]:
+    rewriting_info_list = {}
+    max_step = 0
+
+    for file_name in os.listdir(rewriting_info_dir):
+        match = re.match(r"\D*(\d+)\.ekore", file_name)
+        if match is not None:
+            step = int(match.group(1))
+            assert (
+                step not in rewriting_info_list
+            ), "duplicated rewriting information for step {}".format(step)
+
+            max_step = max(max_step, step)
+
+            full_path = os.path.join(rewriting_info_dir, file_name)
+            with open(full_path) as rewriting_info:
+                # parse each rewriting information
+                # note that we read all lines (also removing new lines)
+                subst = parse_substitution(rewriting_info.read().replace("\n", " "))
+                # resolve all references in the specified module
+                for (p, q) in subst:
+                    p.resolve(module)
+                    q.resolve(module)
+                rewriting_info_list[step] = subst
+    rewriting_info_list = [rewriting_info_list[i] for i in range(max_step + 1)]
+    return rewriting_info_list
+
+
+"""
 Given a list of snapshots, prove that the first snapshot
 rewrites to the second snapshot, and load all proofs into
 the environment
 """
 
 
-def prove_rewriting(env: ProofEnvironment, snapshots: List[Pattern]):
+def prove_rewriting(
+    env: ProofEnvironment,
+    snapshots: List[Pattern],
+    rewriting_info: List[List[Tuple[Pattern, Pattern]]],
+):
     gen = RewriteProofGenerator(env)
 
-    final_claim = gen.prove_multiple_rewrite_steps(snapshots)
+    final_claim = gen.prove_multiple_rewrite_steps(snapshots, rewriting_info)
     env.load_comment(f"\nfinal goal:\n{snapshots[0]}\n=>\n{snapshots[-1]}\n")
     env.load_provable_claim_as_theorem("goal", final_claim)
 
@@ -156,6 +196,10 @@ def main():
         help="directory containing all snapshots in the format *-<step number>.kore",
     )
     parser.add_argument(
+        "--rewriting-info",
+        help="directory containing all rewriting information in the format *-<step number>.ekore",
+    )
+    parser.add_argument(
         "--benchmark",
         action="store_const",
         const=True,
@@ -167,7 +211,6 @@ def main():
     composer = Composer()
 
     with open(args.definition) as f:
-        print("parsing kore definition")
         definition = parse_definition(f.read())
         definition.resolve()
 
@@ -189,16 +232,17 @@ def main():
 
     module_elapsed = time.time() - module_begin
 
-    print("loading snapshots")
-
     # emit claims about each rewriting step if shapshots are given
+    if args.rewriting_info is not None:
+        rewriting_info = load_rewriting_info(module, args.rewriting_info)
+
     if args.snapshots is not None:
         snapshots = load_snapshots(module, args.snapshots)
 
         if len(snapshots) >= 2:
             rewrite_begin = time.time()
             composer.start_segment("rewrite")
-            prove_rewriting(env, snapshots)
+            prove_rewriting(env, snapshots, rewriting_info)
             composer.end_segment()
             rewrite_elapsed = time.time() - rewrite_begin
         else:
