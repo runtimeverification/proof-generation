@@ -22,3 +22,24 @@ def test_closure() -> None:
         == [ [ Symbol("z") ]
            , [ App(Symbol("s"), Mu(SVar("X"), Or(Symbol("z"), App(Symbol("s"), SVar("X"))))) ]
            ]
+
+def test_is_consitant() -> None:
+    assert     SimpleNode([SVar("X")]).is_consitant()
+    assert     SimpleNode([SVar("X"), Not(SVar("Y"))]).is_consitant()
+    assert     SimpleNode([SVar("X"), Not(EVar("X"))]).is_consitant()
+    assert not SimpleNode([SVar("X"), Not(SVar("X"))]).is_consitant()
+
+def test_children() -> None:
+    assert SimpleNode([SVar("X"), Not(SVar("X"))]).children() == OrNode([])
+    assert SimpleNode([SVar("X"), SVar("X")]).children()      == AndNode([])
+
+    assert SimpleNode([App(SVar("X"), SVar("Y")), DApp(SVar("P"), SVar("Q"))]).children() \
+        == AndNode([ OrNode([ AndNode([ SimpleNode([SVar("X")])
+                                      , SimpleNode([SVar("Y"), SVar("Q")])
+                                      ])
+                            , AndNode([ SimpleNode([SVar("X"), SVar("P")])
+                                      , SimpleNode([SVar("Y")])
+                                      ])
+                            ])
+
+                   ])
