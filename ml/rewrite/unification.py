@@ -515,7 +515,7 @@ class UnificationProofGenerator(ProofGenerator):
         if KoreTemplates.is_map_mapsto_pattern(pattern):
             return (pattern, [])
 
-        p, path = KoreTemplates.get_path_to_smallest_key_in_map_pattern(pattern)
+        _, path = KoreTemplates.get_path_to_smallest_key_in_map_pattern(pattern)
 
         # from path we can create applied_eqs
         create_comm = lambda depth, direction: (
