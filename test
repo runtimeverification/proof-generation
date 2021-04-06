@@ -3,4 +3,4 @@
 set -euo pipefail
 
 mypy --strict .
-pytest
+pytest "$@"
