@@ -112,6 +112,9 @@ class RewriteProofGenerator(ProofGenerator):
         unification_gen = UnificationProofGenerator(self.env)
 
         for _, rewrite_axiom in self.env.rewrite_axioms.items():
+            print(
+                f"> trying axiom {KoreTemplates.get_axiom_unique_id(rewrite_axiom.claim)}"
+            )
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
 
             rewriting_info_map = dict(rewriting_info)
@@ -257,6 +260,8 @@ class RewriteProofGenerator(ProofGenerator):
             zip(patterns[:-1], patterns[1:])
         ):
             rewriting_info = rewriting_info_list[step]
+            print("==================")
+            print("proving rewriting step {}".format(step))
             step_claim = self.prove_rewrite_step(
                 from_pattern,
                 to_pattern,

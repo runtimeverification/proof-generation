@@ -253,7 +253,6 @@ class UnificationProofGenerator(ProofGenerator):
     def unify_patterns(
         self, pattern1: kore.Pattern, pattern2: kore.Pattern
     ) -> Optional[UnificationResult]:
-
         algorithms = [
             self.unify_vars,
             self.unify_applications,
