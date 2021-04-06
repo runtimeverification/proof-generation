@@ -15,6 +15,8 @@ from .visitors import SubstitutionVisitor, CopyVisitor
 """
 A proof is a list of (theorem) labels and a final statement that it proves
 """
+
+
 class Proof:
     def __init__(self, statement: StructuredStatement, script: List[str]):
         self.statement = statement
@@ -28,6 +30,8 @@ class Proof:
 A proof generator that's supposed to prove the statement given to it,
 if not, it will raise an error
 """
+
+
 class AutoProof:
     def prove(self, composer: Composer, statement: StructuredStatement) -> Proof:
         raise NotImplementedError()
@@ -44,29 +48,39 @@ class MethodAutoProof(AutoProof):
 """
 A Theorem is any (structured) statement that can be used in a proof
 """
+
+
 class Theorem:
     def __init__(
         self,
         composer: Composer,
         statement: StructuredStatement,
-        floatings: List[Tuple[str, str, str]], # a list of pairs (typecode, metavariable, label),
-                                               # in the order that should be instantiated
-                                               # (order of the floating statements)
-        essentials: List[StructuredStatement], # a list of essential statements (hypotheses)
+        floatings: List[
+            Tuple[str, str, str]
+        ],  # a list of pairs (typecode, metavariable, label),
+        # in the order that should be instantiated
+        # (order of the floating statements)
+        essentials: List[
+            StructuredStatement
+        ],  # a list of essential statements (hypotheses)
     ):
         self.composer = composer
         self.statement = statement
         self.floatings = floatings
         self.essentials = essentials
 
-    def is_meta_substitution_consistent(self, substituted: Union[Proof, Term], term: Term) -> bool:
+    def is_meta_substitution_consistent(
+        self, substituted: Union[Proof, Term], term: Term
+    ) -> bool:
         if isinstance(substituted, Proof):
             assert len(substituted.statement.terms) == 2
             return substituted.statement.terms[1] == term
         else:
             return substituted == term
 
-    def get_conclusion_instance(self, substitution: Mapping[str, Term]) -> StructuredStatement:
+    def get_conclusion_instance(
+        self, substitution: Mapping[str, Term]
+    ) -> StructuredStatement:
         instance = SubstitutionVisitor(substitution).visit(self.statement)
         instance.label = None
         instance.statement_type = Statement.PROVABLE
@@ -76,9 +90,10 @@ class Theorem:
     Treat the theorem itself as a proof of itself, provided
     no essential is needed
     """
+
     def as_proof(self):
         assert len(self.essentials) == 0
-        script = [ label for _, _, label in self.floatings ]
+        script = [label for _, _, label in self.floatings]
         script.append(self.statement.label)
         copied_statement = CopyVisitor().visit(self.statement)
         copied_statement.label = None
@@ -90,10 +105,14 @@ class Theorem:
     infer as many metavariables as possible, and
     then call self.apply
     """
+
     def match_and_apply(self, target: StructuredStatement, *args, **kwargs):
         substitution = Unification.match_statements(self.statement, target)
-        assert substitution is not None, \
-               "failed to unify the target statement `{}` and the theorem `{}`".format(target, self.statement)
+        assert (
+            substitution is not None
+        ), "failed to unify the target statement `{}` and the theorem `{}`".format(
+            target, self.statement
+        )
 
         for lhs, rhs in substitution:
             if not isinstance(lhs, Metavariable):
@@ -102,9 +121,12 @@ class Theorem:
             var = lhs.name
 
             if var in kwargs:
-                assert self.is_meta_substitution_consistent(kwargs[var], rhs), \
-                       "metavariable assignment to {} is not consistent: " \
-                       "`{}` and `{}` are both assigned to it".format(var, kwargs[var], rhs)
+                assert self.is_meta_substitution_consistent(kwargs[var], rhs), (
+                    "metavariable assignment to {} is not consistent: "
+                    "`{}` and `{}` are both assigned to it".format(
+                        var, kwargs[var], rhs
+                    )
+                )
             else:
                 kwargs[var] = rhs
 
@@ -113,67 +135,97 @@ class Theorem:
     """
     Infer a list of subproofs for the hypotheses from the information given
     """
-    def infer_hypotheses(self, *essential_proofs: Proof, **metavar_substitution) -> Tuple[List[Proof], Mapping[str, Term]]:
+
+    def infer_hypotheses(
+        self, *essential_proofs: Proof, **metavar_substitution
+    ) -> Tuple[List[Proof], Mapping[str, Term]]:
         substitution = {}
         floating_proofs = []
         auto_proofs = []
 
-        assert len(essential_proofs) == len(self.essentials), \
-               "unmatched number of subproofs for " \
-               "essential statements, expecting {}, {} given".format(len(self.essentials), len(essential_proofs))
+        assert len(essential_proofs) == len(self.essentials), (
+            "unmatched number of subproofs for "
+            "essential statements, expecting {}, {} given".format(
+                len(self.essentials), len(essential_proofs)
+            )
+        )
 
         # TODO: check proofs for essential statements
-        for i, (essential, essential_proof) in enumerate(zip(self.essentials, essential_proofs)):
+        for i, (essential, essential_proof) in enumerate(
+            zip(self.essentials, essential_proofs)
+        ):
             # auto proofs will be resolved later
             if isinstance(essential_proof, AutoProof):
                 auto_proofs.append((i, essential_proof))
                 continue
 
-            assert isinstance(essential_proof, Proof), f"wrong proof {essential_proof} of {essential}"
+            assert isinstance(
+                essential_proof, Proof
+            ), f"wrong proof {essential_proof} of {essential}"
 
-            solution = Unification.match_statements_as_instance(essential, essential_proof.statement)
-            assert solution is not None, \
-                   "`{}` is not an instance of `{}`".format(essential_proof.statement, essential)
+            solution = Unification.match_statements_as_instance(
+                essential, essential_proof.statement
+            )
+            assert solution is not None, "`{}` is not an instance of `{}`".format(
+                essential_proof.statement, essential
+            )
 
             # check that the unification solution is consistent with
             # the metavariable assignment
             for var, term in solution.items():
                 if var in metavar_substitution:
-                    assert self.is_meta_substitution_consistent(metavar_substitution[var], term), \
-                           "metavariable assignment to {} is not consistent: " \
-                           "`{}` and `{}` are both assigned to it".format(var, metavar_substitution[var], term)
+                    assert self.is_meta_substitution_consistent(
+                        metavar_substitution[var], term
+                    ), (
+                        "metavariable assignment to {} is not consistent: "
+                        "`{}` and `{}` are both assigned to it".format(
+                            var, metavar_substitution[var], term
+                        )
+                    )
                 else:
                     # update metavar_substitution to reflect this assignment
                     metavar_substitution[var] = term
 
         for typecode, var, _ in self.floatings:
-            assert var in metavar_substitution, \
-                   "assignment to metavariable `{}` cannot be inferred".format(var)
+            assert (
+                var in metavar_substitution
+            ), "assignment to metavariable `{}` cannot be inferred".format(var)
 
             # this can either be a direct proof,
             # or a term, in which case we will try to
             # prove the typecode for it automatically
             metavar_substituted = metavar_substitution[var]
-            
-            if isinstance(metavar_substituted, Term):
-                typecode_proof = TypecodeProver.prove_typecode(self.composer, typecode, metavar_substituted)
 
-                assert typecode_proof is not None, \
-                       "a term `{}` is given for metavariable `{}`, " \
-                       "but we couldn't prove that `{} {}`".format(metavar_substituted, var, typecode, metavar_substituted)
+            if isinstance(metavar_substituted, Term):
+                typecode_proof = TypecodeProver.prove_typecode(
+                    self.composer, typecode, metavar_substituted
+                )
+
+                assert typecode_proof is not None, (
+                    "a term `{}` is given for metavariable `{}`, "
+                    "but we couldn't prove that `{} {}`".format(
+                        metavar_substituted, var, typecode, metavar_substituted
+                    )
+                )
             else:
                 # should be a proof
                 typecode_proof = metavar_substituted
 
             # check that the proof is in the right form (for floating statements)
-            assert len(typecode_proof.statement.terms) == 2, \
-                   "wrong proof for `{} {}`, got {}".format(typecode, var, typecode_proof.statement)
-            
+            assert (
+                len(typecode_proof.statement.terms) == 2
+            ), "wrong proof for `{} {}`, got {}".format(
+                typecode, var, typecode_proof.statement
+            )
+
             proved_typecode, proved_term = typecode_proof.statement.terms
 
-            assert isinstance(proved_typecode, Application) and \
-                   proved_typecode.symbol == typecode, \
-                   "wrong proof for `{} {}`, got {}".format(typecode, var, typecode_proof.statement)
+            assert (
+                isinstance(proved_typecode, Application)
+                and proved_typecode.symbol == typecode
+            ), "wrong proof for `{} {}`, got {}".format(
+                typecode, var, typecode_proof.statement
+            )
 
             substitution[var] = proved_term
             floating_proofs.append(typecode_proof)
@@ -188,7 +240,9 @@ class Theorem:
                 essential_proofs[i] = proof.prove(self.composer, essential_instance)
             except Exception:
                 print_exc()
-                assert False, f"unable to automatically generate proof for {essential_instance}"
+                assert (
+                    False
+                ), f"unable to automatically generate proof for {essential_instance}"
 
         return floating_proofs + essential_proofs, substitution
 
@@ -199,10 +253,15 @@ class Theorem:
       - a map from metavariable name -> proof or term (in the latter case we
         will try to prove the typecode automatically)
     """
-    def apply(self, *essential_proofs: Proof, **metavar_substitution) -> Proof:
-        subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
 
-        assert self.statement.label is not None, f"applying a theorem without label: {self.statement}"
+    def apply(self, *essential_proofs: Proof, **metavar_substitution) -> Proof:
+        subproofs, substitution = self.infer_hypotheses(
+            *essential_proofs, **metavar_substitution
+        )
+
+        assert (
+            self.statement.label is not None
+        ), f"applying a theorem without label: {self.statement}"
         proof_script = []
         for subproof in subproofs:
             proof_script.extend(subproof.script)
@@ -212,17 +271,24 @@ class Theorem:
         instance.proof = proof_script
 
         return Proof(instance, proof_script)
-        
+
     """
     Instead of explicitly referencing the labeled statement,
     we can inline the proof in some other proof to remove
     the dependency. However, the proof script will be longer
     """
-    def inline_apply(self, proof_of_theorem: Proof, *essential_proofs: Proof, **metavar_substitution) -> Proof:
-        subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
+
+    def inline_apply(
+        self, proof_of_theorem: Proof, *essential_proofs: Proof, **metavar_substitution
+    ) -> Proof:
+        subproofs, substitution = self.infer_hypotheses(
+            *essential_proofs, **metavar_substitution
+        )
 
         # labels of hypotheses
-        hyp_labels = [ label for _, _, label in self.floatings ] + [ essential.label for essential in self.essentials ]
+        hyp_labels = [label for _, _, label in self.floatings] + [
+            essential.label for essential in self.essentials
+        ]
         assert len(subproofs) == len(hyp_labels)
 
         hyp_proof_map = dict(zip(hyp_labels, subproofs))
@@ -257,6 +323,8 @@ return a proof with the same statement except that:
 TODO: add cache eviction when the cache map gets too large
 TODO: add heuristics to not cache "small" and "infrequent" proofs
 """
+
+
 class ProofCache:
     # if the proof script size exceeds this
     # number of labels, the proof will be cached
@@ -268,8 +336,8 @@ class ProofCache:
 
     def __init__(self, composer: Composer):
         self.composer = composer
-        self.cache_map = {} # label prefix -> (terms -> proof)
-        self.label_map = {} # label prefix -> next index
+        self.cache_map = {}  # label prefix -> (terms -> proof)
+        self.label_map = {}  # label prefix -> next index
 
         self.stat_cache_hit = 0
         self.stat_cache_miss = 0
@@ -278,6 +346,7 @@ class ProofCache:
     """
     Get the next available label with the given prefix
     """
+
     def get_next_label(self, domain: str) -> str:
         domain = re.sub(r"[^a-zA-Z0-9_\-.]", "", domain)
 
@@ -291,17 +360,21 @@ class ProofCache:
     """
     Find an existing cached proof by looking up the statement
     """
-    def lookup(self, domain: str, statement: Union[StructuredStatement, List[Term]]) -> Optional[Proof]:
+
+    def lookup(
+        self, domain: str, statement: Union[StructuredStatement, List[Term]]
+    ) -> Optional[Proof]:
         if isinstance(statement, StructuredStatement):
             statement = statement.terms
         terms = tuple(statement)
 
         domain_cache = self.cache_map.get(domain, None)
-        if domain_cache is None: return None
+        if domain_cache is None:
+            return None
 
         return domain_cache.get(terms, None)
 
-    def cache(self, domain: str, proof: Proof, no_theorem_cache: bool=False) -> Proof:
+    def cache(self, domain: str, proof: Proof, no_theorem_cache: bool = False) -> Proof:
         if ProofCache.DISABLED:
             return proof
 
@@ -318,7 +391,10 @@ class ProofCache:
         self.stat_cache_miss += 1
 
         # cache the proof as a theorem
-        if not no_theorem_cache and len(proof.script) > ProofCache.THEOREM_CACHE_THRESHOLD:
+        if (
+            not no_theorem_cache
+            and len(proof.script) > ProofCache.THEOREM_CACHE_THRESHOLD
+        ):
             self.stat_theorem_cache += 1
 
             theorem_statement = StructuredStatement(
@@ -342,12 +418,14 @@ class ProofCache:
 """
 A linked list recording the current theorem context
 """
+
+
 class Context:
-    def __init__(self, prev: Context=None):
+    def __init__(self, prev: Context = None):
         self.prev = prev
 
-        self.active_floatings = [] # list of (typecode, metavariable, label)
-        self.active_essentials = [] # list of essential statements
+        self.active_floatings = []  # list of (typecode, metavariable, label)
+        self.active_essentials = []  # list of essential statements
 
     def add_floating(self, typecode: str, variable: str, label: str):
         self.active_floatings.append((typecode, variable, label))
@@ -358,8 +436,13 @@ class Context:
     """
     return a fraction of self.metavariables according to the given set
     """
+
     def find_floatings(self, metavariables: Set[str]) -> List[Tuple[str, str, str]]:
-        fraction = [ (typecode, var, label) for typecode, var, label in self.active_floatings if var in metavariables]
+        fraction = [
+            (typecode, var, label)
+            for typecode, var, label in self.active_floatings
+            if var in metavariables
+        ]
         if self.prev is not None:
             return self.prev.find_floatings(metavariables) + fraction
         else:
@@ -368,8 +451,13 @@ class Context:
     """
     return all metavariables of the given typecode
     """
+
     def find_floatings_of_typecode(self, expected_typcode: str) -> List[str]:
-        current = [ var for typecode, var, _ in self.active_floatings if typecode == expected_typcode ]
+        current = [
+            var
+            for typecode, var, _ in self.active_floatings
+            if typecode == expected_typcode
+        ]
         if self.prev is not None:
             return self.find_floatings_of_typecode(expected_typcode) + current
         else:
@@ -402,12 +490,16 @@ class Context:
 Composer is a utility class used for
 emitting metamath statements and proofs
 """
+
+
 class Composer:
     def __init__(self):
-        self.context = Context() # outermost context for a database
-        self.theorems = {} # label -> Theorem
-        self.theorems_by_typecode = {} # typecode -> [ Theorem ], sorted theorems by typecode
-        self.statements = [] # all statements at the top level
+        self.context = Context()  # outermost context for a database
+        self.theorems = {}  # label -> Theorem
+        self.theorems_by_typecode = (
+            {}
+        )  # typecode -> [ Theorem ], sorted theorems by typecode
+        self.statements = []  # all statements at the top level
         self.proof_cache = ProofCache(self)
 
         # mark each statement with a unique "segment label"
@@ -416,8 +508,8 @@ class Composer:
         # the stack is used so that one can mark a set
         # of setences in another segment and restore the old
         # segment
-        self.segment_stack = [] # a stack of current segments
-        self.segments = {} # name -> [indices]
+        self.segment_stack = []  # a stack of current segments
+        self.segments = {}  # name -> [indices]
 
     def find_theorem(self, name: str) -> Optional[Theorem]:
         return self.theorems.get(name)
@@ -433,11 +525,15 @@ class Composer:
 
         # also delete it from the typecode map
         stmt = theorem.statement
-        if len(stmt.terms) != 0 and \
-           isinstance(stmt.terms[0], Application) and \
-           len(stmt.terms[0].subterms) == 0 and \
-           stmt.terms[0].symbol in self.theorems_by_typecode:
-            for i, theorem in enumerate(self.theorems_by_typecode[stmt.terms[0].symbol]):
+        if (
+            len(stmt.terms) != 0
+            and isinstance(stmt.terms[0], Application)
+            and len(stmt.terms[0].subterms) == 0
+            and stmt.terms[0].symbol in self.theorems_by_typecode
+        ):
+            for i, theorem in enumerate(
+                self.theorems_by_typecode[stmt.terms[0].symbol]
+            ):
                 if theorem.statement.label == name:
                     self.theorems_by_typecode[stmt.terms[0].symbol].pop(i)
                     break
@@ -455,7 +551,10 @@ class Composer:
             return None
 
     def get_all_essentials(self) -> List[Theorem]:
-        return [ Theorem(self, essential, [], []) for essential in self.context.get_all_essentials() ]
+        return [
+            Theorem(self, essential, [], [])
+            for essential in self.context.get_all_essentials()
+        ]
 
     def encode(self, stream: TextIO, segment=None):
         for stmt in self.statements if segment is None else self.get_segment(segment):
@@ -480,8 +579,9 @@ class Composer:
         self.segment_stack.pop()
 
     def get_segment(self, name: str) -> List[Statement]:
-        if name not in self.segments: return []
-        return [ self.statements[i] for i in self.segments[name] ]
+        if name not in self.segments:
+            return []
+        return [self.statements[i] for i in self.segments[name]]
 
     def add_indices_to_current_segment(self, indices: List[int]):
         if len(self.segment_stack) == 0:
@@ -497,42 +597,55 @@ class Composer:
     look up a metavariable, if found, return the typecode,
     otherwise, return None
     """
+
     def find_metavariable(self, var: str) -> Optional[str]:
-        found = self.context.find_floatings({ var })
-        if not found: return None
+        found = self.context.find_floatings({var})
+        if not found:
+            return None
         return found[0][0]
 
     """
     find metavariables of the given typecode
     """
+
     def find_metavariables_of_typecode(self, typecode: str) -> List[str]:
         return self.context.find_floatings_of_typecode(typecode)
 
     def get_all_metavariables(self) -> List[str]:
-        return [ var for _, var, _ in self.context.get_all_floatings() ]
+        return [var for _, var, _ in self.context.get_all_floatings()]
 
     """
     Index the statement for more efficient search later
     """
+
     def index_statement(self, stmt: StructuredStatement):
         # index by the typecode
-        if len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0:
-            self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])
+        if (
+            len(stmt.terms) != 0
+            and isinstance(stmt.terms[0], Application)
+            and len(stmt.terms[0].subterms) == 0
+        ):
+            self.add_theorem_for_typecode(
+                stmt.terms[0].symbol, self.theorems[stmt.label]
+            )
 
     """
     Add a structured statement/block/database to the composer
     Optionally return a theorem corresponding to the given statement
     """
-    def load(self, database_or_statement: Union[Database, Statement], index: bool=True) -> Optional[Theorem]:
+
+    def load(
+        self, database_or_statement: Union[Database, Statement], index: bool = True
+    ) -> Optional[Theorem]:
         if isinstance(database_or_statement, Database):
             assert self.context.prev is None, "loading a database at non-top level"
             for statement in database_or_statement.statements:
                 self.load(statement, index)
-    
+
         elif isinstance(database_or_statement, Statement):
             if self.context.prev is None:
                 # add top level statements
-                self.add_indices_to_current_segment([ len(self.statements) ])
+                self.add_indices_to_current_segment([len(self.statements)])
                 self.statements.append(database_or_statement)
 
             if isinstance(database_or_statement, Block):
@@ -546,7 +659,7 @@ class Composer:
         else:
             assert False, f"unable to load {database_or_statement}"
 
-    def load_statement(self, stmt: Statement, index: bool=True) -> Optional[Theorem]:
+    def load_statement(self, stmt: Statement, index: bool = True) -> Optional[Theorem]:
         if not isinstance(stmt, StructuredStatement):
             return None
 
@@ -566,7 +679,7 @@ class Composer:
             self.context.add_essential(stmt)
             theorem = Theorem(self, stmt, [], [])
 
-        elif stmt.statement_type in { Statement.PROVABLE, Statement.AXIOM }:
+        elif stmt.statement_type in {Statement.PROVABLE, Statement.AXIOM}:
             # find all mandatory hypotheses of a statement
             # and build a Theorem object
 
@@ -578,10 +691,15 @@ class Composer:
 
             floatings = self.context.find_floatings(metavariables)
 
-            assert len(floatings) == len(metavariables), \
-                   "some metavariables not found in {}, only found {}".format(metavariables, floatings)
+            assert len(floatings) == len(
+                metavariables
+            ), "some metavariables not found in {}, only found {}".format(
+                metavariables, floatings
+            )
 
-            self.theorems[stmt.label] = theorem = Theorem(self, stmt, floatings, essentials)
+            self.theorems[stmt.label] = theorem = Theorem(
+                self, stmt, floatings, essentials
+            )
 
             if index:
                 self.index_statement(stmt)
@@ -595,20 +713,31 @@ class TypecodeProver:
     <typecode> <term>
     by recursively unify the target with a theorem of this form
     """
+
     @staticmethod
-    def prove_typecode(composer: Composer, typecode: str, term: Term) -> Optional[Proof]:
+    def prove_typecode(
+        composer: Composer, typecode: str, term: Term
+    ) -> Optional[Proof]:
         # TODO: these checks are a bit too specialized
-        if (typecode == "#Variable" or typecode == "#ElementVariable" or typecode == "#SetVariable") and \
-           not isinstance(term, Metavariable):
-                return None
+        if (
+            typecode == "#Variable"
+            or typecode == "#ElementVariable"
+            or typecode == "#SetVariable"
+        ) and not isinstance(term, Metavariable):
+            return None
 
-        if typecode == "#Symbol" and \
-           (not isinstance(term, Application) or len(term.subterms) != 0):
-                return None
+        if typecode == "#Symbol" and (
+            not isinstance(term, Application) or len(term.subterms) != 0
+        ):
+            return None
 
-        expected_statement = StructuredStatement(Statement.PROVABLE, [ Application(typecode), term ])
+        expected_statement = StructuredStatement(
+            Statement.PROVABLE, [Application(typecode), term]
+        )
 
-        cached_proof = composer.lookup_proof_cache("typecode-cache-" + typecode, expected_statement.terms)
+        cached_proof = composer.lookup_proof_cache(
+            "typecode-cache-" + typecode, expected_statement.terms
+        )
         if cached_proof is not None:
             return cached_proof
 
@@ -620,8 +749,10 @@ class TypecodeProver:
 
                     if metavar.name == term.name:
                         # found a direct proof
-                        proof = Proof(expected_statement, [ theorem.statement.label ])
-                        proof = composer.cache_proof("typecode-cache-" + typecode, proof)
+                        proof = Proof(expected_statement, [theorem.statement.label])
+                        proof = composer.cache_proof(
+                            "typecode-cache-" + typecode, proof
+                        )
                         return proof
             # otherwise treat the metavariable as a term
 
@@ -629,34 +760,45 @@ class TypecodeProver:
 
         # try to find a non-floating statement without hypotheses and unify
         for theorem in composer.get_theorems_of_typecode(typecode):
-            if len(theorem.essentials) <= 1 and \
-               theorem.statement.statement_type != Statement.FLOATING and \
-               len(theorem.statement.terms) == 2:
+            if (
+                len(theorem.essentials) <= 1
+                and theorem.statement.statement_type != Statement.FLOATING
+                and len(theorem.statement.terms) == 2
+            ):
                 # check that expected_statement is an instance of theorem.statement
-                solution = Unification.match_terms_as_instance(theorem.statement.terms[1], term)
-                if solution is None: continue
+                solution = Unification.match_terms_as_instance(
+                    theorem.statement.terms[1], term
+                )
+                if solution is None:
+                    continue
 
                 essential_proof = None
 
                 # try to find an exact essential that matches the hypotheses
                 if len(theorem.essentials):
-                    hypothesis = SubstitutionVisitor(solution).visit(theorem.essentials[0])
+                    hypothesis = SubstitutionVisitor(solution).visit(
+                        theorem.essentials[0]
+                    )
                     for essential in composer.get_all_essentials():
                         if hypothesis.terms == essential.statement.terms:
                             essential_proof = essential.apply()
                             break
                     else:
                         continue
-                
+
                 # try to recursively prove that each of the subterms in the solution
                 # also have the suitable typecode
                 proof_script = []
                 failed = False
 
                 for expected_typecode, metavar, _ in theorem.floatings:
-                    assert metavar in solution, f"unable to determine metavarible {metavar} in theorem {theorem}"
+                    assert (
+                        metavar in solution
+                    ), f"unable to determine metavarible {metavar} in theorem {theorem}"
 
-                    metavar_proof = TypecodeProver.prove_typecode(composer, expected_typecode, solution[metavar])
+                    metavar_proof = TypecodeProver.prove_typecode(
+                        composer, expected_typecode, solution[metavar]
+                    )
                     if metavar_proof is None:
                         failed = True
                         break

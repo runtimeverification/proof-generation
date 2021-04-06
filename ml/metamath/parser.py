@@ -26,17 +26,26 @@ class ASTTransformer(Transformer):
 
     def disjoint_stmt(self, args):
         for var in args:
-            assert var in self.metavariables, "variable {} used before declaration".format(var)
+            assert (
+                var in self.metavariables
+            ), "variable {} used before declaration".format(var)
         return StructuredStatement(Statement.DISJOINT, list(map(Metavariable, args)))
 
     def floating_stmt(self, args):
         label, typecode, variable = args
-        assert variable in self.metavariables, "variable {} used before declaration".format(variable)
-        return StructuredStatement(Statement.FLOATING, [ Application(typecode), Metavariable(variable) ], label=label)
+        assert (
+            variable in self.metavariables
+        ), "variable {} used before declaration".format(variable)
+        return StructuredStatement(
+            Statement.FLOATING,
+            [Application(typecode), Metavariable(variable)],
+            label=label,
+        )
 
     """
     Parse a term from a list of tokens, returns the term and the rest of the unused tokens
     """
+
     def parse_term(self, tokens: List[str]) -> Tuple[Term, List[str]]:
         assert len(tokens)
 
@@ -51,22 +60,23 @@ class ASTTransformer(Transformer):
                     num_nested -= 1
                 if num_nested == 0:
                     break
-            
+
             # offset to include the first token
             i += 1
 
-            assert num_nested == 0, "incorrectly nested term: {}".format(" ".join(tokens))
+            assert num_nested == 0, "incorrectly nested term: {}".format(
+                " ".join(tokens)
+            )
             assert i > 2, "ill-formed s-expression: {}".format(" ".join(tokens))
 
             subterms = self.parse_terms(tokens[2:i])
             constant = tokens[1]
-            return Application(constant, subterms), tokens[i + 1:]
-        
+            return Application(constant, subterms), tokens[i + 1 :]
+
         elif first in self.metavariables:
             return Metavariable(first), tokens[1:]
         else:
             return Application(first), tokens[1:]
-
 
     def parse_terms(self, tokens: List[str]) -> List[Term]:
         terms = []
@@ -153,13 +163,15 @@ def parse_database(src: str) -> Database:
     return ASTTransformer().transform(tree)
 
 
-def parse_terms_with_metavariables(src: str, metavariables: Set[str]={}) -> List[Term]:
+def parse_terms_with_metavariables(
+    src: str, metavariables: Set[str] = {}
+) -> List[Term]:
     tree = statement_parser.parse(f"l $a {src} $.")
     stmt = ASTTransformer(metavariables).transform(tree)
     return stmt.terms
 
 
-def parse_term_with_metavariables(src: str, metavariables: Set[str]={}) -> Term:
+def parse_term_with_metavariables(src: str, metavariables: Set[str] = {}) -> Term:
     terms = parse_terms_with_metavariables(src, metavariables)
     assert len(terms) == 1, f"syntax error: {src}"
     return terms[0]
@@ -168,7 +180,11 @@ def parse_term_with_metavariables(src: str, metavariables: Set[str]={}) -> Term:
 """
 Load a file and resolve all includes
 """
-def flatten_includes(path: str, loaded: Set[str]=set(), trace: List[str]=[], include_proof=True) -> str:
+
+
+def flatten_includes(
+    path: str, loaded: Set[str] = set(), trace: List[str] = [], include_proof=True
+) -> str:
     path = os.path.realpath(path)
 
     if path in loaded:
@@ -179,10 +195,10 @@ def flatten_includes(path: str, loaded: Set[str]=set(), trace: List[str]=[], inc
 
     with open(path) as mm_file:
         source = mm_file.read()
-        
+
         if not include_proof:
             source = remove_proof(source)
-        
+
         while True:
             match = re.search(r"\$\[\s+([^\s]+)\s+\$\]", source)
             if match is None:
@@ -193,8 +209,10 @@ def flatten_includes(path: str, loaded: Set[str]=set(), trace: List[str]=[], inc
             # if not os.path.isabs(include_path):
             #     include_path = os.path.join(os.path.dirname(path), include_path)
 
-            included_source = flatten_includes(include_path, loaded, trace=trace + [path], include_proof=include_proof)
-            source = source[:match.start()] + included_source + source[match.end():]
+            included_source = flatten_includes(
+                include_path, loaded, trace=trace + [path], include_proof=include_proof
+            )
+            source = source[: match.start()] + included_source + source[match.end() :]
 
     loaded.add(path)
 

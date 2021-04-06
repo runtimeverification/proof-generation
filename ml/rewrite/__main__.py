@@ -33,6 +33,8 @@ def load_prelude(composer: Composer, args):
 Load all snapshots in a directory
 as patterns in the given module
 """
+
+
 def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
     snapshots = {}
     max_step = 0
@@ -54,15 +56,20 @@ def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
                 snapshot_pattern.resolve(module)
                 snapshots[step] = snapshot_pattern
 
-    snapshots = [ snapshots[i] for i in range(max_step + 1) ]
+    snapshots = [snapshots[i] for i in range(max_step + 1)]
 
     return snapshots
+
 
 """
 Load all rewriting information in a directory
 as substitutions (lists of tuples of patterns) in the given module
 """
-def load_rewriting_info(module: Module, rewriting_info_dir: str) -> List[List[Tuple[Pattern, Pattern]]]:
+
+
+def load_rewriting_info(
+    module: Module, rewriting_info_dir: str
+) -> List[List[Tuple[Pattern, Pattern]]]:
     rewriting_info_list = {}
     max_step = 0
 
@@ -70,7 +77,9 @@ def load_rewriting_info(module: Module, rewriting_info_dir: str) -> List[List[Tu
         match = re.match(r"\D*(\d+)\.ekore", file_name)
         if match is not None:
             step = int(match.group(1))
-            assert step not in rewriting_info_list, "duplicated rewriting information for step {}".format(step)
+            assert (
+                step not in rewriting_info_list
+            ), "duplicated rewriting information for step {}".format(step)
 
             max_step = max(max_step, step)
 
@@ -78,13 +87,13 @@ def load_rewriting_info(module: Module, rewriting_info_dir: str) -> List[List[Tu
             with open(full_path) as rewriting_info:
                 # parse each rewriting information
                 # note that we read all lines (also removing new lines)
-                subst = parse_substitution(rewriting_info.read().replace('\n', ' '))
+                subst = parse_substitution(rewriting_info.read().replace("\n", " "))
                 # resolve all references in the specified module
                 for (p, q) in subst:
                     p.resolve(module)
                     q.resolve(module)
                 rewriting_info_list[step] = subst
-    rewriting_info_list = [ rewriting_info_list[i] for i in range(max_step + 1) ]
+    rewriting_info_list = [rewriting_info_list[i] for i in range(max_step + 1)]
     return rewriting_info_list
 
 
@@ -93,7 +102,13 @@ Given a list of snapshots, prove that the first snapshot
 rewrites to the second snapshot, and load all proofs into
 the environment
 """
-def prove_rewriting(env: ProofEnvironment, snapshots: List[Pattern], rewriting_info: List[List[Tuple[Pattern, Pattern]]]):
+
+
+def prove_rewriting(
+    env: ProofEnvironment,
+    snapshots: List[Pattern],
+    rewriting_info: List[List[Tuple[Pattern, Pattern]]],
+):
     gen = RewriteProofGenerator(env)
 
     final_claim = gen.prove_multiple_rewrite_steps(snapshots, rewriting_info)
@@ -105,7 +120,15 @@ def prove_rewriting(env: ProofEnvironment, snapshots: List[Pattern], rewriting_i
 Output to a standalone .mm file or a directory containing
 multiple interdepdent theories
 """
-def output_theory(composer: Composer, prelude: Optional[str], output: str, standalone=False, include_rewrite_proof=False):
+
+
+def output_theory(
+    composer: Composer,
+    prelude: Optional[str],
+    output: str,
+    standalone=False,
+    include_rewrite_proof=False,
+):
     if standalone:
         assert not os.path.isdir(output), f"path {output} exists and is a directory"
         print(f"dumping standalone metamath theory to {output}")
@@ -144,7 +167,7 @@ def output_theory(composer: Composer, prelude: Optional[str], output: str, stand
                     previous_path = abs_prelude_path
                 else:
                     previous_path = os.path.join(abs_output_path, output_list[i - 1][1])
-                
+
                 IncludeStatement(previous_path).encode(f)
                 f.write("\n")
                 composer.encode(f, segment)
@@ -154,12 +177,35 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("definition", help="a kore file")
     parser.add_argument("module", help="the entry module name")
-    parser.add_argument("-sa", "--standalone", action="store_const", const=True, default=False, help="output a standalone .mm file")
-    parser.add_argument("-o", "--output", help="directory to store the translated module and proof object")
+    parser.add_argument(
+        "-sa",
+        "--standalone",
+        action="store_const",
+        const=True,
+        default=False,
+        help="output a standalone .mm file",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="directory to store the translated module and proof object",
+    )
     parser.add_argument("--prelude", help="prelude mm file")
-    parser.add_argument("--snapshots", help="directory containing all snapshots in the format *-<step number>.kore")
-    parser.add_argument("--rewriting-info", help="directory containing all rewriting information in the format *-<step number>.ekore")
-    parser.add_argument("--benchmark", action="store_const", const=True, default=False, help="output the time spent for translating module and proving rewriting")
+    parser.add_argument(
+        "--snapshots",
+        help="directory containing all snapshots in the format *-<step number>.kore",
+    )
+    parser.add_argument(
+        "--rewriting-info",
+        help="directory containing all rewriting information in the format *-<step number>.ekore",
+    )
+    parser.add_argument(
+        "--benchmark",
+        action="store_const",
+        const=True,
+        default=False,
+        help="output the time spent for translating module and proving rewriting",
+    )
     args = parser.parse_args()
 
     composer = Composer()
@@ -189,7 +235,7 @@ def main():
     # emit claims about each rewriting step if shapshots are given
     if args.rewriting_info is not None:
         rewriting_info = load_rewriting_info(module, args.rewriting_info)
-    
+
     if args.snapshots is not None:
         snapshots = load_snapshots(module, args.snapshots)
 
@@ -204,7 +250,13 @@ def main():
             print("only one snapshot, nothing to prove")
 
     if args.output is not None:
-        output_theory(composer, args.prelude, args.output, standalone=args.standalone, include_rewrite_proof=args.snapshots is not None)
+        output_theory(
+            composer,
+            args.prelude,
+            args.output,
+            standalone=args.standalone,
+            include_rewrite_proof=args.snapshots is not None,
+        )
 
     if args.benchmark:
         print("==================")

@@ -22,7 +22,7 @@ TAB = "  "
 
 
 class BuiltinCommand:
-    builtin_commands = [] # list of BuiltinCommand
+    builtin_commands = []  # list of BuiltinCommand
 
     def __init__(self, *names, help_message=None, handler=None):
         self.names = set(names)
@@ -32,25 +32,34 @@ class BuiltinCommand:
     @staticmethod
     def add(*args, **kwargs):
         def decorator(handler):
-            BuiltinCommand.builtin_commands.append(BuiltinCommand(*args, **kwargs, handler=handler))
+            BuiltinCommand.builtin_commands.append(
+                BuiltinCommand(*args, **kwargs, handler=handler)
+            )
             return handler
+
         return decorator
 
     @staticmethod
     def get_all_command_names() -> List[str]:
-        return sum([ sorted(cmd.names) for cmd in BuiltinCommand.builtin_commands ], [])
+        return sum([sorted(cmd.names) for cmd in BuiltinCommand.builtin_commands], [])
 
     @staticmethod
     def print_help():
         lines = []
 
         for command in BuiltinCommand.builtin_commands:
-            lines.append("{}{} - {}".format(TAB, "/".join(command.names), command.help_message))
+            lines.append(
+                "{}{} - {}".format(TAB, "/".join(command.names), command.help_message)
+            )
 
-        print("""\
+        print(
+            """\
 usage:
 {}<tactic> [options] - apply a tactic
-{}""".format(TAB, "\n".join(lines)))
+{}""".format(
+                TAB, "\n".join(lines)
+            )
+        )
 
 
 class InteractiveState:
@@ -67,7 +76,9 @@ class InteractiveState:
         composer = Composer()
         database = load_database(theory_path, include_proof=False)
         composer.load(database)
-        assert goal_name in composer.theorems, f"cannot find label {goal_name} in the theory file {theory_path}"
+        assert (
+            goal_name in composer.theorems
+        ), f"cannot find label {goal_name} in the theory file {theory_path}"
 
         goal = composer.theorems[goal_name]
         composer.remove_theorem(goal_name)
@@ -85,30 +96,42 @@ class InteractiveState:
         readline.set_completer(self.command_completer)
 
     def command_completer(self, text: str, state: int) -> List[str]:
-        command_names = sorted(ProofState.all_tactics.keys()) + BuiltinCommand.get_all_command_names()
+        command_names = (
+            sorted(ProofState.all_tactics.keys())
+            + BuiltinCommand.get_all_command_names()
+        )
         theorem_names = sorted(self.proof_state.composer.theorems.keys())
 
         current_buffer = readline.get_line_buffer().decode().lstrip()
         split = current_buffer.split(" ")
 
         if len(split) > 1:
-            filtered_names = [ name for name in theorem_names if name.startswith(text) ]
+            filtered_names = [name for name in theorem_names if name.startswith(text)]
 
-            if text.startswith("\""):
-                filtered_names = [ "\"" + name + "\"" for name in theorem_names if name.startswith(text[1:]) ]
+            if text.startswith('"'):
+                filtered_names = [
+                    '"' + name + '"'
+                    for name in theorem_names
+                    if name.startswith(text[1:])
+                ]
             else:
-                filtered_names = [ name for name in theorem_names if name.startswith(text) ]
+                filtered_names = [
+                    name for name in theorem_names if name.startswith(text)
+                ]
         else:
-            filtered_names = [ name + " " for name in command_names if name.startswith(text) ]
+            filtered_names = [
+                name + " " for name in command_names if name.startswith(text)
+            ]
 
-        return (filtered_names + [ None ])[state]
+        return (filtered_names + [None])[state]
 
     def loop(self):
         self.print_state()
         while True:
             try:
                 command_src = input("> ").strip()
-                if not command_src: continue
+                if not command_src:
+                    continue
 
                 lowered = command_src.lower()
                 split = lowered.split()
@@ -119,7 +142,8 @@ class InteractiveState:
                 else:
                     # apply a tactic command then
                     command = parse_command(command_src)
-                    if command is None: continue
+                    if command is None:
+                        continue
                     self.apply_tactic_command(command)
 
             except EOFError:
@@ -139,7 +163,9 @@ class InteractiveState:
                 if self.debug:
                     traceback.print_exc()
                 else:
-                    print(f"{ANSI.COLOR_RED}error:{ANSI.RESET} {ANSI.BOLD}{exc}{ANSI.RESET}")
+                    print(
+                        f"{ANSI.COLOR_RED}error:{ANSI.RESET} {ANSI.BOLD}{exc}{ANSI.RESET}"
+                    )
 
     def apply_tactic_command(self, command: Command):
         old_state = self.proof_state
@@ -156,10 +182,14 @@ class InteractiveState:
         # print all current inline claims
         claims = self.proof_state.get_all_claims()
         if len(claims):
-            segments.append("\n".join([
-                "inline claim(s):",
-                *[ TAB + str(claim.statement) for claim in claims ],
-            ]))
+            segments.append(
+                "\n".join(
+                    [
+                        "inline claim(s):",
+                        *[TAB + str(claim.statement) for claim in claims],
+                    ]
+                )
+            )
 
         # print all current goals
         current_goals = self.proof_state.get_current_goal_statements()
@@ -167,29 +197,44 @@ class InteractiveState:
             # print all essential hypotheses usable for the current goal
             essentials = self.proof_state.get_all_essentials_for_current_top_goal()
             if len(essentials):
-                segments.append("\n".join([
-                    "essential(s):",
-                    *[ TAB + str(essential.statement) for essential in essentials ],
-                ]))
+                segments.append(
+                    "\n".join(
+                        [
+                            "essential(s):",
+                            *[
+                                TAB + str(essential.statement)
+                                for essential in essentials
+                            ],
+                        ]
+                    )
+                )
 
-
-            segments.append("\n".join([
-                "goal(s):",
-                *[
-                    f"{TAB}{ANSI.BOLD}{goal}{ANSI.RESET}" if i == 0 else f"{TAB}{goal}"
-                    for i, goal in enumerate(current_goals)
-                ]
-            ]))
+            segments.append(
+                "\n".join(
+                    [
+                        "goal(s):",
+                        *[
+                            f"{TAB}{ANSI.BOLD}{goal}{ANSI.RESET}"
+                            if i == 0
+                            else f"{TAB}{goal}"
+                            for i, goal in enumerate(current_goals)
+                        ],
+                    ]
+                )
+            )
         else:
             segments.append("no goals left!")
 
         separator = "===================="
         print(separator + "\n" + f"\n{separator}\n".join(segments))
 
-    @BuiltinCommand.add("reload", help_message="reload the theory file and re-apply all tactics")
+    @BuiltinCommand.add(
+        "reload", help_message="reload the theory file and re-apply all tactics"
+    )
     def command_reload(self):
         ans = input(f"are you sure to reload {self.init_theory_path}? (y/n) <n> ")
-        if ans.strip().lower() != "y": return
+        if ans.strip().lower() != "y":
+            return
 
         if len(self.undo_states):
             print("re-applying the following script:")
@@ -197,8 +242,10 @@ class InteractiveState:
             self.command_script()
             print("==================")
 
-        old_commands = [ command for _, command in self.undo_states ]
-        self.init_from_theory_and_goal(self.init_theory_path, self.init_goal.statement.label)
+        old_commands = [command for _, command in self.undo_states]
+        self.init_from_theory_and_goal(
+            self.init_theory_path, self.init_goal.statement.label
+        )
         self.undo_states = []
         self.redo_states = []
 
@@ -236,7 +283,9 @@ class InteractiveState:
     def command_goal(self):
         self.print_state()
 
-    @BuiltinCommand.add("proof", help_message="once all goals are resolved, print the final proof")
+    @BuiltinCommand.add(
+        "proof", help_message="once all goals are resolved, print the final proof"
+    )
     def command_proof(self, output_file=None):
         proof_text = str(self.proof_state.gen_proof())
         if output_file is not None:

@@ -14,6 +14,8 @@ and certain missing axioms need to be added.
 This class implements these somewhat hacky transformations,
 to separate from the rest of the code for clarity.
 """
+
+
 class KorePreprocessor:
     def preprocess(self, definition: kore.Definition):
         # add the functional axiom of kseq and dotk if missing
@@ -35,12 +37,16 @@ class KorePreprocessor:
                     found_dotk_functional_axiom = True
 
             if not found_kseq_functional_axiom:
-                axiom = parse_axiom(r"axiom{R} \exists{R} (Val:SortK{}, \equals{SortK{}, R} (Val:SortK{}, kseq{}(K1:SortKItem{},K2:SortK{}))) [functional{}()]")
+                axiom = parse_axiom(
+                    r"axiom{R} \exists{R} (Val:SortK{}, \equals{SortK{}, R} (Val:SortK{}, kseq{}(K1:SortKItem{},K2:SortK{}))) [functional{}()]"
+                )
                 kseq_module.add_sentence(axiom)
                 axiom.resolve(kseq_module)
 
             if not found_dotk_functional_axiom:
-                axiom = parse_axiom(r"axiom{R} \exists{R} (Val:SortK{}, \equals{SortK{}, R} (Val:SortK{}, dotk{}())) [functional{}()]")
+                axiom = parse_axiom(
+                    r"axiom{R} \exists{R} (Val:SortK{}, \equals{SortK{}, R} (Val:SortK{}, dotk{}())) [functional{}()]"
+                )
                 kseq_module.add_sentence(axiom)
                 axiom.resolve(kseq_module)
 
