@@ -7,7 +7,9 @@ import argparse
 from typing import List, Tuple, Optional
 from io import StringIO
 
-from ml.kore.parser import parse_definition, parse_pattern, parse_substitution
+import yaml
+
+from ml.kore.parser import parse_definition, parse_pattern
 from ml.kore.visitors import FreePatternVariableVisitor, PatternSubstitutionVisitor
 from ml.kore.ast import StringLiteral, MLPattern, Module, Pattern
 from ml.kore.utils import KoreUtils
@@ -20,6 +22,7 @@ from .env import ProofEnvironment
 from .rewrite import RewriteProofGenerator
 from .preprocessor import KorePreprocessor
 from .disjointness import DisjointnessProofGenerator
+from .hints import RewritingHints
 
 
 def load_prelude(composer: Composer, args):
@@ -67,34 +70,10 @@ as substitutions (lists of tuples of patterns) in the given module
 """
 
 
-def load_rewriting_info(
-    module: Module, rewriting_info_dir: str
-) -> List[List[Tuple[Pattern, Pattern]]]:
-    rewriting_info_list = {}
-    max_step = 0
-
-    for file_name in os.listdir(rewriting_info_dir):
-        match = re.match(r"\D*(\d+)\.ekore", file_name)
-        if match is not None:
-            step = int(match.group(1))
-            assert (
-                step not in rewriting_info_list
-            ), "duplicated rewriting information for step {}".format(step)
-
-            max_step = max(max_step, step)
-
-            full_path = os.path.join(rewriting_info_dir, file_name)
-            with open(full_path) as rewriting_info:
-                # parse each rewriting information
-                # note that we read all lines (also removing new lines)
-                subst = parse_substitution(rewriting_info.read().replace("\n", " "))
-                # resolve all references in the specified module
-                for (p, q) in subst:
-                    p.resolve(module)
-                    q.resolve(module)
-                rewriting_info_list[step] = subst
-    rewriting_info_list = [rewriting_info_list[i] for i in range(max_step + 1)]
-    return rewriting_info_list
+def load_rewriting_hints(module: Module, hints_path: str) -> RewritingHints:
+    with open(hints_path) as hints_file:
+        loaded_obj = yaml.load(hints_file, Loader=yaml.Loader)
+        return RewritingHints.load_from_object(module, loaded_obj)
 
 
 """
@@ -196,8 +175,8 @@ def main():
         help="directory containing all snapshots in the format *-<step number>.kore",
     )
     parser.add_argument(
-        "--rewriting-info",
-        help="directory containing all rewriting information in the format *-<step number>.ekore",
+        "--hints",
+        help="optional hint from the backend to aid the proof generator",
     )
     parser.add_argument(
         "--benchmark",
@@ -232,9 +211,11 @@ def main():
 
     module_elapsed = time.time() - module_begin
 
-    # emit claims about each rewriting step if shapshots are given
-    if args.rewriting_info is not None:
-        rewriting_info = load_rewriting_info(module, args.rewriting_info)
+    # TODO: currently only supports rewriting hints
+    if args.hints is not None:
+        rewriting_hints = load_rewriting_hints(module, args.hints)
+    else:
+        rewriting_hints = None
 
     if args.snapshots is not None:
         snapshots = load_snapshots(module, args.snapshots)
@@ -242,7 +223,7 @@ def main():
         if len(snapshots) >= 2:
             rewrite_begin = time.time()
             composer.start_segment("rewrite")
-            prove_rewriting(env, snapshots, rewriting_info)
+            prove_rewriting(env, snapshots, rewriting_hints)
             composer.end_segment()
             rewrite_elapsed = time.time() - rewrite_begin
         else:

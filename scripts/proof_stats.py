@@ -15,7 +15,7 @@ def debug(msg: str):
 
 
 def run_command(command: List[str], **kwargs) -> subprocess.Popen:
-    command_str = " ".join([ shlex.quote(frag) for frag in command ])
+    command_str = " ".join([shlex.quote(frag) for frag in command])
     debug(f"{ANSI.COLOR_GREY}+ {command_str}{ANSI.RESET}")
     return subprocess.Popen(command, **kwargs)
 
@@ -29,8 +29,14 @@ def read_until(stream: BinaryIO, keyword: bytes) -> str:
             return buf
 
 
-def verify_theorems(entry_database: str, label_patterns: List[str]) -> Tuple[float, List[float]]:
-    proc = run_command([ "metamath", "set scroll continuous", f"read \"{entry_database}\"" ], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+def verify_theorems(
+    entry_database: str, label_patterns: List[str]
+) -> Tuple[float, List[float]]:
+    proc = run_command(
+        ["metamath", "set scroll continuous", f'read "{entry_database}"'],
+        stdout=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+    )
 
     begin = time.time()
     read_until(proc.stdout, b"read into the source buffer.")
@@ -51,7 +57,9 @@ def verify_theorems(entry_database: str, label_patterns: List[str]) -> Tuple[flo
     proc.stdin.close()
 
     exit_code = proc.wait()
-    assert exit_code == 0, f"failed to verify database {entry_database}: exit code {exit_code}"
+    assert (
+        exit_code == 0
+    ), f"failed to verify database {entry_database}: exit code {exit_code}"
 
     return loading_time, verify_time
 
@@ -76,16 +84,14 @@ def get_file_size(path: str, wrap: int) -> Tuple[int, int, int]:
     return lines, wrapped_lines, size_in_bytes
 
 
-def measure(proof_object: str, prelude_theory: str, line_wrap: int=80):
+def measure(proof_object: str, prelude_theory: str, line_wrap: int = 80):
     # measure base loading time
     loading_time1, (goal_time, rewrite_time, total_time) = verify_theorems(
-        os.path.join(proof_object, "goal.mm"),
-        [ "goal", "rewrite-*", "*" ]
+        os.path.join(proof_object, "goal.mm"), ["goal", "rewrite-*", "*"]
     )
 
     loading_time2, (prelude_time,) = verify_theorems(
-        os.path.join(prelude_theory, "kore-lemmas.mm"),
-        [ "*" ]
+        os.path.join(prelude_theory, "kore-lemmas.mm"), ["*"]
     )
 
     # count number of lines
@@ -108,7 +114,7 @@ def measure(proof_object: str, prelude_theory: str, line_wrap: int=80):
         # if fname == "dv.mm":
         #     dv_lines += lines
         # el
-        if fname in { "dv.mm", "goal.mm", "variable.mm", "substitution.mm" }:
+        if fname in {"dv.mm", "goal.mm", "variable.mm", "substitution.mm"}:
             task_lines += lines
             task_lines_wrapped += wrapped_lines
             task_size += size
@@ -137,7 +143,9 @@ def measure(proof_object: str, prelude_theory: str, line_wrap: int=80):
     print(f"loc-prelude-wrapped {prelude_lines_wrapped}")
     print(f"loc-module-wrapped {module_lines_wrapped}")
     print(f"loc-rewrite-wrapped {task_lines_wrapped}")
-    print(f"loc-total-wrapped {prelude_lines_wrapped + module_lines_wrapped + task_lines_wrapped}")
+    print(
+        f"loc-total-wrapped {prelude_lines_wrapped + module_lines_wrapped + task_lines_wrapped}"
+    )
 
     print(f"size-prelude {prelude_size}")
     print(f"size-module {module_size}")

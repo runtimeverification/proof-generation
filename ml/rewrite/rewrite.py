@@ -18,6 +18,7 @@ from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
 from .unification import UnificationProofGenerator, InjectionCombine
 from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
+from .hints import RewritingHints
 
 
 """
@@ -107,7 +108,7 @@ class RewriteProofGenerator(ProofGenerator):
     def rewrite_from_pattern(
         self,
         pattern: kore.Pattern,
-        rewriting_info: List[Tuple[kore.Pattern, kore.Pattern]],
+        substitution_hints: Optional[Mapping[kore.Variable, kore.Pattern]] = None,
     ) -> ProvableClaim:
         unification_gen = UnificationProofGenerator(self.env)
 
@@ -117,21 +118,23 @@ class RewriteProofGenerator(ProofGenerator):
             )
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
 
-            rewriting_info_map = dict(rewriting_info)
-            lhs_instance = KoreUtils.copy_and_substitute_pattern(
-                lhs, rewriting_info_map
-            )
-            unification_result = unification_gen.unify_patterns(lhs_instance, pattern)
+            # apply the substitution hint
+            if substitution_hints is not None:
+                lhs = KoreUtils.copy_and_substitute_pattern(lhs, substitution_hints)
+
+            unification_result = unification_gen.unify_patterns(lhs, pattern)
             if unification_result is None:
                 continue
 
             # eliminate all universal quantifiers
+            substitution = unification_result.substitution
+
+            if substitution_hints is not None:
+                substitution = {**substitution, **substitution_hints}
+
             instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(
                 rewrite_axiom,
-                {
-                    **unification_result.substitution,
-                    **rewriting_info_map,
-                },  # this is the union of two dictionaries
+                substitution,
             )
             lhs, requires, rhs, ensures = self.decompose_rewrite_axiom(
                 instantiated_axiom.claim.pattern
@@ -199,7 +202,7 @@ class RewriteProofGenerator(ProofGenerator):
         self,
         from_pattern: kore.Pattern,
         to_pattern: kore.Pattern,
-        rewriting_info: List[Tuple[kore.Pattern, kore.Pattern]],
+        substitution_hints: Optional[Mapping[kore.Variable, kore.Pattern]] = None,
         simplify_initial_pattern: bool = True,
     ) -> ProvableClaim:
         # strip the outermost inj
@@ -226,7 +229,9 @@ class RewriteProofGenerator(ProofGenerator):
 
             from_pattern = rhs
 
-        concrete_rewrite_claim = self.rewrite_from_pattern(from_pattern, rewriting_info)
+        concrete_rewrite_claim = self.rewrite_from_pattern(
+            from_pattern, substitution_hints
+        )
 
         # check that the proven statement is actually what we want
         # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )
@@ -250,7 +255,7 @@ class RewriteProofGenerator(ProofGenerator):
     def prove_multiple_rewrite_steps(
         self,
         patterns: List[kore.Pattern],
-        rewriting_info_list: List[List[Tuple[kore.Pattern, kore.Pattern]]],
+        rewriting_hints: Optional[RewritingHints] = None,
     ) -> ProvableClaim:
         assert len(patterns) > 1, "expecting more than one patterns"
 
@@ -259,13 +264,15 @@ class RewriteProofGenerator(ProofGenerator):
         for step, (from_pattern, to_pattern) in enumerate(
             zip(patterns[:-1], patterns[1:])
         ):
-            rewriting_info = rewriting_info_list[step]
             print("==================")
             print("proving rewriting step {}".format(step))
+
             step_claim = self.prove_rewrite_step(
                 from_pattern,
                 to_pattern,
-                rewriting_info,
+                rewriting_hints.get_substitution_for_step(step)
+                if rewriting_hints is not None
+                else None,
                 simplify_initial_pattern=step == 0,
             )
             self.env.load_comment(

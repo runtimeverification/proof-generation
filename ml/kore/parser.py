@@ -297,9 +297,12 @@ def parse_definition(src: str) -> Definition:
     return ASTTransformer().transform(tree)
 
 
-def parse_pattern(src: str) -> Pattern:
+def parse_pattern(src: str, module: Optional[Module] = None) -> Pattern:
     tree = pattern_parser.parse(src)
-    return ASTTransformer().transform(tree)
+    pattern = ASTTransformer().transform(tree)
+    if module is not None:
+        pattern.resolve(module)
+    return pattern
 
 
 def parse_axiom(src: str) -> Axiom:
@@ -310,21 +313,3 @@ def parse_axiom(src: str) -> Axiom:
 def parse_module(src: str) -> Axiom:
     tree = module_parser.parse(src)
     return ASTTransformer().transform(tree)
-
-
-def parse_substitution(str: str) -> List[Tuple[Pattern, Pattern]]:
-    # print("parse_substition begins")
-    # print("input:", str)
-
-    bindings_str = str.split(";;;")
-    # remove the empty string ''
-    # (which should be the last element of bindings_str)
-    bindings_str = list(filter(None, bindings_str))
-
-    split_lhs_rhs = lambda b: (b.split("==>")[0], b.split("==>")[1])
-    tuples_str = list(map(split_lhs_rhs, bindings_str))
-
-    parse_lhs_rhs = lambda tp: (parse_pattern(tp[0]), parse_pattern(tp[1]))
-    tuples = list(map(parse_lhs_rhs, tuples_str))
-
-    return tuples
