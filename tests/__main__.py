@@ -1,5 +1,5 @@
 import subprocess
-from scripts.runtest import gen_proof
+from scripts.run_test import gen_proof
 
 tests_run_counter = 0
 

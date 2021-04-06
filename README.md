@@ -25,7 +25,7 @@ Suppose you have a K definition `def.k` with the main module `MAIN`,
 and a program `pgm.txt`, you can use
 
 ```
-python3 -m scripts.runtest def.k MAIN pgm.txt --output rewriting-proof
+python3 -m scripts.run_test def.k MAIN pgm.txt --output rewriting-proof
 ```
 to generate the (concrete) rewriting proof for the program `pgm.txt` and output to the `rewriting-proof` directory.
 
