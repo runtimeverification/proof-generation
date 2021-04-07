@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Union, Optional, Any, Mapping, Set
+from typing import List, Union, Optional, Any, Dict, Set, TypeVar, Generic, NoReturn
 
 from ml.utils.visitor import Visitor
 
@@ -12,13 +12,16 @@ class KoreVisitor(Visitor):
     pass
 
 
-class BaseAST:
+P = TypeVar("P")
+
+
+class BaseAST(Generic[P]):
     def __init__(self, attributes: List[Application] = []):
         self.meta_line: Optional[int] = None
         self.meta_column: Optional[int] = None
         self.meta_end_line: Optional[int] = None
         self.meta_end_column: Optional[int] = None
-        self.meta_parent: Optional[BaseAST] = None
+        self.meta_parent: Optional[P] = None
         self.meta_module: Optional[Module] = None
         self.attributes = attributes
 
@@ -31,14 +34,14 @@ class BaseAST:
     def visit(self, visitor: KoreVisitor) -> Any:
         raise NotImplementedError()
 
-    def get_parent(self) -> BaseAST:
+    def get_parent(self) -> P:
         if self.meta_parent is None:
             self.error_with_position("does not have a parent")
             assert False  # to make mypy happy
         else:
             return self.meta_parent
 
-    def set_parent(self, parent: BaseAST):
+    def set_parent(self, parent: P):
         self.meta_parent = parent
 
     def get_attribute_by_symbol(self, symbol: str) -> Optional[Application]:
@@ -54,7 +57,7 @@ class BaseAST:
         else:
             return False
 
-    def error_with_position(self, msg: str, *args, **kwargs):
+    def error_with_position(self, msg: str, *args, **kwargs) -> NoReturn:
         err_msg = "at line {}, column {}: {}".format(
             self.meta_line, self.meta_column, msg.format(*args, **kwargs)
         )
@@ -68,7 +71,7 @@ class BaseAST:
         return self.meta_module
 
 
-class Definition(BaseAST):
+class Definition(BaseAST[None]):
     def __init__(self, modules: List[Module], attributes: List[Application]):
         super().__init__(attributes)
 
@@ -86,7 +89,7 @@ class Definition(BaseAST):
         # TODO: check cyclic module imports
         for module in self.module_map.values():
             module.set_parent(self)
-            module.resolve(self)
+            module.resolve()
 
     def get_module_by_name(self, name: str) -> Optional[Module]:
         return self.module_map.get(name)
@@ -105,20 +108,20 @@ class Definition(BaseAST):
         )
 
 
-class Module(BaseAST):
+class Module(BaseAST[Definition]):
     def __init__(
         self, name: str, sentences: List[Sentence], attributes: List[Application]
     ):
         super().__init__(attributes)
 
         self.name = name
-        self.all_sentences = []
+        self.all_sentences: List[Sentence] = []
 
         # sort out different sentences
         self.imports: Set[ImportStatement] = set()
-        self.sort_map: Mapping[str, SortDefinition] = {}
-        self.symbol_map: Mapping[str, SymbolDefinition] = {}
-        self.alias_map: Mapping[str, AliasDefinition] = {}
+        self.sort_map: Dict[str, SortDefinition] = {}
+        self.symbol_map: Dict[str, SymbolDefinition] = {}
+        self.alias_map: Dict[str, AliasDefinition] = {}
         self.axioms: List[Axiom] = []
 
         for sentence in sentences:
@@ -130,9 +133,10 @@ class Module(BaseAST):
 
         # check imported modules
         for import_stmt in self.imports:
-            found = import_stmt.module.get_sort_by_id(sort_id)
-            if found is not None:
-                return found
+            if isinstance(import_stmt.module, Module):
+                found = import_stmt.module.get_sort_by_id(sort_id)
+                if found is not None:
+                    return found
 
         return None
 
@@ -144,9 +148,10 @@ class Module(BaseAST):
 
         # check imported modules
         for import_stmt in self.imports:
-            found = import_stmt.module.get_symbol_by_name(symbol)
-            if found is not None:
-                return found
+            if isinstance(import_stmt.module, Module):
+                found = import_stmt.module.get_symbol_by_name(symbol)
+                if found is not None:
+                    return found
 
         return None
 
@@ -181,7 +186,7 @@ class Module(BaseAST):
         elif isinstance(sentence, Axiom):
             self.axioms.remove(sentence)
 
-    def resolve(self, definition: Definition):
+    def resolve(self):
         for sentence in self.all_sentences:
             sentence.set_parent(self)
 
@@ -204,9 +209,20 @@ class Module(BaseAST):
         )
 
 
-class Sentence(BaseAST):
+class Sentence(BaseAST[Any]):
     def __init__(self, attributes=[]):
         super().__init__(attributes)
+
+
+class Pattern(BaseAST[Union[Sentence, "Pattern"]]):
+    def __init__(self):
+        super().__init__()
+
+    def __lt__(self, other):
+        raise NotImplementedError("__lt__ for ml.kore.ast.Pattern is not implemented.")
+
+    def __eq__(self, other) -> bool:
+        raise NotImplementedError()
 
 
 class ImportStatement(Sentence):
@@ -217,7 +233,7 @@ class ImportStatement(Sentence):
     def resolve(self, module: Module):
         super().resolve(module)
 
-        if type(self.module) is str:
+        if isinstance(self.module, str):
             resolved_module = module.get_parent().get_module_by_name(self.module)
             if resolved_module is None:
                 self.error_with_position("unable to find module {}", self.module)
@@ -267,7 +283,7 @@ class SortDefinition(Sentence):
         )
 
 
-class SortInstance(BaseAST):
+class SortInstance(BaseAST[Pattern]):
     def __init__(self, definition: Union[str, SortDefinition], arguments: List[Sort]):
         super().__init__()
         self.definition = definition
@@ -276,7 +292,7 @@ class SortInstance(BaseAST):
     def resolve(self, module: Module):
         super().resolve(module)
 
-        if type(self.definition) is str:
+        if isinstance(self.definition, str):
             resloved_definition = module.get_sort_by_id(self.definition)
             if resloved_definition is None:
                 self.error_with_position("unable to find sort {}", self.definition)
@@ -314,7 +330,7 @@ class SortInstance(BaseAST):
         return "{}{{{}}}".format(sort_id, ", ".join(map(str, self.arguments)))
 
 
-class SortVariable(BaseAST):
+class SortVariable(BaseAST[Pattern]):
     def __init__(self, name: str):
         self.name = name
 
@@ -358,7 +374,7 @@ class SymbolDefinition(Sentence):
         self.output_sort = output_sort
         self.hooked = hooked
 
-        self.users = []  # a set of patterns that uses this symbol
+        self.users: List[Pattern] = []  # a set of patterns that uses this symbol
 
     def add_user(self, user: Pattern):
         self.users.append(user)
@@ -389,7 +405,7 @@ class SymbolDefinition(Sentence):
         )
 
 
-class SymbolInstance(BaseAST):
+class SymbolInstance(BaseAST[Pattern]):
     def __init__(
         self, definition: Union[str, SymbolDefinition], sort_arguments: List[Sort]
     ):
@@ -400,7 +416,7 @@ class SymbolInstance(BaseAST):
     def resolve(self, module: Module):
         super().resolve(module)
 
-        if type(self.definition) is str:
+        if isinstance(self.definition, str):
             resolved_definition = module.get_symbol_by_name(self.definition)
             if resolved_definition is None:
                 self.error_with_position(
@@ -514,9 +530,11 @@ class AliasDefinition(Sentence):
 
     def get_binding_variables(self) -> List[Variable]:
         assert isinstance(self.lhs, Application)
+        var_list = []
         for arg in self.lhs.arguments:
             assert isinstance(arg, Variable)
-        return list(self.lhs.arguments)
+            var_list.append(arg)
+        return var_list
 
     def visit(self, visitor: KoreVisitor) -> Any:
         visitor.previsit_alias_definition(self)
@@ -532,17 +550,6 @@ class AliasDefinition(Sentence):
 
     def __str__(self) -> str:
         return "alias {} where {} := {}".format(self.definition, self.lhs, self.rhs)
-
-
-class Pattern(BaseAST):
-    def __init__(self):
-        super().__init__()
-
-    def __lt__(self, other):
-        raise NotImplementedError("__lt__ for ml.kore.ast.Pattern is not implemented.")
-
-    def __eq__(self, other) -> bool:
-        raise NotImplementedError()
 
 
 class Variable(Pattern):
@@ -620,6 +627,8 @@ class Application(Pattern):
 
         self.symbol.set_parent(self)
         self.symbol.resolve(module)
+
+        assert isinstance(self.symbol.definition, SymbolDefinition)
         self.symbol.definition.add_user(self)
 
         for arg in self.arguments:

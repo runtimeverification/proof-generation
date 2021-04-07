@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Tuple, Optional, NewType
+from typing import Mapping, List, Tuple, Optional, NewType, TypeVar
 
 from .ast import *
 from .visitors import (
@@ -17,17 +17,21 @@ from .visitors import (
 """
 Path to a subpattern of a pattern or an axiom
 """
-PatternPath = NewType("PatternPath", List[int])
+PatternPath = List[int]
 
 
-"""
-Utility functions on KORE AST
-"""
+AST = TypeVar("AST", bound=BaseAST)
+PA = TypeVar("PA", bound=Union[Pattern, Axiom])
+PAS = TypeVar("PAS", bound=Union[Pattern, Axiom, Sort])
 
 
 class KoreUtils:
+    """
+    Utility functions on KORE AST
+    """
+
     @staticmethod
-    def copy_ast(module: Module, ast: BaseAST) -> BaseAST:
+    def copy_ast(module: Module, ast: AST) -> AST:
         copy_ast = ast.visit(CopyVisitor())
         copy_ast.resolve(module)
         return copy_ast
@@ -38,15 +42,15 @@ class KoreUtils:
 
     @staticmethod
     def copy_and_substitute_pattern(
-        ast: Union[Pattern, Axiom], substitution: Mapping[Variable, Pattern]
-    ) -> Union[Pattern, Axiom]:
+        ast: PA, substitution: Mapping[Variable, Pattern]
+    ) -> PA:
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
         return PatternSubstitutionVisitor(substitution).visit(copied)
 
     @staticmethod
     def copy_and_substitute_sort(
-        ast: Union[Pattern, Axiom, Sort], substitution: Mapping[SortVariable, Sort]
-    ) -> Union[Pattern, Axiom, Sort]:
+        ast: PAS, substitution: Mapping[SortVariable, Sort]
+    ) -> PAS:
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
         return SortSubstitutionVisitor(substitution).visit(copied)
 
@@ -72,48 +76,54 @@ class KoreUtils:
         ), f"path {path} does not exists in pattern {ast}"
         return KoreUtils.get_subpattern_by_path(ast.arguments[first], rest)
 
-    """
-    path: path to a subpattern
-    e.g. in a(b(), c(phi)),
-    phi would have the path [ 1, 0 ]
-    """
+    @staticmethod
+    def replace_path_by_pattern_in_axiom(
+        axiom: Axiom, path: PatternPath, replacement: Pattern
+    ) -> Axiom:
+        """
+        path: path to a subpattern
+        e.g. in a(b(), c(phi)),
+        phi would have the path [ 1, 0 ]
+        """
+
+        assert len(path) != 0
+        first, *rest = path
+        assert first == 0, f"axiom {axiom} only have one immediate subpattern"
+        axiom.pattern = KoreUtils.replace_path_by_pattern_in_pattern(
+            axiom.pattern, rest, replacement
+        )
+        return axiom
 
     @staticmethod
-    def replace_path_by_pattern(
-        ast: Union[Pattern, Axiom], path: PatternPath, replacement: Pattern
-    ) -> Union[Pattern, Axiom]:
+    def replace_path_by_pattern_in_pattern(
+        pattern: Pattern, path: PatternPath, replacement: Pattern
+    ) -> Pattern:
         if not path:
-            assert isinstance(ast, Pattern)
             return replacement
 
         first, *rest = path
 
-        if isinstance(ast, Axiom):
-            assert first == 0, f"axiom {ast} only have one immediate subpattern"
-            ast.pattern = KoreUtils.replace_path_by_pattern(
-                ast.pattern, rest, replacement
-            )
-            return ast
-
-        assert isinstance(ast, Application) or isinstance(
-            ast, MLPattern
-        ), "path {} does not exists in pattern {}".format(path, ast)
+        assert isinstance(pattern, Application) or isinstance(
+            pattern, MLPattern
+        ), "path {} does not exists in pattern {}".format(path, pattern)
 
         # Application and MLPattern all use .arguments for the list of arguments
         assert first < len(
-            ast.arguments
-        ), "path {} does not exists in pattern {}".format(path, ast)
-        ast.arguments[first] = KoreUtils.replace_path_by_pattern(
-            ast.arguments[first], rest, replacement
+            pattern.arguments
+        ), "path {} does not exists in pattern {}".format(path, pattern)
+        pattern.arguments[first] = KoreUtils.replace_path_by_pattern_in_pattern(
+            pattern.arguments[first], rest, replacement
         )
-        return ast
+        return pattern
 
     @staticmethod
-    def copy_and_replace_path_by_pattern(
-        ast: Union[Pattern, Axiom], path: PatternPath, replacement: Pattern
-    ) -> Union[Pattern, Axiom]:
+    def copy_and_replace_path_by_pattern_in_axiom(
+        ast: Axiom, path: PatternPath, replacement: Pattern
+    ) -> Axiom:
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
-        return KoreUtils.replace_path_by_pattern(copied, path, replacement)
+        return KoreUtils.copy_and_replace_path_by_pattern_in_axiom(
+            copied, path, replacement
+        )
 
     """
     Expand one pattern that uses an alias definition
@@ -149,15 +159,18 @@ class KoreUtils:
             if isinstance(parent, Application) or isinstance(parent, MLPattern):
                 for i, arg in enumerate(parent.arguments):
                     if arg == user:
+                        assert isinstance(arg, Application)
                         parent.arguments[i] = KoreUtils.expand_alias_def(arg, alias_def)
                         break
                 else:
                     assert False, "unable to find corresponding child"
             elif isinstance(parent, AliasDefinition):
                 if parent.rhs == user:
+                    assert isinstance(parent.rhs, Application)
                     parent.rhs = KoreUtils.expand_alias_def(parent.rhs, alias_def)
             elif isinstance(parent, Axiom):
                 assert parent.pattern == user
+                assert isinstance(parent.pattern, Application)
                 parent.pattern = KoreUtils.expand_alias_def(parent.pattern, alias_def)
             else:
                 user.error_with_position("unable to instantiate alias")
@@ -216,7 +229,8 @@ class KoreUtils:
         if len(sort1.arguments) != len(sort2.arguments):
             return None
 
-        substitution = {}
+        substitution: Dict[SortVariable, Sort] = {}
+
         for sub1, sub2 in zip(sort1.arguments, sort2.arguments):
             sub_substitution = KoreUtils.unify_sorts(sub1, sub2)
             if sub_substitution is None:
@@ -240,6 +254,8 @@ class KoreUtils:
             # NOTE: assuming the application has been resolved
             symbol_def = pattern.symbol.definition
             sort_arguments = pattern.symbol.sort_arguments
+
+            assert isinstance(symbol_def, SymbolDefinition)
             assert len(sort_arguments) == len(symbol_def.sort_variables)
 
             substitution = {

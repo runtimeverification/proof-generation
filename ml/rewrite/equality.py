@@ -43,7 +43,7 @@ class EqualityProofGenerator(ProofGenerator):
         replacement: kore.Pattern,
         equation_proof: Proof,
     ) -> ProvableClaim:
-        final_claim = KoreUtils.copy_and_replace_path_by_pattern(
+        final_claim = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(
             provable.claim, path, replacement
         )
 
@@ -72,7 +72,7 @@ class EqualityProofGenerator(ProofGenerator):
         # make a template/context for the replacement
         var = kore.Variable(fresh_var, sort)
         var.resolve(self.env.module)
-        template_pattern = KoreUtils.copy_and_replace_path_by_pattern(
+        template_pattern = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(
             provable.claim, path, var
         )
 
