@@ -9,6 +9,7 @@ class CopyVisitor(MetamathVisitor):
     """
     Make a copy of the statement/term
     """
+
     def postvisit_metavariable(self, metavar: Metavariable) -> Term:
         return Metavariable(metavar.name)
 
@@ -38,6 +39,7 @@ class SubstitutionVisitor(CopyVisitor):
     """
     Copy and substitute variables
     """
+
     def __init__(self, substitution: Mapping[str, Term]):
         super().__init__()
         self.substitution = substitution

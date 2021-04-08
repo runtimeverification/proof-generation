@@ -131,4 +131,4 @@ class ApplicationContextProver:
             composer, statement.terms[1], statement.terms[2], hypotheses
         )
 
-    auto = MethodAutoProof(prove_application_context_statement.__func__) # type: ignore
+    auto = MethodAutoProof(prove_application_context_statement.__func__)  # type: ignore

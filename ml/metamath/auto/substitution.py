@@ -64,9 +64,7 @@ class SubstitutionProver:
         )
 
         if before_pattern == subst_var and after_pattern == subst_pattern:
-            return composer.get_theorem("substitution-var-same").match_and_apply(
-                target
-            )
+            return composer.get_theorem("substitution-var-same").match_and_apply(target)
 
         if after_pattern == before_pattern:
             if is_variable_metavar and before_pattern != subst_var:
@@ -171,7 +169,9 @@ class SubstitutionProver:
                     continue
 
                 failed = True
-                subgoals: List[Tuple[Term, Term, Term, Metavariable]] = (
+                subgoals: List[
+                    Tuple[Term, Term, Term, Metavariable]
+                ] = (
                     []
                 )  # list of tuples (after_pattern, before_pattern, subst_pattern, subst_var)
 
@@ -265,7 +265,7 @@ class SubstitutionProver:
             expanded_subst_pattern,
             subst_var,
         )
-        
+
         assert subst_proof.statement.terms == target.terms
 
         return composer.get_theorem("notation-substitution").apply(
@@ -298,4 +298,4 @@ class SubstitutionProver:
             hypotheses=hypotheses,
         )
 
-    auto = MethodAutoProof(prove_substitution_statement.__func__) # type: ignore
+    auto = MethodAutoProof(prove_substitution_statement.__func__)  # type: ignore

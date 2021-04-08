@@ -18,18 +18,16 @@ class Tactic:
     def __init__(self, tactic_name: str):
         self.tactic_name = tactic_name
 
-    """
-    Transforms the proof state
-    """
-
-    def apply(self, state: ProofState, *args, **kwargs):
-        raise NotImplementedError()
-
-    """
-    Transforms the proof stack
-    """
+    # def apply(self, state: ProofState, *args, **kwargs):
+    #     """
+    #     Transforms the proof state
+    #     """
+    #     raise NotImplementedError()
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        """
+        Transforms the proof stack
+        """
         raise NotImplementedError()
 
     def parse_terms(self, state: ProofState, src: str) -> List[Term]:
@@ -63,7 +61,7 @@ class ApplyTactic(Tactic):
 
     def apply(self, state: ProofState, theorem_name: str, **options):
         substitution = self.parse_substitution(state, options)
-        self.metavars_substitution = substitution
+        self.metavars_substitution = dict(substitution)
 
         top_goal = state.resolve_current_goal(self)
         top_goal_statement = top_goal.statement
@@ -84,12 +82,14 @@ class ApplyTactic(Tactic):
             metavars = copied_statement.get_metavariables()
             for essential in self.theorem.essentials:
                 metavars.update(essential.get_metavariables())
-            metavars = list(metavars)
-            metavars.sort()  # making things a bit more deterministic
 
-            for metavar in metavars:
+            metavars_sorted = list(metavars)
+            metavars_sorted.sort()  # making things a bit more deterministic
+
+            for metavar in metavars_sorted:
                 if metavar not in self.metavars_substitution:
                     typecode = state.composer.find_metavariable(metavar)
+                    assert typecode is not None, f"metavariable {metavar} not found"
                     self.metavars_substitution[
                         metavar
                     ] = state.get_next_schematic_variable(typecode)
@@ -159,6 +159,8 @@ class ApplyTactic(Tactic):
     """
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        assert self.theorem is not None
+
         num_essentials = len(self.theorem.essentials)
 
         assert (
@@ -178,12 +180,16 @@ class ApplyTactic(Tactic):
         if self.use_claim:
             # get an inline proof if the reference theorem is an inline claim
             return self.theorem.inline_apply(
-                *subproofs,  # subproofs would include the proof of the claim as the first one since we added the dependency
+                subproofs[0],
+                *subproofs[
+                    1:
+                ],  # subproofs would include the proof of the claim as the first one since we added the dependency
                 **full_substitution,
             )
         else:
             return self.theorem.apply(
-                *subproofs,
+                subproofs[0],
+                *subproofs[1:],
                 **full_substitution,
             )
 

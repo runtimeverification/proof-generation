@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional, List
 
 import readline
@@ -22,7 +24,7 @@ TAB = "  "
 
 
 class BuiltinCommand:
-    builtin_commands = []  # list of BuiltinCommand
+    builtin_commands: List[BuiltinCommand] = []  # list of BuiltinCommand
 
     def __init__(self, *names, help_message=None, handler=None):
         self.names = set(names)
@@ -95,14 +97,14 @@ class InteractiveState:
         readline.set_completer_delims(" ")
         readline.set_completer(self.command_completer)
 
-    def command_completer(self, text: str, state: int) -> List[str]:
+    def command_completer(self, text: str, state: int) -> Optional[str]:
         command_names = (
             sorted(ProofState.all_tactics.keys())
             + BuiltinCommand.get_all_command_names()
         )
         theorem_names = sorted(self.proof_state.composer.theorems.keys())
 
-        current_buffer = readline.get_line_buffer().decode().lstrip()
+        current_buffer = readline.get_line_buffer().lstrip()
         split = current_buffer.split(" ")
 
         if len(split) > 1:

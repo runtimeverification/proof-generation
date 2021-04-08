@@ -238,7 +238,9 @@ class Theorem:
         for i, proof in auto_proofs:
             essential_instance = subst_visitor.visit(self.essentials[i])
             try:
-                final_essential_proofs[i] = proof.prove(self.composer, essential_instance)
+                final_essential_proofs[i] = proof.prove(
+                    self.composer, essential_instance
+                )
             except Exception:
                 print_exc()
                 assert (
@@ -340,7 +342,9 @@ class ProofCache:
 
     def __init__(self, composer: Composer):
         self.composer = composer
-        self.cache_map: Dict[str, Dict[Tuple[Term, ...], Proof]] = {}  # label prefix -> (terms -> proof)
+        self.cache_map: Dict[
+            str, Dict[Tuple[Term, ...], Proof]
+        ] = {}  # label prefix -> (terms -> proof)
         self.label_map: Dict[str, int] = {}  # label prefix -> next index
 
         self.stat_cache_hit = 0
@@ -428,8 +432,12 @@ class Context:
     def __init__(self, prev: Context = None):
         self.prev = prev
 
-        self.active_floatings: List[Tuple[str, str, str]] = []  # list of (typecode, metavariable, label)
-        self.active_essentials: List[StructuredStatement] = []  # list of essential statements
+        self.active_floatings: List[
+            Tuple[str, str, str]
+        ] = []  # list of (typecode, metavariable, label)
+        self.active_essentials: List[
+            StructuredStatement
+        ] = []  # list of essential statements
 
     def add_floating(self, typecode: str, variable: str, label: str):
         self.active_floatings.append((typecode, variable, label))
@@ -641,7 +649,9 @@ class Composer:
                 stmt.terms[0].symbol, self.theorems[stmt.label]
             )
 
-    def load_theorem(self, statement: StructuredStatement, index: bool = True) -> Theorem:
+    def load_theorem(
+        self, statement: StructuredStatement, index: bool = True
+    ) -> Theorem:
         theorem = self.load(statement, index)
         assert theorem is not None, f"expecting statement {statement} to be a theorem"
         return theorem

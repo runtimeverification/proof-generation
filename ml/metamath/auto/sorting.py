@@ -162,7 +162,9 @@ class SortingProver:
             if len(right_conjuncts) != 1:
                 continue
 
-            conclusion_term, _ = SortingProver.get_in_sort_pair_force(right_conjuncts[0])
+            conclusion_term, _ = SortingProver.get_in_sort_pair_force(
+                right_conjuncts[0]
+            )
 
             if (
                 not isinstance(conclusion_term, Application)
@@ -372,8 +374,9 @@ class SortingProver:
     def prove_multiple_sorting_judgements(
         composer: Composer, hypothesis: Term, conclusion: Term
     ) -> Proof:
-        assert isinstance(hypothesis, Application) and \
-               isinstance(conclusion, Application)
+        assert isinstance(hypothesis, Application) and isinstance(
+            conclusion, Application
+        )
 
         # see if we have already cached the result
         cached_proof = composer.lookup_proof_cache(
@@ -436,7 +439,8 @@ class SortingProver:
     ) -> Proof:
         # construct the hypotheses
         hypotheses = [
-            SortingProver.in_sort(Metavariable(var), sort) for var, sort in free_var_sorts.items()
+            SortingProver.in_sort(Metavariable(var), sort)
+            for var, sort in free_var_sorts.items()
         ]
 
         if len(hypotheses) == 0:
@@ -452,5 +456,5 @@ class SortingProver:
                 hypothesis, SortingProver.in_sort(term, sort)
             ),
         )
-    
-    auto = MethodAutoProof(prove_sorting_statement.__func__) # type: ignore
+
+    auto = MethodAutoProof(prove_sorting_statement.__func__)  # type: ignore

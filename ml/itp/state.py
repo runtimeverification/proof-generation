@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from typing import List, Optional, Mapping, NewType, Set, Callable, Tuple
+from typing import (
+    List,
+    Optional,
+    Mapping,
+    NewType,
+    Set,
+    Callable,
+    Tuple,
+    Any,
+    Dict,
+    Union,
+)
 
 from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
 from ml.metamath.composer import Composer, Proof, Theorem
@@ -52,7 +63,9 @@ class Goal:
 
 
 class ProofState:
-    all_tactics = {}  # name -> ( tactic class name, [help message] )
+    all_tactics: Dict[
+        str, Tuple[Any, Optional[str]]
+    ] = {}  # name -> ( tactic class name, [help message] )
 
     @staticmethod
     def register_tactic(name: str, help_msg: Optional[str] = None):
@@ -70,10 +83,12 @@ class ProofState:
         self.composer = composer
 
         # set of schematic variables
-        self.schematic_vars = []
-        self.schematic_var_assignment = {}  # num -> term
+        self.schematic_vars: List[SchematicVariable] = []
+        self.schematic_var_assignment: Dict[int, Term] = {}  # num -> term
 
-        self.claims = {}  # claim label -> (theorem, associated goal id)
+        self.claims: Dict[
+            str, Tuple[Theorem, int]
+        ] = {}  # claim label -> (theorem, associated goal id)
 
         # the graph of dependencies of goals
         # it should ideally be a DAG
@@ -81,8 +96,10 @@ class ProofState:
         # have claims being used by multiple goals)
         self.all_goals = [Goal(0, init_goal)]
         self.current_goals = [0]
-        self.goal_dependencies = {}  # goal id -> List[goal id]
-        self.goal_resolver = {}  # goal id -> Tactic that resolved the goal
+        self.goal_dependencies: Dict[int, List[int]] = {}  # goal id -> List[goal id]
+        self.goal_resolver: Dict[
+            int, Any
+        ] = {}  # goal id -> Tactic that resolved the goal
 
     def copy(self) -> ProofState:
         copied_state = ProofState(self.composer, self.get_goal_by_id(0).statement)
@@ -108,17 +125,18 @@ class ProofState:
 
     def find_essential_for_goal(self, name: str, goal: Goal) -> Optional[Theorem]:
         if goal.claim_label is not None:
-            theorem, _ = self.find_claim(goal.claim_label)
+            theorem, _ = self.get_claim(goal.claim_label)
             for essential in theorem.essentials:
                 if essential.label == name:
                     return Theorem(self.composer, essential, [], [])
+            return None
         else:
             return self.composer.find_essential(name)
 
     def get_all_essentials_for_current_top_goal(self) -> List[Theorem]:
         top_goal = self.get_current_top_goal()
         if top_goal.claim_label is not None:
-            theorem, _ = self.find_claim(top_goal.claim_label)
+            theorem, _ = self.get_claim(top_goal.claim_label)
             return [
                 Theorem(self.composer, essential, [], [])
                 for essential in theorem.essentials
@@ -186,6 +204,7 @@ class ProofState:
 
     def add_claim(self, theorem: Theorem) -> Goal:
         goal = self.push_isolated_goal(theorem.statement, theorem.statement.label)
+        assert theorem.statement.label is not None
         self.claims[theorem.statement.label] = theorem, goal.goal_id
         return goal
 
@@ -194,6 +213,11 @@ class ProofState:
             return None
         theorem, goal_id = self.claims[name]
         return theorem, self.get_goal_by_id(goal_id)
+
+    def get_claim(self, name: str) -> Tuple[Theorem, Goal]:
+        claim = self.find_claim(name)
+        assert claim is not None, f"cannot find claim {claim}"
+        return claim
 
     def get_all_claims(self) -> List[Theorem]:
         return [theorem for theorem, _ in self.claims.values()]
@@ -235,7 +259,7 @@ class ProofState:
     """
 
     def transform_all_current_goals(
-        self, transformation: Callable[StructuredStatement, StructuredStatement]
+        self, transformation: Callable[[StructuredStatement], StructuredStatement]
     ):
         for goal_id in self.current_goals:
             goal = self.all_goals[goal_id] = self.all_goals[goal_id].copy()
@@ -308,7 +332,7 @@ class ProofState:
     Check if the given term has any schematic variables
     """
 
-    def is_concrete(self, term: Term) -> bool:
+    def is_concrete(self, term: Union[Term, StructuredStatement]) -> bool:
         metavars = term.get_metavariables()
         for metavar in metavars:
             if self.get_schematic_variable_from_name(metavar) is not None:

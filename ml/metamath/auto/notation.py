@@ -85,7 +85,13 @@ class NotationProver:
 
             _, lhs, rhs = theorem.statement.terms
 
-            if not (isinstance(lhs, Application) and isinstance(rhs, Application) and lhs.symbol == symbol and rhs.symbol == symbol and len(lhs.subterms) == len(rhs.subterms)):
+            if not (
+                isinstance(lhs, Application)
+                and isinstance(rhs, Application)
+                and lhs.symbol == symbol
+                and rhs.symbol == symbol
+                and len(lhs.subterms) == len(rhs.subterms)
+            ):
                 continue
 
             failed = False
@@ -109,13 +115,19 @@ class NotationProver:
 
             # check that essentials only assumes things about metavariables
             for essential in theorem.essentials:
-                if not (len(essential.terms) == 3 and essential.terms[0] == Application(NotationProver.SYMBOL)):
+                if not (
+                    len(essential.terms) == 3
+                    and essential.terms[0] == Application(NotationProver.SYMBOL)
+                ):
                     continue
 
                 lhs_var = essential.terms[1]
                 rhs_var = essential.terms[2]
 
-                if not (isinstance(lhs_var, Metavariable) and isinstance(rhs_var, Metavariable)):
+                if not (
+                    isinstance(lhs_var, Metavariable)
+                    and isinstance(rhs_var, Metavariable)
+                ):
                     continue
 
                 pair = lhs_var.name, rhs_var.name
@@ -313,7 +325,9 @@ class NotationProver:
 
         final_term = Application(term.symbol, expanded_subterms)
 
-        congruence_lemma_pair = NotationProver.find_congruence_lemma(composer, term.symbol)
+        congruence_lemma_pair = NotationProver.find_congruence_lemma(
+            composer, term.symbol
+        )
         if congruence_lemma_pair is not None:
             # if we are lucky enough to find a congruence lemma for the current symbol
             # apply it to get the final result

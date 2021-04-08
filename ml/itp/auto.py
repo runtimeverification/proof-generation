@@ -2,7 +2,7 @@
 Some auto tactics
 """
 
-from typing import Optional, Tuple, List, Union
+from typing import Optional, Tuple, List, Union, Dict
 
 from ml.metamath.ast import (
     Application,
@@ -59,8 +59,8 @@ class SearchTactic(Tactic):
             return var.typecode
         return state.composer.find_metavariable(var.name)
 
-    def apply(self, state: ProofState, limit: Union[str, int] = 7):
-        if type(limit) is str:
+    def apply(self, state: ProofState, limit: Optional[Union[str, int]] = 7):
+        if isinstance(limit, str):
             if limit == "all":
                 limit = None
             else:
@@ -462,7 +462,8 @@ class TautologyTactic(Tactic):
             and proof.statement.terms[1].symbol == "\\iff"
             and len(proof.statement.terms[1].subterms) == 2
         )
-        return tuple(proof.statement.terms[1].subterms)
+        lhs, rhs = proof.statement.terms[1].subterms
+        return lhs, rhs
 
     def decompose_imp(self, proof: Proof) -> Tuple[Term, Term]:
         assert (
@@ -471,7 +472,8 @@ class TautologyTactic(Tactic):
             and proof.statement.terms[1].symbol == "\\imp"
             and len(proof.statement.terms[1].subterms) == 2
         )
-        return tuple(proof.statement.terms[1].subterms)
+        lhs, rhs = proof.statement.terms[1].subterms
+        return lhs, rhs
 
     def junction_to_list(self, term: Term, connective="and") -> List[Term]:
         if isinstance(term, Application) and term.symbol == f"\\{connective}":
@@ -501,18 +503,18 @@ class TautologyTactic(Tactic):
         assert len(proofs)
         proof = proofs[0]
         for step in proofs[1:]:
-            proof = state.composer.find_theorem("rule-iff-transitivity").apply(
+            proof = state.composer.get_theorem("rule-iff-transitivity").apply(
                 proof, step
             )
         return proof
 
     def apply_iff_reflexivity(self, state: ProofState, term: Term) -> Proof:
-        return state.composer.find_theorem("iff-reflexivity").apply(ph0=term)
+        return state.composer.get_theorem("iff-reflexivity").apply(ph0=term)
 
     def apply_iff_congruence(
         self, state: ProofState, *terms_or_proofs: Union[Proof, Term], connective="and"
     ) -> Proof:
-        theorem = state.composer.find_theorem(f"rule-iff-compat-in-{connective}")
+        theorem = state.composer.get_theorem(f"rule-iff-compat-in-{connective}")
         proofs = [
             self.apply_iff_reflexivity(state, term_or_proof)
             if isinstance(term_or_proof, Term)
@@ -543,7 +545,7 @@ class TautologyTactic(Tactic):
                 self.apply_iff_congruence(
                     state, first, subproof, connective=connective
                 ),
-                state.composer.find_theorem(f"{connective}-commutativity").apply(
+                state.composer.get_theorem(f"{connective}-commutativity").apply(
                     ph0=first, ph1=rhs
                 ),
             )
@@ -583,7 +585,7 @@ class TautologyTactic(Tactic):
                 ph2 = self.list_to_junction(
                     left_conjuncts[:i][::-1] + right_conjuncts, connective
                 )
-                step = state.composer.find_theorem(f"{connective}-associativity").apply(
+                step = state.composer.get_theorem(f"{connective}-associativity").apply(
                     ph0=ph0, ph1=ph1, ph2=ph2
                 )
                 proof = self.apply_iff_transitivity(state, proof, step)
@@ -643,7 +645,7 @@ class TautologyTactic(Tactic):
                 distribute_or = self.apply_iff_transitivity(
                     state,
                     premerge_proof,
-                    state.composer.find_theorem("or-left-distributivity").apply(
+                    state.composer.get_theorem("or-left-distributivity").apply(
                         ph0=left_conjuncts[0],
                         ph1=self.list_to_junction(left_conjuncts[1:]),
                         ph2=self.list_to_junction(right_conjuncts),
@@ -661,7 +663,7 @@ class TautologyTactic(Tactic):
                 distribute_or = self.apply_iff_transitivity(
                     state,
                     premerge_proof,
-                    state.composer.find_theorem("or-right-distributivity").apply(
+                    state.composer.get_theorem("or-right-distributivity").apply(
                         ph0=left_conjuncts[0],
                         ph1=right_conjuncts[0],
                         ph2=self.list_to_junction(right_conjuncts[1:]),
@@ -692,7 +694,7 @@ class TautologyTactic(Tactic):
 
             if subterm.symbol == "\\and" or subterm.symbol == "\\or":
                 left, right = subterm.subterms
-                de_morgan_proof = state.composer.find_theorem(
+                de_morgan_proof = state.composer.get_theorem(
                     f"de-morgan-{subterm.symbol[1:]}"
                 ).apply(
                     ph0=left,
@@ -709,7 +711,7 @@ class TautologyTactic(Tactic):
 
             if subterm.symbol == "\\not":
                 (subsubterm,) = subterm.subterms
-                dn_elim_proof = state.composer.find_theorem("double-negation").apply(
+                dn_elim_proof = state.composer.get_theorem("double-negation").apply(
                     ph0=subsubterm,
                 )
 
@@ -752,7 +754,7 @@ class TautologyTactic(Tactic):
 
             return self.apply_iff_transitivity(
                 state,
-                state.composer.find_theorem("imp-to-or").apply(ph0=left, ph1=right),
+                state.composer.get_theorem("imp-to-or").apply(ph0=left, ph1=right),
                 self.apply_iff_congruence(
                     state,
                     self.apply_iff_congruence(state, left_reduced, connective="not"),
@@ -770,7 +772,7 @@ class TautologyTactic(Tactic):
 
             return self.apply_iff_transitivity(
                 state,
-                state.composer.find_theorem("iff-to-and").apply(ph0=left, ph1=right),
+                state.composer.get_theorem("iff-to-and").apply(ph0=left, ph1=right),
                 self.apply_iff_congruence(
                     state,
                     self.apply_iff_congruence(
@@ -794,10 +796,10 @@ class TautologyTactic(Tactic):
             )
 
         if term.symbol == "\\bot":
-            return state.composer.find_theorem("bot-to-and").as_proof()
+            return state.composer.get_theorem("bot-to-and").as_proof()
 
         if term.symbol == "\\top":
-            return state.composer.find_theorem("top-to-or").as_proof()
+            return state.composer.get_theorem("top-to-or").as_proof()
 
         assert False, f"unable to reduce pattern {term}"
 
@@ -814,11 +816,12 @@ class TautologyTactic(Tactic):
         conjuncts = self.junction_to_list(cnf, connective)
         assert position < len(conjuncts)
 
+        assert isinstance(cnf, Application)
         left, right = cnf.subterms
 
         right_conjuncts = self.junction_to_list(right, connective)
         if len(right_conjuncts) == 1:
-            return state.composer.find_theorem(f"{connective}-commutativity").apply(
+            return state.composer.get_theorem(f"{connective}-commutativity").apply(
                 ph0=left,
                 ph1=right,
             )
@@ -844,8 +847,8 @@ class TautologyTactic(Tactic):
         proof = self.apply_iff_transitivity(
             state,
             proof,
-            state.composer.find_theorem("rule-iff-symmetry").apply(
-                state.composer.find_theorem(f"{connective}-associativity").apply(
+            state.composer.get_theorem("rule-iff-symmetry").apply(
+                state.composer.get_theorem(f"{connective}-associativity").apply(
                     ph0=left,
                     ph1=target,
                     ph2=rest_conjuncts,
@@ -859,7 +862,7 @@ class TautologyTactic(Tactic):
             proof,
             self.apply_iff_congruence(
                 state,
-                state.composer.find_theorem(f"{connective}-commutativity").apply(
+                state.composer.get_theorem(f"{connective}-commutativity").apply(
                     ph0=left,
                     ph1=target,
                 ),
@@ -872,7 +875,7 @@ class TautologyTactic(Tactic):
         proof = self.apply_iff_transitivity(
             state,
             proof,
-            state.composer.find_theorem(f"{connective}-associativity").apply(
+            state.composer.get_theorem(f"{connective}-associativity").apply(
                 ph0=target,
                 ph1=left,
                 ph2=rest_conjuncts,
@@ -930,7 +933,7 @@ class TautologyTactic(Tactic):
 
                 permuted_literals = self.junction_to_list(permuted_clause, "or")
 
-                top_proof = state.composer.find_theorem("or-complement").apply(
+                top_proof = state.composer.get_theorem("or-complement").apply(
                     ph0=positive_var
                 )
 
@@ -939,8 +942,8 @@ class TautologyTactic(Tactic):
 
                     top_proof = self.apply_iff_transitivity(
                         state,
-                        state.composer.find_theorem("rule-iff-symmetry").apply(
-                            state.composer.find_theorem("or-associativity").apply(
+                        state.composer.get_theorem("rule-iff-symmetry").apply(
+                            state.composer.get_theorem("or-associativity").apply(
                                 ph0=negative_var,
                                 ph1=positive_var,
                                 ph2=rest,
@@ -957,7 +960,7 @@ class TautologyTactic(Tactic):
                     top_proof = self.apply_iff_transitivity(
                         state,
                         top_proof,
-                        state.composer.find_theorem("or-top").apply(ph0=rest),
+                        state.composer.get_theorem("or-top").apply(ph0=rest),
                     )
 
                 return self.apply_iff_transitivity(
@@ -979,7 +982,7 @@ class TautologyTactic(Tactic):
 
             permuted_literals = self.junction_to_list(permuted_clause, "or")
 
-            idempotency_proof = state.composer.find_theorem("or-idempotency").apply(
+            idempotency_proof = state.composer.get_theorem("or-idempotency").apply(
                 ph0=literals[i]
             )
 
@@ -988,8 +991,8 @@ class TautologyTactic(Tactic):
 
                 idempotency_proof = self.apply_iff_transitivity(
                     state,
-                    state.composer.find_theorem("rule-iff-symmetry").apply(
-                        state.composer.find_theorem("or-associativity").apply(
+                    state.composer.get_theorem("rule-iff-symmetry").apply(
+                        state.composer.get_theorem("or-associativity").apply(
                             ph0=literals[i],
                             ph1=literals[i],
                             ph2=rest,
@@ -1063,7 +1066,7 @@ class TautologyTactic(Tactic):
                 simplification_proof = self.apply_iff_transitivity(
                     state,
                     simplification_proof,
-                    state.composer.find_theorem("and-top").apply(ph0=rest),
+                    state.composer.get_theorem("and-top").apply(ph0=rest),
                 )
 
                 # the current clause is eliminated, so we don't
@@ -1087,14 +1090,18 @@ class TautologyTactic(Tactic):
     """
 
     def is_clause_tautology(self, clause: List[Term]) -> bool:
-        literal_map = {}
+        literal_map: Dict[Metavariable, bool] = {}
 
         for literal in clause:
             if isinstance(literal, Metavariable):
                 var = literal
                 value = True
             else:
-                (var,) = literal.subterms
+                assert isinstance(literal, Application)
+                assert len(literal.subterms) == 1
+                term = literal.subterms[0]
+                assert isinstance(term, Metavariable)
+                var = term
                 value = False
 
             if var in literal_map and literal_map[var] != value:
@@ -1130,7 +1137,9 @@ class TautologyTactic(Tactic):
     def find_path_to_falsum(
         self, clauses: List[List[Term]]
     ) -> Optional[List[Tuple[int, int, Metavariable]]]:
-        queue = [(clauses, [])]
+        # [ ( clauses (conjunction of disjunctions of literals), path (negative var position, positive var position, variable) ) ]
+        queue_type = List[Tuple[List[List[Term]], List[Tuple[int, int, Metavariable]]]]
+        queue: queue_type = [(clauses, [])]
         initial_length = len(clauses)
         current_depth = 0
 
@@ -1146,10 +1155,12 @@ class TautologyTactic(Tactic):
             # clause
 
             # record all positive and negative occurrences of variables
-            positive_occurences = (
-                {}
-            )  # metavar -> [ ( position of the clause, position of the literal ) ]
-            negative_occurences = {}  # ^ same
+            positive_occurences: Dict[
+                Metavariable, List[Tuple[int, int]]
+            ] = {}  # metavar -> [ ( position of the clause, position of the literal ) ]
+            negative_occurences: Dict[
+                Metavariable, List[Tuple[int, int]]
+            ] = {}  # ^ same
 
             for i, clause in enumerate(clauses):
                 for j, literal in enumerate(clause):
@@ -1167,7 +1178,7 @@ class TautologyTactic(Tactic):
                         negative_occurences[var].append((i, j))
 
             # test each candidate pair
-            next_steps = []
+            next_steps: queue_type = []
 
             for var in set(positive_occurences).intersection(set(negative_occurences)):
                 candidates = [
@@ -1303,8 +1314,8 @@ class TautologyTactic(Tactic):
             proof = self.apply_iff_transitivity(
                 state,
                 proof,
-                state.composer.find_theorem("rule-iff-symmetry").apply(
-                    state.composer.find_theorem("and-associativity").apply(
+                state.composer.get_theorem("rule-iff-symmetry").apply(
+                    state.composer.get_theorem("and-associativity").apply(
                         ph0=permuted_neg_clause,
                         ph1=permuted_pos_clause,
                         ph2=self.list_to_junction(permuted_conjuncts[2:]),
@@ -1313,7 +1324,7 @@ class TautologyTactic(Tactic):
             )
 
         # reduce iff to imp
-        simplification_proof = state.composer.find_theorem("rule-iff-elim-left").apply(
+        simplification_proof = state.composer.get_theorem("rule-iff-elim-left").apply(
             proof
         )
 
@@ -1348,7 +1359,7 @@ class TautologyTactic(Tactic):
                 ],
             )
 
-            resolution_proof = state.composer.find_theorem(
+            resolution_proof = state.composer.get_theorem(
                 "resolution-4"
             ).match_and_apply(target_statement)
 
@@ -1356,11 +1367,11 @@ class TautologyTactic(Tactic):
             merge_proof = self.merge_junctions(
                 state, resolvent_left, resolvent_right, "or"
             )
-            merge_proof_imp = state.composer.find_theorem("rule-iff-elim-left").apply(
+            merge_proof_imp = state.composer.get_theorem("rule-iff-elim-left").apply(
                 merge_proof
             )
 
-            resolution_proof = state.composer.find_theorem(
+            resolution_proof = state.composer.get_theorem(
                 "rule-imp-transitivity"
             ).apply(
                 resolution_proof,
@@ -1383,7 +1394,7 @@ class TautologyTactic(Tactic):
                 ],
             )
 
-            resolution_proof = state.composer.find_theorem(
+            resolution_proof = state.composer.get_theorem(
                 "resolution-2"
             ).match_and_apply(target_statement)
 
@@ -1404,13 +1415,13 @@ class TautologyTactic(Tactic):
                 ],
             )
 
-            resolution_proof = state.composer.find_theorem(
+            resolution_proof = state.composer.get_theorem(
                 "resolution-3"
             ).match_and_apply(target_statement)
 
         else:
             # otherwise it reduces to falsum!
-            resolution_proof = state.composer.find_theorem("resolution-1").apply(
+            resolution_proof = state.composer.get_theorem("resolution-1").apply(
                 ph0=second_clause[0]
             )
             falsum_found = True
@@ -1420,11 +1431,11 @@ class TautologyTactic(Tactic):
             _, resolvent = self.decompose_imp(resolution_proof)
             # assuming here the resolvent is not top (which should be filtered out by the initial search)
 
-            resolution_proof = state.composer.find_theorem(
+            resolution_proof = state.composer.get_theorem(
                 "rule-imp-transitivity"
             ).apply(
                 resolution_proof,
-                state.composer.find_theorem("rule-iff-elim-left").apply(
+                state.composer.get_theorem("rule-iff-elim-left").apply(
                     self.simplify_clause(state, resolvent)
                 ),
             )
@@ -1435,39 +1446,39 @@ class TautologyTactic(Tactic):
         # 4. cnf -> resolvent /\ cnf
         if len(permuted_conjuncts) > 2:
             rest = self.list_to_junction(permuted_conjuncts[2:])
-            resolution_proof = state.composer.find_theorem(
+            resolution_proof = state.composer.get_theorem(
                 "rule-imp-compat-in-and"
             ).apply(
-                state.composer.find_theorem("rule-imp-transitivity").apply(
+                state.composer.get_theorem("rule-imp-transitivity").apply(
                     simplification_proof,
-                    state.composer.find_theorem("rule-imp-transitivity").apply(
-                        state.composer.find_theorem("and-elim-left-sugar").apply(
+                    state.composer.get_theorem("rule-imp-transitivity").apply(
+                        state.composer.get_theorem("and-elim-left-sugar").apply(
                             ph0=first_and_second_clause, ph1=rest
                         ),
                         resolution_proof,
                     ),
                 ),
-                state.composer.find_theorem("rule-iff-elim-left").apply(
+                state.composer.get_theorem("rule-iff-elim-left").apply(
                     self.apply_iff_reflexivity(state, cnf)
                 ),
             )
         else:
-            resolution_proof = state.composer.find_theorem(
+            resolution_proof = state.composer.get_theorem(
                 "rule-imp-compat-in-and"
             ).apply(
-                state.composer.find_theorem("rule-imp-transitivity").apply(
+                state.composer.get_theorem("rule-imp-transitivity").apply(
                     simplification_proof,
                     resolution_proof,
                 ),
-                state.composer.find_theorem("rule-iff-elim-left").apply(
+                state.composer.get_theorem("rule-iff-elim-left").apply(
                     self.apply_iff_reflexivity(state, cnf)
                 ),
             )
 
-        resolution_proof = state.composer.find_theorem("rule-imp-transitivity").apply(
-            state.composer.find_theorem("rule-iff-elim-left").apply(
-                state.composer.find_theorem("rule-iff-symmetry").apply(
-                    state.composer.find_theorem("and-idempotency").apply(ph0=cnf),
+        resolution_proof = state.composer.get_theorem("rule-imp-transitivity").apply(
+            state.composer.get_theorem("rule-iff-elim-left").apply(
+                state.composer.get_theorem("rule-iff-symmetry").apply(
+                    state.composer.get_theorem("and-idempotency").apply(ph0=cnf),
                 ),
             ),
             resolution_proof,
@@ -1477,11 +1488,13 @@ class TautologyTactic(Tactic):
         # we can just reduce the entire cnf to falsum
         if falsum_found:
             _, cnf_with_resolvent = self.decompose_imp(resolution_proof)
-            resolution_proof = state.composer.find_theorem(
+            assert isinstance(cnf_with_resolvent, Application)
+
+            resolution_proof = state.composer.get_theorem(
                 "rule-imp-transitivity"
             ).apply(
                 resolution_proof,
-                state.composer.find_theorem("and-bot").apply(
+                state.composer.get_theorem("and-bot").apply(
                     ph0=cnf_with_resolvent.subterms[1]
                 ),
             )
@@ -1543,7 +1556,7 @@ class TautologyTactic(Tactic):
             if falsum_proof is None:
                 falsum_proof = step
             else:
-                falsum_proof = state.composer.find_theorem(
+                falsum_proof = state.composer.get_theorem(
                     "rule-imp-transitivity"
                 ).apply(falsum_proof, step)
 
@@ -1552,8 +1565,9 @@ class TautologyTactic(Tactic):
         print("resolved to falsum, constructing final proof")
 
         # the negation of the goal implies falsum
-        falsum_proof = state.composer.find_theorem("rule-imp-transitivity").apply(
-            state.composer.find_theorem("rule-iff-elim-left").apply(
+        assert falsum_proof is not None
+        falsum_proof = state.composer.get_theorem("rule-imp-transitivity").apply(
+            state.composer.get_theorem("rule-iff-elim-left").apply(
                 self.apply_iff_transitivity(
                     state, reduction_proof, cnf_proof, simpl_proof
                 )
@@ -1561,8 +1575,8 @@ class TautologyTactic(Tactic):
             falsum_proof,
         )
 
-        goal_proof = state.composer.find_theorem("proof-rule-mp").apply(
-            state.composer.find_theorem("contradiction").apply(ph0=goal_term),
+        goal_proof = state.composer.get_theorem("proof-rule-mp").apply(
+            state.composer.get_theorem("contradiction").apply(ph0=goal_term),
             falsum_proof,
         )
 
