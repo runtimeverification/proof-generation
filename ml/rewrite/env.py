@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO
+from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO, Dict
 
 import re
 
@@ -49,7 +49,7 @@ relation (a strict partial order)
 
 class SubsortRelation:
     def __init__(self):
-        self.adj_list: Mapping[
+        self.adj_list: Dict[
             kore.SortInstance, List[Tuple[kore.SortInstance, Theorem]]
         ] = {}
         # SortInstance -> [ ( supersort, subsorting lemma ) ... ]
@@ -127,58 +127,51 @@ and useful information in the module
 
 
 class ProofEnvironment:
-    def __init__(self, composer: Composer = Composer()):
-        self.module = None
-        self.loaded_modules = {}
+    def __init__(self, module: kore.Module, composer: Composer = Composer()):
+        self.module = module
+        self.loaded_modules: Dict[str, kore.Module] = {}
         self.composer = composer
 
         #################################
         # some axioms that will be used later
         #################################
 
-        self.all_sorts = []  # sort definitions
-        self.constructors = []  # symbol definitions
+        self.all_sorts: List[kore.SortDefinition] = []  # sort definitions
+        self.constructors: List[kore.SymbolDefinition] = []  # symbol definitions
 
-        self.functional_axioms = {}  # symbol instance -> provable claim
-        self.domain_value_functional_axioms = (
+        self.functional_axioms: Dict[kore.SymbolInstance, ProvableClaim] = {}  # symbol instance -> provable claim
+        self.domain_value_functional_axioms: Dict[Tuple[kore.SortInstance, kore.StringLiteral], ProvableClaim] = (
             {}
         )  # (sort, string literal) -> provable claim
-        self.rewrite_axioms = {}  # unique id -> provable claim
-        self.anywhere_axioms = []  # provable claims
-        self.substitution_axioms = {}  # constant symbol (in metamath) -> theorem
-        self.sort_axioms = {}  # constant symbol (in metamath) -> theorem
-        self.sorting_lemmas = {}  # constant symbol (in metamath) -> theorem
-        self.equational_axioms = {}  # symbol instance -> provable claim
-        self.map_commutativity_axiom = None  # provable claim
-        self.app_ctx_lemmas = (
+        self.rewrite_axioms: Dict[str, ProvableClaim] = {}  # unique id -> provable claim
+        self.anywhere_axioms: List[ProvableClaim] = []  # provable claims
+        self.substitution_axioms: Dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
+        self.sort_axioms: Dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
+        self.sorting_lemmas: Dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
+        self.equational_axioms: Dict[kore.SymbolInstance, List[ProvableClaim]] = {}  # symbol instance -> provable claim
+        self.map_commutativity_axiom: Optional[ProvableClaim] = None  # provable claim
+        self.app_ctx_lemmas: Dict[str, List[Theorem]] = (
             {}
         )  # constant_symbol -> list of theorems, one for each argument
 
         # constructor axioms
-        self.sort_to_constructors = {}  # sort instance -> [ symbol definitions ]
-        self.no_confusion_same_constructor = {}  # constant symbol -> theorem
-        self.no_confusion_diff_constructor = {}  # (symbol, symbol) -> theorem
-        self.no_confusion_hooked_sort = {}  # (kore symbol string, kore sort) -> theorem
-        self.no_junk_axioms = {}  # sort instance -> theorem
-        self.sort_components = (
+        self.sort_to_constructors: Dict[kore.SortInstance, List[kore.SymbolDefinition]] = {}  # sort instance -> [ symbol definitions ]
+        self.no_confusion_same_constructor: Dict[str, Theorem] = {}  # constant symbol -> theorem
+        self.no_confusion_diff_constructor: Dict[Tuple[str, str], Theorem] = {}  # (symbol, symbol) -> theorem
+        self.no_confusion_hooked_sort: Dict[Tuple[str, kore.SortInstance], Theorem] = {}  # (kore symbol string, kore sort) -> theorem
+        self.no_junk_axioms: Dict[kore.SortInstance, Theorem] = {}  # sort instance -> theorem
+        self.sort_components: Dict[kore.SortInstance, kore.Pattern] = (
             {}
         )  # sort instance -> [ patterns (without existential quantifier) ]
 
-        self.sort_injection_symbol = None
-        self.sort_injection_axiom = None
+        self.sort_injection_symbol: Optional[kore.Axiom] = None
+        self.sort_injection_axiom: Optional[kore.Axiom] = None
         self.subsort_relation = SubsortRelation()
 
-        self.domain_values = set()  # set of (sort, string literal)
+        self.domain_values: Set[Tuple[kore.Sort, kore.StringLiteral]] = set()  # set of (sort, string literal)
 
-    """
-    Translate all axioms in the kore module
-    """
-
-    def load_module(self, module: kore.Module):
-        assert self.module is None, "loading multiple modules"
-
-        self.module = module
-        self.load_module_sentences(self.module)
+        # translate all axioms in the kore module
+        self.load_module_sentences(module)
         self.load_axioms_for_injection()
         self.load_sort_constructor_axioms()
 
@@ -212,7 +205,7 @@ class ProofEnvironment:
 
         # filter out existing metavariables and
         # check duplication (different typecode for the same variable)
-        new_metavars = {}
+        new_metavars: Dict[str, str] = {}
         for var, typecode in metavar_map.items():
             found_typecode = self.find_metavariable(var)
 
@@ -289,6 +282,13 @@ class ProofEnvironment:
     def load_metamath_statement(self, statement: mm.Statement) -> Optional[Theorem]:
         return self.composer.load(statement)
 
+    def load_metamath_theorem(self, statement: mm.StructuredStatement) -> Theorem:
+        """
+        Same as load_metamath_statement but checks that we can actually
+        get a theorem out of this
+        """
+        return self.composer.load_theorem(statement)
+
     def cache_proof(self, *args, **kwargs) -> Proof:
         return self.composer.cache_proof(*args, **kwargs)
 
@@ -301,7 +301,7 @@ class ProofEnvironment:
 
     def load_proof_as_theorem(self, label: str, proof: Proof) -> Theorem:
         proof.statement.label = label
-        return self.load_metamath_statement(proof.statement)
+        return self.load_metamath_theorem(proof.statement)
 
     """
     Returns a new provable claim with the proof using the loaded theorem
@@ -333,7 +333,7 @@ class ProofEnvironment:
             label=label,
         )
 
-        return self.load_metamath_statement(stmt)
+        return self.load_metamath_theorem(stmt)
 
     def load_symbol_sorting_lemma(
         self, symbol_definition: kore.SymbolDefinition, label: str
@@ -343,8 +343,7 @@ class ProofEnvironment:
             symbol_definition.input_sorts
         )
 
-        pattern_vars = self.gen_metavariables("#Pattern", arity)
-        pattern_vars = [mm.Metavariable(v) for v in pattern_vars]
+        pattern_vars = [mm.Metavariable(v) for v in self.gen_metavariables("#Pattern", arity)]
 
         sort_pattern_vars = pattern_vars[: len(symbol_definition.sort_variables)]
         argument_pattern_vars = pattern_vars[len(symbol_definition.sort_variables) :]
@@ -352,7 +351,7 @@ class ProofEnvironment:
         # for simplicity, we replace all sort variables (which are #ElementVariable's)
         # by pattern variables since \\kore-is-sort implies they are singletons
         sort_var_subst = {
-            self.encode_pattern(element_var).name: pattern_var
+            KorePatternEncoder.encode_sort_variable(element_var): pattern_var
             for element_var, pattern_var in zip(
                 symbol_definition.sort_variables, sort_pattern_vars
             )
@@ -398,7 +397,7 @@ class ProofEnvironment:
                 lhs = mm.Application("\\and", [lhs, hyp])
             sorting_axiom_term = mm.Application("\\imp", [lhs, sorting_axiom_rhs])
 
-        self.sorting_lemmas[encoded_symbol] = self.load_metamath_statement(
+        self.sorting_lemmas[encoded_symbol] = self.load_metamath_theorem(
             mm.StructuredStatement(
                 mm.Statement.AXIOM,
                 [
@@ -426,10 +425,10 @@ class ProofEnvironment:
 
         # generate noconfusion axiom for the same symbol
         if num_arguments != 0:
-            pattern_vars = self.gen_metavariables(
+            pattern_var_names = self.gen_metavariables(
                 "#Pattern", num_sort_vars + num_arguments * 2
             )
-            pattern_vars = [mm.Metavariable(v) for v in pattern_vars]
+            pattern_vars = [mm.Metavariable(v) for v in pattern_var_names]
 
             sort_pattern_vars = pattern_vars[:num_sort_vars]
             arg_pattern_vars_left = pattern_vars[
@@ -446,15 +445,15 @@ class ProofEnvironment:
 
             left_conj_pattern = mm.Application("\\and", [left_pattern, right_pattern])
 
+            conjunctions: List[mm.Term] = [
+                mm.Application("\\and", [left_arg, right_arg])
+                for left_arg, right_arg in zip(
+                    arg_pattern_vars_left, arg_pattern_vars_right
+                )
+            ]
             right_conj_pattern = mm.Application(
                 encoded_symbol,
-                sort_pattern_vars
-                + [
-                    mm.Application("\\and", [left_arg, right_arg])
-                    for left_arg, right_arg in zip(
-                        arg_pattern_vars_left, arg_pattern_vars_right
-                    )
-                ],
+                sort_pattern_vars + conjunctions # type: ignore
             )
 
             statement = mm.StructuredStatement(
@@ -466,8 +465,8 @@ class ProofEnvironment:
                 label=f"{label}-no-confusion",
             )
 
-            theorem = self.load_metamath_statement(statement)
-            self.no_confusion_same_constructor[encoded_symbol] = theorem
+            self.no_confusion_same_constructor[encoded_symbol] = \
+                self.load_metamath_theorem(statement)
 
         # generate no confusion axioms for different symbols
         for other_constructor in self.constructors:
@@ -477,14 +476,14 @@ class ProofEnvironment:
             other_num_sort_vars = len(other_constructor.sort_variables)
             other_num_arguments = len(other_constructor.input_sorts)
 
-            pattern_vars = self.gen_metavariables(
+            pattern_var_names = self.gen_metavariables(
                 "#Pattern",
                 num_sort_vars
                 + num_arguments
                 + other_num_sort_vars
                 + other_num_arguments,
             )
-            pattern_vars = [mm.Metavariable(v) for v in pattern_vars]
+            pattern_vars = [mm.Metavariable(v) for v in pattern_var_names]
 
             left_pattern = mm.Application(
                 encoded_symbol, pattern_vars[: num_sort_vars + num_arguments]
@@ -505,7 +504,7 @@ class ProofEnvironment:
                 label=f"{label}-no-confusion-with-{self.sanitize_label_name(other_encoded_symbol)}",
             )
 
-            theorem = self.load_metamath_statement(statement)
+            theorem = self.load_metamath_theorem(statement)
             self.no_confusion_diff_constructor[
                 encoded_symbol, other_encoded_symbol
             ] = theorem
@@ -515,6 +514,8 @@ class ProofEnvironment:
         # add the constructor if it's not sort-parametric
         # TODO: what do we do if it's sort-parametric
         if len(symbol_definition.sort_variables) == 0:
+            assert isinstance(symbol_definition.output_sort, kore.SortInstance)
+
             if symbol_definition.output_sort not in self.sort_to_constructors:
                 self.sort_to_constructors[symbol_definition.output_sort] = []
             self.sort_to_constructors[symbol_definition.output_sort].append(
@@ -544,7 +545,7 @@ class ProofEnvironment:
         self.load_comment(str(sort_definition))
         self.load_constant(encoded_sort, arity, label)
 
-        self.sort_axioms[encoded_sort] = self.load_metamath_statement(
+        self.sort_axioms[encoded_sort] = self.load_metamath_theorem(
             mm.StructuredStatement(
                 mm.Statement.AXIOM,
                 [
@@ -573,6 +574,8 @@ class ProofEnvironment:
         self.composer.start_segment("dv")
 
         for index, (sort, literal) in enumerate(new_domain_values):
+            assert isinstance(sort, kore.SortInstance)
+            
             index += offset
 
             self.load_comment(f"domain value {literal} of sort {sort}")
@@ -682,8 +685,8 @@ class ProofEnvironment:
         self.composer.start_segment("substitution")
 
         (hole_var,) = self.gen_metavariables("#Variable", 1)
-        pattern_vars = self.gen_metavariables("#Pattern", arity)
-        pattern_vars = [mm.Metavariable(v) for v in pattern_vars]
+        pattern_var_names = self.gen_metavariables("#Pattern", arity)
+        pattern_vars = [mm.Metavariable(v) for v in pattern_var_names]
 
         # generate one lemma for each argument
         lemmas = []
@@ -724,7 +727,7 @@ class ProofEnvironment:
             )
             conclusion.proof = proof.script
 
-            block = mm.Block(disjoint_statements + [assumption, conclusion])
+            block = mm.Block(disjoint_statements + [assumption, conclusion]) # type: ignore
             self.load_metamath_statement(block)
 
             lemmas.append(self.get_theorem(app_ctx_rule_name))
@@ -821,7 +824,7 @@ class ProofEnvironment:
         else:
             return f"var-{typecode.replace('#', '').lower()}"
 
-    def find_metavariable(self, var: str) -> str:
+    def find_metavariable(self, var: str) -> Optional[str]:
         return self.composer.find_metavariable(var)
 
     """
@@ -841,7 +844,7 @@ class ProofEnvironment:
     def gen_fresh_metavariables(
         self, typecode: str, n: int, other_than: Set[str]
     ) -> List[str]:
-        metavars = set()
+        metavars: Set[str] = set()
         current_extra = 0
         while len(metavars.difference(other_than)) < n:
             metavars = set(self.gen_metavariables(typecode, current_extra + n))
@@ -941,9 +944,7 @@ class ProofEnvironment:
                     label=f"no-junk-axiom-{i}",
                 )
 
-                theorem = self.load_metamath_statement(axiom)
-
-                self.no_junk_axioms[sort_instance] = theorem
+                self.no_junk_axioms[sort_instance] = self.load_metamath_theorem(axiom)
                 self.sort_components[sort_instance] = components
 
             # since we don't have information on any hooked sort
@@ -986,7 +987,7 @@ class ProofEnvironment:
                         label=f"hooked-sort-no-confusion-{i}-{j}",
                     )
 
-                    theorem = self.load_metamath_statement(axiom)
+                    theorem = self.load_metamath_theorem(axiom)
                     self.no_confusion_hooked_sort[
                         symbol_definition.symbol, sort_instance
                     ] = theorem
@@ -1003,6 +1004,7 @@ class ProofEnvironment:
 
         # visit all imported modules
         for import_stmt in module.imports:
+            assert isinstance(import_stmt.module, kore.Module)
             self.load_module_sentences(import_stmt.module)
 
         self.composer.start_segment("sort")
@@ -1047,6 +1049,7 @@ class ProofEnvironment:
                     )
                 elif is_rewrite:
                     uid = KoreTemplates.get_axiom_unique_id(axiom)
+                    assert uid is not None
                     self.rewrite_axioms[uid] = ProvableClaim(axiom, theorem.as_proof())
                 elif is_anywhere:
                     self.anywhere_axioms.append(

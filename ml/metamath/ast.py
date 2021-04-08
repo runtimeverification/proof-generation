@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TextIO, Optional, List, Set, Union
+from typing import TextIO, Optional, List, Set, Union, Iterable
 from io import StringIO
 
 from ml.utils.visitor import Visitor
@@ -95,10 +95,10 @@ class Metavariable(Term):
 
 
 class Application(Term):
-    def __init__(self, symbol: str, subterms: List[Term] = []):
+    def __init__(self, symbol: str, subterms: Iterable[Term] = []):
         super().__init__()
         self.symbol = symbol
-        self.subterms = subterms
+        self.subterms = list(subterms)
         self.hash_cache: Optional[int] = None
 
     def encode(self, stream: TextIO):
@@ -326,8 +326,8 @@ while itself is also a statement
 
 
 class Block(Statement):
-    def __init__(self, statements: List[Statement]):
-        self.statements = statements
+    def __init__(self, statements: Iterable[Statement]):
+        self.statements = list(statements)
 
     def encode(self, stream: TextIO):
         stream.write("${\n")

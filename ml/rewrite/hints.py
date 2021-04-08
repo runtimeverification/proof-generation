@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Mapping, List, Optional, Any, Dict
 
-import schema
+import schema # type: ignore
 
 from ml.kore import ast as kore
 from ml.kore.parser import parse_pattern
@@ -58,7 +58,7 @@ class RewritingHints:
             }
         ).validate(obj)
 
-        substitutions = [
+        substitutions: List[Optional[Mapping[kore.Variable, kore.Pattern]]] = [
             {item["key"]: item["value"] for item in action.get("substitution", [])}
             for action in validated.get("actions", [])
         ]

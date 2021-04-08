@@ -142,7 +142,7 @@ class SubstitutionProver:
         subst_pattern: Term,
         subst_var: Metavariable,
         hypotheses: List[Theorem] = [],
-    ) -> Optional[Proof]:
+    ) -> Proof:
         # if the heads are the same and there exists a substitution for the head symbol
         if (
             isinstance(after_pattern, Application)

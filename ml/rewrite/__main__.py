@@ -39,14 +39,14 @@ as patterns in the given module
 
 
 def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
-    snapshots = {}
+    snapshot_steps = {}
     max_step = 0
 
     for file_name in os.listdir(snapshot_dir):
         match = re.match(r"[^\d]*(\d+)\.kore", file_name)
         if match is not None:
             step = int(match.group(1))
-            assert step not in snapshots, "duplicated snapshot for step {}".format(step)
+            assert step not in snapshot_steps, "duplicated snapshot for step {}".format(step)
 
             max_step = max(max_step, step)
 
@@ -57,11 +57,9 @@ def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
 
                 # resolve all references in the specified module
                 snapshot_pattern.resolve(module)
-                snapshots[step] = snapshot_pattern
+                snapshot_steps[step] = snapshot_pattern
 
-    snapshots = [snapshots[i] for i in range(max_step + 1)]
-
-    return snapshots
+    return [snapshot_steps[i] for i in range(max_step + 1)]
 
 
 """
@@ -86,11 +84,11 @@ the environment
 def prove_rewriting(
     env: ProofEnvironment,
     snapshots: List[Pattern],
-    rewriting_info: List[List[Tuple[Pattern, Pattern]]],
+    rewriting_hints: Optional[RewritingHints],
 ):
     gen = RewriteProofGenerator(env)
 
-    final_claim = gen.prove_multiple_rewrite_steps(snapshots, rewriting_info)
+    final_claim = gen.prove_multiple_rewrite_steps(snapshots, rewriting_hints)
     env.load_comment(f"\nfinal goal:\n{snapshots[0]}\n=>\n{snapshots[-1]}\n")
     env.load_provable_claim_as_theorem("goal", final_claim)
 
@@ -119,6 +117,8 @@ def output_theory(
 
         if not os.path.isdir(output):
             os.mkdir(output)
+
+        assert prelude is not None
 
         abs_output_path = os.path.realpath(output)
         abs_prelude_path = os.path.realpath(prelude)
@@ -201,12 +201,11 @@ def main():
     KorePreprocessor().preprocess(definition)
 
     module = definition.module_map[args.module]
-    env = ProofEnvironment(composer)
 
     module_begin = time.time()
 
     composer.start_segment("module")
-    env.load_module(module)
+    env = ProofEnvironment(module, composer)
     composer.end_segment()
 
     module_elapsed = time.time() - module_begin

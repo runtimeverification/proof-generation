@@ -56,9 +56,9 @@ class KorePatternEncoder(KoreVisitor):
 
     @staticmethod
     def encode_symbol(symbol: Union[kore.SymbolInstance, str]) -> str:
-        if type(symbol) is str:
+        if isinstance(symbol, str):
             symbol_str = symbol
-        elif type(symbol.definition) is str:
+        elif isinstance(symbol.definition, str):
             symbol_str = symbol.definition
         else:
             symbol_str = symbol.definition.symbol
@@ -70,9 +70,9 @@ class KorePatternEncoder(KoreVisitor):
 
     @staticmethod
     def encode_sort(sort: Union[kore.SortInstance, str]) -> str:
-        if type(sort) is str:
+        if isinstance(sort, str):
             return "\\kore-sort-" + sort
-        elif type(sort.definition) is str:
+        elif isinstance(sort.definition, str):
             return "\\kore-sort-" + sort.definition
         else:
             return "\\kore-sort-" + sort.definition.sort_id
@@ -155,6 +155,7 @@ class KorePatternEncoder(KoreVisitor):
         ):
             var = ml_pattern.get_binding_variable()
             assert len(ml_pattern.arguments) == 2
+            assert var is not None
 
             return mm.Application(
                 encoded_construct,
