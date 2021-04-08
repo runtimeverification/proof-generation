@@ -134,7 +134,7 @@ class KoreTemplates:
             body = inner_existential.arguments[1]
             if not isinstance(body, kore.MLPattern):
                 return None
-            inner_existential
+            inner_existential = body
 
         if inner_existential.construct != kore.MLPattern.EXISTS:
             return None
@@ -286,13 +286,14 @@ class KoreTemplates:
         assert isinstance(left, kore.Application)
         
         left_left = KoreTemplates.get_map_merge_left(left)
-        right_left = KoreTemplates.get_map_merge_right(left)
+        left_right = KoreTemplates.get_map_merge_right(left)
         right = KoreTemplates.get_map_merge_right(pattern)
         assert isinstance(right, kore.Application)
 
         pattern.arguments[0] = left_left
-        right.arguments[0] = right_left
-        right.arguments[1] = right
+        pattern.arguments[1] = left
+        left.arguments[0] = left_right
+        left.arguments[1] = right
 
     @staticmethod
     def get_path_to_smallest_key_in_map_pattern(
