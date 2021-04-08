@@ -139,36 +139,60 @@ class ProofEnvironment:
         self.all_sorts: List[kore.SortDefinition] = []  # sort definitions
         self.constructors: List[kore.SymbolDefinition] = []  # symbol definitions
 
-        self.functional_axioms: Dict[kore.SymbolInstance, ProvableClaim] = {}  # symbol instance -> provable claim
-        self.domain_value_functional_axioms: Dict[Tuple[kore.SortInstance, kore.StringLiteral], ProvableClaim] = (
-            {}
-        )  # (sort, string literal) -> provable claim
-        self.rewrite_axioms: Dict[str, ProvableClaim] = {}  # unique id -> provable claim
+        self.functional_axioms: Dict[
+            kore.SymbolInstance, ProvableClaim
+        ] = {}  # symbol instance -> provable claim
+        self.domain_value_functional_axioms: Dict[
+            Tuple[kore.SortInstance, kore.StringLiteral], ProvableClaim
+        ] = {}  # (sort, string literal) -> provable claim
+        self.rewrite_axioms: Dict[
+            str, ProvableClaim
+        ] = {}  # unique id -> provable claim
         self.anywhere_axioms: List[ProvableClaim] = []  # provable claims
-        self.substitution_axioms: Dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
-        self.sort_axioms: Dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
-        self.sorting_lemmas: Dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
-        self.equational_axioms: Dict[kore.SymbolInstance, List[ProvableClaim]] = {}  # symbol instance -> provable claim
+        self.substitution_axioms: Dict[
+            str, Theorem
+        ] = {}  # constant symbol (in metamath) -> theorem
+        self.sort_axioms: Dict[
+            str, Theorem
+        ] = {}  # constant symbol (in metamath) -> theorem
+        self.sorting_lemmas: Dict[
+            str, Theorem
+        ] = {}  # constant symbol (in metamath) -> theorem
+        self.equational_axioms: Dict[
+            kore.SymbolInstance, List[ProvableClaim]
+        ] = {}  # symbol instance -> provable claim
         self.map_commutativity_axiom: Optional[ProvableClaim] = None  # provable claim
-        self.app_ctx_lemmas: Dict[str, List[Theorem]] = (
-            {}
-        )  # constant_symbol -> list of theorems, one for each argument
+        self.app_ctx_lemmas: Dict[
+            str, List[Theorem]
+        ] = {}  # constant_symbol -> list of theorems, one for each argument
 
         # constructor axioms
-        self.sort_to_constructors: Dict[kore.SortInstance, List[kore.SymbolDefinition]] = {}  # sort instance -> [ symbol definitions ]
-        self.no_confusion_same_constructor: Dict[str, Theorem] = {}  # constant symbol -> theorem
-        self.no_confusion_diff_constructor: Dict[Tuple[str, str], Theorem] = {}  # (symbol, symbol) -> theorem
-        self.no_confusion_hooked_sort: Dict[Tuple[str, kore.SortInstance], Theorem] = {}  # (kore symbol string, kore sort) -> theorem
-        self.no_junk_axioms: Dict[kore.SortInstance, Theorem] = {}  # sort instance -> theorem
-        self.sort_components: Dict[kore.SortInstance, kore.Pattern] = (
-            {}
-        )  # sort instance -> [ patterns (without existential quantifier) ]
+        self.sort_to_constructors: Dict[
+            kore.SortInstance, List[kore.SymbolDefinition]
+        ] = {}  # sort instance -> [ symbol definitions ]
+        self.no_confusion_same_constructor: Dict[
+            str, Theorem
+        ] = {}  # constant symbol -> theorem
+        self.no_confusion_diff_constructor: Dict[
+            Tuple[str, str], Theorem
+        ] = {}  # (symbol, symbol) -> theorem
+        self.no_confusion_hooked_sort: Dict[
+            Tuple[str, kore.SortInstance], Theorem
+        ] = {}  # (kore symbol string, kore sort) -> theorem
+        self.no_junk_axioms: Dict[
+            kore.SortInstance, Theorem
+        ] = {}  # sort instance -> theorem
+        self.sort_components: Dict[
+            kore.SortInstance, kore.Pattern
+        ] = {}  # sort instance -> [ patterns (without existential quantifier) ]
 
         self.sort_injection_symbol: Optional[kore.Axiom] = None
         self.sort_injection_axiom: Optional[kore.Axiom] = None
         self.subsort_relation = SubsortRelation()
 
-        self.domain_values: Set[Tuple[kore.Sort, kore.StringLiteral]] = set()  # set of (sort, string literal)
+        self.domain_values: Set[
+            Tuple[kore.Sort, kore.StringLiteral]
+        ] = set()  # set of (sort, string literal)
 
         # translate all axioms in the kore module
         self.load_module_sentences(module)
@@ -343,7 +367,9 @@ class ProofEnvironment:
             symbol_definition.input_sorts
         )
 
-        pattern_vars = [mm.Metavariable(v) for v in self.gen_metavariables("#Pattern", arity)]
+        pattern_vars = [
+            mm.Metavariable(v) for v in self.gen_metavariables("#Pattern", arity)
+        ]
 
         sort_pattern_vars = pattern_vars[: len(symbol_definition.sort_variables)]
         argument_pattern_vars = pattern_vars[len(symbol_definition.sort_variables) :]
@@ -452,8 +478,7 @@ class ProofEnvironment:
                 )
             ]
             right_conj_pattern = mm.Application(
-                encoded_symbol,
-                sort_pattern_vars + conjunctions # type: ignore
+                encoded_symbol, sort_pattern_vars + conjunctions  # type: ignore
             )
 
             statement = mm.StructuredStatement(
@@ -465,8 +490,9 @@ class ProofEnvironment:
                 label=f"{label}-no-confusion",
             )
 
-            self.no_confusion_same_constructor[encoded_symbol] = \
-                self.load_metamath_theorem(statement)
+            self.no_confusion_same_constructor[
+                encoded_symbol
+            ] = self.load_metamath_theorem(statement)
 
         # generate no confusion axioms for different symbols
         for other_constructor in self.constructors:
@@ -575,7 +601,7 @@ class ProofEnvironment:
 
         for index, (sort, literal) in enumerate(new_domain_values):
             assert isinstance(sort, kore.SortInstance)
-            
+
             index += offset
 
             self.load_comment(f"domain value {literal} of sort {sort}")
@@ -727,7 +753,7 @@ class ProofEnvironment:
             )
             conclusion.proof = proof.script
 
-            block = mm.Block(disjoint_statements + [assumption, conclusion]) # type: ignore
+            block = mm.Block(disjoint_statements + [assumption, conclusion])  # type: ignore
             self.load_metamath_statement(block)
 
             lemmas.append(self.get_theorem(app_ctx_rule_name))

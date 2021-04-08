@@ -121,9 +121,7 @@ class KoreUtils:
         ast: Axiom, path: PatternPath, replacement: Pattern
     ) -> Axiom:
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
-        return KoreUtils.replace_path_by_pattern_in_axiom(
-            copied, path, replacement
-        )
+        return KoreUtils.replace_path_by_pattern_in_axiom(copied, path, replacement)
 
     @staticmethod
     def expand_alias_def(

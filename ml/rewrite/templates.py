@@ -97,7 +97,10 @@ class KoreTemplates:
         sort1.resolve(axiom.get_parent())
         sort2.resolve(axiom.get_parent())
 
-        if not (isinstance(sort1, kore.SortInstance) and isinstance(sort2, kore.SortInstance)):
+        if not (
+            isinstance(sort1, kore.SortInstance)
+            and isinstance(sort2, kore.SortInstance)
+        ):
             return None
 
         return sort1, sort2
@@ -284,7 +287,7 @@ class KoreTemplates:
 
         assert KoreTemplates.is_map_merge_pattern(left)
         assert isinstance(left, kore.Application)
-        
+
         left_left = KoreTemplates.get_map_merge_left(left)
         left_right = KoreTemplates.get_map_merge_right(left)
         right = KoreTemplates.get_map_merge_right(pattern)
@@ -313,7 +316,7 @@ class KoreTemplates:
         if KoreTemplates.is_map_merge_pattern(pattern):
             lhs = KoreTemplates.get_map_merge_left(pattern)
             rhs = KoreTemplates.get_map_merge_right(pattern)
-            
+
             p, lp = KoreTemplates.get_path_to_smallest_key_in_map_pattern(lhs)
             q, lq = KoreTemplates.get_path_to_smallest_key_in_map_pattern(rhs)
 
@@ -321,10 +324,10 @@ class KoreTemplates:
             assert isinstance(q, kore.Application)
 
             if p.arguments[0] < q.arguments[0]:
-                return (p, [0] + lp) # left
+                return (p, [0] + lp)  # left
             elif q.arguments[0] < p.arguments[0]:
-                return (q, [1] + lq) # right
-                
+                return (q, [1] + lq)  # right
+
             raise NotImplementedError(
                 "Should not be reachable because map patterns have distinct keys."
             )
