@@ -2,5 +2,5 @@
 
 set -euo pipefail
 
-mypy --strict .
+mypy --strict --show-error-context --show-column-numbers .
 pytest "$@"

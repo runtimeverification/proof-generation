@@ -26,22 +26,27 @@ def closurePs(patterns: list[Pattern]) -> list[list[Pattern]]:
         ret += [l + r]
     return ret
 
-Node = Union['OrNode', 'AndNode', 'Sequent']
-
 # TODO: Make typing more generic.
 def powerset(s: list[DApp]) -> Iterator[Iterable[DApp]]:
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
+class Node:
+    @staticmethod
+    def make_nodes(patterns: list[Pattern]) -> 'Node':
+        closure = closurePs(patterns)
+        if len(closure) == 1: return Sequent(closure[0])
+        return OrNode([Sequent(gamma) for gamma in closure])
+
 @dataclass
-class OrNode:
+class OrNode(Node):
     children: list[Node]
 
 @dataclass
-class AndNode:
+class AndNode(Node):
     children: list[Node]
 
 @dataclass
-class Sequent:
+class Sequent(Node):
     gamma: list[Pattern]
 
     def is_consitant(self) -> bool:
@@ -49,7 +54,6 @@ class Sequent:
         return not bool(atoms.intersection(set(self.gamma)))
 
     def children(self) -> Node:
-
         def project_left(p: DApp)  -> Pattern: return p.left
         def project_right(p: DApp) -> Pattern: return p.right
 
@@ -57,9 +61,28 @@ class Sequent:
         apps  = [phi for phi in self.gamma if isinstance(phi, App)]
         dapps = [phi for phi in self.gamma if isinstance(phi, DApp)]
         left_partitions = powerset(dapps)
-        return AndNode([ OrNode([ AndNode([ Sequent([app.left] + list(map(project_left, left)))
-                                          , Sequent([app.right] + list(map(project_right, set(dapps) - set(left))))])
+        return AndNode([ OrNode([ AndNode([ Node.make_nodes([app.left] + list(map(project_left, left)))
+                                          , Node.make_nodes([app.right] + list(map(project_right, set(dapps) - set(left))))])
                                   for left in left_partitions
                                 ])
                          for app in apps
                        ])
+
+def build_tableau(node: Node, path_prefix: list[Node]) -> Node:
+    if isinstance(node, Sequent):
+        if node in path_prefix: return node
+        else: path_prefix += [node]
+        child = node.children()
+        if child == AndNode([]): return node
+        else: node = child
+
+    if   isinstance(node, AndNode):
+        children = [build_tableau(child, path_prefix) for child in node.children]
+        if any((child == OrNode([]) for child in children)): return OrNode([])
+        return AndNode(children)
+    elif isinstance(node, OrNode):
+        for child in node.children:
+            tab = build_tableau(child, path_prefix)
+            if tab != OrNode([]): return tab
+        return OrNode([])
+    raise NotImplementedError

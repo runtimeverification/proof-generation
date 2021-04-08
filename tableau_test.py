@@ -43,3 +43,10 @@ def test_children() -> None:
                             ])
 
                    ])
+
+def test_tableau() -> None:
+    assert build_tableau(Node.make_nodes([Mu(SVar("X"), App(Symbol("a"), App(Symbol("b"), SVar("X"))))]), []) \
+        == AndNode([AndNode([ Sequent([Symbol("a")]),
+           AndNode([AndNode([ Sequent([Symbol("b")])
+                            , Sequent([App(Symbol("a"), App(Symbol("b"), Mu(SVar("X"), App(Symbol("a"), App(Symbol("b"), SVar("X"))))))])
+                   ])])])])
