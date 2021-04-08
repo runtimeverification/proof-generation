@@ -2,10 +2,10 @@ from aml import *
 from dataclasses import dataclass
 from itertools import chain, combinations, product
 
-from typing import Iterable, Iterator, Union
+from typing import Iterable, Iterator, Union, List
 
 
-def closure(p: Pattern) -> list[list[Pattern]]:
+def closure(p: Pattern) -> List[List[Pattern]]:
     if (
         isinstance(p, SVar)
         or isinstance(p, EVar)
@@ -25,11 +25,11 @@ def closure(p: Pattern) -> list[list[Pattern]]:
         raise NotImplementedError
 
 
-def closurePs(patterns: list[Pattern]) -> list[list[Pattern]]:
+def closurePs(patterns: List[Pattern]) -> List[List[Pattern]]:
     if patterns == []:
         return [[]]
     p, *ps = patterns
-    ret: list[list[Pattern]] = []
+    ret: List[List[Pattern]] = []
     for l, r in product(closure(p), closurePs(ps)):
         ret += [l + r]
     return ret
@@ -38,23 +38,23 @@ def closurePs(patterns: list[Pattern]) -> list[list[Pattern]]:
 Node = Union["OrNode", "AndNode", "SimpleNode"]
 
 # TODO: Make typing more generic.
-def powerset(s: list[DApp]) -> Iterator[Iterable[DApp]]:
+def powerset(s: List[DApp]) -> Iterator[Iterable[DApp]]:
     return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
 
 @dataclass
 class OrNode:
-    children: list[Node]
+    children: List[Node]
 
 
 @dataclass
 class AndNode:
-    children: list[Node]
+    children: List[Node]
 
 
 @dataclass
 class SimpleNode:
-    gamma: list[Pattern]
+    gamma: List[Pattern]
 
     def is_consitant(self) -> bool:
         atoms = set(
