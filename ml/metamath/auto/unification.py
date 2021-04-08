@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Mapping
+from typing import Optional, List, Tuple, Mapping, Dict
 
 from ..ast import Metavariable, Term, Statement, Application, StructuredStatement
 from ..visitors import SubstitutionVisitor
@@ -163,7 +163,7 @@ class Unification:
     def get_instance_substitution(
         matching: List[Tuple[Term, Term]]
     ) -> Optional[Mapping[str, Term]]:
-        substitution = {}
+        substitution: Dict[str, Term] = {}
 
         for lhs, rhs in matching:
             if not isinstance(lhs, Metavariable):

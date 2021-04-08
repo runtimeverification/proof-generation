@@ -99,7 +99,7 @@ class Application(Term):
         super().__init__()
         self.symbol = symbol
         self.subterms = subterms
-        self.hash_cache = None
+        self.hash_cache: Optional[int] = None
 
     def encode(self, stream: TextIO):
         if len(self.subterms):

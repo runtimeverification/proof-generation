@@ -5,13 +5,11 @@ from typing import List, Tuple, Mapping
 from .ast import *
 
 
-"""
-Make a copy of the statement/term
-"""
-
-
 class CopyVisitor(MetamathVisitor):
-    def postvisit_metavariable(self, metavar: Metavariable) -> Metavariable:
+    """
+    Make a copy of the statement/term
+    """
+    def postvisit_metavariable(self, metavar: Metavariable) -> Term:
         return Metavariable(metavar.name)
 
     def postvisit_application(
@@ -36,12 +34,10 @@ class CopyVisitor(MetamathVisitor):
         return Database(statements)
 
 
-"""
-Copy and substitute variables
-"""
-
-
 class SubstitutionVisitor(CopyVisitor):
+    """
+    Copy and substitute variables
+    """
     def __init__(self, substitution: Mapping[str, Term]):
         super().__init__()
         self.substitution = substitution

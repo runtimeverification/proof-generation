@@ -1,4 +1,4 @@
-from typing import Mapping, Optional, Tuple, List
+from typing import Mapping, Optional, Tuple, List, Dict
 
 from ..ast import Metavariable, Term, Application, Statement, StructuredStatement
 from ..composer import Composer, Theorem, Proof, MethodAutoProof, ProofCache
@@ -37,7 +37,7 @@ we will scan the essentials to show that
 
 class SortingProver:
     @staticmethod
-    def in_sort(term: Term, sort: Term) -> Term:
+    def in_sort(term: Term, sort: Term) -> Application:
         return Application("\\in-sort", [term, sort])
 
     @staticmethod
@@ -64,11 +64,17 @@ class SortingProver:
             return [term]
 
     @staticmethod
-    def is_provability_statement(statement: StructuredStatement) -> Optional[Term]:
+    def get_provability_body(statement: StructuredStatement) -> Optional[Term]:
         if len(statement.terms) == 2 and statement.terms[0] == Application("|-"):
             return statement.terms[1]
         else:
             return None
+
+    @staticmethod
+    def get_provability_body_force(statement: StructuredStatement) -> Term:
+        body = SortingProver.get_provability_body(statement)
+        assert body is not None, f"not a provability statement {statement}"
+        return body
 
     """
     Check if the given term is an implication of conjunctions
@@ -90,15 +96,21 @@ class SortingProver:
         )
 
     @staticmethod
-    def is_in_sort(term: Term) -> Optional[Tuple[Term, Term]]:
+    def get_in_sort_pair(term: Term) -> Optional[Tuple[Term, Term]]:
         if (
             isinstance(term, Application)
             and term.symbol == "\\in-sort"
             and len(term.subterms) == 2
         ):
-            return tuple(term.subterms)
+            return term.subterms[0], term.subterms[1]
         else:
             return None
+
+    @staticmethod
+    def get_in_sort_pair_force(term: Term) -> Tuple[Term, Term]:
+        pair = SortingProver.get_in_sort_pair(term)
+        assert pair is not None, f"not an in-sort pattern {term}"
+        return pair
 
     @staticmethod
     def is_kore_is_sort(term: Term) -> bool:
@@ -109,7 +121,7 @@ class SortingProver:
         )
 
     # TODO: this cache is quite unsafe
-    sorting_lemma_cache = {}
+    sorting_lemma_cache: Dict[str, Theorem] = {}
 
     @staticmethod
     def find_sorting_lemma_for_symbol(
@@ -122,14 +134,14 @@ class SortingProver:
             if len(theorem.essentials) != 0:
                 continue
 
-            term = SortingProver.is_provability_statement(theorem.statement)
+            term = SortingProver.get_provability_body(theorem.statement)
             if term is None:
                 continue
 
             conjuncts = SortingProver.is_imp_conjunctions(term)
             if conjuncts is None:
-                if SortingProver.is_in_sort(term):
-                    left_conjuncts = []
+                if SortingProver.get_in_sort_pair(term):
+                    left_conjuncts: List[Term] = []
                     right_conjuncts = [term]
                 else:
                     continue
@@ -139,7 +151,7 @@ class SortingProver:
             # all conjuncts have to be \in-sort patterns
             failed = False
             for conjunct in left_conjuncts + right_conjuncts:
-                if SortingProver.is_in_sort(
+                if SortingProver.get_in_sort_pair(
                     conjunct
                 ) is None and not SortingProver.is_kore_is_sort(conjunct):
                     failed = True
@@ -150,7 +162,7 @@ class SortingProver:
             if len(right_conjuncts) != 1:
                 continue
 
-            conclusion_term, _ = SortingProver.is_in_sort(right_conjuncts[0])
+            conclusion_term, _ = SortingProver.get_in_sort_pair_force(right_conjuncts[0])
 
             if (
                 not isinstance(conclusion_term, Application)
@@ -167,6 +179,8 @@ class SortingProver:
             SortingProver.sorting_lemma_cache[symbol] = theorem
             return theorem
 
+        return None
+
     r"""
     Prove a statement of the form:
     |- ( \kore-is-sort ph0 )
@@ -176,7 +190,7 @@ class SortingProver:
 
     @staticmethod
     def prove_kore_is_sort(composer: Composer, statement: StructuredStatement) -> Proof:
-        term = SortingProver.is_provability_statement(statement)
+        term = SortingProver.get_provability_body(statement)
         assert term is not None, f"statement {statement} is not a provability claim"
 
         assert (
@@ -189,7 +203,7 @@ class SortingProver:
             if len(theorem.essentials) != 0:
                 continue
 
-            theorem_term = SortingProver.is_provability_statement(theorem.statement)
+            theorem_term = SortingProver.get_provability_body(theorem.statement)
             if theorem_term is None:
                 continue
 
@@ -223,7 +237,7 @@ class SortingProver:
 
     @staticmethod
     def prove_single_sorting_judgement(
-        composer: Composer, hypothesis: Term, conclusion: Term
+        composer: Composer, hypothesis: Application, conclusion: Application
     ) -> Proof:
         left_conjuncts = SortingProver.get_conjuncts(hypothesis)
 
@@ -234,8 +248,8 @@ class SortingProver:
             isinstance(conclusion, Application)
             and conclusion.symbol == "\\kore-is-sort"
         ):
-            return composer.find_theorem("proof-rule-mp").apply(
-                composer.find_theorem("proof-rule-prop-1").apply(
+            return composer.get_theorem("proof-rule-mp").apply(
+                composer.get_theorem("proof-rule-prop-1").apply(
                     ph0=conclusion, ph1=hypothesis
                 ),
                 SortingProver.prove_kore_is_sort(
@@ -250,13 +264,13 @@ class SortingProver:
                 ),
             )
 
-        conclusion_term, _ = SortingProver.is_in_sort(conclusion)
+        conclusion_term, _ = SortingProver.get_in_sort_pair_force(conclusion)
 
         # if the conclusion in one of the essentials
         for essential in composer.get_all_essentials():
             if essential.statement.terms == [Application("|-"), conclusion]:
-                return composer.find_theorem("proof-rule-mp").apply(
-                    composer.find_theorem("proof-rule-prop-1").apply(
+                return composer.get_theorem("proof-rule-mp").apply(
+                    composer.get_theorem("proof-rule-prop-1").apply(
                         ph0=conclusion, ph1=hypothesis
                     ),
                     essential.apply(),
@@ -264,15 +278,15 @@ class SortingProver:
 
         # if the conclusion is exactly the (only) left conjunct
         if hypothesis == conclusion:
-            return composer.find_theorem("imp-reflexivity").apply(ph0=conclusion)
+            return composer.get_theorem("imp-reflexivity").apply(ph0=conclusion)
 
         # if the conclusion is one of the left conjuncts
         if conclusion in left_conjuncts and len(left_conjuncts) > 1:
             left_left_conjuncts = SortingProver.get_conjuncts(hypothesis.subterms[0])
 
             if conclusion in left_left_conjuncts:
-                return composer.find_theorem("rule-imp-transitivity").apply(
-                    composer.find_theorem("and-elim-left-sugar").apply(
+                return composer.get_theorem("rule-imp-transitivity").apply(
+                    composer.get_theorem("and-elim-left-sugar").apply(
                         ph0=hypothesis.subterms[0], ph1=hypothesis.subterms[1]
                     ),
                     SortingProver.prove_multiple_sorting_judgements(
@@ -282,8 +296,8 @@ class SortingProver:
                     ),
                 )
             else:
-                return composer.find_theorem("rule-imp-transitivity").apply(
-                    composer.find_theorem("and-elim-right-sugar").apply(
+                return composer.get_theorem("rule-imp-transitivity").apply(
+                    composer.get_theorem("and-elim-right-sugar").apply(
                         ph0=hypothesis.subterms[0], ph1=hypothesis.subterms[1]
                     ),
                     SortingProver.prove_multiple_sorting_judgements(
@@ -304,15 +318,17 @@ class SortingProver:
             sorting_lemma is not None
         ), f"unable to find sorting lemma for symbol {conclusion_term.symbol}"
 
-        sorting_lemma_term = SortingProver.is_provability_statement(
+        sorting_lemma_term = SortingProver.get_provability_body_force(
             sorting_lemma.statement
         )
 
-        if SortingProver.is_in_sort(sorting_lemma_term) is not None:
+        if SortingProver.get_in_sort_pair(sorting_lemma_term) is not None:
             sorting_lemma_rhs = sorting_lemma_term
         else:
+            assert isinstance(sorting_lemma_term, Application)
             sorting_lemma_rhs = sorting_lemma_term.subterms[1]
 
+        assert isinstance(sorting_lemma_rhs, Application)
         substitution = Unification.match_terms_as_instance(
             sorting_lemma_rhs, conclusion
         )
@@ -327,13 +343,13 @@ class SortingProver:
         subproof = sorting_lemma.apply(**substitution)
 
         # we can prove the conclusion directly without using hypotheses
-        if SortingProver.is_in_sort(sorting_lemma_term) is not None:
+        if SortingProver.get_in_sort_pair(sorting_lemma_term) is not None:
             assert (
                 subproof.statement.terms[1] == conclusion
             ), f"unable to prove sorting judgement ( \\imp {hypothesis} {conclusion} )"
 
-            return composer.find_theorem("proof-rule-mp").apply(
-                composer.find_theorem("proof-rule-prop-1").apply(
+            return composer.get_theorem("proof-rule-mp").apply(
+                composer.get_theorem("proof-rule-prop-1").apply(
                     ph0=conclusion, ph1=hypothesis
                 ),
                 subproof,
@@ -342,9 +358,10 @@ class SortingProver:
         # this statement should also be a implication
         # we prove the left hand side of our target
         # implies the left hand side of this statement
+        assert isinstance(subproof.statement.terms[1], Application)
         subgoal = subproof.statement.terms[1].subterms[0]
 
-        return composer.find_theorem("rule-imp-transitivity").apply(
+        return composer.get_theorem("rule-imp-transitivity").apply(
             SortingProver.prove_multiple_sorting_judgements(
                 composer, hypothesis, subgoal
             ),
@@ -355,6 +372,9 @@ class SortingProver:
     def prove_multiple_sorting_judgements(
         composer: Composer, hypothesis: Term, conclusion: Term
     ) -> Proof:
+        assert isinstance(hypothesis, Application) and \
+               isinstance(conclusion, Application)
+
         # see if we have already cached the result
         cached_proof = composer.lookup_proof_cache(
             "sorting-cache", SortingProver.construct_imp_goal(hypothesis, conclusion)
@@ -362,11 +382,11 @@ class SortingProver:
         if cached_proof is not None:
             return cached_proof
 
-        if isinstance(conclusion, Application) and conclusion.symbol == "\\and":
+        if conclusion.symbol == "\\and":
             # top level must be an \and, so we break it into two goals
             return composer.cache_proof(
                 "sorting-cache",
-                composer.find_theorem("rule-and-intro-alt2-sugar").apply(
+                composer.get_theorem("rule-and-intro-alt2-sugar").apply(
                     SortingProver.prove_multiple_sorting_judgements(
                         composer, hypothesis, conclusion.subterms[0]
                     ),
@@ -392,16 +412,17 @@ class SortingProver:
     def prove_sorting_statement(
         composer: Composer, statement: StructuredStatement
     ) -> Proof:
-        term = SortingProver.is_provability_statement(statement)
+        term = SortingProver.get_provability_body(statement)
         assert term is not None, f"statement {statement} is not a provability claim"
+        assert isinstance(term, Application)
 
         # if the top level is not \imp (i.e. if there is no hypotheses/sorting environment)
-        if isinstance(term, Application) and term.symbol != "\\imp":
-            return composer.find_theorem("proof-rule-mp").apply(
+        if term.symbol != "\\imp":
+            return composer.get_theorem("proof-rule-mp").apply(
                 SortingProver.prove_multiple_sorting_judgements(
                     composer, Application("\\top"), term
                 ),
-                composer.find_theorem("top-intro").apply(),
+                composer.get_theorem("top-intro").apply(),
             )
 
         hypothesis, conclusion = term.subterms
@@ -415,7 +436,7 @@ class SortingProver:
     ) -> Proof:
         # construct the hypotheses
         hypotheses = [
-            SortingProver.in_sort(var, sort) for var, sort in free_var_sorts.items()
+            SortingProver.in_sort(Metavariable(var), sort) for var, sort in free_var_sorts.items()
         ]
 
         if len(hypotheses) == 0:
@@ -431,5 +452,5 @@ class SortingProver:
                 hypothesis, SortingProver.in_sort(term, sort)
             ),
         )
-
-    auto = MethodAutoProof(prove_sorting_statement.__func__)
+    
+    auto = MethodAutoProof(prove_sorting_statement.__func__) # type: ignore

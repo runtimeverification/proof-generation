@@ -125,15 +125,15 @@ class KoreUtils:
             copied, path, replacement
         )
 
-    """
-    Expand one pattern that uses an alias definition
-    and return a new pattern
-    """
-
     @staticmethod
     def expand_alias_def(
         application: Application, alias_def: AliasDefinition
     ) -> Pattern:
+        """
+        Expand one pattern that uses an alias definition
+        and return a new pattern
+        """
+
         assert application.symbol.definition == alias_def.definition
 
         variables = alias_def.get_binding_variables()
@@ -175,12 +175,11 @@ class KoreUtils:
             else:
                 user.error_with_position("unable to instantiate alias")
 
-    """
-    Replace all alias uses with their definition
-    """
-
     @staticmethod
     def instantiate_all_alias_uses(module: Module):
+        """
+        Replace all alias uses with their definition
+        """
         alias_defs = list(module.alias_map.values())
         for alias_def in alias_defs:
             KoreUtils.instantiate_one_alias_use(module, alias_def)
@@ -188,12 +187,12 @@ class KoreUtils:
         for alias_def in alias_defs:
             module.remove_sentence(alias_def)
 
-    """
-    Quantify all free (pattern) variables in the given axiom
-    """
-
     @staticmethod
     def quantify_all_free_variables_in_axiom(axiom: Axiom):
+        """
+        Quantify all free (pattern) variables in the given axiom
+        """
+
         free_vars = axiom.pattern.visit(FreePatternVariableVisitor())
         body = axiom.pattern
         body_sort = KoreUtils.infer_sort(body)
@@ -204,12 +203,11 @@ class KoreUtils:
         axiom.pattern = body
         axiom.resolve(axiom.get_module())
 
-    """
-    Quantify all free (pattern) variables in the axioms
-    """
-
     @staticmethod
     def quantify_all_free_variables(module: Module):
+        """
+        Quantify all free (pattern) variables in the axioms
+        """
         for axiom in module.axioms:
             KoreUtils.quantify_all_free_variables_in_axiom(axiom)
 
@@ -271,12 +269,11 @@ class KoreUtils:
 
         assert False, "unable to get the sort of pattern `{}`".format(pattern)
 
-    """
-    Remove all universal quantifiers
-    """
-
     @staticmethod
     def strip_forall(pattern: Pattern) -> Pattern:
+        """
+        Remove all universal quantifiers
+        """
         while isinstance(pattern, MLPattern) and pattern.construct == MLPattern.FORALL:
             pattern = pattern.arguments[1]
         return pattern
@@ -287,13 +284,12 @@ class KoreUtils:
             pattern = pattern.arguments[1]
         return pattern
 
-    """
-    NOTE: here a single pattern that doesn't start with the specified construct
-    is also considered a junction (of a single clause)
-    """
-
     @staticmethod
     def decompose_junction(pattern: Pattern, construct: str) -> List[Pattern]:
+        """
+        NOTE: here a single pattern that doesn't start with the specified construct
+        is also considered a junction (of a single clause)
+        """
         if not isinstance(pattern, MLPattern) or pattern.construct != construct:
             return [pattern]
 
@@ -312,37 +308,33 @@ class KoreUtils:
     def is_quantifier_free(pattern: Pattern) -> bool:
         return QuantifierTester().visit(pattern)
 
-    """
-    Tests if a pattern starts with existential quantifier(s)
-    and the innermost pattern is a quantifier free pattern
-    """
-
     @staticmethod
     def is_existential(pattern: Pattern) -> bool:
+        """
+        Tests if a pattern starts with existential quantifier(s)
+        and the innermost pattern is a quantifier free pattern
+        """
         return KoreUtils.is_quantifier_free(KoreUtils.strip_exists(pattern))
-
-    """
-    Have no pattern variable
-    """
 
     @staticmethod
     def is_concrete(pattern: Pattern) -> bool:
+        """
+        Have no pattern variable
+        """
         return len(PatternVariableVisitor().visit(pattern)) == 0
-
-    """
-    Have no sort variable
-    """
 
     @staticmethod
     def is_concrete_sort(sort: Sort) -> bool:
+        """
+        Have no sort variable
+        """
         return len(SortVariableVisitor().visit(sort)) == 0
-
-    """
-    Tests that the given symbol definition is not parametric in any sort variable
-    """
 
     @staticmethod
     def is_non_sort_parametric_symbol(symbol_definition: SymbolDefinition) -> bool:
+        """
+        Tests that the given symbol definition is not parametric in any sort variable
+        """
         for input_sort in symbol_definition.input_sorts:
             if not KoreUtils.is_concrete_sort(input_sort):
                 return False

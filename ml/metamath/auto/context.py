@@ -20,7 +20,7 @@ class ApplicationContextProver:
         )
 
     @staticmethod
-    def flatten_application(pattern: Application) -> List[Term]:
+    def flatten_application(pattern: Term) -> List[Term]:
         if not isinstance(pattern, Application) or pattern.symbol != "\\app":
             return [pattern]
 
@@ -40,7 +40,7 @@ class ApplicationContextProver:
 
         if isinstance(pattern, Metavariable):
             if var == pattern:
-                return composer.find_theorem("application-context-var").match_and_apply(
+                return composer.get_theorem("application-context-var").match_and_apply(
                     target
                 )
 
@@ -58,7 +58,7 @@ class ApplicationContextProver:
                 pattern.subterms[1]
             )
 
-            known_context = [var]
+            known_context: List[Term] = [var]
             for hypothesis in hypotheses:
                 if (
                     len(hypothesis.statement.terms) == 3
@@ -71,7 +71,7 @@ class ApplicationContextProver:
             # try left side
             for arg in left_arguments:
                 if arg in known_context:
-                    return composer.find_theorem(
+                    return composer.get_theorem(
                         "application-context-app-left"
                     ).match_and_apply(
                         target,
@@ -83,7 +83,7 @@ class ApplicationContextProver:
             # try right side
             for arg in right_arguments:
                 if arg in known_context:
-                    return composer.find_theorem(
+                    return composer.get_theorem(
                         "application-context-app-right"
                     ).match_and_apply(
                         target,
@@ -110,7 +110,7 @@ class ApplicationContextProver:
         subproof = ApplicationContextProver.prove_application_context_desugared(
             composer, var, expanded_pattern, hypotheses
         )
-        return composer.find_theorem("notation-application-context").apply(
+        return composer.get_theorem("notation-application-context").apply(
             subproof,
             notation_proof,
         )
@@ -131,4 +131,4 @@ class ApplicationContextProver:
             composer, statement.terms[1], statement.terms[2], hypotheses
         )
 
-    auto = MethodAutoProof(prove_application_context_statement.__func__)
+    auto = MethodAutoProof(prove_application_context_statement.__func__) # type: ignore

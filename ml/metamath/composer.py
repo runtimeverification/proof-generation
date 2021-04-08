@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from traceback import print_exc
 
-from typing import List, Tuple, Mapping, Callable
+from typing import List, Tuple, Mapping, Callable, Dict
 
 import re
 
@@ -209,6 +209,7 @@ class Theorem:
                 )
             else:
                 # should be a proof
+                assert isinstance(metavar_substituted, Proof)
                 typecode_proof = metavar_substituted
 
             # check that the proof is in the right form (for floating statements)
@@ -231,20 +232,20 @@ class Theorem:
             floating_proofs.append(typecode_proof)
 
         # resolve auto proofs
-        essential_proofs = list(essential_proofs)
+        final_essential_proofs = list(essential_proofs)
         subst_visitor = SubstitutionVisitor(substitution)
 
         for i, proof in auto_proofs:
             essential_instance = subst_visitor.visit(self.essentials[i])
             try:
-                essential_proofs[i] = proof.prove(self.composer, essential_instance)
+                final_essential_proofs[i] = proof.prove(self.composer, essential_instance)
             except Exception:
                 print_exc()
                 assert (
                     False
                 ), f"unable to automatically generate proof for {essential_instance}"
 
-        return floating_proofs + essential_proofs, substitution
+        return floating_proofs + final_essential_proofs, substitution
 
     """
     Applies the theorem, given the following arguments:
@@ -286,9 +287,12 @@ class Theorem:
         )
 
         # labels of hypotheses
-        hyp_labels = [label for _, _, label in self.floatings] + [
-            essential.label for essential in self.essentials
-        ]
+        essential_labels = []
+        for essential in self.essentials:
+            assert essential.label is not None
+            essential_labels.append(essential.label)
+
+        hyp_labels = [label for _, _, label in self.floatings] + essential_labels
         assert len(subproofs) == len(hyp_labels)
 
         hyp_proof_map = dict(zip(hyp_labels, subproofs))
@@ -336,8 +340,8 @@ class ProofCache:
 
     def __init__(self, composer: Composer):
         self.composer = composer
-        self.cache_map = {}  # label prefix -> (terms -> proof)
-        self.label_map = {}  # label prefix -> next index
+        self.cache_map: Dict[str, Dict[Tuple[Term, ...], Proof]] = {}  # label prefix -> (terms -> proof)
+        self.label_map: Dict[str, int] = {}  # label prefix -> next index
 
         self.stat_cache_hit = 0
         self.stat_cache_miss = 0
@@ -405,7 +409,7 @@ class ProofCache:
             )
 
             # do not index the cached statements
-            theorem = self.composer.load(theorem_statement, index=False)
+            theorem = self.composer.load_theorem(theorem_statement, index=False)
             proof = theorem.as_proof()
 
         if domain not in self.cache_map:
@@ -424,8 +428,8 @@ class Context:
     def __init__(self, prev: Context = None):
         self.prev = prev
 
-        self.active_floatings = []  # list of (typecode, metavariable, label)
-        self.active_essentials = []  # list of essential statements
+        self.active_floatings: List[Tuple[str, str, str]] = []  # list of (typecode, metavariable, label)
+        self.active_essentials: List[StructuredStatement] = []  # list of essential statements
 
     def add_floating(self, typecode: str, variable: str, label: str):
         self.active_floatings.append((typecode, variable, label))
@@ -513,6 +517,14 @@ class Composer:
 
     def find_theorem(self, name: str) -> Optional[Theorem]:
         return self.theorems.get(name)
+
+    def get_theorem(self, name: str) -> Theorem:
+        """
+        Same as find_theorem but raises an exception if not found
+        """
+        theorem = self.find_theorem(name)
+        assert theorem is not None, f"cannot find theorem {name}"
+        return theorem
 
     def get_theorems_of_typecode(self, typecode: str) -> List[Theorem]:
         return self.theorems_by_typecode.get(typecode, [])
@@ -629,19 +641,24 @@ class Composer:
                 stmt.terms[0].symbol, self.theorems[stmt.label]
             )
 
-    """
-    Add a structured statement/block/database to the composer
-    Optionally return a theorem corresponding to the given statement
-    """
+    def load_theorem(self, statement: StructuredStatement, index: bool = True) -> Theorem:
+        theorem = self.load(statement, index)
+        assert theorem is not None, f"expecting statement {statement} to be a theorem"
+        return theorem
 
     def load(
         self, database_or_statement: Union[Database, Statement], index: bool = True
     ) -> Optional[Theorem]:
+        """
+        Add a structured statement/block/database to the composer
+        Optionally return a theorem corresponding to the given statement
+        """
         if isinstance(database_or_statement, Database):
             assert self.context.prev is None, "loading a database at non-top level"
             for statement in database_or_statement.statements:
                 self.load(statement, index)
 
+            return None
         elif isinstance(database_or_statement, Statement):
             if self.context.prev is None:
                 # add top level statements
@@ -653,6 +670,7 @@ class Composer:
                 for statement in database_or_statement.statements:
                     self.load(statement, index)
                 self.context = self.context.prev
+                return None
             else:
                 return self.load_statement(database_or_statement, index)
 
@@ -667,6 +685,9 @@ class Composer:
 
         if stmt.statement_type == Statement.FLOATING:
             typecode, variable = stmt.terms
+            assert isinstance(typecode, Application)
+            assert isinstance(variable, Metavariable)
+
             self.context.add_floating(typecode.symbol, variable.name, stmt.label)
 
             # any floating statement is also a theorem
@@ -746,9 +767,11 @@ class TypecodeProver:
             for theorem in composer.get_theorems_of_typecode(typecode):
                 if theorem.statement.statement_type == Statement.FLOATING:
                     _, metavar = theorem.statement.terms
+                    assert isinstance(metavar, Metavariable)
 
                     if metavar.name == term.name:
                         # found a direct proof
+                        assert theorem.statement.label is not None
                         proof = Proof(expected_statement, [theorem.statement.label])
                         proof = composer.cache_proof(
                             "typecode-cache-" + typecode, proof
@@ -791,13 +814,13 @@ class TypecodeProver:
                 proof_script = []
                 failed = False
 
-                for expected_typecode, metavar, _ in theorem.floatings:
+                for expected_typecode, var, _ in theorem.floatings:
                     assert (
-                        metavar in solution
-                    ), f"unable to determine metavarible {metavar} in theorem {theorem}"
+                        var in solution
+                    ), f"unable to determine metavarible {var} in theorem {theorem}"
 
                     metavar_proof = TypecodeProver.prove_typecode(
-                        composer, expected_typecode, solution[metavar]
+                        composer, expected_typecode, solution[var]
                     )
                     if metavar_proof is None:
                         failed = True
@@ -811,6 +834,7 @@ class TypecodeProver:
                 # found a proof
                 if not failed:
                     # directly construct the proof here for performance
+                    assert theorem.statement.label is not None
                     proof_script.append(theorem.statement.label)
                     proof = Proof(expected_statement, proof_script)
                     proof = composer.cache_proof("typecode-cache-" + typecode, proof)

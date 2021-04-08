@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from ..ast import Metavariable, Term, Application, StructuredStatement, Statement
 from ..composer import Composer, Proof, Theorem, MethodAutoProof, TypecodeProver
@@ -45,7 +45,7 @@ class SubstitutionProver:
         subst_pattern: Term,
         subst_var: Metavariable,
         hypotheses: List[Theorem] = [],
-    ) -> Optional[Proof]:
+    ) -> Proof:
         target = SubstitutionProver.get_target(
             after_pattern, before_pattern, subst_pattern, subst_var
         )
@@ -64,23 +64,23 @@ class SubstitutionProver:
         )
 
         if before_pattern == subst_var and after_pattern == subst_pattern:
-            return composer.find_theorem("substitution-var-same").match_and_apply(
+            return composer.get_theorem("substitution-var-same").match_and_apply(
                 target
             )
 
         if after_pattern == before_pattern:
             if is_variable_metavar and before_pattern != subst_var:
-                return composer.find_theorem("substitution-var-diff").match_and_apply(
+                return composer.get_theorem("substitution-var-diff").match_and_apply(
                     target
                 )
 
             if subst_pattern == subst_var:
-                return composer.find_theorem("substitution-identity").match_and_apply(
+                return composer.get_theorem("substitution-identity").match_and_apply(
                     target
                 )
 
             if is_symbol_metavar:
-                return composer.find_theorem("substitution-symbol").match_and_apply(
+                return composer.get_theorem("substitution-symbol").match_and_apply(
                     target
                 )
 
@@ -91,6 +91,8 @@ class SubstitutionProver:
                     return hypothesis.apply()
 
         if isinstance(before_pattern, Application):
+            assert isinstance(after_pattern, Application)
+
             arity_map = {
                 "\\bot": (0, "substitution-bot"),
                 "\\imp": (2, "substitution-imp"),
@@ -118,7 +120,7 @@ class SubstitutionProver:
                     )
                 ]
 
-                return composer.find_theorem(theorem_label).match_and_apply(
+                return composer.get_theorem(theorem_label).match_and_apply(
                     target, *subproofs
                 )
 
@@ -169,7 +171,7 @@ class SubstitutionProver:
                     continue
 
                 failed = True
-                subgoals = (
+                subgoals: List[Tuple[Term, Term, Term, Metavariable]] = (
                     []
                 )  # list of tuples (after_pattern, before_pattern, subst_pattern, subst_var)
 
@@ -196,13 +198,14 @@ class SubstitutionProver:
                             and subst_subpattern.name in instantiation
                             and sub_subst_var.name in instantiation
                         ):
-
+                            var = instantiation[sub_subst_var.name]
+                            assert isinstance(var, Metavariable)
                             subgoals.append(
                                 (
                                     instantiation[after_subpattern.name],
                                     instantiation[before_subpattern.name],
                                     instantiation[subst_subpattern.name],
-                                    instantiation[sub_subst_var.name],
+                                    var,
                                 )
                             )
                             continue
@@ -262,9 +265,10 @@ class SubstitutionProver:
             expanded_subst_pattern,
             subst_var,
         )
+        
         assert subst_proof.statement.terms == target.terms
 
-        return composer.find_theorem("notation-substitution").apply(
+        return composer.get_theorem("notation-substitution").apply(
             subst_proof,
             expansion_subproof1,
             expansion_subproof2,
@@ -279,10 +283,12 @@ class SubstitutionProver:
     def prove_substitution_statement(
         composer: Composer, statement: Statement, hypotheses: List[Theorem] = []
     ):
+        assert isinstance(statement, StructuredStatement)
         assert len(statement.terms) == 5 and statement.terms[0] == Application(
             "#Substitution"
         ), f"not a substitution goal {statement}"
         _, after, before, pattern, var = statement.terms
+        assert isinstance(var, Metavariable)
         return SubstitutionProver.prove_substitution(
             composer,
             after,
@@ -292,4 +298,4 @@ class SubstitutionProver:
             hypotheses=hypotheses,
         )
 
-    auto = MethodAutoProof(prove_substitution_statement.__func__)
+    auto = MethodAutoProof(prove_substitution_statement.__func__) # type: ignore

@@ -34,18 +34,17 @@ class NotationProver:
     @staticmethod
     def find_sugar_axiom(composer: Composer, symbol: str) -> Optional[Theorem]:
         for theorem in composer.get_theorems_of_typecode(NotationProver.SYMBOL):
-            condition = (
-                len(theorem.statement.terms) == 3
-                and len(theorem.essentials) == 0
-                and isinstance(theorem.statement.terms[1], Application)
-                and theorem.statement.terms[1].symbol == symbol
-            )
-            if not condition:
+            if not (len(theorem.statement.terms) == 3 and len(theorem.essentials) == 0):
+                continue
+
+            lhs = theorem.statement.terms[1]
+
+            if not (isinstance(lhs, Application) and lhs.symbol == symbol):
                 continue
 
             failed = False
 
-            for subterm in theorem.statement.terms[1].subterms:
+            for subterm in lhs.subterms:
                 if not isinstance(subterm, Metavariable):
                     failed = True
                     break
@@ -53,12 +52,14 @@ class NotationProver:
                 continue
 
             # check that RHS doesn't have variables not appearing in the LHS
-            left_metavars = theorem.statement.terms[1].get_metavariables()
+            left_metavars = lhs.get_metavariables()
             right_metavars = theorem.statement.terms[2].get_metavariables()
             if not right_metavars.issubset(left_metavars):
                 continue
 
             return theorem
+
+        return None
 
     """
     A congruence lemma for a symbol S is of the form
@@ -79,16 +80,12 @@ class NotationProver:
         composer: Composer, symbol: str
     ) -> Optional[Tuple[Theorem, List[int]]]:
         for theorem in composer.get_theorems_of_typecode(NotationProver.SYMBOL):
-            condition = (
-                len(theorem.statement.terms) == 3
-                and isinstance(theorem.statement.terms[1], Application)
-                and isinstance(theorem.statement.terms[2], Application)
-                and theorem.statement.terms[1].symbol == symbol
-                and theorem.statement.terms[2].symbol == symbol
-                and len(theorem.statement.terms[1].subterms)
-                == len(theorem.statement.terms[2].subterms)
-            )
-            if not condition:
+            if len(theorem.statement.terms) != 3:
+                continue
+
+            _, lhs, rhs = theorem.statement.terms
+
+            if not (isinstance(lhs, Application) and isinstance(rhs, Application) and lhs.symbol == symbol and rhs.symbol == symbol and len(lhs.subterms) == len(rhs.subterms)):
                 continue
 
             failed = False
@@ -97,8 +94,8 @@ class NotationProver:
             # check that all children of the applications are metavariables
             for i, (s1, s2) in enumerate(
                 zip(
-                    theorem.statement.terms[1].subterms,
-                    theorem.statement.terms[2].subterms,
+                    lhs.subterms,
+                    rhs.subterms,
                 )
             ):
                 if not isinstance(s1, Metavariable) or not isinstance(s2, Metavariable):
@@ -112,14 +109,16 @@ class NotationProver:
 
             # check that essentials only assumes things about metavariables
             for essential in theorem.essentials:
-                condition = (
-                    len(essential.terms) == 3
-                    and essential.terms[0] == Application(NotationProver.SYMBOL)
-                    and isinstance(essential.terms[1], Metavariable)
-                    and isinstance(essential.terms[2], Metavariable)
-                )
+                if not (len(essential.terms) == 3 and essential.terms[0] == Application(NotationProver.SYMBOL)):
+                    continue
 
-                pair = essential.terms[1].name, essential.terms[2].name
+                lhs_var = essential.terms[1]
+                rhs_var = essential.terms[2]
+
+                if not (isinstance(lhs_var, Metavariable) and isinstance(rhs_var, Metavariable)):
+                    continue
+
+                pair = lhs_var.name, rhs_var.name
                 if pair not in order_of_metavars:
                     failed = True
                     break
@@ -162,7 +161,7 @@ class NotationProver:
         symmetric_target = NotationProver.format_target(right, left)
 
         if left == right:
-            return composer.find_theorem(NotationProver.REFL).match_and_apply(target)
+            return composer.get_theorem(NotationProver.REFL).match_and_apply(target)
 
         # different metavariables
         if isinstance(left, Metavariable) and isinstance(right, Metavariable):
@@ -171,7 +170,7 @@ class NotationProver:
                 if theorem.statement.terms == target.terms:
                     return theorem.apply()
                 elif theorem.statement.terms == symmetric_target.terms:
-                    return composer.find_theorem(NotationProver.SYM).apply(
+                    return composer.get_theorem(NotationProver.SYM).apply(
                         theorem.apply()
                     )
             assert False, f"unable to show {left} === {right}"
@@ -230,9 +229,9 @@ class NotationProver:
 
             return composer.cache_proof(
                 "notation-cache",
-                composer.find_theorem(NotationProver.TRANS).apply(
+                composer.get_theorem(NotationProver.TRANS).apply(
                     reduction_proof,
-                    composer.find_theorem(NotationProver.SYM).apply(proof),
+                    composer.get_theorem(NotationProver.SYM).apply(proof),
                 ),
             )
 
@@ -241,7 +240,7 @@ class NotationProver:
             # TODO: just being lazy here
             return composer.cache_proof(
                 "notation-cache",
-                composer.find_theorem(NotationProver.SYM).apply(
+                composer.get_theorem(NotationProver.SYM).apply(
                     NotationProver.prove_notation(composer, right, left),
                 ),
             )
@@ -267,7 +266,7 @@ class NotationProver:
         composer: Composer, term: Term, target_symbol: Optional[str] = None
     ) -> Tuple[Term, Proof]:
         if isinstance(term, Metavariable):
-            return term, composer.find_theorem(NotationProver.REFL).apply(ph0=term)
+            return term, composer.get_theorem(NotationProver.REFL).apply(ph0=term)
 
         assert isinstance(term, Application)
 
@@ -293,13 +292,13 @@ class NotationProver:
                 expanded, proof = NotationProver.expand_sugar_with_proof(
                     composer, expanded, target_symbol=target_symbol
                 )
-                proof = composer.find_theorem(NotationProver.TRANS).apply(
+                proof = composer.get_theorem(NotationProver.TRANS).apply(
                     reduction_proof, proof
                 )
                 return expanded, composer.cache_proof("notation-cache", proof)
 
         if len(term.subterms) == 0:
-            return term, composer.find_theorem(NotationProver.REFL).apply(ph0=term)
+            return term, composer.get_theorem(NotationProver.REFL).apply(ph0=term)
 
         expanded_subterms = []
         subproofs = []
@@ -314,20 +313,20 @@ class NotationProver:
 
         final_term = Application(term.symbol, expanded_subterms)
 
-        congruence = NotationProver.find_congruence_lemma(composer, term.symbol)
-        if congruence is not None:
+        congruence_lemma_pair = NotationProver.find_congruence_lemma(composer, term.symbol)
+        if congruence_lemma_pair is not None:
             # if we are lucky enough to find a congruence lemma for the current symbol
             # apply it to get the final result
-            congruence, order = congruence
+            congruence_lemma, order = congruence_lemma_pair
             reordered_subproofs = []
             for n in order:
                 assert n < len(
                     subproofs
-                ), f"ill-formed congruence axiom {congruence.statement.label}"
+                ), f"ill-formed congruence axiom {congruence_lemma.statement.label}"
                 reordered_subproofs.append(subproofs[n])
 
             target = NotationProver.format_target(term, final_term)
-            proof = congruence.match_and_apply(target, *reordered_subproofs)
+            proof = congruence_lemma.match_and_apply(target, *reordered_subproofs)
             return final_term, composer.cache_proof("notation-cache", proof)
         else:
             # otherwise resort to the dumb way
