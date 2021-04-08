@@ -26,7 +26,7 @@ def closurePs(patterns: list[Pattern]) -> list[list[Pattern]]:
         ret += [l + r]
     return ret
 
-Node = Union['OrNode', 'AndNode', 'SimpleNode']
+Node = Union['OrNode', 'AndNode', 'Sequent']
 
 # TODO: Make typing more generic.
 def powerset(s: list[DApp]) -> Iterator[Iterable[DApp]]:
@@ -41,7 +41,7 @@ class AndNode:
     children: list[Node]
 
 @dataclass
-class SimpleNode:
+class Sequent:
     gamma: list[Pattern]
 
     def is_consitant(self) -> bool:
@@ -57,8 +57,8 @@ class SimpleNode:
         apps  = [phi for phi in self.gamma if isinstance(phi, App)]
         dapps = [phi for phi in self.gamma if isinstance(phi, DApp)]
         left_partitions = powerset(dapps)
-        return AndNode([ OrNode([ AndNode([ SimpleNode([app.left] + list(map(project_left, left)))
-                                          , SimpleNode([app.right] + list(map(project_right, set(dapps) - set(left))))])
+        return AndNode([ OrNode([ AndNode([ Sequent([app.left] + list(map(project_left, left)))
+                                          , Sequent([app.right] + list(map(project_right, set(dapps) - set(left))))])
                                   for left in left_partitions
                                 ])
                          for app in apps

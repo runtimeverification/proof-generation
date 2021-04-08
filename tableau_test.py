@@ -24,21 +24,21 @@ def test_closure() -> None:
            ]
 
 def test_is_consitant() -> None:
-    assert     SimpleNode([SVar("X")]).is_consitant()
-    assert     SimpleNode([SVar("X"), Not(SVar("Y"))]).is_consitant()
-    assert     SimpleNode([SVar("X"), Not(EVar("X"))]).is_consitant()
-    assert not SimpleNode([SVar("X"), Not(SVar("X"))]).is_consitant()
+    assert     Sequent([SVar("X")]).is_consitant()
+    assert     Sequent([SVar("X"), Not(SVar("Y"))]).is_consitant()
+    assert     Sequent([SVar("X"), Not(EVar("X"))]).is_consitant()
+    assert not Sequent([SVar("X"), Not(SVar("X"))]).is_consitant()
 
 def test_children() -> None:
-    assert SimpleNode([SVar("X"), Not(SVar("X"))]).children() == OrNode([])
-    assert SimpleNode([SVar("X"), SVar("X")]).children()      == AndNode([])
+    assert Sequent([SVar("X"), Not(SVar("X"))]).children() == OrNode([])
+    assert Sequent([SVar("X"), SVar("X")]).children()      == AndNode([])
 
-    assert SimpleNode([App(SVar("X"), SVar("Y")), DApp(SVar("P"), SVar("Q"))]).children() \
-        == AndNode([ OrNode([ AndNode([ SimpleNode([SVar("X")])
-                                      , SimpleNode([SVar("Y"), SVar("Q")])
+    assert Sequent([App(SVar("X"), SVar("Y")), DApp(SVar("P"), SVar("Q"))]).children() \
+        == AndNode([ OrNode([ AndNode([ Sequent([SVar("X")])
+                                      , Sequent([SVar("Y"), SVar("Q")])
                                       ])
-                            , AndNode([ SimpleNode([SVar("X"), SVar("P")])
-                                      , SimpleNode([SVar("Y")])
+                            , AndNode([ Sequent([SVar("X"), SVar("P")])
+                                      , Sequent([SVar("Y")])
                                       ])
                             ])
 
