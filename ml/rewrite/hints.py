@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Mapping, List, Optional, Any, Dict
 
-import schema # type: ignore
+import schema  # type: ignore
 
 from ml.kore import ast as kore
 from ml.kore.parser import parse_pattern

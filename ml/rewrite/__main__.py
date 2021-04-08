@@ -46,7 +46,9 @@ def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
         match = re.match(r"[^\d]*(\d+)\.kore", file_name)
         if match is not None:
             step = int(match.group(1))
-            assert step not in snapshot_steps, "duplicated snapshot for step {}".format(step)
+            assert step not in snapshot_steps, "duplicated snapshot for step {}".format(
+                step
+            )
 
             max_step = max(max_step, step)
 
