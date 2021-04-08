@@ -1,0 +1,228 @@
+from dataclasses import dataclass
+from typing import Union
+from abc import abstractmethod
+
+Var = Union['SVar', 'EVar']
+
+class Pattern:
+    @abstractmethod
+    def free_variables(self) -> frozenset[Var]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def substitute(self, p: 'Var', v: 'Pattern') -> 'Pattern':
+        raise NotImplementedError
+
+    @abstractmethod
+    def subpatterns(self) -> frozenset['Pattern']:
+        raise NotImplementedError
+
+    @abstractmethod
+    def negate(self) -> 'Pattern':
+        raise NotImplementedError
+
+@dataclass(frozen=True)
+class Symbol(Pattern):
+    name: str
+    def free_variables(self) -> frozenset[Var]:
+        return frozenset()
+
+    def substitute(self, x: Var, v: Pattern) -> 'Symbol':
+        return self
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return frozenset([self])
+
+    def negate(self) -> 'Pattern':
+        return Not(self)
+
+@dataclass(frozen=True)
+class EVar(Pattern):
+    name: str
+
+    def free_variables(self) -> frozenset[Var]:
+        return frozenset([self])
+
+    def substitute(self, x: Var, v: Pattern) -> Pattern:
+        if x == self: return v
+        else:         return self
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return frozenset([self])
+
+    def negate(self) -> 'Pattern':
+        return Not(self)
+
+@dataclass(frozen=True)
+class SVar(Pattern):
+    name: str
+
+    def free_variables(self) -> frozenset[Var]:
+        return frozenset([self])
+
+    def substitute(self, x: Var, v: Pattern) -> Pattern:
+        if x == self: return v
+        else:         return self
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return frozenset([self])
+
+    def negate(self) -> 'Pattern':
+        return Not(self)
+
+@dataclass(frozen=True)
+class And(Pattern):
+    left: Pattern
+    right: Pattern
+
+    def free_variables(self) -> frozenset[Var]:
+        return self.left.free_variables().union(self.right.free_variables())
+
+    def substitute(self, x: Var, v: Pattern) -> 'And':
+        return And(self.left.substitute(x, v), self.right.substitute(x, v))
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
+
+    def negate(self) -> 'Pattern':
+        return Or(self.left.negate(), self.right.negate())
+
+@dataclass(frozen=True)
+class Or(Pattern):
+    left: Pattern
+    right: Pattern
+
+    def free_variables(self) -> frozenset[Var]:
+        return self.left.free_variables().union(self.right.free_variables())
+
+    def substitute(self, x: Var, v: Pattern) -> 'Or':
+        return Or(self.left.substitute(x, v), self.right.substitute(x, v))
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
+
+    def negate(self) -> 'Pattern':
+        return And(self.left.negate(), self.right.negate())
+
+
+@dataclass(frozen=True)
+class Not(Pattern):
+    subpattern: Pattern
+
+    def free_variables(self) -> frozenset[Var]:
+        return self.subpattern.free_variables()
+
+    def substitute(self, x: Var, v: Pattern) -> 'Not':
+        return Not(self.subpattern.substitute(x, v))
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return self.subpattern.subpatterns().union(frozenset([self]))
+
+    def negate(self) -> 'Pattern':
+        return self.subpattern
+
+@dataclass(frozen=True)
+class App(Pattern):
+    left: Pattern
+    right: Pattern
+
+    def free_variables(self) -> frozenset[Var]:
+        return self.left.free_variables().union(self.right.free_variables())
+
+    def substitute(self, x: Var, v: Pattern) -> 'App':
+        return App(self.left.substitute(x, v), self.right.substitute(x, v))
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
+
+    def negate(self) -> 'Pattern':
+        return DApp(self.left.negate(), self.right.negate())
+
+@dataclass(frozen=True)
+class DApp(Pattern):
+    left: Pattern
+    right: Pattern
+
+    def free_variables(self) -> frozenset[Var]:
+        return self.left.free_variables().union(self.right.free_variables())
+
+    def substitute(self, x: Var, v: Pattern) -> 'DApp':
+        return DApp(self.left.substitute(x, v), self.right.substitute(x, v))
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
+
+    def negate(self) -> 'Pattern':
+        return App(self.left.negate(), self.right.negate())
+
+@dataclass(frozen=True)
+class Exists(Pattern):
+    bound: EVar
+    subpattern: Pattern
+
+    def free_variables(self) -> frozenset[Var]:
+        return self.subpattern.free_variables() - frozenset([self.bound])
+
+    def substitute(self, x: Var, v: Pattern) -> 'Exists':
+        if x == self.bound: return self
+        else:               return Exists(self.bound, self.subpattern.substitute(x, v))
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return self.subpattern.subpatterns().union(frozenset([self]))
+
+    def negate(self) -> 'Pattern':
+        return Forall(self.bound, self.subpattern.negate())
+
+@dataclass(frozen=True)
+class Forall(Pattern):
+    bound: EVar
+    subpattern: Pattern
+
+    def free_variables(self) -> frozenset[Var]:
+        return self.subpattern.free_variables() - frozenset([self.bound])
+
+    def substitute(self, x: Var, v: Pattern) -> 'Forall':
+        if x == self.bound: return self
+        else:               return Forall(self.bound, self.subpattern.substitute(x, v))
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return self.subpattern.subpatterns().union(frozenset([self]))
+
+    def negate(self) -> 'Pattern':
+        return Exists(self.bound, self.subpattern.negate())
+
+@dataclass(frozen=True)
+class Mu(Pattern):
+    bound: SVar
+    subpattern: Pattern
+
+    def free_variables(self) -> frozenset[Var]:
+        return self.subpattern.free_variables() - frozenset([self.bound])
+
+    def substitute(self, x: Var, v: Pattern) -> 'Mu':
+        if x == self.bound: return self
+        else:               return Mu(self.bound, self.subpattern.substitute(x, v))
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return self.subpattern.subpatterns().union(frozenset([self]))
+
+    def negate(self) -> 'Pattern':
+        return Nu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
+
+@dataclass(frozen=True)
+class Nu(Pattern):
+    bound: SVar
+    subpattern: Pattern
+
+    def free_variables(self) -> frozenset[Var]:
+        return self.subpattern.free_variables() - frozenset([self.bound])
+
+    def substitute(self, x: Var, v: Pattern) -> 'Nu':
+        if x == self.bound: return self
+        else:               return Nu(self.bound, self.subpattern.substitute(x, v))
+
+    def subpatterns(self) -> frozenset[Pattern]:
+        return self.subpattern.subpatterns().union(frozenset([self]))
+
+    def negate(self) -> 'Pattern':
+        return Mu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
