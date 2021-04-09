@@ -17,6 +17,11 @@ def closure(p: Pattern) -> list[list[Pattern]]:
       or isinstance(p, App) \
       or isinstance(p, Exists) or isinstance(p, Forall):
         return [[p]]
+    elif isinstance(p, Not) and \
+       ( isinstance(p.subpattern, SVar) or isinstance(p.subpattern, EVar) or isinstance(p.subpattern, Symbol)
+      or isinstance(p.subpattern, App)
+      or isinstance(p.subpattern, Exists) or isinstance(p.subpattern, Forall)):
+        return [[p]]
     elif isinstance(p, And):
         return closurePs([p.left, p.right])
     elif isinstance(p, Or):
