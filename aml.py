@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Hashable, Union
 from abc import abstractmethod
 
 Var = Union['SVar', 'EVar']
@@ -55,7 +55,7 @@ class EVar(Pattern):
 
 @dataclass(frozen=True)
 class SVar(Pattern):
-    name: str
+    name: Hashable
 
     def free_variables(self) -> frozenset[Var]:
         return frozenset([self])

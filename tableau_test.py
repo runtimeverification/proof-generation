@@ -44,6 +44,14 @@ def test_children() -> None:
 
                    ])
 
+def test_definition_list() -> None:
+    assert definition_list(SVar("X"), []) == []
+    assert definition_list(Mu(SVar("X"), App(Symbol("S"), SVar("X"))), []) == [Mu(SVar("X"), App(Symbol("S"), SVar("X")))]
+    assert definition_list(Mu(SVar("X"), Nu(SVar("Y"), App(Symbol("S"), SVar("X")))), []) \
+        == [ Mu(SVar("X"), Nu(SVar("Y"), App(Symbol("S"), SVar("X"))))
+           , Nu(SVar("Y"), App(Symbol("S"), SVar(0)))
+           ]
+
 def test_quasimodel() -> None:
     assert build_quasimodel(Node.make_nodes([Mu(SVar("X"), App(Symbol("a"), App(Symbol("b"), SVar("X"))))]), []) \
         == AndNode([AndNode([ Sequent([Symbol("a")]),

@@ -8,6 +8,23 @@ from typing import Iterable, Iterator, Union
 def powerset(s: list[DApp]) -> Iterator[Iterable[DApp]]:
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
+def definition_list(p: Pattern, existing_list: list[Pattern]) -> list[Pattern]:
+    if isinstance(p, SVar) or isinstance(p, EVar) or isinstance(p, Symbol):
+        return existing_list
+    elif isinstance(p, Not) and ( isinstance(p.subpattern, SVar) or isinstance(p.subpattern, EVar) or isinstance(p.subpattern, Symbol) ):
+        return existing_list
+    elif isinstance(p, App) or isinstance(p, DApp) or isinstance(p, And) or isinstance(p, Or):
+        existing_list = definition_list(p.left, existing_list)
+        existing_list = definition_list(p.right, existing_list)
+        return existing_list
+    elif isinstance(p, Mu) or isinstance(p, Nu):
+        if p not in existing_list:
+            existing_list = existing_list + [p]
+            existing_list = definition_list(p.subpattern.substitute(p.bound, SVar(existing_list.index(p))), existing_list)
+        return existing_list
+    else:
+        raise NotImplementedError
+
 def closure(p: Pattern) -> list[list[Pattern]]:
     """Calculate possible closures by applying all non-app tableau rules
 
