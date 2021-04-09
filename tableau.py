@@ -4,7 +4,15 @@ from itertools import chain, combinations, product
 
 from typing import Iterable, Iterator, Union
 
+# TODO: Make typing more generic.
+def powerset(s: list[DApp]) -> Iterator[Iterable[DApp]]:
+    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+
 def closure(p: Pattern) -> list[list[Pattern]]:
+    """Calculate possible closures by applying all non-app tableau rules
+
+       Since rules may have `Or`s multiple closures.
+    """
     if   isinstance(p, SVar) or isinstance(p, EVar) or isinstance(p, Symbol) \
       or isinstance(p, App) \
       or isinstance(p, Exists) or isinstance(p, Forall):
@@ -25,10 +33,6 @@ def closurePs(patterns: list[Pattern]) -> list[list[Pattern]]:
     for l, r in product(closure(p), closurePs(ps)):
         ret += [l + r]
     return ret
-
-# TODO: Make typing more generic.
-def powerset(s: list[DApp]) -> Iterator[Iterable[DApp]]:
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 class Node:
     @staticmethod
