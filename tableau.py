@@ -80,7 +80,7 @@ class Sequent(Node):
 def build_tableau(node: Node, path_prefix: list[Node]) -> Node:
     if isinstance(node, Sequent):
         if node in path_prefix: return node
-        else: path_prefix += [node]
+        else: path_prefix = path_prefix + [node]
         child = node.children()
         if child == AndNode([]): return node
         else: node = child
