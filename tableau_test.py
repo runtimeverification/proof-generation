@@ -58,3 +58,11 @@ def test_quasimodel() -> None:
                                             )
                                          ]), []) \
         == OrNode([])
+
+    print(build_quasimodel(Node.make_nodes([Mu(SVar("X"), And(Symbol("a"), App(Symbol("b"), SVar("X"))))]), []))
+    assert build_quasimodel(Node.make_nodes([Mu(SVar("X"), And(Symbol("a"), App(Symbol("b"), SVar("X"))))]), []) \
+        == AndNode([AndNode([ Sequent([Symbol("b")])
+                            , Sequent([ Symbol("a")
+                                      , App( Symbol("b")
+                                           , Mu(SVar("X"), And(Symbol("a"), App(Symbol("b"), SVar("X")))))])
+                   ])])
