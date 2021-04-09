@@ -77,7 +77,7 @@ class Sequent(Node):
                          for app in apps
                        ])
 
-def build_tableau(node: Node, path_prefix: list[Node]) -> Node:
+def build_quasimodel(node: Node, path_prefix: list[Node]) -> Node:
     if isinstance(node, Sequent):
         if node in path_prefix: return node
         else: path_prefix = path_prefix + [node]
@@ -86,12 +86,12 @@ def build_tableau(node: Node, path_prefix: list[Node]) -> Node:
         else: node = child
 
     if   isinstance(node, AndNode):
-        children = [build_tableau(child, path_prefix) for child in node.children]
+        children = [build_quasimodel(child, path_prefix) for child in node.children]
         if any((child == OrNode([]) for child in children)): return OrNode([])
         return AndNode(children)
     elif isinstance(node, OrNode):
         for child in node.children:
-            tab = build_tableau(child, path_prefix)
+            tab = build_quasimodel(child, path_prefix)
             if tab != OrNode([]): return tab
         return OrNode([])
     raise NotImplementedError

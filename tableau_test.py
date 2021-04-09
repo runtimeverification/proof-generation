@@ -44,8 +44,8 @@ def test_children() -> None:
 
                    ])
 
-def test_tableau() -> None:
-    assert build_tableau(Node.make_nodes([Mu(SVar("X"), App(Symbol("a"), App(Symbol("b"), SVar("X"))))]), []) \
+def test_quasimodel() -> None:
+    assert build_quasimodel(Node.make_nodes([Mu(SVar("X"), App(Symbol("a"), App(Symbol("b"), SVar("X"))))]), []) \
         == AndNode([AndNode([ Sequent([Symbol("a")]),
            AndNode([AndNode([ Sequent([Symbol("b")])
                             , Sequent([App( Symbol("a")
@@ -53,7 +53,7 @@ def test_tableau() -> None:
                                                , Mu(SVar("X"), App(Symbol("a"), App(Symbol("b"), SVar("X"))))))])
                    ])])])])
 
-    assert build_tableau(Node.make_nodes([Or( App( Symbol("S") , And(SVar("X"), Not(SVar("X"))) )
+    assert build_quasimodel(Node.make_nodes([Or( App( Symbol("S") , And(SVar("X"), Not(SVar("X"))) )
                                             , App( Symbol("S") , And(SVar("X"), Not(SVar("X"))) )
                                             )
                                          ]), []) \
