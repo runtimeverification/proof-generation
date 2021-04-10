@@ -25,13 +25,8 @@ jobs:
     - name: Lint with black
       run: |
         black --check ml scripts
-    - name: Type checking
-      run: |
-        mypy --strict ml/aml
-        mypy ml/__init__.py ml/itp ml/kore ml/metamath ml/utils
-    - name: Test
-      run: |
-        pytest ml
+    - name: Testing
+      run: ./scripts/test
     # - name: Lint with flake8
     #   run: |
     #     flake8 ml scripts
