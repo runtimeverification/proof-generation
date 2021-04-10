@@ -33,7 +33,7 @@ class Symbol(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return frozenset([self])
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> 'Not':
         return Not(self)
 
 @dataclass(frozen=True)
@@ -50,7 +50,7 @@ class EVar(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return frozenset([self])
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> 'Not':
         return Not(self)
 
 @dataclass(frozen=True)
@@ -67,7 +67,7 @@ class SVar(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return frozenset([self])
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> 'Not':
         return Not(self)
 
 @dataclass(frozen=True)
@@ -84,7 +84,7 @@ class And(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> 'Or':
         return Or(self.left.negate(), self.right.negate())
 
 @dataclass(frozen=True)
@@ -101,9 +101,8 @@ class Or(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> And:
         return And(self.left.negate(), self.right.negate())
-
 
 @dataclass(frozen=True)
 class Not(Pattern):
@@ -118,7 +117,7 @@ class Not(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return self.subpattern.subpatterns().union(frozenset([self]))
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> Pattern:
         return self.subpattern
 
 @dataclass(frozen=True)
@@ -135,7 +134,7 @@ class App(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> 'DApp':
         return DApp(self.left.negate(), self.right.negate())
 
 @dataclass(frozen=True)
@@ -152,7 +151,7 @@ class DApp(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> App:
         return App(self.left.negate(), self.right.negate())
 
 @dataclass(frozen=True)
@@ -170,7 +169,7 @@ class Exists(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return self.subpattern.subpatterns().union(frozenset([self]))
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> 'Forall':
         return Forall(self.bound, self.subpattern.negate())
 
 @dataclass(frozen=True)
@@ -188,7 +187,7 @@ class Forall(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return self.subpattern.subpatterns().union(frozenset([self]))
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> Exists:
         return Exists(self.bound, self.subpattern.negate())
 
 @dataclass(frozen=True)
@@ -206,7 +205,7 @@ class Mu(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return self.subpattern.subpatterns().union(frozenset([self]))
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> 'Nu':
         return Nu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
 
 @dataclass(frozen=True)
@@ -224,5 +223,5 @@ class Nu(Pattern):
     def subpatterns(self) -> frozenset[Pattern]:
         return self.subpattern.subpatterns().union(frozenset([self]))
 
-    def negate(self) -> 'Pattern':
+    def negate(self) -> Mu:
         return Mu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
