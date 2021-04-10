@@ -24,7 +24,7 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Lint with black
       run: |
-        black --check ml scripts
+        black --check --line-length 120 ml scripts
     - name: Testing
       run: ./scripts/test
     # - name: Lint with flake8
