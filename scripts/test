@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+mypy --strict ml/aml
+mypy          ml/__init__.py ml/itp ml/kore ml/metamath ml/utils
+# Failing: ml/rewrite
+
+pytest ml/ "$@"
