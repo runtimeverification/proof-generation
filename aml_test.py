@@ -70,13 +70,13 @@ def test_substitute() -> None:
     assert Nu(SVar("y"), EVar("x")).substitute(SVar("x"), EVar("v")) == Nu(SVar("y"), EVar("x"))
     assert Nu(SVar("y"), SVar("x")).substitute(SVar("x"), EVar("v")) == Nu(SVar("y"), EVar("v"))
 
-    assert And( Or(SVar("a"), SVar("b")) , App(App(Symbol("c"), SVar("d")), SVar("e")) ).substitute(SVar("a"), SVar("x")) \
-        == And( Or(SVar("x"), SVar("b")) , App(App(Symbol("c"), SVar("d")), SVar("e")) )
-    assert And( Or(SVar("a"), SVar("b")) , App(App(Symbol("c"), SVar("d")), SVar("e")) ).substitute(SVar("b"), SVar("x")) \
-        == And( Or(SVar("a"), SVar("x")) , App(App(Symbol("c"), SVar("d")), SVar("e")) )
-    assert And( Or(SVar("a"), SVar("b")) , App(App(Symbol("c"), SVar("d")), SVar("e")) ).substitute(SVar("c"), SVar("x")) \
-        == And( Or(SVar("a"), SVar("b")) , App(App(Symbol("c"), SVar("d")), SVar("e")) )
-    assert And( Or(SVar("a"), SVar("b")) , App(App(Symbol("c"), SVar("d")), SVar("e")) ).substitute(SVar("d"), SVar("x")) \
-        == And( Or(SVar("a"), SVar("b")) , App(App(Symbol("c"), SVar("x")), SVar("e")) )
-    assert And( Or(SVar("a"), SVar("b")) , App(App(Symbol("c"), SVar("d")), SVar("e")) ).substitute(SVar("e"), SVar("x")) \
-        == And( Or(SVar("a"), SVar("b")) , App(App(Symbol("c"), SVar("d")), SVar("x")) )
+    assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("a"), SVar("x")) \
+        == And(Or(SVar("x"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e")))
+    assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("b"), SVar("x")) \
+        == And(Or(SVar("a"), SVar("x")), App(App(Symbol("c"), SVar("d")), SVar("e")))
+    assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("c"), SVar("x")) \
+        == And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e")))
+    assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("d"), SVar("x")) \
+        == And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("x")), SVar("e")))
+    assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("e"), SVar("x")) \
+        == And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("x")))
