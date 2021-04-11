@@ -1,7 +1,14 @@
 from aml import *
 from tableau import *
+from typing import Optional
+
+def tp(p: Pattern, parent: Optional[TracedPattern] = None) -> TracedPattern:
+    return TracedPattern(parent, p)
 
 def test_closure() -> None:
+    def closure(p: Pattern) -> list[list[Pattern]]:
+        return [[traced.pattern for traced in ltp] for ltp in tp(p).closure()]
+
     assert closure(And(SVar("X"), EVar("Y"))) \
         == [ [SVar("X"), EVar("Y")] ]
     assert closure(And(SVar("X"), Or(EVar("Y"), SVar("Z")))) \
@@ -13,7 +20,7 @@ def test_closure() -> None:
            , [EVar("Y")]
            , [SVar("Z")]
            ]
-    assert closurePs([Or(SVar("X"), Or(EVar("Y"), SVar("Z"))), Symbol("Q")]) \
+    assert closure(And(Or(SVar("X"), Or(EVar("Y"), SVar("Z"))), Symbol("Q"))) \
         == [ [SVar("X"), Symbol("Q")]
            , [EVar("Y"), Symbol("Q")]
            , [SVar("Z"), Symbol("Q")]
@@ -24,25 +31,11 @@ def test_closure() -> None:
            ]
 
 def test_is_consitant() -> None:
-    assert     Sequent([SVar("X")]).is_consitant()
-    assert     Sequent([SVar("X"), Not(SVar("Y"))]).is_consitant()
-    assert     Sequent([SVar("X"), Not(EVar("X"))]).is_consitant()
-    assert not Sequent([SVar("X"), Not(SVar("X"))]).is_consitant()
+    assert     Sequent([tp(SVar("X"))]).is_consitant()
+    assert     Sequent([tp(SVar("X")), tp(Not(SVar("Y")))]).is_consitant()
+    assert     Sequent([tp(SVar("X")), tp(Not(EVar("X")))]).is_consitant()
+    assert not Sequent([tp(SVar("X")), tp(Not(SVar("X")))]).is_consitant()
 
-def test_children() -> None:
-    assert Sequent([SVar("X"), Not(SVar("X"))]).children() == OrNode([])
-    assert Sequent([SVar("X"), SVar("X")]).children()      == AndNode([])
-
-    assert Sequent([App(SVar("X"), SVar("Y")), DApp(SVar("P"), SVar("Q"))]).children() \
-        == AndNode([ OrNode([ AndNode([ Sequent([SVar("X")])
-                                      , Sequent([SVar("Y"), SVar("Q")])
-                                      ])
-                            , AndNode([ Sequent([SVar("X"), SVar("P")])
-                                      , Sequent([SVar("Y")])
-                                      ])
-                            ])
-
-                   ])
 
 def test_definition_list() -> None:
     assert definition_list(SVar("X"), []) == []
@@ -52,25 +45,45 @@ def test_definition_list() -> None:
            , Nu(SVar("Y"), App(Symbol("S"), SVar(0)))
            ]
 
-def test_quasimodel() -> None:
-    assert build_quasimodel(Node.make_nodes([Mu(SVar("X"), App(Symbol("a"), App(Symbol("b"), SVar("X"))))]), []) \
-        == AndNode([AndNode([ Sequent([Symbol("a")]),
-           AndNode([AndNode([ Sequent([Symbol("b")])
-                            , Sequent([App( Symbol("a")
-                                          , App( Symbol("b")
-                                               , Mu(SVar("X"), App(Symbol("a"), App(Symbol("b"), SVar("X"))))))])
-                   ])])])])
+def test_children() -> None:
+    assert Sequent([tp(SVar("X")), tp(Not(SVar("X")))]).children() == OrNode([])
+    assert Sequent([tp(SVar("X")), tp(SVar("X"))]).children()      == AndNode([])
 
-    assert build_quasimodel(Node.make_nodes([Or( App( Symbol("S") , And(SVar("X"), Not(SVar("X"))) )
-                                            , App( Symbol("S") , And(SVar("X"), Not(SVar("X"))) )
-                                            )
-                                         ]), []) \
+    app = tp(App(SVar("X"), SVar("Y")))
+    dapp = tp(DApp(SVar("P"), SVar("Q")))
+    assert Sequent([app, dapp]).children() \
+        == AndNode([ OrNode([ AndNode([ Sequent([tp(SVar("X"))])
+                                      , Sequent([tp(SVar("Y")), tp(SVar("Q"))])
+                                      ])
+                            , AndNode([ Sequent([tp(SVar("X")), tp(SVar("P"))])
+                                      , Sequent([tp(SVar("Y"))])
+                                      ])
+                            ])
+                   ])
+
+def test_quasimodel() -> None:
+    mu = tp(Mu(SVar("X"), App(Symbol("a"), App(Symbol("b"), SVar("X")))), None)
+    assert build_quasimodel(Node.make_nodes([mu.pattern]), []) \
+        == AndNode([AndNode([ Sequent([tp(Symbol("a"), mu)]),
+           AndNode([AndNode([ Sequent([tp(Symbol("b"), mu)])
+                            , Sequent([tp( App(Symbol("a"), App( Symbol("b") , mu.pattern))
+                                         , tp(mu.pattern, mu)
+                                         )
+                                      ])])])])])
+
+    assert build_quasimodel(Node.make_nodes([ Or( App( Symbol("S") , And(SVar("X"), Not(SVar("X"))) )
+                                                , App( Symbol("S") , And(SVar("X"), Not(SVar("X"))) )
+                                                )
+                                           ]), []) \
         == OrNode([])
 
-    print(build_quasimodel(Node.make_nodes([Mu(SVar("X"), And(Symbol("a"), App(Symbol("b"), SVar("X"))))]), []))
-    assert build_quasimodel(Node.make_nodes([Mu(SVar("X"), And(Symbol("a"), App(Symbol("b"), SVar("X"))))]), []) \
-        == AndNode([AndNode([ Sequent([Symbol("b")])
-                            , Sequent([ Symbol("a")
-                                      , App( Symbol("b")
-                                           , Mu(SVar("X"), And(Symbol("a"), App(Symbol("b"), SVar("X")))))])
-                   ])])
+    mu = tp(Mu(SVar("X"), And(Symbol("a"), App(Symbol("b"), SVar("X")))))
+    assert build_quasimodel(Node.make_nodes([mu.pattern]), []) \
+        == AndNode([AndNode([ Sequent([ tp(Symbol("b"), mu)])
+                            , Sequent([ tp(Symbol("a"), tp(mu.pattern, mu))
+                                      , tp( App(Symbol("b"), mu.pattern)
+                                          , tp(mu.pattern, mu)
+                                          )
+                                      ]
+                       )])])
+

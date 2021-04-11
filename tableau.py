@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 from aml import *
 from dataclasses import dataclass
 from itertools import chain, combinations, product
 
-from typing import Iterable, Iterator, Union
+from typing import Iterable, Iterator, Optional, Union
 
 # TODO: Make typing more generic.
-def powerset(s: list[DApp]) -> Iterator[Iterable[DApp]]:
+def powerset(s: list[TracedPattern]) -> Iterator[Iterable[TracedPattern]]:
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 def definition_list(p: Pattern, existing_list: list[Pattern]) -> list[Pattern]:
@@ -25,41 +27,54 @@ def definition_list(p: Pattern, existing_list: list[Pattern]) -> list[Pattern]:
     else:
         raise NotImplementedError
 
-def closure(p: Pattern) -> list[list[Pattern]]:
-    """Calculate possible closures by applying all non-app tableau rules
+@dataclass(frozen=True)
+class TracedPattern:
+    """ Annotates patterns with a trace of regenerated definitional constants.  """ 
+    parent: Optional['TracedPattern']
+    pattern: Pattern
 
-       Since rules may have `Or`s multiple closures.
-    """
-    if   isinstance(p, SVar) or isinstance(p, EVar) or isinstance(p, Symbol) \
-      or isinstance(p, App) \
-      or isinstance(p, Exists) or isinstance(p, Forall):
-        return [[p]]
-    elif isinstance(p, Not) and \
-       ( isinstance(p.subpattern, SVar) or isinstance(p.subpattern, EVar) or isinstance(p.subpattern, Symbol)
-      or isinstance(p.subpattern, App)
-      or isinstance(p.subpattern, Exists) or isinstance(p.subpattern, Forall)):
-        return [[p]]
-    elif isinstance(p, And):
-        return closurePs([p.left, p.right])
-    elif isinstance(p, Or):
-        return closure(p.left) + closure(p.right)
-    elif isinstance(p, Mu) or isinstance(p, Nu):
-        return closure(p.subpattern.substitute(p.bound, p))
-    else:
-        raise NotImplementedError
+    def left(self) -> TracedPattern:
+        assert(isinstance(self.pattern, (App, DApp, And, Or)))
+        return TracedPattern(self.parent, self.pattern.left)
+    def right(self) -> TracedPattern:
+        assert(isinstance(self.pattern, (App, DApp, And, Or)))
+        return TracedPattern(self.parent, self.pattern.right)
 
-def closurePs(patterns: list[Pattern]) -> list[list[Pattern]]:
-    if patterns == []: return [[]]
-    p, *ps = patterns
-    ret : list[list[Pattern]] = []
-    for l, r in product(closure(p), closurePs(ps)):
-        ret += [l + r]
-    return ret
+    def closure(self) -> list[list[TracedPattern]]:
+        """Calculate possible closures by applying all non-app tableau rules
+
+           Since rules may have `Or`s multiple closures.
+        """
+        if   isinstance(self.pattern, (SVar, EVar, Symbol, App, DApp, Exists, Forall)):
+            return [[self]]
+        elif isinstance(self.pattern, Not) and isinstance(self.pattern.subpattern, (SVar, EVar, Symbol)):
+            return [[self]]
+        elif isinstance(self.pattern, And):
+            return TracedPattern.closurePs([TracedPattern(self.parent, self.pattern.left), TracedPattern(self.parent, self.pattern.right)])
+        elif isinstance(self.pattern, Or):
+            return TracedPattern(self.parent, self.pattern.left).closure() + TracedPattern(self.parent, self.pattern.right).closure()
+        elif isinstance(self.pattern, Mu) or isinstance(self.pattern, Nu):
+            return TracedPattern(self, self.pattern.subpattern.substitute(self.pattern.bound, self.pattern)).closure()
+        else:
+            raise NotImplementedError
+
+    @staticmethod
+    def closurePs(patterns: list[TracedPattern]) -> list[list[TracedPattern]]:
+        if patterns == []: return [[]]
+        p, *ps = patterns
+        ret : list[list[TracedPattern]] = []
+        for l, r in product(p.closure(), TracedPattern.closurePs(ps)):
+            ret += [l + r]
+        return ret
 
 class Node:
     @staticmethod
     def make_nodes(patterns: list[Pattern]) -> 'Node':
-        closure = closurePs(patterns)
+        return Node.from_closure([TracedPattern(None, p) for p in patterns])
+
+    @staticmethod
+    def from_closure(patterns: list[TracedPattern]) -> 'Node':
+        closure = TracedPattern.closurePs(patterns)
         if len(closure) == 1: return Sequent(closure[0])
         return OrNode([Sequent(gamma) for gamma in closure])
 
@@ -73,31 +88,30 @@ class AndNode(Node):
 
 @dataclass
 class Sequent(Node):
-    gamma: list[Pattern]
+    gamma: list[TracedPattern]
 
     def is_consitant(self) -> bool:
-        atoms = set([phi.negate() for phi in self.gamma if isinstance(phi, Symbol) or isinstance(phi, SVar) or isinstance(phi, EVar)])
-        return not bool(atoms.intersection(set(self.gamma)))
+        gamma : list[Pattern] = [tp.pattern for tp in self.gamma]
+        atoms : set[Pattern] = set([phi.negate() for phi in gamma if isinstance(phi, (Symbol, EVar, SVar))])
+        return not bool(atoms.intersection(set(gamma)))
 
     def children(self) -> Node:
-        def project_left(p: DApp)  -> Pattern: return p.left
-        def project_right(p: DApp) -> Pattern: return p.right
-
         if not self.is_consitant(): return OrNode([])
-        apps  = [phi for phi in self.gamma if isinstance(phi, App)]
-        dapps = [phi for phi in self.gamma if isinstance(phi, DApp)]
+        apps  = [phi for phi in self.gamma if isinstance(phi.pattern, App)]
+        dapps = [phi for phi in self.gamma if isinstance(phi.pattern, DApp)]
         left_partitions = powerset(dapps)
-        return AndNode([ OrNode([ AndNode([ Node.make_nodes([app.left] + list(map(project_left, left)))
-                                          , Node.make_nodes([app.right] + list(map(project_right, set(dapps) - set(left))))])
+        return AndNode([ OrNode([ AndNode([ Node.from_closure([app.left()] + list(map(TracedPattern.left, left)))
+                                          , Node.from_closure([app.right()] + list(map(TracedPattern.right, set(dapps) - set(left))))])
                                   for left in left_partitions
                                 ])
                          for app in apps
                        ])
 
-def build_quasimodel(node: Node, path_prefix: list[Node]) -> Node:
+def build_quasimodel(node: Node, path_prefix: list[list[Pattern]]) -> Node:
     if isinstance(node, Sequent):
-        if node in path_prefix: return node
-        else: path_prefix = path_prefix + [node]
+        gamma_p = [tp.pattern for tp in node.gamma]
+        if gamma_p in path_prefix: return node
+        else: path_prefix = path_prefix + [gamma_p]
         child = node.children()
         if child == AndNode([]): return node
         else: node = child
