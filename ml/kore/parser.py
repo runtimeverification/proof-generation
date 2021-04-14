@@ -2,8 +2,6 @@ from typing import Tuple, List
 from lark import Lark, Transformer
 from lark.visitors import v_args
 from .ast import *
-
-
 """
 A decorator to attach extra info on each
 AST node when doing tranformation
@@ -96,16 +94,12 @@ class ASTTransformer(Transformer):
     @meta_info
     def symbol_definition(self, args):
         symbol, sort_variables, input_sorts, output_sort, attributes = args
-        return SymbolDefinition(
-            symbol, sort_variables, input_sorts, output_sort, attributes, hooked=False
-        )
+        return SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, attributes, hooked=False)
 
     @meta_info
     def hooked_symbol_definition(self, args):
         symbol, sort_variables, input_sorts, output_sort, attributes = args
-        return SymbolDefinition(
-            symbol, sort_variables, input_sorts, output_sort, attributes, hooked=True
-        )
+        return SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, attributes, hooked=True)
 
     @meta_info
     def axiom(self, args):
@@ -125,9 +119,7 @@ class ASTTransformer(Transformer):
     @meta_info
     def alias_definition(self, args):
         symbol, sort_variables, input_sorts, output_sort, lhs, rhs, attributes = args
-        definition = SymbolDefinition(
-            symbol, sort_variables, input_sorts, output_sort, [], hooked=False
-        )
+        definition = SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, [], hooked=False)
         return AliasDefinition(definition, lhs, rhs, attributes)
 
     # patterns
@@ -252,7 +244,6 @@ application_pattern: symbol_id "{" sorts "}" "(" patterns ")"
 ml_pattern: ml_symbols "{" sorts "}" "(" patterns ")"
 """
 
-
 definition_parser = Lark(
     syntax,
     start="definition",
@@ -260,7 +251,6 @@ definition_parser = Lark(
     lexer="standard",
     propagate_positions=True,
 )
-
 
 # parser for an individual pattern
 pattern_parser = Lark(
@@ -271,7 +261,6 @@ pattern_parser = Lark(
     propagate_positions=True,
 )
 
-
 # parser for an individual axiom
 axiom_parser = Lark(
     syntax,
@@ -280,7 +269,6 @@ axiom_parser = Lark(
     lexer="standard",
     propagate_positions=True,
 )
-
 
 # parser for an individual module
 module_parser = Lark(

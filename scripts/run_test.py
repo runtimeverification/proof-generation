@@ -40,16 +40,12 @@ def check_dependency_change(targets: List[str], dependencies: List[str]) -> bool
 
 
 class Initializer(KoreVisitor, PatternOnlyVisitorStructure):
-    def __init__(
-        self, initializer_axioms: Mapping[str, kore.Pattern], pgm_pattern: kore.Pattern
-    ):
+    def __init__(self, initializer_axioms: Mapping[str, kore.Pattern], pgm_pattern: kore.Pattern):
         super().__init__()
         self.initializer_axioms = initializer_axioms
         self.pgm_pattern = pgm_pattern
 
-    def postvisit_application(
-        self, application: kore.Application, arguments: List[kore.Pattern]
-    ) -> kore.Application:
+    def postvisit_application(self, application: kore.Application, arguments: List[kore.Pattern]) -> kore.Application:
         symbol_name = application.symbol.get_symbol_name()
 
         if symbol_name in self.initializer_axioms:
@@ -76,8 +72,7 @@ def gen_init_config(kore_def_path: str, module: str, pgm_src: str) -> str:
     for axiom in main_module.axioms:
         if axiom.get_attribute_by_symbol("initializer") is not None:
             assert (
-                isinstance(axiom.pattern, kore.MLPattern)
-                and isinstance(axiom.pattern.arguments[1], kore.MLPattern)
+                isinstance(axiom.pattern, kore.MLPattern) and isinstance(axiom.pattern.arguments[1], kore.MLPattern)
                 and isinstance(axiom.pattern.arguments[1].arguments[0], kore.MLPattern)
             )
 
@@ -89,9 +84,8 @@ def gen_init_config(kore_def_path: str, module: str, pgm_src: str) -> str:
             initializer_axioms[symbol_name] = rhs
 
     assert "LblinitGeneratedTopCell" in initializer_axioms
-    init_config_pattern = Initializer(initializer_axioms, pgm_pattern).visit(
-        initializer_axioms["LblinitGeneratedTopCell"]
-    )
+    init_config_pattern = Initializer(initializer_axioms,
+                                      pgm_pattern).visit(initializer_axioms["LblinitGeneratedTopCell"])
 
     return f"inj{{SortGeneratedTopCell{{}}, SortKItem{{}}}}({init_config_pattern})"
 
@@ -245,9 +239,7 @@ def gen_proof(
                 snapshot_dir,
                 "--output",
                 output,
-            ]
-            + (["--benchmark"] if benchmark else [])
-            + (["--hints", hints] if hints is not None else [])
+            ] + (["--benchmark"] if benchmark else []) + (["--hints", hints] if hints is not None else [])
         )
         exit_code = proc.wait()
         assert exit_code == 0, f"ml.rewrite failed with exit code {exit_code}"
@@ -259,9 +251,7 @@ def main():
     parser.add_argument("module", help="The main module")
     parser.add_argument("pgm", help="The program to run")
     parser.add_argument("-o", "--output", help="output directory for the proof object")
-    parser.add_argument(
-        "--hints", help="optional hint from the backend to aid the proof generator"
-    )
+    parser.add_argument("--hints", help="optional hint from the backend to aid the proof generator")
     parser.add_argument(
         "--cpython",
         action="store_const",

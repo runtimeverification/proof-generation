@@ -9,7 +9,6 @@ class VisitorStructure:
     relation of parents and children in a visitor, in particular,
     which children of a node will be visited and in what order
     """
-
     def visit(self, ast):
         raise NotImplementedError()
 
@@ -18,7 +17,6 @@ class PatternOnlyVisitorStructure(VisitorStructure):
     """
     Only visit node that may contain (non-attribute) patterns
     """
-
     def visit_children_of_definition(self, definition: Definition):
         return [
             [self.visit(module) for module in definition.module_map.values()],
@@ -54,7 +52,6 @@ class PatternAndSortVisitorStructure(VisitorStructure):
     """
     Explores all patterns and sorts
     """
-
     def visit_children_of_definition(self, definition: Definition):
         return [
             [self.visit(module) for module in definition.module_map.values()],
@@ -122,7 +119,6 @@ class FullVisitorStructure(VisitorStructure):
     """
     Explores all children (but avoiding infinite recursion)
     """
-
     def visit_children_of_definition(self, definition: Definition):
         return [
             [self.visit(module) for module in definition.module_map.values()],
@@ -208,7 +204,6 @@ class UnionVisitor(KoreVisitor):
     Union visitor is used for collecting
     information that is unioned at each node
     """
-
     def postvisit_default(self, x, *args):
         union = set()
 
@@ -225,13 +220,10 @@ class FreePatternVariableVisitor(UnionVisitor, PatternOnlyVisitorStructure):
     """
     Collect free (pattern) variables in a definition
     """
-
     def postvisit_variable(self, var) -> Set[Variable]:
         return {var}
 
-    def postvisit_ml_pattern(
-        self, ml_pattern: MLPattern, arguments: List[Set[Variable]]
-    ) -> Set[Variable]:
+    def postvisit_ml_pattern(self, ml_pattern: MLPattern, arguments: List[Set[Variable]]) -> Set[Variable]:
         binding_variable = ml_pattern.get_binding_variable()
         free_variables: Set[Variable] = set()
 
@@ -243,9 +235,7 @@ class FreePatternVariableVisitor(UnionVisitor, PatternOnlyVisitorStructure):
 
         return free_variables
 
-    def postvisit_alias_definition(
-        self, alias_def: AliasDefinition, rhs: Set[Variable]
-    ):
+    def postvisit_alias_definition(self, alias_def: AliasDefinition, rhs: Set[Variable]):
         return rhs.difference(alias_def.get_binding_variables())
 
 
@@ -253,7 +243,6 @@ class PatternVariableVisitor(UnionVisitor, PatternOnlyVisitorStructure):
     """
     Collect all variables used in a pattern
     """
-
     def postvisit_variable(self, var) -> Set[Variable]:
         return {var}
 
@@ -262,7 +251,6 @@ class SortVariableVisitor(UnionVisitor, PatternAndSortVisitorStructure):
     """
     Collect all sort variables used in a pattern
     """
-
     def postvisit_sort_variable(self, var) -> Set[SortVariable]:
         return {var}
 
@@ -271,7 +259,6 @@ class OrderedPatternVariableVisitor(UnionVisitor, PatternOnlyVisitorStructure):
     """
     Collect all variables used in a pattern (in order of visit)
     """
-
     def __init__(self):
         self.index = 0
 
@@ -285,7 +272,6 @@ class ConjunctionVisitor(KoreVisitor):
     """
     Tests if every node satisfy certain condition
     """
-
     def postvisit_default(self, x, *args) -> bool:
         result = True
 
@@ -302,12 +288,8 @@ class QuantifierTester(ConjunctionVisitor, PatternOnlyVisitorStructure):
     """
     Tests if a given pattern is quantifier free
     """
-
     def postvisit_ml_pattern(self, pattern: MLPattern, arguments: List[bool]) -> bool:
-        if (
-            pattern.construct == MLPattern.FORALL
-            or pattern.construct == MLPattern.EXISTS
-        ):
+        if (pattern.construct == MLPattern.FORALL or pattern.construct == MLPattern.EXISTS):
             return False
         else:
             return self.postvisit_default(None, *arguments)
@@ -318,7 +300,6 @@ class PatternSubstitutionVisitor(KoreVisitor, PatternOnlyVisitorStructure):
     In place substitution of pattern variables
     Note: this visitor does not detect free variable capturing
     """
-
     def __init__(self, substitution: Mapping[Variable, Pattern]):
         super().__init__()
         self.substitution = dict(substitution)
@@ -346,9 +327,7 @@ class PatternSubstitutionVisitor(KoreVisitor, PatternOnlyVisitorStructure):
                 del self.substitution[key]
             self.shadowing_stack.append(shadowed_substitution)
 
-    def postvisit_alias_definition(
-        self, alias_def: AliasDefinition, rhs
-    ) -> AliasDefinition:
+    def postvisit_alias_definition(self, alias_def: AliasDefinition, rhs) -> AliasDefinition:
         alias_def.rhs = rhs
 
         # restore the substitution
@@ -362,9 +341,7 @@ class PatternSubstitutionVisitor(KoreVisitor, PatternOnlyVisitorStructure):
 
         return alias_def
 
-    def postvisit_application(
-        self, application: Application, arguments: List[Pattern]
-    ) -> Application:
+    def postvisit_application(self, application: Application, arguments: List[Pattern]) -> Application:
         application.arguments = arguments
         return application
 
@@ -372,18 +349,14 @@ class PatternSubstitutionVisitor(KoreVisitor, PatternOnlyVisitorStructure):
         # shadow the binded variable
         binding_variable = ml_pattern.get_binding_variable()
         if binding_variable is not None and binding_variable in self.substitution:
-            self.shadowing_stack.append(
-                {binding_variable: self.substitution[binding_variable]}
-            )
+            self.shadowing_stack.append({binding_variable: self.substitution[binding_variable]})
             del self.substitution[binding_variable]
 
-    def postvisit_ml_pattern(
-        self, ml_pattern: MLPattern, arguments: List[Pattern]
-    ) -> MLPattern:
+    def postvisit_ml_pattern(self, ml_pattern: MLPattern, arguments: List[Pattern]) -> MLPattern:
         # restore the substitution
         binding_variable = ml_pattern.get_binding_variable()
         if binding_variable is not None and binding_variable in self.substitution:
-            ((variable, assigned),) = self.shadowing_stack.pop().items()
+            ((variable, assigned), ) = self.shadowing_stack.pop().items()
             assert variable == binding_variable
             self.substitution[variable] = assigned
 
@@ -396,7 +369,6 @@ class SortSubstitutionVisitor(KoreVisitor, PatternAndSortVisitorStructure):
     """
     In place substitution of sort variables
     """
-
     def __init__(self, substitution: Mapping[SortVariable, Sort]):
         super().__init__()
         self.substitution = substitution
@@ -405,9 +377,7 @@ class SortSubstitutionVisitor(KoreVisitor, PatternAndSortVisitorStructure):
         # an axiom is assumed to have no free sort variables
         return axiom
 
-    def postvisit_sort_instance(
-        self, sort_instance: SortInstance, arguments: List[Sort]
-    ) -> SortInstance:
+    def postvisit_sort_instance(self, sort_instance: SortInstance, arguments: List[Sort]) -> SortInstance:
         sort_instance.arguments = arguments
         return sort_instance
 
@@ -417,9 +387,7 @@ class SortSubstitutionVisitor(KoreVisitor, PatternAndSortVisitorStructure):
         else:
             return sort_variable
 
-    def postvisit_symbol_instance(
-        self, symbol_instance: SymbolInstance, sort_arguments: List[Sort]
-    ) -> SymbolInstance:
+    def postvisit_symbol_instance(self, symbol_instance: SymbolInstance, sort_arguments: List[Sort]) -> SymbolInstance:
         symbol_instance.sort_arguments = sort_arguments
         return symbol_instance
 
@@ -427,9 +395,7 @@ class SortSubstitutionVisitor(KoreVisitor, PatternAndSortVisitorStructure):
         variable.sort = sort
         return variable
 
-    def postvisit_ml_pattern(
-        self, ml_pattern: MLPattern, sorts: List[Sort], arguments: List[Pattern]
-    ) -> Pattern:
+    def postvisit_ml_pattern(self, ml_pattern: MLPattern, sorts: List[Sort], arguments: List[Pattern]) -> Pattern:
         ml_pattern.sorts = sorts
         return ml_pattern
 
@@ -441,7 +407,6 @@ class CopyVisitor(KoreVisitor, FullVisitorStructure):
     we have to call resolve() again to relink all the
     references to definitions
     """
-
     def postvisit_default(self, x, *args):
         raise NotImplementedError()
 
@@ -451,39 +416,27 @@ class CopyVisitor(KoreVisitor, FullVisitorStructure):
     def postvisit_module(self, module: Module, *args) -> Module:
         return Module(module.name, *args)
 
-    def postvisit_import_statement(
-        self, import_stmt: ImportStatement, *args
-    ) -> ImportStatement:
+    def postvisit_import_statement(self, import_stmt: ImportStatement, *args) -> ImportStatement:
         return ImportStatement(
-            import_stmt.module
-            if isinstance(import_stmt.module, str)
-            else import_stmt.module.name,
+            import_stmt.module if isinstance(import_stmt.module, str) else import_stmt.module.name,
             *args,
         )
 
-    def postvisit_sort_definition(
-        self, sort_definition: SortDefinition, *args
-    ) -> SortDefinition:
+    def postvisit_sort_definition(self, sort_definition: SortDefinition, *args) -> SortDefinition:
         definition = SortDefinition(sort_definition.sort_id, *args)
         definition.hooked = sort_definition.hooked
         return definition
 
-    def postvisit_sort_instance(
-        self, sort_instance: SortInstance, *args
-    ) -> SortInstance:
+    def postvisit_sort_instance(self, sort_instance: SortInstance, *args) -> SortInstance:
         return SortInstance(
-            sort_instance.definition
-            if isinstance(sort_instance.definition, str)
-            else sort_instance.definition.sort_id,
+            sort_instance.definition if isinstance(sort_instance.definition, str) else sort_instance.definition.sort_id,
             *args,
         )
 
     def postvisit_sort_variable(self, sort_variable: SortVariable) -> SortVariable:
         return SortVariable(sort_variable.name)
 
-    def postvisit_symbol_definition(
-        self, definition: SymbolDefinition, *args
-    ) -> SymbolDefinition:
+    def postvisit_symbol_definition(self, definition: SymbolDefinition, *args) -> SymbolDefinition:
         definition = SymbolDefinition(
             definition.symbol,
             *args,
@@ -491,13 +444,9 @@ class CopyVisitor(KoreVisitor, FullVisitorStructure):
         definition.hooked = definition.hooked
         return definition
 
-    def postvisit_symbol_instance(
-        self, instance: SymbolInstance, *args
-    ) -> SymbolInstance:
+    def postvisit_symbol_instance(self, instance: SymbolInstance, *args) -> SymbolInstance:
         return SymbolInstance(
-            instance.definition
-            if isinstance(instance.definition, str)
-            else instance.definition.symbol,
+            instance.definition if isinstance(instance.definition, str) else instance.definition.symbol,
             *args,
         )
 
@@ -506,9 +455,7 @@ class CopyVisitor(KoreVisitor, FullVisitorStructure):
         sentence.is_claim = axiom.is_claim
         return sentence
 
-    def postvisit_alias_definition(
-        self, alias_def: AliasDefinition, *args
-    ) -> AliasDefinition:
+    def postvisit_alias_definition(self, alias_def: AliasDefinition, *args) -> AliasDefinition:
         return AliasDefinition(*args)
 
     def postvisit_variable(self, var: Variable, *args) -> Variable:

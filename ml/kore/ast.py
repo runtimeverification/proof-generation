@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import List, Union, Optional, Any, Dict, Set, TypeVar, Generic, NoReturn
 
 from ml.utils.visitor import Visitor
-
 """
 Visits a Kore AST in post-order traversal
 """
@@ -58,9 +57,7 @@ class BaseAST(Generic[P]):
             return False
 
     def error_with_position(self, msg: str, *args, **kwargs) -> NoReturn:
-        err_msg = "at line {}, column {}: {}".format(
-            self.meta_line, self.meta_column, msg.format(*args, **kwargs)
-        )
+        err_msg = "at line {}, column {}: {}".format(self.meta_line, self.meta_column, msg.format(*args, **kwargs))
         raise Exception(err_msg)
 
     def resolve(self, module: Module):
@@ -103,15 +100,11 @@ class Definition(BaseAST[None]):
         return self.module_map < other.module_map
 
     def __str__(self) -> str:
-        return "definition {{\n{}\n}}".format(
-            "\n".join(map(str, self.module_map.values()))
-        )
+        return "definition {{\n{}\n}}".format("\n".join(map(str, self.module_map.values())))
 
 
 class Module(BaseAST[Definition]):
-    def __init__(
-        self, name: str, sentences: List[Sentence], attributes: List[Application]
-    ):
+    def __init__(self, name: str, sentences: List[Sentence], attributes: List[Application]):
         super().__init__(attributes)
 
         self.name = name
@@ -204,9 +197,7 @@ class Module(BaseAST[Definition]):
         return visitor.postvisit_module(self, *children)
 
     def __str__(self) -> str:
-        return "module {} {{\n{}\n}}".format(
-            self.name, "\n".join(map(str, self.all_sentences))
-        )
+        return "module {} {{\n{}\n}}".format(self.name, "\n".join(map(str, self.all_sentences)))
 
 
 class Sentence(BaseAST[Any]):
@@ -246,9 +237,7 @@ class ImportStatement(Sentence):
         return visitor.postvisit_import_statement(self, *children)
 
     def __str__(self) -> str:
-        module_name = (
-            self.module.name if isinstance(self.module, Module) else self.module
-        )
+        module_name = (self.module.name if isinstance(self.module, Module) else self.module)
         return "import {}".format(module_name)
 
 
@@ -278,9 +267,7 @@ class SortDefinition(Sentence):
         ]
 
     def __str__(self) -> str:
-        return "sort {}({})".format(
-            self.sort_id, ", ".join(map(str, self.sort_variables))
-        )
+        return "sort {}({})".format(self.sort_id, ", ".join(map(str, self.sort_variables)))
 
 
 class SortInstance(BaseAST[Pattern]):
@@ -322,11 +309,7 @@ class SortInstance(BaseAST[Pattern]):
         return [self.definition, self.arguments] < [other.definition, other.arguments]
 
     def __str__(self) -> str:
-        sort_id = (
-            self.definition.sort_id
-            if isinstance(self.definition, SortDefinition)
-            else self.definition
-        )
+        sort_id = (self.definition.sort_id if isinstance(self.definition, SortDefinition) else self.definition)
         return "{}{{{}}}".format(sort_id, ", ".join(map(str, self.arguments)))
 
     def get_sort_id(self) -> str:
@@ -380,7 +363,8 @@ class SymbolDefinition(Sentence):
         self.output_sort = output_sort
         self.hooked = hooked
 
-        self.users: List[Pattern] = []  # a set of patterns that uses this symbol
+        # a set of patterns that uses this symbol
+        self.users: List[Pattern] = []
 
     def add_user(self, user: Pattern):
         self.users.append(user)
@@ -406,15 +390,11 @@ class SymbolDefinition(Sentence):
         ] < [other.symbol, other.sort_variables, other.input_sorts, other.output_sort]
 
     def __str__(self):
-        return "symbol {}({}): {}".format(
-            self.symbol, ", ".join(map(str, self.input_sorts)), self.output_sort
-        )
+        return "symbol {}({}): {}".format(self.symbol, ", ".join(map(str, self.input_sorts)), self.output_sort)
 
 
 class SymbolInstance(BaseAST[Pattern]):
-    def __init__(
-        self, definition: Union[str, SymbolDefinition], sort_arguments: List[Sort]
-    ):
+    def __init__(self, definition: Union[str, SymbolDefinition], sort_arguments: List[Sort]):
         super().__init__()
         self.definition = definition
         self.sort_arguments = sort_arguments
@@ -448,19 +428,12 @@ class SymbolInstance(BaseAST[Pattern]):
         ]
 
     def __str__(self) -> str:
-        symbol = (
-            self.definition.symbol
-            if isinstance(self.definition, SymbolDefinition)
-            else self.definition
-        )
+        symbol = (self.definition.symbol if isinstance(self.definition, SymbolDefinition) else self.definition)
         return "{}{{{}}}".format(symbol, ", ".join(map(str, self.sort_arguments)))
 
     def __eq__(self, other):
         if isinstance(other, SymbolInstance):
-            return (
-                self.definition == other.definition
-                and self.sort_arguments == other.sort_arguments
-            )
+            return (self.definition == other.definition and self.sort_arguments == other.sort_arguments)
         return False
 
     def __hash__(self):
@@ -508,9 +481,7 @@ class Axiom(Sentence):
         ]
 
     def __str__(self) -> str:
-        return "axiom {{{}}} {}".format(
-            ", ".join(map(str, self.sort_variables)), self.pattern
-        )
+        return "axiom {{{}}} {}".format(", ".join(map(str, self.sort_variables)), self.pattern)
 
 
 Claim = Axiom
@@ -583,9 +554,7 @@ class Variable(Pattern):
     def __eq__(self, other) -> bool:
         if isinstance(other, Variable):
             return (
-                self.name == other.name
-                and self.is_set_variable == other.is_set_variable
-                and self.sort == other.sort
+                self.name == other.name and self.is_set_variable == other.is_set_variable and self.sort == other.sort
             )
         return False
 
@@ -730,9 +699,7 @@ class MLPattern(Pattern):
     def __eq__(self, other):
         if isinstance(other, MLPattern):
             return (
-                self.construct == other.construct
-                and self.sorts == other.sorts
-                and self.arguments == other.arguments
+                self.construct == other.construct and self.sorts == other.sorts and self.arguments == other.arguments
             )
         return False
 

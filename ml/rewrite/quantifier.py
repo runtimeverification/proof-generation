@@ -18,10 +18,7 @@ class QuantifierProofGenerator(ProofGenerator):
     """
     A wrapper to eliminate the top level forall
     """
-
-    def prove_forall_elim_single(
-        self, provable: ProvableClaim, pattern: kore.Pattern
-    ) -> ProvableClaim:
+    def prove_forall_elim_single(self, provable: ProvableClaim, pattern: kore.Pattern) -> ProvableClaim:
         assert (
             isinstance(provable.claim.pattern, kore.MLPattern)
             and provable.claim.pattern.construct == kore.MLPattern.FORALL
@@ -57,9 +54,7 @@ class QuantifierProofGenerator(ProofGenerator):
         if num_sort_vars in thm_map:
             thm = thm_map[num_sort_vars]
         else:
-            raise Exception(
-                f"forall elimination for axiom with {num_sort_vars} variable(s) is not supported"
-            )
+            raise Exception(f"forall elimination for axiom with {num_sort_vars} variable(s) is not supported")
 
         eliminated = 0
 
@@ -70,23 +65,16 @@ class QuantifierProofGenerator(ProofGenerator):
 
         claim_pattern = provable.claim.pattern
 
-        while (
-            isinstance(claim_pattern, kore.MLPattern)
-            and claim_pattern.construct == kore.MLPattern.FORALL
-            and eliminated < len(substitution)
-        ):
+        while (isinstance(claim_pattern, kore.MLPattern) and claim_pattern.construct == kore.MLPattern.FORALL
+               and eliminated < len(substitution)):
             var = claim_pattern.get_binding_variable()
             body = claim_pattern.arguments[1]
 
             assert var is not None
-            assert (
-                var in substitution
-            ), f"variable {var} not found in substitution {substitution}"
+            assert (var in substitution), f"variable {var} not found in substitution {substitution}"
 
             pattern = substitution[var]
-            substituted_body = KoreUtils.copy_and_substitute_pattern(
-                body, {var: pattern}
-            )
+            substituted_body = KoreUtils.copy_and_substitute_pattern(body, {var: pattern})
             substituted_body.resolve(self.env.module)
 
             intermediate_instances.append((substituted_body, body, pattern, var))
@@ -99,9 +87,7 @@ class QuantifierProofGenerator(ProofGenerator):
 
         # test if the final claim has already been proved
         final_mm_statement = self.env.encode_axiom(mm.Statement.PROVABLE, final_claim)
-        cached_proof = self.env.composer.lookup_proof_cache(
-            "quant-forall-elim-cache", final_mm_statement
-        )
+        cached_proof = self.env.composer.lookup_proof_cache("quant-forall-elim-cache", final_mm_statement)
         if cached_proof is not None:
             return ProvableClaim(final_claim, cached_proof)
 
@@ -113,9 +99,7 @@ class QuantifierProofGenerator(ProofGenerator):
             pattern_is_functional = FunctionalProofGenerator(self.env).visit(pattern)
 
             # prove the substitution
-            subst_proof = SingleSubstitutionProofGenerator(
-                self.env, var, pattern
-            ).prove_substitution(body)
+            subst_proof = SingleSubstitutionProofGenerator(self.env, var, pattern).prove_substitution(body)
 
             current_proof = self.env.get_theorem(thm).apply(
                 current_proof,
@@ -125,9 +109,7 @@ class QuantifierProofGenerator(ProofGenerator):
                 SortingProver.auto,
             )
 
-            current_proof = self.env.cache_proof(
-                "quant-forall-elim-cache", current_proof
-            )
+            current_proof = self.env.cache_proof("quant-forall-elim-cache", current_proof)
 
         return ProvableClaim(final_claim, current_proof)
 
@@ -154,21 +136,14 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
     and then use the inj axiom to reduce that back to
     a single injection.
     """
-
-    def prove_non_immediate_injection(
-        self, application: kore.Application
-    ) -> ProvableClaim:
+    def prove_non_immediate_injection(self, application: kore.Application) -> ProvableClaim:
         assert application.symbol.definition == self.env.sort_injection_symbol
 
         sort1, sort2 = application.symbol.sort_arguments
-        assert isinstance(sort1, kore.SortInstance) and isinstance(
-            sort2, kore.SortInstance
-        )
+        assert isinstance(sort1, kore.SortInstance) and isinstance(sort2, kore.SortInstance)
 
         chain = self.env.subsort_relation.get_subsort_chain(sort1, sort2)
-        assert (
-            chain is not None
-        ), f"{sort1} is not a subsort of {sort2}, unable to prove that it's functional"
+        assert (chain is not None), f"{sort1} is not a subsort of {sort2}, unable to prove that it's functional"
         assert len(chain) > 2, f"{sort1} is an immediate subsort of {sort2}"
 
         argument = application.arguments[0]
@@ -189,16 +164,12 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
 
         # get an instance of the injection axiom
         # with sort variables replaced by S1, Sn-1, and Sn
-        inj_axiom_instance = SortProofGenerator(self.env).get_inj_instance(
-            sort1, chain[-2], chain[-1]
-        )
+        inj_axiom_instance = SortProofGenerator(self.env).get_inj_instance(sort1, chain[-2], chain[-1])
 
         # inj_axiom_instance is of the form
         # \forall{...}(X:<sort1>, ... = ...)
         # we need to substitute current_argument for X in the equation
-        inj_axiom_instance = QuantifierProofGenerator(
-            self.env
-        ).prove_forall_elim_single(inj_axiom_instance, argument)
+        inj_axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim_single(inj_axiom_instance, argument)
 
         return EqualityProofGenerator(self.env).replace_equal_subpattern(
             reduced_injection_is_functional,
@@ -219,20 +190,13 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
     Return the substitution that should be applied to the equation
     """
 
-    def get_substitution(
-        self, axiom: kore.Axiom, application: kore.Application
-    ) -> Mapping[kore.Variable, kore.Pattern]:
+    def get_substitution(self, axiom: kore.Axiom,
+                         application: kore.Application) -> Mapping[kore.Variable, kore.Pattern]:
         existential = KoreUtils.strip_forall(axiom.pattern)
-        assert (
-            isinstance(existential, kore.MLPattern)
-            and existential.construct == kore.MLPattern.EXISTS
-        )
+        assert (isinstance(existential, kore.MLPattern) and existential.construct == kore.MLPattern.EXISTS)
 
         equality = existential.arguments[1]
-        assert (
-            isinstance(equality, kore.MLPattern)
-            and equality.construct == kore.MLPattern.EQUALS
-        )
+        assert (isinstance(equality, kore.MLPattern) and equality.construct == kore.MLPattern.EQUALS)
 
         rhs = equality.arguments[1]
         assert isinstance(rhs, kore.Application)
@@ -251,29 +215,20 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
             if application.symbol.definition == self.env.sort_injection_symbol:
                 return self.prove_non_immediate_injection(application)
             else:
-                assert (
-                    False
-                ), "cannot find a functional axiom for symbol instance {}".format(
-                    application.symbol
-                )
+                assert (False), "cannot find a functional axiom for symbol instance {}".format(application.symbol)
 
         functional_property = self.env.functional_axioms[application.symbol]
         substitution = self.get_substitution(functional_property.claim, application)
 
-        return QuantifierProofGenerator(self.env).prove_forall_elim(
-            functional_property, substitution
-        )
+        return QuantifierProofGenerator(self.env).prove_forall_elim(functional_property, substitution)
 
     def postvisit_ml_pattern(self, ml_pattern: kore.MLPattern) -> ProvableClaim:
-        assert (
-            ml_pattern.construct == kore.MLPattern.DV
-        ), "unnable to prove functional property for {}".format(ml_pattern)
+        assert (ml_pattern.construct == kore.MLPattern.DV
+                ), "unnable to prove functional property for {}".format(ml_pattern)
 
         sort, literal = ml_pattern.sorts[0], ml_pattern.arguments[0]
 
-        assert isinstance(sort, kore.SortInstance) and isinstance(
-            literal, kore.StringLiteral
-        )
+        assert isinstance(sort, kore.SortInstance) and isinstance(literal, kore.StringLiteral)
         assert (
             sort,
             literal,

@@ -4,7 +4,6 @@ from typing import TextIO, Optional, List, Set, Union, Iterable
 from io import StringIO
 
 from ml.utils.visitor import Visitor
-
 """
 This is a less general version
 of metamath that preseves certain structures
@@ -140,9 +139,7 @@ class Application(Term):
             right = comparison_right.pop()
 
             if type(left) == type(right) == Application:
-                if left.symbol == right.symbol and len(left.subterms) == len(
-                    right.subterms
-                ):
+                if left.symbol == right.symbol and len(left.subterms) == len(right.subterms):
                     comparison_left.extend(left.subterms)
                     comparison_right.extend(right.subterms)
                 else:
@@ -227,9 +224,7 @@ Constant and variable statements are of this kind
 
 
 class RawStatement(Statement):
-    def __init__(
-        self, statement_type: str, tokens: List[str], label: Optional[str] = None
-    ):
+    def __init__(self, statement_type: str, tokens: List[str], label: Optional[str] = None):
         super().__init__()
         self.statement_type = statement_type
         self.tokens = tokens
@@ -311,9 +306,7 @@ class StructuredStatement(Statement):
     def __eq__(self, other) -> bool:
         if isinstance(other, StructuredStatement):
             return (
-                self.statement_type == other.statement_type
-                and self.terms == other.terms
-                and self.label == other.label
+                self.statement_type == other.statement_type and self.terms == other.terms and self.label == other.label
                 and self.proof == other.proof
             )
         return False

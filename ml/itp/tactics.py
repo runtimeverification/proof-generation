@@ -31,13 +31,9 @@ class Tactic:
         raise NotImplementedError()
 
     def parse_terms(self, state: ProofState, src: str) -> List[Term]:
-        return parse_terms_with_metavariables(
-            src, set(state.composer.get_all_metavariables())
-        )
+        return parse_terms_with_metavariables(src, set(state.composer.get_all_metavariables()))
 
-    def parse_substitution(
-        self, state: ProofState, options: Mapping[str, str]
-    ) -> Mapping[str, Term]:
+    def parse_substitution(self, state: ProofState, options: Mapping[str, str]) -> Mapping[str, Term]:
         substitution = {}
         all_metavars = set(state.composer.get_all_metavariables())
 
@@ -90,22 +86,15 @@ class ApplyTactic(Tactic):
                 if metavar not in self.metavars_substitution:
                     typecode = state.composer.find_metavariable(metavar)
                     assert typecode is not None, f"metavariable {metavar} not found"
-                    self.metavars_substitution[
-                        metavar
-                    ] = state.get_next_schematic_variable(typecode)
+                    self.metavars_substitution[metavar] = state.get_next_schematic_variable(typecode)
 
             # replace all metavariables in the applied theorem
             # with distinct schematic variables
             metavars_subst_visitor = SubstitutionVisitor(self.metavars_substitution)
             copied_statement = metavars_subst_visitor.visit(copied_statement)
 
-            essentials = [
-                Goal.sanitize_goal_statement(essential)
-                for essential in self.theorem.essentials
-            ]
-            essentials = [
-                metavars_subst_visitor.visit(essential) for essential in essentials
-            ]
+            essentials = [Goal.sanitize_goal_statement(essential) for essential in self.theorem.essentials]
+            essentials = [metavars_subst_visitor.visit(essential) for essential in essentials]
 
         else:
             # try to find a hypotheses
@@ -137,22 +126,14 @@ class ApplyTactic(Tactic):
         # add all essentials to the goal stack
         state.push_derived_goals(top_goal, essentials)
 
-        state.transform_all_current_goals(
-            lambda stmt: schematic_subst_visitor.visit(stmt)
-        )
+        state.transform_all_current_goals(lambda stmt: schematic_subst_visitor.visit(stmt))
 
         # check if any schematic variables are killed before being assigned
         top_goal_statement = schematic_subst_visitor.visit(top_goal_statement)
         live_svars = state.get_live_schematic_variables()
         killed_svars = top_goal_statement.get_metavariables().difference(live_svars)
-        killed_svars = {
-            var
-            for var in killed_svars
-            if state.get_schematic_variable_from_name(var) is not None
-        }
-        assert (
-            not killed_svars
-        ), f"schematic variable(s) {killed_svars} killed before being assigned"
+        killed_svars = {var for var in killed_svars if state.get_schematic_variable_from_name(var) is not None}
+        assert (not killed_svars), f"schematic variable(s) {killed_svars} killed before being assigned"
 
     """
     Construct a proof from given subproofs and the information inferred before
@@ -211,9 +192,7 @@ class SetSchematicVariableTactic(Tactic):
         ), f"assigning dead/nonexistent schematic variable(s) {substituting_svars.difference(live_svars)}"
 
         for var, term in substitution.items():
-            assert state.is_concrete(
-                term
-            ), f"non-concrete term {term} substituted for schematic variable {var}"
+            assert state.is_concrete(term), f"non-concrete term {term} substituted for schematic variable {var}"
 
             svar = state.get_schematic_variable_from_name(var)
             assert svar is not None, f"cannot substitute non-schematic variable {var}"
@@ -253,10 +232,7 @@ class ClaimTactic(Tactic):
         # TODO: well...
         while True:
             name = prefix + str(i)
-            if (
-                state.composer.find_theorem(name) is None
-                and state.find_claim(name) is None
-            ):
+            if (state.composer.find_theorem(name) is None and state.find_claim(name) is None):
                 return name
             i += 1
 
@@ -278,9 +254,7 @@ class ClaimTactic(Tactic):
         for i, hypothesis in enumerate(hypotheses):
             terms = self.parse_terms(state, hypothesis)
             essential_label = f"{label}.{i}"
-            essential = StructuredStatement(
-                Statement.ESSENTITAL, terms, label=essential_label
-            )
+            essential = StructuredStatement(Statement.ESSENTITAL, terms, label=essential_label)
             essentials.append(essential)
 
         terms = self.parse_terms(state, conclusion)

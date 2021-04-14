@@ -14,8 +14,6 @@ from .encoder import KorePatternEncoder
 
 from .env import ProofGenerator, ProvableClaim
 from .substitution import SingleSubstitutionProofGenerator
-
-
 """
 Generate proofs for equality related statements
 """
@@ -35,7 +33,6 @@ class EqualityProofGenerator(ProofGenerator):
     Returns phi with psi replaced by psi',
     and a proof for it using (primarily) `kore-equality`
     """
-
     def replace_equal_subpattern(
         self,
         provable: ProvableClaim,
@@ -43,9 +40,7 @@ class EqualityProofGenerator(ProofGenerator):
         replacement: kore.Pattern,
         equation_proof: Proof,
     ) -> ProvableClaim:
-        final_claim = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(
-            provable.claim, path, replacement
-        )
+        final_claim = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, replacement)
 
         # check for proof cache
         cached_proof = self.env.composer.lookup_proof_cache(
@@ -63,9 +58,7 @@ class EqualityProofGenerator(ProofGenerator):
             KorePatternEncoder.encode_variable(var)
             for var in PatternVariableVisitor().visit(provable.claim)
         }
-        (fresh_var,) = self.env.gen_fresh_metavariables(
-            "#ElementVariable", 1, all_metavars
-        )
+        (fresh_var, ) = self.env.gen_fresh_metavariables("#ElementVariable", 1, all_metavars)
 
         sort = KoreUtils.infer_sort(original)
         assert sort == KoreUtils.infer_sort(replacement)
@@ -73,16 +66,10 @@ class EqualityProofGenerator(ProofGenerator):
         # make a template/context for the replacement
         var = kore.Variable(fresh_var, sort)
         var.resolve(self.env.module)
-        template_pattern = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(
-            provable.claim, path, var
-        )
+        template_pattern = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, var)
 
-        subst_proof1 = SingleSubstitutionProofGenerator(
-            self.env, var, original
-        ).prove_substitution(template_pattern)
-        subst_proof2 = SingleSubstitutionProofGenerator(
-            self.env, var, replacement
-        ).prove_substitution(template_pattern)
+        subst_proof1 = SingleSubstitutionProofGenerator(self.env, var, original).prove_substitution(template_pattern)
+        subst_proof2 = SingleSubstitutionProofGenerator(self.env, var, replacement).prove_substitution(template_pattern)
 
         # kore-equality requires that the sort variable in the equation
         # should be disjoint from the main statement being substituted
@@ -94,22 +81,21 @@ class EqualityProofGenerator(ProofGenerator):
         }
         # equation_proof is expected to be of the form
         # |- ( \kore-forall-sort z ... )
-        assert isinstance(
-            equation_proof.statement.terms[1], mm.Application
-        ) and isinstance(equation_proof.statement.terms[1].subterms[0], mm.Metavariable)
+        assert isinstance(equation_proof.statement.terms[1], mm.Application
+                          ) and isinstance(equation_proof.statement.terms[1].subterms[0], mm.Metavariable)
         current_sort_var = equation_proof.statement.terms[1].subterms[0].name
 
         if current_sort_var in all_sort_metavars:
-            (fresh_sort_var,) = self.env.gen_fresh_metavariables(
+            (fresh_sort_var, ) = self.env.gen_fresh_metavariables(
                 "#ElementVariable",
                 1,
                 all_sort_metavars.union(all_metavars).union({fresh_var}),
             )
 
             equation_body = equation_proof.statement.terms[1].subterms[1]
-            equation_body_subst = SubstitutionVisitor(
-                {current_sort_var: mm.Metavariable(fresh_sort_var)}
-            ).visit(equation_body)
+            equation_body_subst = SubstitutionVisitor({
+                current_sort_var: mm.Metavariable(fresh_sort_var)
+            }).visit(equation_body)
 
             # apply alpha renaming
             equation_proof = self.env.get_theorem("alpha-kore-forall-sort-alt").apply(

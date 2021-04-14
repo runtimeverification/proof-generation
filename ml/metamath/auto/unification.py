@@ -9,7 +9,6 @@ class Unification:
     Try to solve the given unification problem,
     treating only <variable> as variables (this is primarily for the purpose of extending the AST)
     """
-
     @staticmethod
     def unify(
         equations: List[Tuple[Term, Term]],
@@ -25,12 +24,8 @@ class Unification:
                 continue
 
             # unifying applications
-            if not isinstance(left, variable_class) and not isinstance(
-                right, variable_class
-            ):
-                if not isinstance(left, Application) or not isinstance(
-                    right, Application
-                ):
+            if not isinstance(left, variable_class) and not isinstance(right, variable_class):
+                if not isinstance(left, Application) or not isinstance(right, Application):
                     # we are not supposed to substitute any non-schematic metavariables
                     return None
 
@@ -48,9 +43,7 @@ class Unification:
 
                 # if both are variables, potentially switch them to
                 # make sure left <= right in some given ordering
-                if isinstance(right, variable_class) and not variable_order(
-                    left, right
-                ):
+                if isinstance(right, variable_class) and not variable_order(left, right):
                     left, right = right, left
 
                 substitution[left.name] = right
@@ -60,9 +53,7 @@ class Unification:
                 for i, (left, right) in enumerate(equations):
                     equations[i] = subst_visitor.visit(left), subst_visitor.visit(right)
 
-                substitution = {
-                    var: subst_visitor.visit(term) for var, term in substitution.items()
-                }
+                substitution = {var: subst_visitor.visit(term) for var, term in substitution.items()}
 
             else:
                 assert isinstance(right, variable_class)
@@ -75,9 +66,8 @@ class Unification:
         return Unification.unify([(term1, term2)], **kwargs)
 
     @staticmethod
-    def unify_statements(
-        stmt1: StructuredStatement, stmt2: StructuredStatement, **kwargs
-    ) -> Optional[Mapping[str, Term]]:
+    def unify_statements(stmt1: StructuredStatement, stmt2: StructuredStatement,
+                         **kwargs) -> Optional[Mapping[str, Term]]:
         if len(stmt1.terms) != len(stmt2.terms):
             return None
         return Unification.unify(list(zip(stmt1.terms, stmt2.terms)), **kwargs)
@@ -90,9 +80,7 @@ class Unification:
     @staticmethod
     def match_terms(term1: Term, term2: Term) -> Optional[List[Tuple[Term, Term]]]:
         if isinstance(term1, Application) and isinstance(term2, Application):
-            if term1.symbol == term2.symbol and len(term1.subterms) == len(
-                term2.subterms
-            ):
+            if term1.symbol == term2.symbol and len(term1.subterms) == len(term2.subterms):
                 matching = []
                 for subterm1, subterm2 in zip(term1.subterms, term2.subterms):
                     submatching = Unification.match_terms(subterm1, subterm2)
@@ -116,9 +104,7 @@ class Unification:
     """
 
     @staticmethod
-    def match_statements(
-        stmt1: StructuredStatement, stmt2: StructuredStatement
-    ) -> Optional[List[Tuple[Term, Term]]]:
+    def match_statements(stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[List[Tuple[Term, Term]]]:
         matching = []
 
         for term1, term2 in zip(stmt1.terms, stmt2.terms):
@@ -138,9 +124,7 @@ class Unification:
     """
 
     @staticmethod
-    def match_terms_as_instance(
-        term1: Term, term2: Term
-    ) -> Optional[Mapping[str, Term]]:
+    def match_terms_as_instance(term1: Term, term2: Term) -> Optional[Mapping[str, Term]]:
         solution = Unification.match_terms(term1, term2)
         if solution is None:
             return None
@@ -151,18 +135,15 @@ class Unification:
     """
 
     @staticmethod
-    def match_statements_as_instance(
-        stmt1: StructuredStatement, stmt2: StructuredStatement
-    ) -> Optional[Mapping[str, Term]]:
+    def match_statements_as_instance(stmt1: StructuredStatement,
+                                     stmt2: StructuredStatement) -> Optional[Mapping[str, Term]]:
         solution = Unification.match_statements(stmt1, stmt2)
         if solution is None:
             return None
         return Unification.get_instance_substitution(solution)
 
     @staticmethod
-    def get_instance_substitution(
-        matching: List[Tuple[Term, Term]]
-    ) -> Optional[Mapping[str, Term]]:
+    def get_instance_substitution(matching: List[Tuple[Term, Term]]) -> Optional[Mapping[str, Term]]:
         substitution: Dict[str, Term] = {}
 
         for lhs, rhs in matching:

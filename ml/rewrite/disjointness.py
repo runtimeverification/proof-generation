@@ -13,8 +13,6 @@ from ml.metamath.auto.substitution import SubstitutionProver
 
 from .env import ProofGenerator
 from .encoder import KorePatternEncoder
-
-
 r"""
 The disjointness proof generator generates proof for
 patterns of the form
@@ -66,23 +64,11 @@ class DisjointnessProofGenerator(ProofGenerator):
     all free variables should be exitentially quantified
     """
 
-    def get_disjointness_pattern(
-        self, left: kore.Pattern, right: kore.Pattern, quantify: bool = True
-    ) -> mm.Term:
-        left_term = (
-            self.existentially_quantify_free_variables(left)
-            if quantify
-            else self.env.encode_pattern(left)
-        )
-        right_term = (
-            self.existentially_quantify_free_variables(right)
-            if quantify
-            else self.env.encode_pattern(right)
-        )
+    def get_disjointness_pattern(self, left: kore.Pattern, right: kore.Pattern, quantify: bool = True) -> mm.Term:
+        left_term = (self.existentially_quantify_free_variables(left) if quantify else self.env.encode_pattern(left))
+        right_term = (self.existentially_quantify_free_variables(right) if quantify else self.env.encode_pattern(right))
 
-        return mm.Application(
-            "\\not", [mm.Application("\\and", [left_term, right_term])]
-        )
+        return mm.Application("\\not", [mm.Application("\\and", [left_term, right_term])])
 
     """
     Same as above but wraps it in a metamath statement
@@ -110,9 +96,7 @@ class DisjointnessProofGenerator(ProofGenerator):
 
     def make_app_context(self, app: mm.Application, i: int) -> Proof:
         metavars = app.get_metavariables()
-        (free_var_name,) = self.env.gen_fresh_metavariables(
-            "#ElementVariable", 1, metavars
-        )
+        (free_var_name, ) = self.env.gen_fresh_metavariables("#ElementVariable", 1, metavars)
         free_var = mm.Metavariable(free_var_name)
 
         # f(..., xX, ...)
@@ -147,10 +131,7 @@ class DisjointnessProofGenerator(ProofGenerator):
         ith_arg = app.subterms[i]
 
         # base case, nothing to propagation, return imp-reflexivity
-        if (
-            not isinstance(ith_arg, mm.Application)
-            or ith_arg.symbol != "\\sorted-exists"
-        ):
+        if (not isinstance(ith_arg, mm.Application) or ith_arg.symbol != "\\sorted-exists"):
             return self.env.get_theorem("imp-reflexivity").apply(ph0=app)
 
         ith_arg_body = ith_arg.subterms[2]
@@ -178,13 +159,9 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
         subst2 = CopyVisitor().visit(app)
-        subst2.subterms[i] = mm.Application(
-            "\\and", [mm.Application("\\top"), ith_arg_body]
-        )
+        subst2.subterms[i] = mm.Application("\\and", [mm.Application("\\top"), ith_arg_body])
 
-        next_step = self.env.get_theorem(
-            "sorted-exists-propagation-converse"
-        ).match_and_apply(
+        next_step = self.env.get_theorem("sorted-exists-propagation-converse").match_and_apply(
             mm.StructuredStatement(
                 mm.Statement.PROVABLE,
                 [mm.Application("|-"), mm.Application("\\imp", [lhs, app])],
@@ -229,15 +206,12 @@ class DisjointnessProofGenerator(ProofGenerator):
       f(ph0, ph1, ...) -> f(ph0, psi, ...)
     """
 
-    def apply_framing_on_application(
-        self, app: mm.Application, i: int, imp: Proof
-    ) -> Proof:
+    def apply_framing_on_application(self, app: mm.Application, i: int, imp: Proof) -> Proof:
         app_ctx_proof = self.make_app_context(app, i)
 
         # |- ph0 -> ph1
         assert (
-            len(imp.statement.terms) == 2
-            and isinstance(imp.statement.terms[1], mm.Application)
+            len(imp.statement.terms) == 2 and isinstance(imp.statement.terms[1], mm.Application)
             and imp.statement.terms[1].symbol == "\\imp"
         )
         lhs, rhs = imp.statement.terms[1].subterms
@@ -303,24 +277,16 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         # existentially quantify the target argument
         # since the disjointness proof is quantified
-        encoded_right_app.subterms[i] = self.existentially_quantify_free_variables(
-            right.arguments[i]
-        )
+        encoded_right_app.subterms[i] = self.existentially_quantify_free_variables(right.arguments[i])
 
         conj_app = CopyVisitor().visit(encoded_left_app)
-        for j, (left_arg, right_arg) in enumerate(
-            zip(encoded_left_app.subterms, encoded_right_app.subterms)
-        ):
+        for j, (left_arg, right_arg) in enumerate(zip(encoded_left_app.subterms, encoded_right_app.subterms)):
             conj_app.subterms[j] = mm.Application("\\and", [left_arg, right_arg])
 
         # desugar |- ( \not (...) ) to |- ( \imp (...) \bot )
-        arg_imp_bot = self.env.get_theorem("desugar-not-to-imp").apply(
-            argument_disjointness
-        )
+        arg_imp_bot = self.env.get_theorem("desugar-not-to-imp").apply(argument_disjointness)
 
-        replace_arg_with_bot = self.apply_framing_on_application(
-            conj_app, i, arg_imp_bot
-        )
+        replace_arg_with_bot = self.apply_framing_on_application(conj_app, i, arg_imp_bot)
         assert isinstance(replace_arg_with_bot.statement.terms[1], mm.Application)
         _, rhs = replace_arg_with_bot.statement.terms[1].subterms
         assert isinstance(rhs, mm.Application)
@@ -347,9 +313,7 @@ class DisjointnessProofGenerator(ProofGenerator):
                     mm.Application(
                         "\\imp",
                         [
-                            mm.Application(
-                                "\\and", [encoded_left_app, encoded_right_app]
-                            ),
+                            mm.Application("\\and", [encoded_left_app, encoded_right_app]),
                             conj_app,
                         ],
                     ),
@@ -364,9 +328,8 @@ class DisjointnessProofGenerator(ProofGenerator):
             )
         )
 
-        assert isinstance(not_conj.statement.terms[1], mm.Application) and isinstance(
-            not_conj.statement.terms[1].subterms[0], mm.Application
-        )
+        assert isinstance(not_conj.statement.terms[1],
+                          mm.Application) and isinstance(not_conj.statement.terms[1].subterms[0], mm.Application)
         _, rhs = not_conj.statement.terms[1].subterms[0].subterms
         assert isinstance(rhs, mm.Application)
         exists_propagation = self.propagate_exists_out(rhs, i)
@@ -382,16 +345,14 @@ class DisjointnessProofGenerator(ProofGenerator):
     Prove that two patterns with different heads are disjoint
     """
 
-    def prove_diff_constructor_disjointness(
-        self, left: kore.Application, right: kore.Application
-    ) -> Proof:
+    def prove_diff_constructor_disjointness(self, left: kore.Application, right: kore.Application) -> Proof:
         encoded_left_symbol = KorePatternEncoder.encode_symbol(left.symbol)
         encoded_right_symbol = KorePatternEncoder.encode_symbol(right.symbol)
 
         # symmetry
         if (
-            encoded_right_symbol,
-            encoded_left_symbol,
+                encoded_right_symbol,
+                encoded_left_symbol,
         ) in self.env.no_confusion_diff_constructor:
             disjointness_proof = self.env.get_theorem("disjointness-symmetry").apply(
                 self.prove_diff_constructor_disjointness(right, left)
@@ -402,9 +363,7 @@ class DisjointnessProofGenerator(ProofGenerator):
                 encoded_right_symbol,
             ) in self.env.no_confusion_diff_constructor, f"unable to find no confusion axiom for {encoded_left_symbol} and {encoded_right_symbol}"
 
-            no_confusion = self.env.no_confusion_diff_constructor[
-                encoded_left_symbol, encoded_right_symbol
-            ]
+            no_confusion = self.env.no_confusion_diff_constructor[encoded_left_symbol, encoded_right_symbol]
             disjointness_proof = no_confusion.match_and_apply(
                 self.get_disjointness_statement(left, right, quantify=False)
             )
@@ -424,9 +383,7 @@ class DisjointnessProofGenerator(ProofGenerator):
     any of the components given
     """
 
-    def prove_disjointness_with_disjunction(
-        self, left: kore.Application, components: List[kore.Application]
-    ) -> Proof:
+    def prove_disjointness_with_disjunction(self, left: kore.Application, components: List[kore.Application]) -> Proof:
         assert len(components) != 0
 
         first_disjointness = self.prove_disjointness(left, components[0])
@@ -443,12 +400,9 @@ class DisjointnessProofGenerator(ProofGenerator):
     Prove that a (concrete) pattern is not in a sort
     """
 
-    def prove_sort_disjointness(
-        self, left: kore.Application, right: kore.Variable
-    ) -> Proof:
+    def prove_sort_disjointness(self, left: kore.Application, right: kore.Variable) -> Proof:
         assert (
-            isinstance(right.sort, kore.SortInstance)
-            and right.sort in self.env.no_junk_axioms
+            isinstance(right.sort, kore.SortInstance) and right.sort in self.env.no_junk_axioms
             and right.sort in self.env.sort_components
         ), f"unable to find no junk axiom for sort {right.sort}"
 
@@ -458,29 +412,22 @@ class DisjointnessProofGenerator(ProofGenerator):
         # |- ( \eq ( \inh <sort> ) ( <disjunction> ) )
 
         components = self.env.sort_components[right.sort]
-        disjoint_with_disjunction = self.prove_disjointness_with_disjunction(
-            left, components
-        )
+        disjoint_with_disjunction = self.prove_disjointness_with_disjunction(left, components)
 
         disjoint_with_sort = self.env.get_theorem("disjointness-simplify").apply(
             disjoint_with_disjunction,
-            self.env.get_theorem("rule-iff-elim-left").apply(
-                self.env.get_theorem("rule-eq-to-iff").apply(no_junk_axiom.as_proof()),
-            ),
+            self.env.get_theorem("rule-iff-elim-left"
+                                 ).apply(self.env.get_theorem("rule-eq-to-iff").apply(no_junk_axiom.as_proof()), ),
         )
 
-        disjoint_with_sort_alt = self.env.get_theorem(
-            "disjointnesss-sort"
-        ).match_and_apply(
+        disjoint_with_sort_alt = self.env.get_theorem("disjointnesss-sort").match_and_apply(
             self.get_disjointness_statement(left, right),
             disjoint_with_sort,
         )
 
         return disjoint_with_sort_alt
 
-    def prove_inj_disjointness(
-        self, left: kore.Application, right: kore.Application
-    ) -> Proof:
+    def prove_inj_disjointness(self, left: kore.Application, right: kore.Application) -> Proof:
         assert len(left.arguments) == 1 and len(right.arguments) == 1
         subproof = self.prove_disjointness(left.arguments[0], right.arguments[0])
 
@@ -502,11 +449,8 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
         # propagate out the existential quantifiers at the body of the injection
-        assert isinstance(
-            disjointness_proof.statement.terms[1], mm.Application
-        ) and isinstance(
-            disjointness_proof.statement.terms[1].subterms[0], mm.Application
-        )
+        assert isinstance(disjointness_proof.statement.terms[1], mm.Application
+                          ) and isinstance(disjointness_proof.statement.terms[1].subterms[0], mm.Application)
         rhs = disjointness_proof.statement.terms[1].subterms[0].subterms[1]
         assert isinstance(rhs, mm.Application)
         exists_propagation = self.propagate_exists_out(rhs, 2)
@@ -516,18 +460,14 @@ class DisjointnessProofGenerator(ProofGenerator):
             exists_propagation,
         )
 
-    def prove_hooked_sort_disjointness(
-        self, left: kore.Application, var: kore.Variable
-    ) -> Proof:
+    def prove_hooked_sort_disjointness(self, left: kore.Application, var: kore.Variable) -> Proof:
         assert (
             left.symbol.get_symbol_name(),
             var.sort,
         ) in self.env.no_confusion_hooked_sort
         assert isinstance(var.sort, kore.SortInstance)
 
-        no_confusion = self.env.no_confusion_hooked_sort[
-            left.symbol.get_symbol_name(), var.sort
-        ]
+        no_confusion = self.env.no_confusion_hooked_sort[left.symbol.get_symbol_name(), var.sort]
 
         encoded_left = self.env.encode_pattern(left)
         encoded_sort = self.env.encode_pattern(var.sort)
@@ -564,15 +504,11 @@ class DisjointnessProofGenerator(ProofGenerator):
     """
 
     def prove_disjointness(self, left: kore.Pattern, right: kore.Pattern) -> Proof:
-        assert KoreUtils.is_concrete(
-            left
-        ), f"currently only supports concrete left pattern, but {left} is given"
+        assert KoreUtils.is_concrete(left), f"currently only supports concrete left pattern, but {left} is given"
 
         right = KoreUtils.strip_exists(right)
 
-        assert isinstance(
-            left, kore.Application
-        ), f"left pattern {left} should be an application"
+        assert isinstance(left, kore.Application), f"left pattern {left} should be an application"
         assert isinstance(right, kore.Application) or isinstance(
             right, kore.Variable
         ), f"right pattern {right} should be an application or a variable"
@@ -582,10 +518,8 @@ class DisjointnessProofGenerator(ProofGenerator):
         if isinstance(right, kore.Application):
             # if both symbols are injections
             # it's enough to prove that the inner patterns are disjoint
-            if (
-                left_symbol.definition == self.env.sort_injection_symbol
-                and right.symbol.definition == self.env.sort_injection_symbol
-            ):
+            if (left_symbol.definition == self.env.sort_injection_symbol
+                    and right.symbol.definition == self.env.sort_injection_symbol):
                 assert isinstance(right, kore.Application)
                 return self.prove_inj_disjointness(left, right)
             elif left_symbol == right.symbol:
@@ -596,17 +530,13 @@ class DisjointnessProofGenerator(ProofGenerator):
                     right.arguments
                 ), f"same head but different numbers of arguments: {left} vs {right}"
 
-                for i, (left_arg, right_arg) in enumerate(
-                    zip(left.arguments, right.arguments)
-                ):
+                for i, (left_arg, right_arg) in enumerate(zip(left.arguments, right.arguments)):
                     try:
                         subproof = self.prove_disjointness(left_arg, right_arg)
                     except Exception:
                         print_exc()
                     else:
-                        return self.prove_argument_disjointness(
-                            left, right, i, subproof
-                        )
+                        return self.prove_argument_disjointness(left, right, i, subproof)
 
                 assert False, f"failed to show disjointness of {left} and {right}"
             else:
@@ -621,8 +551,8 @@ class DisjointnessProofGenerator(ProofGenerator):
 
             # right is a variable of a hooked sort
             if (
-                left.symbol.get_symbol_name(),
-                right.sort,
+                    left.symbol.get_symbol_name(),
+                    right.sort,
             ) in self.env.no_confusion_hooked_sort:
                 return self.prove_hooked_sort_disjointness(left, right)
 

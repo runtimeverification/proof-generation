@@ -29,9 +29,7 @@ def read_until(stream: BinaryIO, keyword: bytes) -> bytes:
             return buf
 
 
-def verify_theorems(
-    entry_database: str, label_patterns: List[str]
-) -> Tuple[float, List[float]]:
+def verify_theorems(entry_database: str, label_patterns: List[str]) -> Tuple[float, List[float]]:
     proc = run_command(
         ["metamath", "set scroll continuous", f'read "{entry_database}"'],
         stdout=subprocess.PIPE,
@@ -59,9 +57,7 @@ def verify_theorems(
     proc.stdin.close()
 
     exit_code = proc.wait()
-    assert (
-        exit_code == 0
-    ), f"failed to verify database {entry_database}: exit code {exit_code}"
+    assert (exit_code == 0), f"failed to verify database {entry_database}: exit code {exit_code}"
 
     return loading_time, verify_time
 
@@ -88,13 +84,10 @@ def get_file_size(path: str, wrap: int) -> Tuple[int, int, int]:
 
 def measure(proof_object: str, prelude_theory: str, line_wrap: int = 80):
     # measure base loading time
-    loading_time1, (goal_time, rewrite_time, total_time) = verify_theorems(
-        os.path.join(proof_object, "goal.mm"), ["goal", "rewrite-*", "*"]
-    )
+    loading_time1, (goal_time, rewrite_time,
+                    total_time) = verify_theorems(os.path.join(proof_object, "goal.mm"), ["goal", "rewrite-*", "*"])
 
-    loading_time2, (prelude_time,) = verify_theorems(
-        os.path.join(prelude_theory, "kore-lemmas.mm"), ["*"]
-    )
+    loading_time2, (prelude_time, ) = verify_theorems(os.path.join(prelude_theory, "kore-lemmas.mm"), ["*"])
 
     # count number of lines
     prelude_lines = 0
@@ -145,9 +138,7 @@ def measure(proof_object: str, prelude_theory: str, line_wrap: int = 80):
     print(f"loc-prelude-wrapped {prelude_lines_wrapped}")
     print(f"loc-module-wrapped {module_lines_wrapped}")
     print(f"loc-rewrite-wrapped {task_lines_wrapped}")
-    print(
-        f"loc-total-wrapped {prelude_lines_wrapped + module_lines_wrapped + task_lines_wrapped}"
-    )
+    print(f"loc-total-wrapped {prelude_lines_wrapped + module_lines_wrapped + task_lines_wrapped}")
 
     print(f"size-prelude {prelude_size}")
     print(f"size-module {module_size}")

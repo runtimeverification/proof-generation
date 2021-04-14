@@ -6,14 +6,8 @@ from typing import Iterable, Iterator, Union, List
 
 
 def closure(p: Pattern) -> List[List[Pattern]]:
-    if (
-        isinstance(p, SVar)
-        or isinstance(p, EVar)
-        or isinstance(p, Symbol)
-        or isinstance(p, App)
-        or isinstance(p, Exists)
-        or isinstance(p, Forall)
-    ):
+    if (isinstance(p, SVar) or isinstance(p, EVar) or isinstance(p, Symbol) or isinstance(p, App)
+            or isinstance(p, Exists) or isinstance(p, Forall)):
         return [[p]]
     elif isinstance(p, And):
         return closurePs([p.left, p.right])
@@ -38,6 +32,8 @@ def closurePs(patterns: List[Pattern]) -> List[List[Pattern]]:
 Node = Union["OrNode", "AndNode", "SimpleNode"]
 
 # TODO: Make typing more generic.
+
+
 def powerset(s: List[DApp]) -> Iterator[Iterable[DApp]]:
     return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
@@ -59,11 +55,8 @@ class SimpleNode:
     def is_consitant(self) -> bool:
         atoms = set(
             [
-                phi.negate()
-                for phi in self.gamma
-                if isinstance(phi, Symbol)
-                or isinstance(phi, SVar)
-                or isinstance(phi, EVar)
+                phi.negate() for phi in self.gamma
+                if isinstance(phi, Symbol) or isinstance(phi, SVar) or isinstance(phi, EVar)
             ]
         )
         return not bool(atoms.intersection(set(self.gamma)))
@@ -87,15 +80,11 @@ class SimpleNode:
                         AndNode(
                             [
                                 SimpleNode([app.left] + list(map(project_left, left))),
-                                SimpleNode(
-                                    [app.right]
-                                    + list(map(project_right, set(dapps) - set(left)))
-                                ),
+                                SimpleNode([app.right] + list(map(project_right,
+                                                                  set(dapps) - set(left)))),
                             ]
-                        )
-                        for left in left_partitions
+                        ) for left in left_partitions
                     ]
-                )
-                for app in apps
+                ) for app in apps
             ]
         )

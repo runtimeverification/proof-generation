@@ -24,7 +24,7 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Lint with black
       run: |
-        black --check ml scripts
+        yapf --recursive --diff ml scripts tests
     - name: Type checking
       run: |
         mypy --strict ml/aml
@@ -34,4 +34,4 @@ jobs:
         pytest ml
     # - name: Lint with flake8
     #   run: |
-    #     flake8 ml scripts
+    #     flake8 ml scripts tests

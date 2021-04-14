@@ -1,10 +1,9 @@
+from .interactive import InteractiveState
 import argparse
 
 from ml.metamath.composer import ProofCache
 
 ProofCache.DISABLED = True
-
-from .interactive import InteractiveState
 
 
 def main():

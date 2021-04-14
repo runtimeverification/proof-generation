@@ -9,7 +9,6 @@ import subprocess
 
 from ml.utils.ansi import ANSI
 
-
 TESTS = [
     # [
     #     # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-10.two-counters", "examples/cav/two-counters-pgm-10"),
@@ -22,8 +21,7 @@ TESTS = [
         rec_module.upper(),
         f"examples/cav/rec-k-unconditional/pgm.{rec_module}",
         f"examples/cav/rec-k-unconditional/{rec_module}-pgm",
-    )
-    for rec_module in [
+    ) for rec_module in [
         # "add8",
         # "factorial5",
         "fibonacci05",

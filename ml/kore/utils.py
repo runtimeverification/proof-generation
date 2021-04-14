@@ -28,13 +28,10 @@ from .visitors import (
     PatternVariableVisitor,
     SortVariableVisitor,
 )
-
-
 """
 Path to a subpattern of a pattern or an axiom
 """
 PatternPath = List[int]
-
 
 AST = TypeVar("AST", bound=BaseAST)
 P = TypeVar("P", bound=Pattern)
@@ -46,7 +43,6 @@ class KoreUtils:
     """
     Utility functions on KORE AST
     """
-
     @staticmethod
     def copy_ast(module: Module, ast: AST) -> AST:
         copy_ast = ast.visit(CopyVisitor())
@@ -58,16 +54,12 @@ class KoreUtils:
         return KoreUtils.copy_ast(pattern.get_module(), pattern)
 
     @staticmethod
-    def copy_and_substitute_pattern(
-        ast: PAS, substitution: Mapping[Variable, Pattern]
-    ) -> PAS:
+    def copy_and_substitute_pattern(ast: PAS, substitution: Mapping[Variable, Pattern]) -> PAS:
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
         return PatternSubstitutionVisitor(substitution).visit(copied)
 
     @staticmethod
-    def copy_and_substitute_sort(
-        ast: PAS, substitution: Mapping[SortVariable, Sort]
-    ) -> PAS:
+    def copy_and_substitute_sort(ast: PAS, substitution: Mapping[SortVariable, Sort]) -> PAS:
         """
         Note that the substitution should be sort variable -> sort
         """
@@ -75,9 +67,7 @@ class KoreUtils:
         return SortSubstitutionVisitor(substitution).visit(copied)
 
     @staticmethod
-    def get_subpattern_by_path(
-        ast: Union[Pattern, Axiom], path: PatternPath
-    ) -> Union[Pattern, Axiom]:
+    def get_subpattern_by_path(ast: Union[Pattern, Axiom], path: PatternPath) -> Union[Pattern, Axiom]:
         if not path:
             return ast
 
@@ -87,19 +77,14 @@ class KoreUtils:
             assert first == 0, f"axiom {ast} only have one immediate subpattern"
             return KoreUtils.get_subpattern_by_path(ast.pattern, rest)
 
-        assert isinstance(ast, Application) or isinstance(
-            ast, MLPattern
-        ), "path {} does not exists in pattern {}".format(path, ast)
+        assert isinstance(ast, Application) or isinstance(ast, MLPattern
+                                                          ), "path {} does not exists in pattern {}".format(path, ast)
 
-        assert first < len(
-            ast.arguments
-        ), f"path {path} does not exists in pattern {ast}"
+        assert first < len(ast.arguments), f"path {path} does not exists in pattern {ast}"
         return KoreUtils.get_subpattern_by_path(ast.arguments[first], rest)
 
     @staticmethod
-    def replace_path_by_pattern_in_axiom(
-        axiom: Axiom, path: PatternPath, replacement: Pattern
-    ) -> Axiom:
+    def replace_path_by_pattern_in_axiom(axiom: Axiom, path: PatternPath, replacement: Pattern) -> Axiom:
         """
         path: path to a subpattern
         e.g. in a(b(), c(phi)),
@@ -109,15 +94,11 @@ class KoreUtils:
         assert len(path) != 0
         first, *rest = path
         assert first == 0, f"axiom {axiom} only have one immediate subpattern"
-        axiom.pattern = KoreUtils.replace_path_by_pattern_in_pattern(
-            axiom.pattern, rest, replacement
-        )
+        axiom.pattern = KoreUtils.replace_path_by_pattern_in_pattern(axiom.pattern, rest, replacement)
         return axiom
 
     @staticmethod
-    def replace_path_by_pattern_in_pattern(
-        pattern: Pattern, path: PatternPath, replacement: Pattern
-    ) -> Pattern:
+    def replace_path_by_pattern_in_pattern(pattern: Pattern, path: PatternPath, replacement: Pattern) -> Pattern:
         if not path:
             return replacement
 
@@ -128,25 +109,19 @@ class KoreUtils:
         ), "path {} does not exists in pattern {}".format(path, pattern)
 
         # Application and MLPattern all use .arguments for the list of arguments
-        assert first < len(
-            pattern.arguments
-        ), "path {} does not exists in pattern {}".format(path, pattern)
+        assert first < len(pattern.arguments), "path {} does not exists in pattern {}".format(path, pattern)
         pattern.arguments[first] = KoreUtils.replace_path_by_pattern_in_pattern(
             pattern.arguments[first], rest, replacement
         )
         return pattern
 
     @staticmethod
-    def copy_and_replace_path_by_pattern_in_axiom(
-        ast: Axiom, path: PatternPath, replacement: Pattern
-    ) -> Axiom:
+    def copy_and_replace_path_by_pattern_in_axiom(ast: Axiom, path: PatternPath, replacement: Pattern) -> Axiom:
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
         return KoreUtils.replace_path_by_pattern_in_axiom(copied, path, replacement)
 
     @staticmethod
-    def expand_alias_def(
-        application: Application, alias_def: AliasDefinition
-    ) -> Pattern:
+    def expand_alias_def(application: Application, alias_def: AliasDefinition) -> Pattern:
         """
         Expand one pattern that uses an alias definition
         and return a new pattern
@@ -157,9 +132,7 @@ class KoreUtils:
         variables = alias_def.get_binding_variables()
 
         if len(application.arguments) != len(variables):
-            application.error_with_position(
-                "unmatched number of arguments in the use of alias"
-            )
+            application.error_with_position("unmatched number of arguments in the use of alias")
 
         assignment = {var: arg for var, arg in zip(variables, application.arguments)}
         assignment_visitor = PatternSubstitutionVisitor(assignment)
@@ -274,12 +247,8 @@ class KoreUtils:
             assert isinstance(symbol_def, SymbolDefinition)
             assert len(sort_arguments) == len(symbol_def.sort_variables)
 
-            substitution = {
-                var: arg for var, arg in zip(symbol_def.sort_variables, sort_arguments)
-            }
-            return KoreUtils.copy_and_substitute_sort(
-                symbol_def.output_sort, substitution
-            )
+            substitution = {var: arg for var, arg in zip(symbol_def.sort_variables, sort_arguments)}
+            return KoreUtils.copy_and_substitute_sort(symbol_def.output_sort, substitution)
 
         if isinstance(pattern, MLPattern):
             # NOTE: as a convention, the last sort in the sort arguments is the output sort

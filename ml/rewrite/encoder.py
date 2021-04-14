@@ -7,7 +7,6 @@ from ml.kore.ast import KoreVisitor
 from ml.kore.utils import KoreUtils
 
 from ml.metamath import ast as mm
-
 """
 Encode a kore pattern as a Term and collect all metavariables
 and constant symbols
@@ -113,9 +112,7 @@ class KorePatternEncoder(KoreVisitor):
     def postvisit_sort_instance(self, sort_instance: kore.SortInstance) -> mm.Term:
         encoded = KorePatternEncoder.encode_sort(sort_instance)
         self.constant_symbols[encoded] = len(sort_instance.arguments)
-        return mm.Application(
-            encoded, [self.visit(arg) for arg in sort_instance.arguments]
-        )
+        return mm.Application(encoded, [self.visit(arg) for arg in sort_instance.arguments])
 
     def postvisit_sort_variable(self, sort_variable: kore.SortVariable) -> mm.Term:
         encoded_var = KorePatternEncoder.encode_sort_variable(sort_variable)
@@ -135,24 +132,17 @@ class KorePatternEncoder(KoreVisitor):
 
     def postvisit_application(self, application: kore.Application) -> mm.Term:
         constant_symbol = KorePatternEncoder.encode_symbol(application.symbol)
-        self.constant_symbols[constant_symbol] = len(
-            application.symbol.sort_arguments
-        ) + len(application.arguments)
+        self.constant_symbols[constant_symbol] = len(application.symbol.sort_arguments) + len(application.arguments)
         return mm.Application(
             constant_symbol,
-            [self.visit(sort_arg) for sort_arg in application.symbol.sort_arguments]
-            + [self.visit(arg) for arg in application.arguments],
+            [self.visit(sort_arg)
+             for sort_arg in application.symbol.sort_arguments] + [self.visit(arg) for arg in application.arguments],
         )
 
     def postvisit_ml_pattern(self, ml_pattern: kore.MLPattern) -> mm.Term:
-        encoded_construct = KorePatternEncoder.encode_logical_construct(
-            ml_pattern.construct
-        )
+        encoded_construct = KorePatternEncoder.encode_logical_construct(ml_pattern.construct)
 
-        if (
-            ml_pattern.construct == kore.MLPattern.FORALL
-            or ml_pattern.construct == kore.MLPattern.EXISTS
-        ):
+        if (ml_pattern.construct == kore.MLPattern.FORALL or ml_pattern.construct == kore.MLPattern.EXISTS):
             var = ml_pattern.get_binding_variable()
             assert len(ml_pattern.arguments) == 2
             assert var is not None
@@ -175,6 +165,5 @@ class KorePatternEncoder(KoreVisitor):
 
             return mm.Application(
                 encoded_construct,
-                [self.visit(sort) for sort in ml_pattern.sorts]
-                + [self.visit(arg) for arg in ml_pattern.arguments],
+                [self.visit(sort) for sort in ml_pattern.sorts] + [self.visit(arg) for arg in ml_pattern.arguments],
             )

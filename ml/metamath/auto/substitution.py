@@ -5,8 +5,6 @@ from ..composer import Composer, Proof, Theorem, MethodAutoProof, TypecodeProver
 
 from .notation import NotationProver
 from .unification import Unification
-
-
 """
 TODO: subsitution of patterns with \\exists and \\mu is not supported yet
 """
@@ -46,41 +44,24 @@ class SubstitutionProver:
         subst_var: Metavariable,
         hypotheses: List[Theorem] = [],
     ) -> Proof:
-        target = SubstitutionProver.get_target(
-            after_pattern, before_pattern, subst_pattern, subst_var
-        )
+        target = SubstitutionProver.get_target(after_pattern, before_pattern, subst_pattern, subst_var)
 
-        is_variable_metavar = (
-            TypecodeProver.prove_typecode(composer, "#Variable", before_pattern)
-            is not None
-        )
-        is_pattern_metavar = (
-            TypecodeProver.prove_typecode(composer, "#Pattern", before_pattern)
-            is not None
-        )
-        is_symbol_metavar = (
-            TypecodeProver.prove_typecode(composer, "#Symbol", before_pattern)
-            is not None
-        )
+        is_variable_metavar = (TypecodeProver.prove_typecode(composer, "#Variable", before_pattern) is not None)
+        is_pattern_metavar = (TypecodeProver.prove_typecode(composer, "#Pattern", before_pattern) is not None)
+        is_symbol_metavar = (TypecodeProver.prove_typecode(composer, "#Symbol", before_pattern) is not None)
 
         if before_pattern == subst_var and after_pattern == subst_pattern:
             return composer.get_theorem("substitution-var-same").match_and_apply(target)
 
         if after_pattern == before_pattern:
             if is_variable_metavar and before_pattern != subst_var:
-                return composer.get_theorem("substitution-var-diff").match_and_apply(
-                    target
-                )
+                return composer.get_theorem("substitution-var-diff").match_and_apply(target)
 
             if subst_pattern == subst_var:
-                return composer.get_theorem("substitution-identity").match_and_apply(
-                    target
-                )
+                return composer.get_theorem("substitution-identity").match_and_apply(target)
 
             if is_symbol_metavar:
-                return composer.get_theorem("substitution-symbol").match_and_apply(
-                    target
-                )
+                return composer.get_theorem("substitution-symbol").match_and_apply(target)
 
         if is_pattern_metavar:
             # try to find a hypothesis that says so
@@ -100,9 +81,7 @@ class SubstitutionProver:
             if before_pattern.symbol in arity_map:
                 arity, theorem_label = arity_map[before_pattern.symbol]
 
-                assert (
-                    len(after_pattern.subterms) == len(before_pattern.subterms) == arity
-                )
+                assert (len(after_pattern.subterms) == len(before_pattern.subterms) == arity)
 
                 subproofs = [
                     SubstitutionProver.prove_desugared_substitution(
@@ -112,19 +91,12 @@ class SubstitutionProver:
                         subst_pattern,
                         subst_var,
                         hypotheses,
-                    )
-                    for after_subpattern, before_subpattern in zip(
-                        after_pattern.subterms, before_pattern.subterms
-                    )
+                    ) for after_subpattern, before_subpattern in zip(after_pattern.subterms, before_pattern.subterms)
                 ]
 
-                return composer.get_theorem(theorem_label).match_and_apply(
-                    target, *subproofs
-                )
+                return composer.get_theorem(theorem_label).match_and_apply(target, *subproofs)
 
-        assert (
-            False
-        ), f"unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}"
+        assert (False), f"unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}"
 
     """
     Prove statement of the form
@@ -144,42 +116,27 @@ class SubstitutionProver:
         hypotheses: List[Theorem] = [],
     ) -> Proof:
         # if the heads are the same and there exists a substitution for the head symbol
-        if (
-            isinstance(after_pattern, Application)
-            and isinstance(before_pattern, Application)
-            and after_pattern.symbol == before_pattern.symbol
-            and len(after_pattern.subterms) == len(before_pattern.subterms)
-        ):
-            target = SubstitutionProver.get_target(
-                after_pattern, before_pattern, subst_pattern, subst_var
-            )
+        if (isinstance(after_pattern, Application) and isinstance(before_pattern, Application)
+                and after_pattern.symbol == before_pattern.symbol
+                and len(after_pattern.subterms) == len(before_pattern.subterms)):
+            target = SubstitutionProver.get_target(after_pattern, before_pattern, subst_pattern, subst_var)
 
             for theorem in composer.get_theorems_of_typecode("#Substitution"):
-                if not (
-                    len(theorem.statement.terms) > 1
-                    and isinstance(theorem.statement.terms[1], Application)
-                    and theorem.statement.terms[1].symbol == after_pattern.symbol
-                ):
+                if not (len(theorem.statement.terms) > 1 and isinstance(theorem.statement.terms[1], Application)
+                        and theorem.statement.terms[1].symbol == after_pattern.symbol):
                     continue
 
-                instantiation = Unification.match_statements_as_instance(
-                    theorem.statement, target
-                )
+                instantiation = Unification.match_statements_as_instance(theorem.statement, target)
                 if instantiation is None:
                     continue
 
                 failed = True
-                subgoals: List[
-                    Tuple[Term, Term, Term, Metavariable]
-                ] = (
-                    []
-                )  # list of tuples (after_pattern, before_pattern, subst_pattern, subst_var)
+                subgoals: List[Tuple[Term, Term, Term, Metavariable]
+                               ] = ([])  # list of tuples (after_pattern, before_pattern, subst_pattern, subst_var)
 
                 # determine the subgoals
                 for essential in theorem.essentials:
-                    if len(essential.terms) == 5 and essential.terms[0] == Application(
-                        "#Substitution"
-                    ):
+                    if len(essential.terms) == 5 and essential.terms[0] == Application("#Substitution"):
                         (
                             _,
                             after_subpattern,
@@ -188,16 +145,11 @@ class SubstitutionProver:
                             sub_subst_var,
                         ) = essential.terms
 
-                        if (
-                            isinstance(after_subpattern, Metavariable)
-                            and isinstance(before_subpattern, Metavariable)
-                            and isinstance(subst_subpattern, Metavariable)
-                            and isinstance(sub_subst_var, Metavariable)
-                            and after_subpattern.name in instantiation
-                            and before_subpattern.name in instantiation
-                            and subst_subpattern.name in instantiation
-                            and sub_subst_var.name in instantiation
-                        ):
+                        if (isinstance(after_subpattern, Metavariable) and isinstance(before_subpattern, Metavariable)
+                                and isinstance(subst_subpattern, Metavariable)
+                                and isinstance(sub_subst_var, Metavariable) and after_subpattern.name in instantiation
+                                and before_subpattern.name in instantiation and subst_subpattern.name in instantiation
+                                and sub_subst_var.name in instantiation):
                             var = instantiation[sub_subst_var.name]
                             assert isinstance(var, Metavariable)
                             subgoals.append(
@@ -218,9 +170,7 @@ class SubstitutionProver:
 
                 subproofs = []
                 for subgoal in subgoals:
-                    subproof = SubstitutionProver.prove_substitution(
-                        composer, *subgoal, hypotheses
-                    )
+                    subproof = SubstitutionProver.prove_substitution(composer, *subgoal, hypotheses)
                     if subproof is None:
                         failed = True
                         break
@@ -280,13 +230,11 @@ class SubstitutionProver:
     """
 
     @staticmethod
-    def prove_substitution_statement(
-        composer: Composer, statement: Statement, hypotheses: List[Theorem] = []
-    ):
+    def prove_substitution_statement(composer: Composer, statement: Statement, hypotheses: List[Theorem] = []):
         assert isinstance(statement, StructuredStatement)
-        assert len(statement.terms) == 5 and statement.terms[0] == Application(
-            "#Substitution"
-        ), f"not a substitution goal {statement}"
+        assert len(
+            statement.terms
+        ) == 5 and statement.terms[0] == Application("#Substitution"), f"not a substitution goal {statement}"
         _, after, before, pattern, var = statement.terms
         assert isinstance(var, Metavariable)
         return SubstitutionProver.prove_substitution(

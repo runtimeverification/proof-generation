@@ -74,7 +74,6 @@ value: STRING_LITERAL -> string
      | token
 """
 
-
 command_parser = Lark(
     syntax,
     start="command_or_empty",

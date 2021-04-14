@@ -15,7 +15,6 @@ class KorePreprocessor:
     This class implements these somewhat hacky transformations,
     to separate from the rest of the code for clarity.
     """
-
     def preprocess(self, definition: kore.Definition):
         # add the functional axiom of kseq and dotk if missing
         if "KSEQ" in definition.module_map:
