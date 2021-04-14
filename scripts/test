@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+mypy --strict ml/aml
+mypy ml scripts tests
+
+pytest ml/ "$@"
