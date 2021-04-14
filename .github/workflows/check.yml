@@ -22,10 +22,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-    - name: Lint with black
+    - name: Style check with yapf
       run: |
         yapf --recursive --diff ml scripts tests
-    - name: Type checking
+    - name: Type check
       run: |
         mypy --strict ml/aml
         mypy ml scripts tests
