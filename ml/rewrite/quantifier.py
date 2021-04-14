@@ -1,4 +1,4 @@
-from typing import List, Tuple, Mapping
+from typing import List, Tuple, Mapping, Dict
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
@@ -26,9 +26,9 @@ class QuantifierProofGenerator(ProofGenerator):
             isinstance(provable.claim.pattern, kore.MLPattern)
             and provable.claim.pattern.construct == kore.MLPattern.FORALL
         )
-        return self.prove_forall_elim(
-            provable, {provable.claim.pattern.get_binding_variable(): pattern}
-        )
+        binding_var = provable.claim.pattern.get_binding_variable()
+        assert binding_var is not None
+        return self.prove_forall_elim(provable, {binding_var: pattern})
 
     r"""
     Given a provable claim of the form
@@ -78,6 +78,7 @@ class QuantifierProofGenerator(ProofGenerator):
             var = claim_pattern.get_binding_variable()
             body = claim_pattern.arguments[1]
 
+            assert var is not None
             assert (
                 var in substitution
             ), f"variable {var} not found in substitution {substitution}"
@@ -160,6 +161,10 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
         assert application.symbol.definition == self.env.sort_injection_symbol
 
         sort1, sort2 = application.symbol.sort_arguments
+        assert isinstance(sort1, kore.SortInstance) and isinstance(
+            sort2, kore.SortInstance
+        )
+
         chain = self.env.subsort_relation.get_subsort_chain(sort1, sort2)
         assert (
             chain is not None
@@ -233,10 +238,13 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
         assert isinstance(rhs, kore.Application)
         assert len(rhs.arguments) == len(application.arguments)
 
-        for arg in rhs.arguments:
-            assert isinstance(arg, kore.Variable)
+        subst: Dict[kore.Variable, kore.Pattern] = {}
 
-        return dict(zip(rhs.arguments, application.arguments))
+        for arg, app_arg in zip(rhs.arguments, application.arguments):
+            assert isinstance(arg, kore.Variable)
+            subst[arg] = app_arg
+
+        return subst
 
     def postvisit_application(self, application: kore.Application) -> ProvableClaim:
         if application.symbol not in self.env.functional_axioms:
@@ -263,6 +271,9 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
 
         sort, literal = ml_pattern.sorts[0], ml_pattern.arguments[0]
 
+        assert isinstance(sort, kore.SortInstance) and isinstance(
+            literal, kore.StringLiteral
+        )
         assert (
             sort,
             literal,

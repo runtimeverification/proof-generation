@@ -1,4 +1,4 @@
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, TypeVar
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
@@ -11,19 +11,21 @@ from .encoder import KorePatternEncoder
 from .env import ProofEnvironment, ProofGenerator
 
 
-"""
-Given a kore pattern phi, pattern psi, and variable x, generate a proof for
-
-#Substitution phi[psi/x] phi psi x
-
-where phi[psi/x] is the actual pattern with x substituted with phi,
-with the assumption that distinct meta #Variable varible are disjoint
-
-This also support substituting sort variables
-"""
+PAS = TypeVar("PAS", kore.Pattern, kore.Axiom, kore.Sort)
 
 
 class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
+    """
+    Given a kore pattern phi, pattern psi, and variable x, generate a proof for
+
+    #Substitution phi[psi/x] phi psi x
+
+    where phi[psi/x] is the actual pattern with x substituted with phi,
+    with the assumption that distinct meta #Variable varible are disjoint
+
+    This also support substituting sort variables
+    """
+
     def __init__(
         self,
         env: ProofEnvironment,
@@ -31,6 +33,13 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         substitute: Union[kore.Pattern, kore.Sort],
     ):
         super().__init__(env)
+
+        if isinstance(var, kore.Variable):
+            assert isinstance(substitute, kore.Pattern)
+        else:
+            assert isinstance(substitute, kore.SortVariable) or isinstance(
+                substitute, kore.SortInstance
+            )
 
         self.var = var
         self.substitute = substitute
@@ -52,30 +61,28 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
             ],
         )
 
-    def get_substituted_ast(
-        self, pattern_or_sort: Union[kore.Pattern, kore.Sort]
-    ) -> Union[kore.Pattern, kore.Sort]:
-        if isinstance(pattern_or_sort, kore.Pattern):
+    def get_substituted_ast(self, pattern_or_sort: PAS) -> PAS:
+        if isinstance(self.var, kore.Variable):
+            assert isinstance(self.substitute, kore.Pattern)
             return KoreUtils.copy_and_substitute_pattern(
                 pattern_or_sort, {self.var: self.substitute}
             )
         else:
+            assert isinstance(self.substitute, kore.SortVariable) or isinstance(
+                self.substitute, kore.SortInstance
+            )
             return KoreUtils.copy_and_substitute_sort(
                 pattern_or_sort, {self.var: self.substitute}
             )
 
-    def prove_substitution(
-        self, pattern_or_sort: Union[kore.Pattern, kore.Sort]
-    ) -> Proof:
+    def prove_substitution(self, pattern_or_sort: PAS) -> Proof:
         return self.prove_substitution_with_result(pattern_or_sort)[0]
 
     """
     In addition to the substitution proof, also return a actual substituted pattern/sort
     """
 
-    def prove_substitution_with_result(
-        self, pattern_or_sort: Union[kore.Pattern, kore.Sort]
-    ) -> Tuple[Proof, Union[kore.Pattern, kore.Sort]]:
+    def prove_substitution_with_result(self, pattern_or_sort: PAS) -> Tuple[Proof, PAS]:
         substituted = self.get_substituted_ast(pattern_or_sort)
 
         # look up proof cache
@@ -186,10 +193,8 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         symbol = KorePatternEncoder.encode_symbol(application.symbol)
         return self.env.substitution_axioms[symbol].match_and_apply(
             self.target,
-            *(
-                self.visit(arg)
-                for arg in application.symbol.sort_arguments + application.arguments
-            ),
+            *(self.visit(arg) for arg in application.symbol.sort_arguments),
+            *(self.visit(arg) for arg in application.arguments),
         )
 
     ML_PATTERN_SUBST_MAP = {
@@ -217,13 +222,16 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
                 ml_pattern.construct
             ]
             return self.env.get_theorem(theorem_label).apply(
-                *(self.visit(arg) for arg in ml_pattern.sorts + ml_pattern.arguments),
+                *(self.visit(arg) for arg in ml_pattern.sorts),
+                *(self.visit(arg) for arg in ml_pattern.arguments),
             )
         elif (
             ml_pattern.construct == kore.MLPattern.FORALL
             or ml_pattern.construct == kore.MLPattern.EXISTS
         ):
             binding_var = ml_pattern.get_binding_variable()
+            assert binding_var is not None
+
             body = ml_pattern.arguments[1]
             body_sort = ml_pattern.sorts[0]
 

@@ -1,8 +1,24 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Tuple, Optional, NewType, TypeVar
+from typing import Mapping, List, Tuple, Optional, NewType, TypeVar, Union, Dict
 
-from .ast import *
+from .ast import (
+    Pattern,
+    BaseAST,
+    Axiom,
+    Axiom,
+    Sort,
+    SortInstance,
+    SortDefinition,
+    SymbolDefinition,
+    Variable,
+    Module,
+    Definition,
+    AliasDefinition,
+    Application,
+    MLPattern,
+    SortVariable,
+)
 from .visitors import (
     PatternSubstitutionVisitor,
     SortSubstitutionVisitor,
@@ -21,8 +37,9 @@ PatternPath = List[int]
 
 
 AST = TypeVar("AST", bound=BaseAST)
-PA = TypeVar("PA", bound=Union[Pattern, Axiom])
-PAS = TypeVar("PAS", bound=Union[Pattern, Axiom, Sort])
+P = TypeVar("P", bound=Pattern)
+PA = TypeVar("PA", Pattern, Axiom)
+PAS = TypeVar("PAS", Pattern, Axiom, Sort)
 
 
 class KoreUtils:
@@ -37,13 +54,13 @@ class KoreUtils:
         return copy_ast
 
     @staticmethod
-    def copy_pattern(pattern: Pattern) -> Pattern:
+    def copy_pattern(pattern: P) -> P:
         return KoreUtils.copy_ast(pattern.get_module(), pattern)
 
     @staticmethod
     def copy_and_substitute_pattern(
-        ast: PA, substitution: Mapping[Variable, Pattern]
-    ) -> PA:
+        ast: PAS, substitution: Mapping[Variable, Pattern]
+    ) -> PAS:
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
         return PatternSubstitutionVisitor(substitution).visit(copied)
 
@@ -51,6 +68,9 @@ class KoreUtils:
     def copy_and_substitute_sort(
         ast: PAS, substitution: Mapping[SortVariable, Sort]
     ) -> PAS:
+        """
+        Note that the substitution should be sort variable -> sort
+        """
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
         return SortSubstitutionVisitor(substitution).visit(copied)
 

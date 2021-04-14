@@ -21,7 +21,7 @@ def run_command(command: List[str], **kwargs) -> subprocess.Popen:
     return subprocess.Popen(command, **kwargs)
 
 
-def get_mtime(path: str) -> int:
+def get_mtime(path: str) -> float:
     if not os.path.exists(path):
         return -1
     return os.stat(path).st_mtime
@@ -50,12 +50,13 @@ class Initializer(KoreVisitor, PatternOnlyVisitorStructure):
     def postvisit_application(
         self, application: kore.Application, arguments: List[kore.Pattern]
     ) -> kore.Application:
-        symbol_name = application.symbol.definition
+        symbol_name = application.symbol.get_symbol_name()
 
         if symbol_name in self.initializer_axioms:
             return self.visit(self.initializer_axioms[symbol_name])
 
         if symbol_name.startswith("Lblproject'Coln'"):
+            assert isinstance(self.pgm_pattern, kore.Application)
             return self.pgm_pattern
 
         application.arguments = arguments
@@ -74,11 +75,17 @@ def gen_init_config(kore_def_path: str, module: str, pgm_src: str) -> str:
 
     for axiom in main_module.axioms:
         if axiom.get_attribute_by_symbol("initializer") is not None:
+            assert (
+                isinstance(axiom.pattern, kore.MLPattern)
+                and isinstance(axiom.pattern.arguments[1], kore.MLPattern)
+                and isinstance(axiom.pattern.arguments[1].arguments[0], kore.MLPattern)
+            )
+
             equation = axiom.pattern.arguments[1].arguments[0]
             lhs, rhs = equation.arguments
             assert isinstance(lhs, kore.Application)
 
-            symbol_name = lhs.symbol.definition
+            symbol_name = lhs.symbol.get_symbol_name()
             initializer_axioms[symbol_name] = rhs
 
     assert "LblinitGeneratedTopCell" in initializer_axioms
@@ -173,6 +180,7 @@ def gen_proof(
             ],
             stdout=subprocess.PIPE,
         )
+        assert proc.stdout is not None
         stdout = proc.stdout.read().decode()
         exit_code = proc.wait()
         assert exit_code == 0, f"kast failed with exit code {exit_code}"
@@ -202,6 +210,7 @@ def gen_proof(
                 ],
                 stdout=subprocess.PIPE,
             )
+            assert proc.stdout is not None
             stdout = proc.stdout.read().decode()
             exit_code = proc.wait()
             assert exit_code == 0, f"krun failed with exit code {exit_code}"

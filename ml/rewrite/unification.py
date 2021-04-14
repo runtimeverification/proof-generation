@@ -160,6 +160,8 @@ class InjectionCombine(Equation):
             self.env
         ).prove_forall_elim_single(inj_axiom_instance, subsubpattern.arguments[0])
 
+        assert isinstance(inj_axiom_instance.claim.pattern, kore.MLPattern)
+
         return EqualityProofGenerator(self.env).replace_equal_subpattern(
             provable,
             path,
@@ -168,12 +170,11 @@ class InjectionCombine(Equation):
         )
 
 
-r"""
-mapmerge(M1, M2) === mapmerge(M2, M1)
-"""
-
-
 class MapCommutativity(Equation):
+    r"""
+    mapmerge(M1, M2) === mapmerge(M2, M1)
+    """
+
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)
     #     # If flag is true, apply the commutativity equation from left to right
@@ -184,17 +185,23 @@ class MapCommutativity(Equation):
         self, provable: ProvableClaim, path: PatternPath
     ) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
+        assert isinstance(subpattern, kore.Application)
         # TODO:: assert here that subpattern is a mapmerge
 
         # get the two variable (names) in the commutativity axiom
+        assert self.env.map_commutativity_axiom is not None
         comm_axiom = self.env.map_commutativity_axiom
-        var1, var2 = (
-            KoreUtils.strip_forall(comm_axiom.claim.pattern).arguments[0].arguments
-        )
+
+        comm_axiom_body = KoreUtils.strip_forall(comm_axiom.claim.pattern)
+        assert isinstance(comm_axiom_body, kore.MLPattern)
+        assert isinstance(comm_axiom_body.arguments[0], kore.Application)
+
+        var1, var2 = comm_axiom_body.arguments[0].arguments
+        assert isinstance(var1, kore.Variable) and isinstance(var2, kore.Variable)
 
         subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
         axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(
-            self.env.map_commutativity_axiom, subst
+            comm_axiom, subst
         )
 
         return EqualityProofGenerator(self.env).replace_equal_subpattern_with_equation(
@@ -204,13 +211,12 @@ class MapCommutativity(Equation):
         )
 
 
-r"""
-  mapmerge(mapmerge(M1, M2), M3) <==> mapmerge(M1, mapmerge(M2, M3))
-  We use a boolean rotate_right to control the direction. 
-"""
-
-
 class MapAssociativity(Equation):
+    r"""
+    mapmerge(mapmerge(M1, M2), M3) <==> mapmerge(M1, mapmerge(M2, M3))
+    We use a boolean rotate_right to control the direction.
+    """
+
     def __init__(self, rotate_right, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.rotate_right: bool = rotate_right
@@ -220,15 +226,23 @@ class MapAssociativity(Equation):
     ) -> ProvableClaim:
         # TODO::
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
+        assert isinstance(subpattern, kore.Application)
         # TODO:: assert here that subpattern is a mapmerge
 
         # get the two variable (names) in the commutativity axiom
-        comm_axiom = self.env.map_commutativity_axiom
-        var1, var2 = KoreUtils.strip_forall(comm_axiom.claim).arguments[0].arguments
+        assert self.env.map_commutativity_axiom is not None
+        assoc_axiom = self.env.map_commutativity_axiom
+
+        assoc_axiom_body = KoreUtils.strip_forall(assoc_axiom.claim.pattern)
+        assert isinstance(assoc_axiom_body, kore.Application)
+        assert isinstance(assoc_axiom_body.arguments[0], kore.Application)
+
+        var1, var2 = assoc_axiom_body.arguments[0].arguments
+        assert isinstance(var1, kore.Variable) and isinstance(var2, kore.Variable)
 
         subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
         axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(
-            self.env.map_commutativity_axiom, subst
+            assoc_axiom, subst
         )
 
         return EqualityProofGenerator(self.env).replace_equal_subpattern_with_equation(
@@ -269,14 +283,14 @@ class UnificationProofGenerator(ProofGenerator):
 
         return None
 
-    """
-    Check if any one of the patterns is a variable, if so try to unify
-    otherwise return failure
-    """
-
     def unify_vars(
         self, pattern1: kore.Pattern, pattern2: kore.Pattern
     ) -> Optional[UnificationResult]:
+        """
+        Check if any one of the patterns is a variable, if so try to unify
+        otherwise return failure
+        """
+
         if not isinstance(pattern1, kore.Variable) and not isinstance(
             pattern2, kore.Variable
         ):
@@ -291,19 +305,20 @@ class UnificationProofGenerator(ProofGenerator):
 
             return UnificationResult({pattern1: pattern2})
         else:
+            assert isinstance(pattern2, kore.Variable)
+
             if pattern2 in FreePatternVariableVisitor().visit(pattern1):
                 return None
 
             return UnificationResult({pattern2: pattern1})
 
-    """
-    Try to unify two applications, expecting symbols and the number
-    of arguments to be exactly the same
-    """
-
     def unify_applications(
         self, pattern1: kore.Pattern, pattern2: kore.Pattern
     ) -> Optional[UnificationResult]:
+        """
+        Try to unify two applications, expecting symbols and the number
+        of arguments to be exactly the same
+        """
         if not isinstance(pattern1, kore.Application) or not isinstance(
             pattern2, kore.Application
         ):
@@ -315,7 +330,7 @@ class UnificationProofGenerator(ProofGenerator):
             return None
 
         # unify subpatterns
-        unification = UnificationResult()
+        unification: UnificationResult = UnificationResult()
 
         for index, (subpattern1, subpattern2) in enumerate(
             zip(pattern1.arguments, pattern2.arguments)
@@ -324,21 +339,22 @@ class UnificationProofGenerator(ProofGenerator):
             if subunification is None:
                 return None
 
-            unification = unification.merge(subunification.prepend_path(index))
-            if unification is None:
+            merged = unification.merge(subunification.prepend_path(index))
+            if merged is None:
                 return None
 
-        return unification
+            unification = merged
 
-    """
-    Try to unify two ML patterns. Currently
-    we are conservatively assuming that the two patterns'
-    top level constructs have to be exactly the same
-    """
+        return unification
 
     def unify_ml_patterns(
         self, pattern1: kore.Pattern, pattern2: kore.Pattern
     ) -> Optional[UnificationResult]:
+        """
+        Try to unify two ML patterns. Currently
+        we are conservatively assuming that the two patterns'
+        top level constructs have to be exactly the same
+        """
         if not isinstance(pattern1, kore.MLPattern) or not isinstance(
             pattern2, kore.MLPattern
         ):
@@ -369,9 +385,11 @@ class UnificationProofGenerator(ProofGenerator):
             if subunification is None:
                 return None
 
-            unification = unification.merge(subunification.prepend_path(index))
-            if unification is None:
+            merged = unification.merge(subunification.prepend_path(index))
+            if merged is None:
                 return None
+
+            unification = merged
 
         return unification
 
@@ -387,16 +405,15 @@ class UnificationProofGenerator(ProofGenerator):
         else:
             return None
 
-    r"""
-    Assuming pattern1 is of the form phi /\ var
-    and if pattern2 is unifiable with phi, then we
-    can apply DuplicateConjunction to reduce
-    phi /\ phi to phi after substitution
-    """
-
     def unify_left_duplicate_conjunction(
         self, pattern1: kore.Pattern, pattern2: kore.Pattern
     ) -> Optional[UnificationResult]:
+        r"""
+        Assuming pattern1 is of the form phi /\ var
+        and if pattern2 is unifiable with phi, then we
+        can apply DuplicateConjunction to reduce
+        phi /\ phi to phi after substitution
+        """
         if (
             isinstance(pattern1, kore.MLPattern)
             and pattern1.construct == kore.MLPattern.AND
@@ -405,25 +422,25 @@ class UnificationProofGenerator(ProofGenerator):
             result1 = self.unify_patterns(pattern1.arguments[0], pattern2)
             result2 = self.unify_patterns(pattern1.arguments[1], pattern2)
             if result1 is not None and result2 is not None:
-                return (
-                    result1.prepend_path(0)
-                    .merge(result2.prepend_path(1))
-                    .append_equation(DuplicateConjunction(self.env), [])
-                )
+                merged = result1.prepend_path(0).merge(result2.prepend_path(1))
+                if merged is None:
+                    return None
+
+                return merged.append_equation(DuplicateConjunction(self.env), [])
 
         return None
-
-    r"""
-    If left pattern is inj{A, C}(X) and
-    the right pattern is inj{B, C}(X)
-    such that B < A, we can split the
-    right pattern to inj{A, C}(inj{B, A}(X))
-    and keep unifying
-    """
 
     def unify_right_splittable_inj(
         self, pattern1: kore.Pattern, pattern2: kore.Pattern
     ) -> Optional[UnificationResult]:
+        r"""
+        If left pattern is inj{A, C}(X) and
+        the right pattern is inj{B, C}(X)
+        such that B < A, we can split the
+        right pattern to inj{A, C}(inj{B, A}(X))
+        and keep unifying
+        """
+
         if (
             isinstance(pattern1, kore.Application)
             and isinstance(pattern2, kore.Application)
@@ -439,6 +456,8 @@ class UnificationProofGenerator(ProofGenerator):
             if (
                 sort_c1 == sort_c2
                 and sort_a != sort_b
+                and isinstance(sort_a, kore.SortInstance)
+                and isinstance(sort_b, kore.SortInstance)
                 and self.env.subsort_relation.get_subsort_chain(sort_b, sort_a)
                 is not None
             ):
@@ -466,20 +485,26 @@ class UnificationProofGenerator(ProofGenerator):
         self, pattern: kore.Pattern
     ) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
         assert KoreTemplates.is_map_merge_pattern(pattern)
+        assert isinstance(pattern, kore.Application)
         swapped_pattern = KoreUtils.copy_pattern(pattern)
         swapped_pattern.arguments[0] = pattern.arguments[1]
         swapped_pattern.arguments[1] = pattern.arguments[0]
         return (swapped_pattern, [(MapCommutativity(self.env), [])])
 
-    r"""
-    merge(a, merge(b,c)) => merge(merge(a,b), c)
-    """
-
     def rotate_left_map_pattern(
         self, pattern: kore.Pattern
     ) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+        r"""
+        merge(a, merge(b,c)) => merge(merge(a,b), c)
+        """
+
         assert KoreTemplates.is_map_merge_pattern(pattern)
+        assert isinstance(pattern, kore.Application)
+
         assert KoreTemplates.is_map_merge_pattern(pattern.arguments[1])
+        assert isinstance(pattern.arguments[0], kore.Application)
+        assert isinstance(pattern.arguments[1], kore.Application)
+
         rotated_pattern_left = kore.Application(
             pattern.symbol, [pattern.arguments[0], pattern.arguments[1].arguments[0]]
         )
@@ -489,15 +514,18 @@ class UnificationProofGenerator(ProofGenerator):
         rotated_pattern.resolve(self.env.module)
         return (rotated_pattern, [(MapAssociativity(self.env, False), [])])
 
-    r"""
-    merge(merge(a,b), c) => merge(a, merge(b,c))
-    """
-
     def rotate_right_map_pattern(
         self, pattern: kore.Pattern
     ) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+        r"""
+        merge(merge(a,b), c) => merge(a, merge(b,c))
+        """
         assert KoreTemplates.is_map_merge_pattern(pattern)
+        assert isinstance(pattern, kore.Application)
+
         assert KoreTemplates.is_map_merge_pattern(pattern.arguments[0])
+        assert isinstance(pattern.arguments[0], kore.Application)
+
         rotated_pattern_right = kore.Application(
             pattern.symbol, [pattern.arguments[0].arguments[1], pattern.arguments[1]]
         )
@@ -518,12 +546,10 @@ class UnificationProofGenerator(ProofGenerator):
         _, path = KoreTemplates.get_path_to_smallest_key_in_map_pattern(pattern)
 
         # from path we can create applied_eqs
-        create_comm = lambda depth, direction: (
-            MapCommutativity(self.env),
-            ([0] * depth),
-        )
-        applied_eqs_comm = [
-            create_comm(d, direct) for d, direct in enumerate(path) if direct == 1
+        applied_eqs_comm: List[Tuple[Equation, PatternPath]] = [
+            (MapCommutativity(self.env), [0] * depth)
+            for depth, direct in enumerate(path)
+            if direct == 1
         ]
 
         leftmost_depth = 0
@@ -534,7 +560,9 @@ class UnificationProofGenerator(ProofGenerator):
             pp = KoreTemplates.get_map_merge_left(pp)
             leftmost_depth = leftmost_depth + 1
 
-        applied_eqs_assoc = [(MapAssociativity(self.env, True), [])] * leftmost_depth
+        applied_eqs_assoc: List[Tuple[Equation, PatternPath]] = [
+            (MapAssociativity(self.env, True), [])
+        ] * leftmost_depth
 
         # create the return pattern
 
@@ -556,22 +584,28 @@ class UnificationProofGenerator(ProofGenerator):
         ):
             KoreTemplates.deep_rotate_right_map_merge_pattern(ret_pattern)
 
-        return (ret_pattern, applied_eqs_comm + applied_eqs_assoc)
+        return ret_pattern, applied_eqs_comm + applied_eqs_assoc
 
     def sort_map_pattern(
         self, pattern: kore.Pattern
     ) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
         assert KoreTemplates.is_map_pattern(pattern)
+        assert isinstance(pattern, kore.Application)
+
         if KoreTemplates.is_map_mapsto_pattern(pattern):
             return (pattern, [])
+
         if KoreTemplates.is_map_merge_pattern(pattern):
             pattern_bubbled, applied_eqs_bubbled = self.bubble_smallest_map_pattern(
                 pattern
             )
+            assert isinstance(pattern_bubbled, kore.Application)
+
             pattern_bubbled_right = KoreTemplates.get_map_merge_right(pattern_bubbled)
             pattern_bubbled_right_sorted, applied_eqs_right = self.sort_map_pattern(
                 pattern_bubbled_right
             )
+
             sorted_pattern = KoreUtils.copy_pattern(pattern)
             sorted_pattern.arguments[0] = pattern_bubbled.arguments[0]
             sorted_pattern.arguments[1] = pattern_bubbled_right_sorted
@@ -584,13 +618,12 @@ class UnificationProofGenerator(ProofGenerator):
             "Unexpected. A map pattern is either a mapsto or a merge."
         )
 
-    r"""
-    Unify two concrete map patterns. 
-    """
-
     def unify_concrete_map_patterns(
         self, pattern1: kore.Pattern, pattern2: kore.Pattern
     ) -> Optional[UnificationResult]:
+        r"""
+        Unify two concrete map patterns.
+        """
 
         if not KoreTemplates.is_map_pattern(
             pattern1
@@ -615,7 +648,7 @@ class UnificationProofGenerator(ProofGenerator):
             return None
 
         # reverse applied_eq2
-        applied_eqs2_reversed = []
+        applied_eqs2_reversed: List[Tuple[Equation, PatternPath]] = []
         for eq, path in reversed(applied_eqs2):
             if isinstance(eq, MapAssociativity):
                 eq.rotate_right = not eq.rotate_right

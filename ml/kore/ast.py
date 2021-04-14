@@ -329,6 +329,12 @@ class SortInstance(BaseAST[Pattern]):
         )
         return "{}{{{}}}".format(sort_id, ", ".join(map(str, self.arguments)))
 
+    def get_sort_id(self) -> str:
+        if isinstance(self.definition, str):
+            return self.definition
+        else:
+            return self.definition.sort_id
+
 
 class SortVariable(BaseAST[Pattern]):
     def __init__(self, name: str):
@@ -459,6 +465,12 @@ class SymbolInstance(BaseAST[Pattern]):
 
     def __hash__(self):
         return hash(self.definition) ^ hash(tuple(self.sort_arguments))
+
+    def get_symbol_name(self) -> str:
+        if isinstance(self.definition, str):
+            return self.definition
+        else:
+            return self.definition.symbol
 
 
 class Axiom(Sentence):

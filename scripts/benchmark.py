@@ -11,11 +11,12 @@ from ml.utils.ansi import ANSI
 
 
 TESTS = [
-    # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-10.two-counters", "examples/cav/two-counters-pgm-10"),
-    # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-20.two-counters", "examples/cav/two-counters-pgm-20"),
-    # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-50.two-counters", "examples/cav/two-counters-pgm-50"),
-    # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-100.two-counters", "examples/cav/two-counters-pgm-100"),
-] + [
+    # [
+    #     # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-10.two-counters", "examples/cav/two-counters-pgm-10"),
+    #     # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-20.two-counters", "examples/cav/two-counters-pgm-20"),
+    #     # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-50.two-counters", "examples/cav/two-counters-pgm-50"),
+    #     # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-100.two-counters", "examples/cav/two-counters-pgm-100"),
+    # ] +
     (
         f"examples/cav/rec-k-unconditional/{rec_module}.k",
         rec_module.upper(),

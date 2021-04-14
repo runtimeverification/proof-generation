@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from traceback import print_exc
 
-from typing import List, Tuple, Mapping, Callable, Dict
+from typing import List, Tuple, Mapping, Callable, Dict, Sequence
 
 import re
 
@@ -137,11 +137,10 @@ class Theorem:
     """
 
     def infer_hypotheses(
-        self, *essential_proofs: Proof, **metavar_substitution
+        self, *essential_proofs: Union[Proof, AutoProof], **metavar_substitution
     ) -> Tuple[List[Proof], Mapping[str, Term]]:
         substitution = {}
         floating_proofs = []
-        auto_proofs = []
 
         assert len(essential_proofs) == len(self.essentials), (
             "unmatched number of subproofs for "
@@ -156,7 +155,6 @@ class Theorem:
         ):
             # auto proofs will be resolved later
             if isinstance(essential_proof, AutoProof):
-                auto_proofs.append((i, essential_proof))
                 continue
 
             assert isinstance(
@@ -232,20 +230,23 @@ class Theorem:
             floating_proofs.append(typecode_proof)
 
         # resolve auto proofs
-        final_essential_proofs = list(essential_proofs)
         subst_visitor = SubstitutionVisitor(substitution)
+        final_essential_proofs: List[Proof] = []
 
-        for i, proof in auto_proofs:
-            essential_instance = subst_visitor.visit(self.essentials[i])
-            try:
-                final_essential_proofs[i] = proof.prove(
-                    self.composer, essential_instance
-                )
-            except Exception:
-                print_exc()
-                assert (
-                    False
-                ), f"unable to automatically generate proof for {essential_instance}"
+        for i, proof in enumerate(essential_proofs):
+            if isinstance(proof, Proof):
+                final_essential_proofs.append(proof)
+            else:
+                essential_instance = subst_visitor.visit(self.essentials[i])
+                try:
+                    final_essential_proofs.append(
+                        proof.prove(self.composer, essential_instance)
+                    )
+                except Exception:
+                    print_exc()
+                    assert (
+                        False
+                    ), f"unable to automatically generate proof for {essential_instance}"
 
         return floating_proofs + final_essential_proofs, substitution
 
@@ -257,7 +258,9 @@ class Theorem:
         will try to prove the typecode automatically)
     """
 
-    def apply(self, *essential_proofs: Proof, **metavar_substitution) -> Proof:
+    def apply(
+        self, *essential_proofs: Union[Proof, AutoProof], **metavar_substitution
+    ) -> Proof:
         subproofs, substitution = self.infer_hypotheses(
             *essential_proofs, **metavar_substitution
         )

@@ -55,6 +55,7 @@ class EqualityProofGenerator(ProofGenerator):
             return ProvableClaim(final_claim, cached_proof)
 
         original = KoreUtils.get_subpattern_by_path(provable.claim, path)
+        assert isinstance(original, kore.Pattern)
 
         # TODO: we are generating a mm fresh variable for a kore variable
         # this might cause some problems in the future
@@ -93,6 +94,9 @@ class EqualityProofGenerator(ProofGenerator):
         }
         # equation_proof is expected to be of the form
         # |- ( \kore-forall-sort z ... )
+        assert isinstance(
+            equation_proof.statement.terms[1], mm.Application
+        ) and isinstance(equation_proof.statement.terms[1].subterms[0], mm.Metavariable)
         current_sort_var = equation_proof.statement.terms[1].subterms[0].name
 
         if current_sort_var in all_sort_metavars:

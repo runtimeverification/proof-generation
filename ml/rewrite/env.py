@@ -183,11 +183,11 @@ class ProofEnvironment:
             kore.SortInstance, Theorem
         ] = {}  # sort instance -> theorem
         self.sort_components: Dict[
-            kore.SortInstance, kore.Pattern
+            kore.SortInstance, List[kore.Application]
         ] = {}  # sort instance -> [ patterns (without existential quantifier) ]
 
-        self.sort_injection_symbol: Optional[kore.Axiom] = None
-        self.sort_injection_axiom: Optional[kore.Axiom] = None
+        self.sort_injection_symbol: Optional[kore.SymbolDefinition] = None
+        self.sort_injection_axiom: Optional[ProvableClaim] = None
         self.subsort_relation = SubsortRelation()
 
         self.domain_values: Set[

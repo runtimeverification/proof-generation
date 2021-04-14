@@ -34,6 +34,8 @@ class SortProofGenerator(ProofGenerator):
             and len(sort3.arguments) == 0
         ), "parametric sort not supported"
 
+        assert self.env.sort_injection_axiom is not None
+
         (
             sort_var1,
             sort_var2,

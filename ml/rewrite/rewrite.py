@@ -53,7 +53,7 @@ class RewriteProofGenerator(ProofGenerator):
     def strip_inj(self, pattern: kore.Pattern) -> kore.Pattern:
         while (
             isinstance(pattern, kore.Application)
-            and pattern.symbol.definition.symbol == "inj"
+            and pattern.symbol.get_symbol_name() == "inj"
         ):
             assert len(pattern.arguments) == 1
             pattern = pattern.arguments[0]
@@ -65,7 +65,9 @@ class RewriteProofGenerator(ProofGenerator):
 
     def decompose_rewrite_axiom(
         self, pattern: kore.Pattern
-    ) -> Tuple[kore.Pattern, kore.Pattern, kore.Pattern, kore.Pattern]:
+    ) -> Tuple[
+        kore.Pattern, Optional[kore.Pattern], kore.Pattern, Optional[kore.Pattern]
+    ]:
         rewrite_pattern = KoreUtils.strip_forall(pattern)
 
         assert isinstance(rewrite_pattern, kore.MLPattern) and (
@@ -75,15 +77,18 @@ class RewriteProofGenerator(ProofGenerator):
 
         lhs, rhs = rewrite_pattern.arguments
 
+        lhs_requires: Optional[kore.Pattern] = None
+        rhs_ensures: Optional[kore.Pattern] = None
+
         if isinstance(lhs, kore.MLPattern) and lhs.construct == kore.MLPattern.AND:
             lhs_requires, lhs_body = lhs.arguments
         else:
-            lhs_requires, lhs_body = None, lhs
+            lhs_body = lhs
 
         if isinstance(rhs, kore.MLPattern) and rhs.construct == kore.MLPattern.AND:
             rhs_ensures, rhs_body = rhs.arguments
         else:
-            rhs_ensures, rhs_body = None, rhs
+            rhs_body = rhs
 
         return lhs_body, lhs_requires, rhs_body, rhs_ensures
 
@@ -140,8 +145,11 @@ class RewriteProofGenerator(ProofGenerator):
                 instantiated_axiom.claim.pattern
             )
 
+            assert requires is not None
+
             assert (
-                ensures.construct == kore.MLPattern.TOP
+                isinstance(ensures, kore.MLPattern)
+                and ensures.construct == kore.MLPattern.TOP
             ), f"non-top ensures clause is not supported: {ensures}"
 
             # trying to prove the requires clause
@@ -161,6 +169,7 @@ class RewriteProofGenerator(ProofGenerator):
             )
 
             # reconstruct the rewrite pattern in kore
+            assert isinstance(instantiated_axiom.claim.pattern, kore.MLPattern)
             concrete_rewrite = kore.Axiom(
                 [],
                 kore.MLPattern(
@@ -240,7 +249,7 @@ class RewriteProofGenerator(ProofGenerator):
         assert rhs == to_pattern, "unexpected RHS: {} vs {}".format(rhs, to_pattern)
 
         # connect the simplification claim too
-        if simplify_initial_pattern:
+        if simplification_claim is not None:
             concrete_rewrite_claim = self.apply_rewrite_star_transitivity(
                 simplification_claim,
                 concrete_rewrite_claim,
@@ -289,6 +298,8 @@ class RewriteProofGenerator(ProofGenerator):
                 final_claim = self.apply_rewrite_star_transitivity(
                     final_claim, step_claim
                 )
+
+        assert final_claim is not None
 
         return final_claim
 
@@ -453,6 +464,7 @@ class RewriteProofGenerator(ProofGenerator):
         provable = self.simplify_pattern(provable, [0, 1])
 
         # failed to prove the condition
+        assert isinstance(provable.claim.pattern, kore.MLPattern)
         if provable.claim.pattern.arguments[1] != rhs:
             return None
 
@@ -465,6 +477,7 @@ class RewriteProofGenerator(ProofGenerator):
         )
 
         (output_sort,) = condition.sorts
+        assert isinstance(output_sort, kore.SortVariable)
 
         # TODO: currently we don't have enough axioms in the kore definition
         # to show this condition, so we will just assume it being true
@@ -475,16 +488,9 @@ class RewriteProofGenerator(ProofGenerator):
         try:
             # trying to prove the simplest case with 1 other rule and 1 free variable
             # TODO: make this more general
-            left, right = (
-                condition.arguments[0]
-                .arguments[0]
-                .arguments[0]
-                .arguments[1]
-                .arguments[1]
-                .arguments[0]
-                .arguments[0]
-                .arguments
-            )
+            eq = KoreUtils.get_subpattern_by_path(condition, [0, 0, 0, 1, 1, 0, 0])
+            assert isinstance(eq, kore.MLPattern)
+            left, right = eq.arguments
 
             print("> proving disjointness claim")
             disjoint_proof = self.disjoint_gen.prove_disjointness(left, right)
@@ -556,6 +562,7 @@ class RewriteProofGenerator(ProofGenerator):
             requires_proof,
             instantiated_axiom.proof,
         )
+        assert isinstance(instantiated_axiom.claim.pattern, kore.MLPattern)
         instantiated_axiom_claim = kore.Claim(
             instantiated_axiom.claim.sort_variables,
             instantiated_axiom.claim.pattern.arguments[1],
@@ -571,6 +578,7 @@ class RewriteProofGenerator(ProofGenerator):
         and_eliminated = self.env.get_theorem("kore-and-equals-top-elim-v1").apply(
             instantiated_axiom.proof,
         )
+        assert isinstance(instantiated_axiom.claim.pattern, kore.MLPattern)
         instantiated_axiom_claim = kore.Claim(
             instantiated_axiom.claim.sort_variables,
             instantiated_axiom.claim.pattern.arguments[0],
@@ -676,10 +684,11 @@ class RewriteProofGenerator(ProofGenerator):
                 function_subpattern = KoreUtils.get_subpattern_by_path(
                     subpattern, function_path
                 )
+                assert isinstance(function_subpattern, kore.Application)
                 print(f"> rewriting anywhere/function {function_subpattern.symbol}")
 
                 # if the symbol is bulitin, try the builtin evaluator
-                symbol_string = function_subpattern.symbol.definition.symbol
+                symbol_string = function_subpattern.symbol.get_symbol_name()
                 if symbol_string in self.hooked_symbol_evaluators:
                     axiom = self.hooked_symbol_evaluators[
                         symbol_string
@@ -797,7 +806,8 @@ class InnermostFunctionPathVisitor(KoreVisitor):
 
         # if the application itself is a function, return the empty path (pointing to itself)
         if (
-            application.symbol.definition.get_attribute_by_symbol("function")
+            isinstance(application.symbol.definition, kore.SymbolDefinition)
+            and application.symbol.definition.get_attribute_by_symbol("function")
             is not None
             and application.symbol.definition.symbol
             not in InnermostFunctionPathVisitor.EXCEPTIONS
@@ -829,7 +839,11 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         assert (
             isinstance(value, kore.MLPattern) and value.construct == kore.MLPattern.DV
         )
-        assert value.sorts[0].definition.sort_id == "SortInt"
+        assert (
+            isinstance(value.sorts[0], kore.SortInstance)
+            and value.sorts[0].get_sort_id() == "SortInt"
+        )
+
         assert isinstance(value.arguments[0], kore.StringLiteral)
         return int(value.arguments[0].content)
 
@@ -837,21 +851,27 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         assert (
             isinstance(value, kore.MLPattern) and value.construct == kore.MLPattern.DV
         )
-        assert value.sorts[0].definition.sort_id == "SortBool"
+        assert (
+            isinstance(value.sorts[0], kore.SortInstance)
+            and value.sorts[0].get_sort_id() == "SortBool"
+        )
         assert isinstance(value.arguments[0], kore.StringLiteral)
         return {"true": True, "false": False}[value.arguments[0].content]
 
-    """
-    Build an axiom that says the given pattern
-    is equal to the result, which is either an integer
-    or a boolean
-
-    Then we will potentially discharge a proof obligation to some domain value reasoning tool
-    """
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        raise NotImplementedError()
 
     def build_arithmetic_equation(
         self, application: kore.Application, result: Union[int, bool]
     ) -> ProvableClaim:
+        """
+        Build an axiom that says the given pattern
+        is equal to the result, which is either an integer
+        or a boolean
+
+        Then we will potentially discharge a proof obligation to some domain value reasoning tool
+        """
+        assert isinstance(application.symbol.definition, kore.SymbolDefinition)
         output_sort = application.symbol.definition.output_sort
         sort_var = kore.SortVariable("R")
 

@@ -20,7 +20,7 @@ def run_command(command: List[str], **kwargs) -> subprocess.Popen:
     return subprocess.Popen(command, **kwargs)
 
 
-def read_until(stream: BinaryIO, keyword: bytes) -> str:
+def read_until(stream: BinaryIO, keyword: bytes) -> bytes:
     buf = b""
     while True:
         buf += stream.read(1)
@@ -37,6 +37,8 @@ def verify_theorems(
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
     )
+    assert isinstance(proc.stdout, BinaryIO)
+    assert proc.stdin is not None
 
     begin = time.time()
     read_until(proc.stdout, b"read into the source buffer.")

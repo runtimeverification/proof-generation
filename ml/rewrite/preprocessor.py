@@ -5,18 +5,17 @@ from ml.kore.utils import KoreUtils
 from .templates import KoreTemplates
 
 
-"""
-Sometimes certain transformations need to be
-done before translating the kore module. For
-instance, all axioms needs to be universally quantified
-and certain missing axioms need to be added.
-
-This class implements these somewhat hacky transformations,
-to separate from the rest of the code for clarity.
-"""
-
-
 class KorePreprocessor:
+    """
+    Sometimes certain transformations need to be
+    done before translating the kore module. For
+    instance, all axioms needs to be universally quantified
+    and certain missing axioms need to be added.
+
+    This class implements these somewhat hacky transformations,
+    to separate from the rest of the code for clarity.
+    """
+
     def preprocess(self, definition: kore.Definition):
         # add the functional axiom of kseq and dotk if missing
         if "KSEQ" in definition.module_map:
@@ -31,9 +30,11 @@ class KorePreprocessor:
                 if symbol is None:
                     continue
 
-                if symbol.definition.symbol == "kseq":
+                symbol_name = symbol.get_symbol_name()
+
+                if symbol_name == "kseq":
                     found_kseq_functional_axiom = True
-                elif symbol.definition.symbol == "dotk":
+                elif symbol_name == "dotk":
                     found_dotk_functional_axiom = True
 
             if not found_kseq_functional_axiom:
