@@ -100,14 +100,8 @@ class SortingProver:
     def is_kore_is_sort(term: Term) -> bool:
         return (isinstance(term, Application) and term.symbol == "\\kore-is-sort" and len(term.subterms) == 1)
 
-    # TODO: this cache is quite unsafe
-    sorting_lemma_cache: Dict[str, Theorem] = {}
-
     @staticmethod
     def find_sorting_lemma_for_symbol(composer: Composer, symbol: str) -> Optional[Theorem]:
-        if not ProofCache.DISABLED and symbol in SortingProver.sorting_lemma_cache:
-            return SortingProver.sorting_lemma_cache[symbol]
-
         for theorem in composer.get_theorems_of_typecode("|-"):
             if len(theorem.essentials) != 0:
                 continue
@@ -149,7 +143,6 @@ class SortingProver:
             if failed:
                 continue
 
-            SortingProver.sorting_lemma_cache[symbol] = theorem
             return theorem
 
         return None

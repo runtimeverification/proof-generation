@@ -4,7 +4,7 @@ import sys
 import time
 import argparse
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Sequence
 from io import StringIO
 
 import yaml
@@ -32,13 +32,11 @@ def load_prelude(composer: Composer, args):
     composer.load(prelude)
 
 
-"""
-Load all snapshots in a directory
-as patterns in the given module
-"""
-
-
 def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
+    """
+    Load all snapshots in a directory
+    as patterns in the given module
+    """
     snapshot_steps = {}
     max_step = 0
 
@@ -62,23 +60,14 @@ def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
     return [snapshot_steps[i] for i in range(max_step + 1)]
 
 
-"""
-Load all rewriting information in a directory
-as substitutions (lists of tuples of patterns) in the given module
-"""
-
-
 def load_rewriting_hints(module: Module, hints_path: str) -> RewritingHints:
+    """
+    Load all rewriting information in a directory
+    as substitutions (lists of tuples of patterns) in the given module
+    """
     with open(hints_path) as hints_file:
         loaded_obj = yaml.load(hints_file, Loader=yaml.Loader)
         return RewritingHints.load_from_object(module, loaded_obj)
-
-
-"""
-Given a list of snapshots, prove that the first snapshot
-rewrites to the second snapshot, and load all proofs into
-the environment
-"""
 
 
 def prove_rewriting(
@@ -86,17 +75,17 @@ def prove_rewriting(
     snapshots: List[Pattern],
     rewriting_hints: Optional[RewritingHints],
 ):
+    """
+    Given a list of snapshots, prove that the first snapshot
+    rewrites to the second snapshot, and load all proofs into
+    the environment
+    """
+
     gen = RewriteProofGenerator(env)
 
     final_claim = gen.prove_multiple_rewrite_steps(snapshots, rewriting_hints)
     env.load_comment(f"\nfinal goal:\n{snapshots[0]}\n=>\n{snapshots[-1]}\n")
     env.load_provable_claim_as_theorem("goal", final_claim)
-
-
-"""
-Output to a standalone .mm file or a directory containing
-multiple interdepdent theories
-"""
 
 
 def output_theory(
@@ -106,6 +95,10 @@ def output_theory(
     standalone=False,
     include_rewrite_proof=False,
 ):
+    """
+    Output to a standalone .mm file or a directory containing
+    multiple interdepdent theories
+    """
     if standalone:
         assert not os.path.isdir(output), f"path {output} exists and is a directory"
         print(f"dumping standalone metamath theory to {output}")
@@ -152,7 +145,7 @@ def output_theory(
                 composer.encode(f, segment)
 
 
-def main():
+def main(argv: Optional[Sequence[str]] = None):
     parser = argparse.ArgumentParser()
     parser.add_argument("definition", help="a kore file")
     parser.add_argument("module", help="the entry module name")
@@ -185,7 +178,7 @@ def main():
         default=False,
         help="output the time spent for translating module and proving rewriting",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     composer = Composer()
 
@@ -211,10 +204,10 @@ def main():
     module_elapsed = time.time() - module_begin
 
     # TODO: currently only supports rewriting hints
+    rewriting_hints: Optional[RewritingHints] = None
+
     if args.hints is not None:
         rewriting_hints = load_rewriting_hints(module, args.hints)
-    else:
-        rewriting_hints = None
 
     if args.snapshots is not None:
         snapshots = load_snapshots(module, args.snapshots)

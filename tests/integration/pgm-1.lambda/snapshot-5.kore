@@ -1,0 +1,1 @@
+inj{SortGeneratedTopCell{}, SortKItem{}}(Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortValue{}, SortKItem{}}(Lbllambda'UndsUndsUnds'LAMBDA-SYNTAX'Unds'Value'Unds'Int'Unds'Term{}(\dv{SortInt{}}("2"),inj{SortInt{}, SortTerm{}}(\dv{SortInt{}}("2")))),dotk{}())),Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))))
