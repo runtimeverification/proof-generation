@@ -69,6 +69,15 @@ def is_satisfiable(gamma: frozenset[Pattern], processed: frozenset[Pattern], def
     print('apps', apps)
     left_partitions = powerset(dapps)
 
-    return all( any(     is_satisfiable(frozenset([app.left]).union( frozenset(map(lambda p: p.left,  left))),                   frozenset(), definition_list, path)
-                     and is_satisfiable(frozenset([app.right]).union(frozenset(map(lambda p: p.right, set(dapps) - set(left)))), frozenset(), definition_list, path)
-                    for left in left_partitions) for app in apps )
+    for app in apps:
+        for left in left_partitions:
+            left_gamma  = frozenset([app.left]).union(frozenset(map(lambda p: p.left, left)))
+            right_gamma = frozenset([app.right]).union(frozenset(map(lambda p: p.right, set(dapps) - set(left))))
+
+            if not is_satisfiable(left_gamma, frozenset(), definition_list, path): continue
+            if not is_satisfiable(right_gamma, frozenset(), definition_list, path): continue
+            break # break does not fallthrough to else block
+        else:
+            # No partition worked
+            return False
+    return True
