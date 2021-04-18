@@ -208,6 +208,9 @@ class Mu(Pattern):
     def negate(self) -> 'Nu':
         return Nu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
 
+    def alpha_rename(self, v: SVar) -> 'Mu':
+        return Mu(v, self.subpattern.substitute(self.bound, v))
+
 @dataclass(frozen=True)
 class Nu(Pattern):
     bound: SVar
@@ -225,3 +228,7 @@ class Nu(Pattern):
 
     def negate(self) -> Mu:
         return Mu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
+
+    def alpha_rename(self, v: SVar) -> 'Nu':
+        return Nu(v, self.subpattern.substitute(self.bound, v))
+
