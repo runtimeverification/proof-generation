@@ -31,33 +31,44 @@ def is_inconsistant(gamma: list[Pattern]) -> bool:
     negated_atoms : set[Pattern] = set([phi.negate() for phi in gamma if isinstance(phi, (Symbol, EVar, SVar))])
     return bool(negated_atoms.intersection(set(gamma)))
 
-def is_satisfiable(gamma: list[Pattern], processed: list[Pattern] = []) -> bool:
+def is_sat(p: Pattern) -> bool:
+    return is_satisfiable(frozenset([p]), frozenset(), definition_list(p, []), frozenset())
+
+def is_satisfiable(gamma: frozenset[Pattern], processed: frozenset[Pattern], definition_list: list[Pattern], path: frozenset[frozenset[Pattern]]) -> bool:
     while gamma:
-        p, *gamma = gamma
+        # p, *gamma = gamma, but for sets
+        gamma_iter = iter(gamma)
+        p = next(gamma_iter)
+        gamma = frozenset(gamma_iter)
+
         if   isinstance(p, (Symbol, App, DApp)):
-            processed = processed + [p]
+            processed = processed.union(set([p]))
         elif isinstance(p, Not) and isinstance(p.subpattern, (Symbol)):
-            processed = processed + [p]
+            processed = processed.union(set([p]))
         elif isinstance(p, And):
-            processed = processed + [p.left, p.right]
-#        elif isinstance(p, SVar) and isinstance(p.name, int): # Definitional Constant
-#            return is_satisfiable(gamma, processed + [definition_list[p.name]], definition_list)
-#        elif isinstance(p, Mu) or isinstance(p, Nu):
-#            return is_satisfiable(gamma, processed + [p.subpattern.substitute(p.bound, SVar(definition_list.index(p)))], definition_list)
+            gamma = gamma.union(set([p.left, p.right]))
+        elif isinstance(p, SVar) and isinstance(p.name, int): # Definitional Constant
+            return is_satisfiable(gamma.union(set([definition_list[p.name]])), processed, definition_list, path)
+        elif isinstance(p, Nu):
+            # TODO: We should handle `Nu X . X`
+            return is_satisfiable(gamma.union(set([p.subpattern.substitute(p.bound, SVar(definition_list.index(p)))])), processed, definition_list, path)
         elif isinstance(p, Or):
-            return is_satisfiable(gamma + [p.left],  processed) \
-                or is_satisfiable(gamma + [p.right], processed)
+            return is_satisfiable(gamma.union(set([p.left])),  processed, definition_list, path) \
+                or is_satisfiable(gamma.union(set([p.right])), processed, definition_list, path)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(p)
 
     print(processed)
-    print(is_inconsistant(processed))
 
-    if is_inconsistant(processed): return False
+    if is_inconsistant(list(processed)): return False
+    if processed in path: return True
+    path = path.union([processed])
+
     apps  = [phi for phi in processed if isinstance(phi, App)]
     dapps = [phi for phi in processed if isinstance(phi, DApp)]
+    print('apps', apps)
     left_partitions = powerset(dapps)
 
-    return all( any(     is_satisfiable([app.left]  + list(map(lambda p: p.left,  left)))
-                     and is_satisfiable([app.right] + list(map(lambda p: p.right, set(dapps) - set(left))))
+    return all( any(     is_satisfiable(frozenset([app.left]).union( frozenset(map(lambda p: p.left,  left))),                   frozenset(), definition_list, path)
+                     and is_satisfiable(frozenset([app.right]).union(frozenset(map(lambda p: p.right, set(dapps) - set(left)))), frozenset(), definition_list, path)
                     for left in left_partitions) for app in apps )
