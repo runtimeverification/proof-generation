@@ -13,10 +13,10 @@ def powerset(s: list[T]) -> Iterator[Iterable[T]]:
 def definition_list(p: Pattern, existing_list: list[Pattern]) -> list[Pattern]:
     if isinstance(p, SVar) or isinstance(p, EVar) or isinstance(p, Symbol):
         return existing_list
-    elif isinstance(p, Not) and ( isinstance(p.subpattern, SVar) or isinstance(p.subpattern, EVar) or isinstance(p.subpattern, Symbol) ):
+    elif isinstance(p, Not) and (isinstance(p.subpattern, (SVar, EVar, Symbol))):
         return existing_list
     elif isinstance(p, App) or isinstance(p, DApp) or isinstance(p, And) or isinstance(p, Or):
-        existing_list = definition_list(p.left, existing_list)
+        existing_list = definition_list(p.left,  existing_list)
         existing_list = definition_list(p.right, existing_list)
         return existing_list
     elif isinstance(p, Mu) or isinstance(p, Nu):
