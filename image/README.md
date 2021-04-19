@@ -34,7 +34,7 @@ This might take a while (~50 min on a laptop with 8 Intel i7 CPUs and 16 gigs of
 
 To run our proof generation separately without using the Dockerfile, you would need to do the following:
 
-- Install K framework following the instructions on [https://github.com/kframework/k](https://github.com/kframework/k). Note that we currently only support the exact version `v5.0.0-bbc70cb`, so we need to check out this tag before building.
+- Install K framework following the instructions on [https://github.com/kframework/k](https://github.com/kframework/k). Note that we currently only support the exact version `v5.0.0-bbc70cb`, so you need to check out this tag before building.
 - Then install python3.7+ and pypy3.7+ (see [https://www.pypy.org/download.html](https://www.pypy.org/download.html))
 - Finally, run
 
@@ -44,7 +44,8 @@ To run our proof generation separately without using the Dockerfile, you would n
 
     to generate a proof object for concrete execution of the given `<program>`.
 
-Note that this might be outdated at the time you are reading it, so ideally you can follow the instruction on [https://github.com/kframework/matching-logic-proof-checker](https://github.com/kframework/matching-logic-proof-checker) to try out our tool.
+Please see [https://github.com/kframework/matching-logic-proof-checker](https://github.com/kframework/matching-logic-proof-checker)
+for more information.
 
 ## Brief recap of our paper
 
@@ -137,8 +138,6 @@ $ python3 -m scripts.benchmark eval/* output.csv
 ```
 
 This will take a while (~40 min on a laptop with Intel i7 CPUs and 16 gigs of memory) because we need to run `kompile` (to compile a k definition) and `krun` to obtain a term for each step of rewriting. Currently, we use a naive way to obtain each step of rewriting by calling `krun` multiple times. Since each run of `krun` incurs some loading time, the second step (`generating snapshots`) can be quite slow, so we don't count this part in our performance data, as they can be re-implemented much more efficiently inside the K framework.
-
-Also note that in the Docker image, `python3` is an alias of `pypy3`.
 
 When it finishes, `output.csv` will contain performance statistics from the tests. The correspondence between the column names in the CSV file and the columns in Table 1 is as follows:
 
