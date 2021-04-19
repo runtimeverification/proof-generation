@@ -10,7 +10,7 @@ Depending on where are you reading this:
     docker push zl38/matching-logic-proof-checker:cav21-ae
     ```
 
-- If you are reading this in the docker image mentioned above, there is also an online version of this [README](https://github.com/kframework/matching-logic-proof-checker/tree/cav21-ae/image) for convenience.
+- If you are reading this in the docker image mentioned above, there is also an online version of this [README](https://github.com/kframework/matching-logic-proof-checker/blob/cav21-ae/image/README.md) for convenience.
 
 If you are interested in setting up everything from scratch, the following section sketches the steps.
 
