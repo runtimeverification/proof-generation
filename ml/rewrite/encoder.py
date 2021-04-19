@@ -121,8 +121,8 @@ class KorePatternEncoder(KoreVisitor):
 
     def postvisit_variable(self, var: kore.Variable) -> mm.Term:
         encoded_var = KorePatternEncoder.encode_variable(var)
-        assert not var.is_set_variable, "set variables are not supported"
-        self.metavariables[encoded_var] = "#ElementVariable"
+        # assert not var.is_set_variable, f"set variables are not supported: {var}"
+        self.metavariables[encoded_var] = "#ElementVariable" if not var.is_set_variable else "#SetVariable"
         return mm.Metavariable(encoded_var)
 
     def postvisit_string_literal(self, literal: kore.StringLiteral) -> mm.Term:

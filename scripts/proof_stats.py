@@ -1,4 +1,4 @@
-from typing import List, BinaryIO, Tuple
+from typing import List, BinaryIO, TextIO, Tuple
 
 import os
 import sys
@@ -35,7 +35,6 @@ def verify_theorems(entry_database: str, label_patterns: List[str]) -> Tuple[flo
         stdout=subprocess.PIPE,
         stdin=subprocess.PIPE,
     )
-    assert isinstance(proc.stdout, BinaryIO)
     assert proc.stdin is not None
 
     begin = time.time()

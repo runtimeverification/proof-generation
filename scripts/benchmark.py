@@ -1,6 +1,7 @@
-from typing import List, BinaryIO
+from typing import List, BinaryIO, Tuple
 
 import os
+import re
 import sys
 import csv
 import shlex
@@ -8,33 +9,6 @@ import argparse
 import subprocess
 
 from ml.utils.ansi import ANSI
-
-TESTS = [
-    # [
-    #     # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-10.two-counters", "examples/cav/two-counters-pgm-10"),
-    #     # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-20.two-counters", "examples/cav/two-counters-pgm-20"),
-    #     # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-50.two-counters", "examples/cav/two-counters-pgm-50"),
-    #     # ("examples/cav/two-counters.k", "TWO-COUNTERS", "examples/cav/pgm-100.two-counters", "examples/cav/two-counters-pgm-100"),
-    # ] +
-    (
-        f"examples/cav/rec-k-unconditional/{rec_module}.k",
-        rec_module.upper(),
-        f"examples/cav/rec-k-unconditional/pgm.{rec_module}",
-        f"examples/cav/rec-k-unconditional/{rec_module}-pgm",
-    ) for rec_module in [
-        # "add8",
-        # "factorial5",
-        "fibonacci05",
-        "benchexpr10",
-        "benchsym10",
-        "benchtree10",
-        "langton6",
-        "mul8",
-        "revelt",
-        "revnat100",
-        "tautologyhard",
-    ]
-]
 
 STATS_LABELS = [
     "gen-module",
@@ -86,6 +60,7 @@ def read_stats(stream: BinaryIO, stats):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("test_dir", nargs="+", help="each test directory should contain exactly one *.k file and one input.* file")
     parser.add_argument("output", help="output csv file")
     parser.add_argument(
         "--append",
@@ -96,6 +71,57 @@ def main():
     )
     args = parser.parse_args()
 
+    # [ (k defn, main module name, input program, output proof) ]
+    tests: List[Tuple[str, str, str, str]] = []
+
+    # find tests
+    for test_path in args.test_dir:
+        k_defn = None
+        input_files = []
+
+        # find the k definition
+        for name in os.listdir(test_path):
+            if name.endswith(".k"):
+                assert k_defn is None, f"multiple k definitions found in {test_path}: {k_defn} and {name}"
+                k_defn = name
+        
+        assert k_defn is not None, f"unable to find k definition in {test_path}"
+
+        k_defn_suffix = k_defn.split(".")[0]
+        k_defn = os.path.join(test_path, k_defn)
+
+        # find all tests with suffix being .<k definition name>
+        for name in os.listdir(test_path):
+            if name.endswith(f".{k_defn_suffix}"):
+                input_files.append(os.path.join(test_path, name))
+
+        assert len(input_files) != 0, f"no input program found in {test_path}"
+
+        # find the module name
+        # we assume that it's the last module in the k definition
+        main_module = None
+        with open(k_defn) as f:
+            for match in re.finditer(r"^\s*module\s+([^\s\n]+)$", f.read(), flags=re.MULTILINE):
+                main_module = match.group(1)
+
+        assert main_module is not None, f"unable to infer a main module name in {name}"
+
+        for input_file in input_files:
+            basename = os.path.basename(input_file)
+            name = basename.split(".")[0]
+            output = os.path.join(test_path, f"proof-{name}")
+
+            tests.append(
+                (
+                    k_defn,
+                    main_module,
+                    input_file,
+                    output,
+                )
+            )
+
+            print(f"found test {k_defn} {main_module} {input_file}, will output to {output}")
+
     with open(args.output, "a" if args.append else "w") as output:
         writer = csv.DictWriter(output, ["module-name", "pgm"] + STATS_LABELS)
 
@@ -103,15 +129,15 @@ def main():
             writer.writeheader()
             output.flush()
 
-        for module_path, module_name, pgm_path, output_path in TESTS:
-            debug(f"## collecting stats on {module_path} on program {pgm_path}")
+        for module_path, module_name, pgm_path, output_path in tests:
+            debug(f"## collecting stats of {module_path} on program {pgm_path}")
             stats = {}
 
             proc = run_command(
                 [
                     "python3",
                     "-m",
-                    "scripts.run-test",
+                    "scripts.run_test",
                     module_path,
                     module_name,
                     pgm_path,
@@ -133,7 +159,7 @@ def main():
                 [
                     "python3",
                     "-m",
-                    "scripts.proof-stats",
+                    "scripts.proof_stats",
                     PRELUDE_THEORY,
                     output_path,
                 ],
