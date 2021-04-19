@@ -129,7 +129,7 @@ def gen_proof(
             [
                 "kompile",
                 "--backend",
-                "llvm",
+                "haskell",
                 "--directory",
                 cache_dir,
                 "--main-module",
