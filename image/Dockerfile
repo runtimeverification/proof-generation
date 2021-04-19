@@ -69,14 +69,18 @@ RUN mkdir metamath && cd metamath && \
 #####################################################################################
 
 # build the actual image
-# we need glibc for openjdk
+# using ubuntu because we need glibc for openjdk
 FROM ubuntu:20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y flex bison z3 && \
+    apt-get install --no-install-recommends -y \
+        tcc libc-dev flex bison z3 python3 python3-pip && \
     rm -rf /var/lib/apt/lists/*
+
+# TODO: perhaps not a good idea
+RUN ln -s /usr/bin/tcc /usr/bin/gcc
 
 # NOTE: we might need these for the llvm backend
 # libjemalloc-dev libgmp-dev
@@ -96,8 +100,9 @@ ENV PATH="/opt/k/bin:${PATH}"
 COPY --from=BUILD /jre /opt/jre
 ENV PATH="/opt/jre/bin:${PATH}"
 
-COPY --from=BUILD /pypy/* /opt/pypy
-ENV PATH="/opt/pypy/bin:${PATH}"
+# OPTIONAL: use pypy3
+# COPY --from=BUILD /pypy/* /opt/pypy
+# ENV PATH="/opt/pypy/bin:${PATH}"
 
 COPY --from=BUILD /metamath/metamath/metamath /opt/metamath/bin/metamath
 ENV PATH="/opt/metamath/bin:${PATH}"
@@ -112,8 +117,9 @@ ADD scripts repo/scripts
 ADD theory repo/theory
 ADD requirements.txt repo
 
-RUN pypy3 -m ensurepip && \
-    pypy3 -m pip install --no-cache-dir -r repo/requirements.txt
+# NOTE: uncomment if using pypy3
+# RUN python3 -m ensurepip && \
+RUN python3 -m pip install --no-cache-dir -r repo/requirements.txt
 
 # copy the paper and README.md
 # according to the requirements

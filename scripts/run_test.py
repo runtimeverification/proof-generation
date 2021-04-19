@@ -228,7 +228,7 @@ def gen_proof(
         print(f"- generating proof")
         proc = run_command(
             [
-                "python3" if cpython else "pypy3",
+                "python3", # if cpython else "pypy3",
                 "-m",
                 "ml.rewrite",
                 kore_definition,
