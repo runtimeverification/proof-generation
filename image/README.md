@@ -7,7 +7,7 @@ Depending on where are you reading this:
     To get started, make sure that you have `docker-19.03.8+` installed (lower versions probably work too, but this is the version we were using). Then run the following to pull and start the container:
 
     ```
-    docker push zl38/matching-logic-proof-checker:cav21-ae
+    docker run -it zl38/matching-logic-proof-checker:cav21-ae
     ```
 
 - If you are reading this in the docker image mentioned above, there is also an online version of this [README](https://github.com/kframework/matching-logic-proof-checker/blob/cav21-ae/image/README.md) for convenience.
