@@ -4,10 +4,6 @@ ARG jdk_build=https://download.java.net/java/GA/jdk15.0.2/0d1cfde4252546c6931946
 ARG pypy_build=https://downloads.python.org/pypy/pypy3.7-v7.3.4-linux64.tar.bz2
 ARG metamath_build=http://us.metamath.org/downloads/metamath.tar.bz2
 
-ARG paper_path=image/submission-v1.pdf
-ARG readme_path=image/README.md
-ARG eval_tests=eval
-
 # we first build the kframework and haskell backend
 FROM ubuntu:20.04 AS BUILD
 
@@ -104,19 +100,15 @@ ENV PATH="/opt/metamath/bin:${PATH}"
 RUN mkdir cav21
 WORKDIR /cav21
 
-# copy the paper and README.md
-# according to the requirements
-# of CAV 2021 AE
-ARG paper_path
-ARG readme_path
-ADD $paper_path paper.pdf
-ADD $readme_path README.md
-
-ADD . repo
+ADD eval ml scripts theory requirements.txt repo/
 RUN pypy3 -m ensurepip && \
     pypy3 -m pip install --no-cache-dir -r repo/requirements.txt
 
-RUN rm -r repo/image
+# copy the paper and README.md
+# according to the requirements
+# of CAV 2021 AE
+ADD image/submission-v1.pdf paper.pdf
+ADD image/README.md README.md
+ADD image/init.sh /root/init.sh
 
-ARG eval_tests
-ADD $eval_tests repo/eval
+RUN echo ". ~/init.sh" >> /root/.bashrc
