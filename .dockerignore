@@ -23,7 +23,6 @@
 
 .vscode/
 .github/
-examples/
 tests/
 tmp/
 env.sh

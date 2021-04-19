@@ -1,36 +1,75 @@
-## Welcome!
+# Welcome!
 
-Depending on where are you reading this:
+## Quick installation
 
-- If you are reading this on the web, we have prepared a [docker image](https://hub.docker.com/r/zl38/matching-logic-proof-checker) that contains all software required for artifact evaluation.
-
-    To get started, make sure that you have `docker-19.03.8+` installed (lower versions probably work too, but this is the version we were using). Then run the following to pull and start the container:
+- Install Docker following [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/) (version ≥ `19.03.8`)
+- Download the Docker image as a `cav21-paper1-docker-image.tar.gz`.
+- Load and run the image:
 
     ```
-    docker run -it zl38/matching-logic-proof-checker:cav21-ae
+    $ docker load --input cav21-paper1-docker-image.tar.gz
+    $ docker run -it zl38/matching-logic-proof-checker:cav21-ae
     ```
 
-- If you are reading this in the docker image mentioned above, there is also an online version of this [README](https://github.com/kframework/matching-logic-proof-checker/blob/cav21-ae/image/README.md) for convenience.
+- Run all experiments in the paper
 
-If you are interested in setting up everything from scratch, the following section sketches the steps.
+    ```
+    /cav21# python3 -m scripts.benchmark eval/* output.csv
+    ```
 
-In the directory `/cav21` (which would be the initial directory when you start the container), you can find a few files/directories:
+    Output can be found in `output.csv`
+
+The directory `/cav21` is organized as follows:
 
 - `README.md` is the same as this document.
-- `paper.pdf` is a copy of our paper.
-- `repo` is a directory containing our proof generator as well as source code of examples used in our evaluation section.
+- `cav21-paper1.pdf` is a copy of our paper.
+- The rest of the directory contains source code and tests of our tool.
+    - Tests are in `eval/`
 
-Furthermore, this image contains a slim bulid of the [K framework](https://kframework.org/) with the haskell backend.
+The rest of the document is organized as follows:
 
-## Setting up from scratch (OPTIONAL)
+- Overview
+- Functional badge
+- Available badge
+- Reusable badge
 
-In our public [repository](https://github.com/kframework/matching-logic-proof-checker/tree/cav21-ae), you can find a Dockerfile in `image/`, and you can build the Docker image used in this artifact evaluation by running the following from the root of the repo:
+## Overview
+
+We propose a method to generate proof objects for program executions.
+
+[K framework](https://kframework.org/) is a language framework that allows one to define the operational semantics of a language and derive various tools (interpreter, symbolic execution engine, bounded model checking, etc.) from a single definition.
+
+We have formalized matching logic in a theorem prover called [Metamath](http://us.metamath.org/) and implemented proof object generation for concrete execution, which is what we present here in this artifact evaluation.
+
+## Functional badge
+
+Our paper evaluates the proof generator on a selected set of tests from the REC (Rewrite Engine Competition) benchmark, using reduced input size. To reproduce the data in the paper (Table 1), run the following benchmark script:
 
 ```
-docker build -f image/Dockerfile .
+$ python3 -m scripts.benchmark eval/* output.csv
 ```
 
-This might take a while (~50 min on a laptop with 8 Intel i7 CPUs and 16 gigs of memory), since we need to build the K framework.
+This will take a while (~40 min on a laptop with Intel i7 CPUs and 16 gigs of memory).
+
+When it finishes, `output.csv` will contain performance statistics on proof generation and proof checking (the time to generate proof parameters such as execution traces is not included). The columns in `output.csv` (also Table 1 in the paper) are as follows:
+
+- `module-name` + `pgm` = programs
+- `gen-total` = proof generation time - total
+    - `gen-module` = proof generation time - semantics
+    - `gen-rewrite` = proof generation time - rewrite
+- `mm-total` = proof checking time - total
+    - `mm-prelude` = proof checking time - logic
+    - `mm-rewrite` = proof checking time - task
+- `loc-total-wrapped` = proof size - kLOC (the unit in the CSV file is LOC instead of kLOC)
+- `size-total` = proof size - megabytes (the unit in the CSV file is bytes instead of megabytes)
+
+## Available badge
+
+We have uploaded the Docker image to Zenodo, and the permanent link should be present in the artifact submission.
+
+## Reusable badge
+
+### Set up our tool outside the image
 
 To run our proof generation separately without using the Dockerfile, you would need to do the following:
 
@@ -44,27 +83,30 @@ To run our proof generation separately without using the Dockerfile, you would n
 
     to generate a proof object for concrete execution of the given `<program>`.
 
-Please see [https://github.com/kframework/matching-logic-proof-checker](https://github.com/kframework/matching-logic-proof-checker)
-for more information.
+Note that this might be outdated at the time you are readng it, so ideally you can follow the instruction on [https://github.com/kframework/matching-logic-proof-checker](https://github.com/kframework/matching-logic-proof-checker) to try out our tool.
 
-## Brief recap of our paper
+### Build Docker image
 
-[K framework](https://kframework.org/) is a language framework that allows one to define the operational semantics of a language and derive various tools (interpreter, symbolic execution engine, bounded model checking, etc.) from a single definition.
+The Dockerfile used to build the image can be found at [https://github.com/kframework/matching-logic-proof-checker/blob/cav21-ae/image/Dockerfile](https://github.com/kframework/matching-logic-proof-checker/blob/cav21-ae/image/Dockerfile).
 
-In the paper, we propose a method to generate proof objects for tasks that K does. Namely, we formalize K in a variant of FOL called matching logic, as well as relevant theories like rewriting. Then we are able to (in matching logic) prove certain facts given a theory derived from the K definition.
+To build it, run the following from the root of this [repo](https://github.com/kframework/matching-logic-proof-checker/tree/cav21-ae):
 
-We have formalized matching logic in a theorem prover called [Metamath](http://us.metamath.org/) and implemented proof object generation for concrete rewriting, which is what we present here in this artifact evaluation.
+```
+docker build -f image/Dockerfile .
+```
 
-## Basic usage
+This might take a while (~50 min on a laptop with 8 Intel i7 CPUs and 16 gigs of memory), since we need to build the K framework.
 
-First, change the directory to `/cav21/repo`.
+### Usage of the tool on new inputs
 
-Suppose we have the following:
+We explain how our tool can be used for new inputs.
 
-- A language definition in K: `kdef.k`, whose entry module name is `LANG`
-- A program file `pgm.txt`
+Our tool takes the following as input:
 
-To generate a proof for concrete rewriting, run
+- A formal definition of a programming language L, defined using the [K framework](https://kframework.org),
+- A program in the language L.
+
+To generate a proof of execution for the program run (at the root of the repo or `/cav21` in the image)
 
 ```
 $ python3 -m scripts.run_test <k definition> <main module name> <program> --output <output proof>
@@ -94,58 +136,57 @@ MM> verify proof *
 All proofs in the database were verified in 12.72 s.
 ```
 
-One can also inspect the content of the proof object, although it's not quite readable right now. At the end of the `[goal.mm](http://goal.mm)` file, one can find a statement of the form:
-
-```
-goal $p |-
-	( \kore-valid \kore-sort-SortGeneratedTopCell
-		( \kore-rewrites-star <term1> <term2> ) )
-$= <proof> $.
-```
-
-which encodes a claim that `<term1>` rewrites to (`\kore-rewrites-star`) to `<term2>` in zero or more steps, and `<term1>` should be an encoding of the input program as a K configuration, and `<term2>` should be the final result of the execution.
-
 As an example, we can generate proof object for the K definition located at `eval/two-counters`
 
 ```
 $ python3 -m scripts.run_test eval/two-counters/two-counters.k TWO-COUNTERS eval/two-counters/input-10.two-counters --output proof-of-two-counters
-- kompiling /cav21/repo/eval/two-counters/two-counters.k
-+ kompile --backend haskell --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --main-module TWO-COUNTERS --debug /cav21/repo/eval/two-counters/two-counters.k
-- generating snapshots
-+ kast --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 1 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 2 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 3 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 4 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 5 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 6 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 7 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 8 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 9 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 10 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-+ krun --directory /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters --depth 11 --output kore /cav21/repo/eval/two-counters/input-10.two-counters
-- generating proof
-+ pypy3 -m ml.rewrite /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters/two-counters-kompiled/definition.kore TWO-COUNTERS --prelude theory/prelude.mm --snapshots /cav21/repo/eval/two-counters/.ml-proof-cache-two-counters/snapshots-input-10 --output /cav21/repo/proof-of-two-counters
+```
+
+### Examples of new inputs
+
+In this section we give some examples of new inputs not presented in the paper.
+
+`examples/lambda/lambda.k` is a K definition of untyped pure lambda calculus (using integers as variables).
+
+To generate the proof object for concrete execution of a term
+
+```
+((lambda 1 (lambda 2 (2 1))) (lambda 2 2)) (lambda 1 1)
+```
+
+Run:
+
+```
+$ python3 -m scripts.run_test examples/lambda/lambda.k LAMBDA examples/lambda/pgm-1.lambda --output proof-of-lambda-pgm-1
+```
+
+The output proof can be checked:
+
+```
+$ metamath proof-of-lambda-pgm-1/goal.mm
 ...
+MM> verify proof *
+0 10%  20%  30%  40%  50%  60%  70%  80%  90% 100%
+..................................................
+Warning: The following $p statement(s) were not proved: 
+ LblUndsandBoolUnds-domain-fact-0, LblnotBoolUnds-domain-fact-0,
+ LblUndsandBoolUnds-domain-fact-1, LblUndsandBoolUnds-domain-fact-2,
+ LblUndsandBoolUnds-domain-fact-3, LblnotBoolUnds-domain-fact-1,
+ LblUndsandBoolUnds-domain-fact-4, LblUndsandBoolUnds-domain-fact-5,
+ LblnotBoolUnds-domain-fact-2, LblUndsandBoolUnds-domain-fact-6,
+ LblUndsEqlsEqlsIntUnds-domain-fact-0, LblnotBoolUnds-domain-fact-3,
+ LblnotBoolUnds-domain-fact-4, LblUndsandBoolUnds-domain-fact-7,
+ LblUndsEqlsEqlsIntUnds-domain-fact-1, LblnotBoolUnds-domain-fact-5,
+ LblUndsEqlsEqlsIntUnds-domain-fact-2, LblnotBoolUnds-domain-fact-6,
+ LblUndsandBoolUnds-domain-fact-8, LblUndsandBoolUnds-domain-fact-9,
+ LblnotBoolUnds-domain-fact-7, LblUndsandBoolUnds-domain-fact-10,
+ LblUndsandBoolUnds-domain-fact-11, LblnotBoolUnds-domain-fact-8,
+ LblUndsandBoolUnds-domain-fact-12, LblUndsEqlsEqlsIntUnds-domain-fact-3,
+ LblnotBoolUnds-domain-fact-9, LblUndsandBoolUnds-domain-fact-13,
+ LblnotBoolUnds-domain-fact-10, LblUndsandBoolUnds-domain-fact-14,
+ LblUndsandBoolUnds-domain-fact-15, LblnotBoolUnds-domain-fact-11,
+ LblUndsandBoolUnds-domain-fact-16, LblUndsEqlsEqlsIntUnds-domain-fact-4,
+ LblnotBoolUnds-domain-fact-12
 ```
 
-## Reproducing evaluation results
-
-Our paper evaluates the proof generator on a selected set of tests from the REC (Rewrite Engine Competition) benchmark, using reduced input size. To reproduce the data in the paper (Table 1), run the following benchmark script:
-
-```
-$ python3 -m scripts.benchmark eval/* output.csv
-```
-
-This will take a while (~40 min on a laptop with Intel i7 CPUs and 16 gigs of memory) because we need to run `kompile` (to compile a k definition) and `krun` to obtain a term for each step of rewriting. Currently, we use a naive way to obtain each step of rewriting by calling `krun` multiple times. Since each run of `krun` incurs some loading time, the second step (`generating snapshots`) can be quite slow, so we don't count this part in our performance data, as they can be re-implemented much more efficiently inside the K framework.
-
-When it finishes, `output.csv` will contain performance statistics from the tests. The correspondence between the column names in the CSV file and the columns in Table 1 is as follows:
-
-- `gen-module` = proof generation/sem (unit: seconds)
-- `gen-rewrite` = proof generation/rewrite (unit: seconds)
-- `gen-total` = proof generation/total (unit: seconds)
-- `mm-prelude` = proof checking/logic (unit: seconds)
-- `mm-rewrite` = proof checking/task (unit: seconds)
-- `mm-total` = proof checking/total (unit: seconds)
-- `loc-total-wrapped` = proof size/kLOC (the unit in the CSV file is LOC instead of kLOC)
-- `size-total` = proof size/megabytes (the unit in the CSV file is bytes instead of megabytes)
+Note that we are not currently proving facts about domain values like integers, so these are stated as assumptions in the proof object.

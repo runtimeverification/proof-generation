@@ -107,19 +107,20 @@ ENV PATH="/opt/jre/bin:${PATH}"
 COPY --from=BUILD /metamath/metamath/metamath /opt/metamath/bin/metamath
 ENV PATH="/opt/metamath/bin:${PATH}"
 
-# set up AE directory
-RUN mkdir cav21
 WORKDIR /cav21
 
-ADD eval repo/eval
-ADD ml repo/ml
-ADD scripts repo/scripts
-ADD theory repo/theory
-ADD requirements.txt repo
+# set up AE directory
+ADD requirements.txt requirements.txt
 
 # NOTE: uncomment if using pypy3
 # RUN python3 -m ensurepip && \
-RUN python3 -m pip install --no-cache-dir -r repo/requirements.txt
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
+ADD eval eval
+ADD ml ml
+ADD scripts scripts
+ADD theory theory
+ADD examples/lambda examples/lambda
 
 # copy the paper and README.md
 # according to the requirements
