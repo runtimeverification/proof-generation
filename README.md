@@ -3,7 +3,7 @@
 ## Quick installation
 
 - Install Docker following [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/) (version ≥ `19.03.8`)
-- Download the Docker image as a `cav21-paper1-docker-image.tar.gz`.
+- Download the Docker image as `cav21-paper1-docker-image.tar.gz`.
 - Load and run the image:
 
     ```
@@ -11,20 +11,21 @@
     $ docker run -it zl38/matching-logic-proof-checker:cav21-ae
     ```
 
+    Alternatively you can directly use the image `zl38/matching-logic-proof-checker:cav21-ae` from Docker Hub by running `docker pull zl38/matching-logic-proof-checker:cav21-ae`.
+
 - Run all experiments in the paper
 
     ```
     /cav21# python3 -m scripts.benchmark eval/* output.csv
     ```
 
-    Output can be found in `output.csv`
+    Output can be found in `output.csv`. This step is explained in more detail in the `Functional badge` section.
 
 The directory `/cav21` is organized as follows:
 
 - `README.md` is the same as this document.
 - `cav21-paper1.pdf` is a copy of our paper.
-- The rest of the directory contains source code and tests of our tool.
-    - Tests are in `eval/`
+- The rest of the directory contains source code and tests (located at `eval/`) of our tool.
 
 The rest of the document is organized as follows:
 
@@ -35,11 +36,9 @@ The rest of the document is organized as follows:
 
 ## Overview
 
-We propose a method to generate proof objects for program executions.
+We propose a method to generate proof objects for program executions, based on the [K framework](https://kframework.org/). K framework is a language framework that allows one to define the operational semantics of a language and derive various tools (interpreter, symbolic execution engine, bounded model checking, etc.) from a single definition.
 
-[K framework](https://kframework.org/) is a language framework that allows one to define the operational semantics of a language and derive various tools (interpreter, symbolic execution engine, bounded model checking, etc.) from a single definition.
-
-We have formalized matching logic in a theorem prover called [Metamath](http://us.metamath.org/) and implemented proof object generation for concrete execution, which is what we present here in this artifact evaluation.
+We have formalized K and its underlying logic, matching logic, in a theorem prover called [Metamath](http://us.metamath.org/) and implemented proof object generation for concrete execution, which is what we present here in this artifact evaluation.
 
 ## Functional badge
 
@@ -51,7 +50,7 @@ $ python3 -m scripts.benchmark eval/* output.csv
 
 This will take a while (~40 min on a laptop with Intel i7 CPUs and 16 gigs of memory).
 
-When it finishes, `output.csv` will contain performance statistics on proof generation and proof checking (the time to generate proof parameters such as execution traces is not included). The columns in `output.csv` (also Table 1 in the paper) are as follows:
+When it finishes, `output.csv` will contain performance statistics on proof generation and proof checking (the time to generate proof parameters such as execution traces is not included). The columns in `output.csv` correspond to the columns in Table 1 of our paper in the following way:
 
 - `module-name` + `pgm` = programs
 - `gen-total` = proof generation time - total
@@ -73,23 +72,35 @@ We have uploaded the Docker image to Zenodo, and the permanent link should be pr
 
 To run our proof generation separately without using the Dockerfile, you would need to do the following:
 
-- Install K framework following the instructions on [https://github.com/kframework/k](https://github.com/kframework/k). Note that we currently only support the exact version `v5.0.0-bbc70cb`, so you need to check out this tag before building.
-- Then install python3.7+ and pypy3.7+ (see [https://www.pypy.org/download.html](https://www.pypy.org/download.html))
+- Install the K framework `v5.0.0-bbc70cb` following [https://github.com/kframework/k/releases/tag/v5.0.0-bbc70cb](https://github.com/kframework/k/releases/tag/v5.0.0-bbc70cb). Note that newer versions may not work with our tool.
+- Install Python 3.7+ and PyPy 3.7+ (see [https://www.pypy.org/download.html](https://www.pypy.org/download.html))
+- Install Metamath. If you are using Ubuntu 20.04+, you can use
+
+    ```
+    apt install metamath
+    ```
+
+    Otherwise, you can follow the instructions in [http://us.metamath.org/#downloads](http://us.metamath.org/#downloads) to compile from source code.
+
+- At the root of our repo, run
+
+    ```
+    python3 -m pip install -r requirements.txt
+    ```
+
 - Finally, run
 
     ```
     python3 -m scripts.run_test <k definition> <main module name> <program> --output <output proof>
     ```
 
-    to generate a proof object for concrete execution of the given `<program>`.
-
-Note that this might be outdated at the time you are readng it, so ideally you can follow the instruction on [https://github.com/kframework/matching-logic-proof-checker](https://github.com/kframework/matching-logic-proof-checker) to try out our tool.
+    to generate a proof object for concrete execution of the given `<program>`. The detailed usage is in the section `Usage of the tool on new inputs`.
 
 ### Build Docker image
 
 The Dockerfile used to build the image can be found at [https://github.com/kframework/matching-logic-proof-checker/blob/cav21-ae/image/Dockerfile](https://github.com/kframework/matching-logic-proof-checker/blob/cav21-ae/image/Dockerfile).
 
-To build it, run the following from the root of this [repo](https://github.com/kframework/matching-logic-proof-checker/tree/cav21-ae):
+To build it, run the following from the root of this [repo](https://github.com/kframework/matching-logic-proof-checker/tree/cav21-ae) at branch `cav21-ae`
 
 ```
 docker build -f image/Dockerfile .
@@ -99,7 +110,7 @@ This might take a while (~50 min on a laptop with 8 Intel i7 CPUs and 16 gigs of
 
 ### Usage of the tool on new inputs
 
-We explain how our tool can be used for new inputs.
+We show how our tool can be used for new inputs.
 
 Our tool takes the following as input:
 
@@ -114,7 +125,7 @@ $ python3 -m scripts.run_test <k definition> <main module name> <program> --outp
 
 which will output the proof object (in Metamath) to `<output proof>`.
 
-Then, we can use a (third-party) Metamath proof checker to check the proof. The image contains the official reference implementation written in C, which you can run using the following:
+Then, we can use the Metamath proof checker to check the proof:
 
 ```
 $ metamath <output proof>/goal.mm
@@ -142,11 +153,11 @@ As an example, we can generate proof object for the K definition located at `eva
 $ python3 -m scripts.run_test eval/two-counters/two-counters.k TWO-COUNTERS eval/two-counters/input-10.two-counters --output proof-of-two-counters
 ```
 
-### Examples of new inputs
+### An example of new inputs
 
-In this section we give some examples of new inputs not presented in the paper.
+In this section we give one example of new inputs not presented in the paper.
 
-`examples/lambda/lambda.k` is a K definition of untyped pure lambda calculus (using integers as variables).
+`examples/lambda/lambda.k` is a K definition of the untyped pure lambda calculus (using integers as variables).
 
 To generate the proof object for concrete execution of a term
 
@@ -160,7 +171,7 @@ Run:
 $ python3 -m scripts.run_test examples/lambda/lambda.k LAMBDA examples/lambda/pgm-1.lambda --output proof-of-lambda-pgm-1
 ```
 
-The output proof can be checked:
+The output proof can be checked by Metamath:
 
 ```
 $ metamath proof-of-lambda-pgm-1/goal.mm
@@ -189,4 +200,4 @@ Warning: The following $p statement(s) were not proved:
  LblnotBoolUnds-domain-fact-12
 ```
 
-Note that we are not currently proving facts about domain values like integers, so these are stated as assumptions in the proof object.
+Note that we are not currently proving facts about domain values like integers, so the warning above complains about these unproved assumptions in the proof object.
