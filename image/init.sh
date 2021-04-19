@@ -9,7 +9,7 @@ Welcome to the artifact evaluation Docker image for the paper
 You can find a copy of our original submission at /cav21/paper.pdf
 
 /cav21/README.md contains detailed instruction on how to use this image
-An online version is also available at https://github.com/kframework/matching-logic-proof-checker/blob/cav21-ae/image/README.md
+An online version is also available at https://github.com/kframework/matching-logic-proof-checker/blob/cav21-ae/README.md
 
 EOF
 

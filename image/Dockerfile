@@ -121,12 +121,9 @@ ADD ml ml
 ADD scripts scripts
 ADD theory theory
 ADD examples/lambda examples/lambda
+ADD README.md README.md
 
-# copy the paper and README.md
-# according to the requirements
-# of CAV 2021 AE
 ADD image/submission-v1.pdf paper.pdf
-ADD image/README.md README.md
 ADD image/init.sh /root/init.sh
 
 RUN echo ". ~/init.sh" >> /root/.bashrc
