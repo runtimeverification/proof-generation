@@ -43,7 +43,13 @@ RUN cd k_repo && mvn -T 1C package -Dllvm.backend.skip -DskipTests
 
 # pack a custom jvm with only the components we need
 RUN deps=$(jdeps --ignore-missing-deps --print-module-deps k_repo/k-distribution/target/release/k/lib/kframework/java/*.jar) && \
-    jlink --output jre --strip-debug --compress=2 --add-modules $deps
+    jlink \
+        --output jre \
+        --strip-debug \
+        --no-header-files \
+        --no-man-pages \
+        --compress=2 \
+        --add-modules $deps
 
 # download pypy3.7
 ARG pypy_build
@@ -69,8 +75,8 @@ FROM ubuntu:20.04
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y gcc flex bison z3 && \
-    apt-get clean
+    apt-get install -y flex bison z3 && \
+    rm -rf /var/lib/apt/lists/*
 
 # NOTE: we might need these for the llvm backend
 # libjemalloc-dev libgmp-dev
@@ -100,7 +106,12 @@ ENV PATH="/opt/metamath/bin:${PATH}"
 RUN mkdir cav21
 WORKDIR /cav21
 
-ADD eval ml scripts theory requirements.txt repo/
+ADD eval repo/eval
+ADD ml repo/ml
+ADD scripts repo/scripts
+ADD theory repo/theory
+ADD requirements.txt repo
+
 RUN pypy3 -m ensurepip && \
     pypy3 -m pip install --no-cache-dir -r repo/requirements.txt
 
