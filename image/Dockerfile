@@ -6,7 +6,7 @@ ARG metamath_build=http://us.metamath.org/downloads/metamath.tar.bz2
 
 ARG paper_path=image/submission-v1.pdf
 ARG readme_path=image/README.md
-ARG eval_tests=image/eval
+ARG eval_tests=eval
 
 # we first build the kframework and haskell backend
 FROM ubuntu:20.04 AS BUILD
@@ -109,7 +109,6 @@ WORKDIR /cav21
 # of CAV 2021 AE
 ARG paper_path
 ARG readme_path
-ARG rec_tests
 ADD $paper_path paper.pdf
 ADD $readme_path README.md
 
@@ -117,5 +116,7 @@ ADD . repo
 RUN pypy3 -m ensurepip && \
     pypy3 -m pip install --no-cache-dir -r repo/requirements.txt
 
-ADD $eval_tests repo/eval
 RUN rm -r repo/image
+
+ARG eval_tests
+ADD $eval_tests repo/eval
