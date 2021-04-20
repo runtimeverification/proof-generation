@@ -1,4 +1,4 @@
-from typing import List, BinaryIO, TextIO, Tuple
+from typing import List, BinaryIO, TextIO, Tuple, Any
 
 import os
 import sys
@@ -16,11 +16,11 @@ def debug(msg: str):
 
 def run_command(command: List[str], **kwargs) -> subprocess.Popen:
     command_str = " ".join([shlex.quote(frag) for frag in command])
-    debug(f"{ANSI.COLOR_GREY}+ {command_str}{ANSI.RESET}")
+    debug(f"{ANSI.in_gray('+ ' + command_str)}")
     return subprocess.Popen(command, **kwargs)
 
 
-def read_until(stream: BinaryIO, keyword: bytes) -> bytes:
+def read_until(stream: Any, keyword: bytes) -> bytes:
     buf = b""
     while True:
         buf += stream.read(1)

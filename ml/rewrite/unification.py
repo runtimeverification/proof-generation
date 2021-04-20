@@ -223,18 +223,16 @@ class MapAssociativity(Equation):
         )
 
 
-"""
-Unify two patterns modulo certain equations
-NOTE: this generator currently only supports
-unifying a pattern with a CONCRETE pattern
-"""
-
-
 class UnificationProofGenerator(ProofGenerator):
     """
-    Losely following https://github.com/kframework/kore/blob/master/docs/2018-11-12-Unification.md
+    Unify two patterns modulo certain equations
+    NOTE: this generator currently only supports
+    unifying a pattern with a CONCRETE pattern
     """
     def unify_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        """
+        Losely following https://github.com/kframework/kore/blob/master/docs/2018-11-12-Unification.md
+        """
         algorithms = [
             self.unify_vars,
             self.unify_applications,

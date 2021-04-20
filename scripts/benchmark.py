@@ -41,7 +41,7 @@ def debug(msg: str):
 
 def run_command(command: List[str], **kwargs) -> subprocess.Popen:
     command_str = " ".join([shlex.quote(frag) for frag in command])
-    debug(f"{ANSI.COLOR_GREY}+ {command_str}{ANSI.RESET}")
+    debug(f"{ANSI.in_gray('+ ' + command_str)}")
     return subprocess.Popen(command, **kwargs)
 
 
@@ -60,7 +60,9 @@ def read_stats(stream: BinaryIO, stats):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("test_dir", nargs="+", help="each test directory should contain exactly one *.k file and one input.* file")
+    parser.add_argument(
+        "test_dir", nargs="+", help="each test directory should contain exactly one *.k file and one input.* file"
+    )
     parser.add_argument("output", help="output csv file")
     parser.add_argument(
         "--append",
@@ -84,7 +86,7 @@ def main():
             if name.endswith(".k"):
                 assert k_defn is None, f"multiple k definitions found in {test_path}: {k_defn} and {name}"
                 k_defn = name
-        
+
         assert k_defn is not None, f"unable to find k definition in {test_path}"
 
         k_defn_suffix = k_defn.split(".")[0]
@@ -111,14 +113,12 @@ def main():
             name = basename.split(".")[0]
             output = os.path.join(test_path, f"proof-{name}")
 
-            tests.append(
-                (
-                    k_defn,
-                    main_module,
-                    input_file,
-                    output,
-                )
-            )
+            tests.append((
+                k_defn,
+                main_module,
+                input_file,
+                output,
+            ))
 
             print(f"found test {k_defn} {main_module} {input_file}, will output to {output}")
 

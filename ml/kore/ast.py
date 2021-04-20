@@ -240,6 +240,12 @@ class ImportStatement(Sentence):
         module_name = (self.module.name if isinstance(self.module, Module) else self.module)
         return "import {}".format(module_name)
 
+    def get_module_name(self) -> str:
+        if isinstance(self.module, str):
+            return self.module
+        else:
+            return self.module.name
+
 
 class SortDefinition(Sentence):
     def __init__(

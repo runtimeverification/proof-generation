@@ -17,7 +17,7 @@ from ml.utils.ansi import ANSI
 
 def run_command(command: List[str], **kwargs) -> subprocess.Popen:
     command_str = " ".join([shlex.quote(frag) for frag in command])
-    print(f"{ANSI.COLOR_GREY}+ {command_str}{ANSI.RESET}", file=sys.stderr)
+    print(f"{ANSI.in_gray('+ ' + command_str)}", file=sys.stderr)
     return subprocess.Popen(command, **kwargs)
 
 

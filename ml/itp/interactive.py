@@ -144,7 +144,7 @@ class InteractiveState:
                 if self.debug:
                     traceback.print_exc()
                 else:
-                    print(f"{ANSI.COLOR_RED}error:{ANSI.RESET} {ANSI.BOLD}{exc}{ANSI.RESET}")
+                    print(f"{ANSI.in_bold_red('error:')} {ANSI.in_bold(exc)}")
 
     def apply_tactic_command(self, command: Command):
         old_state = self.proof_state
@@ -184,7 +184,7 @@ class InteractiveState:
                     [
                         "goal(s):",
                         *[
-                            f"{TAB}{ANSI.BOLD}{goal}{ANSI.RESET}" if i == 0 else f"{TAB}{goal}"
+                            f"{TAB}{ANSI.in_bold(goal)}" if i == 0 else f"{TAB}{goal}"
                             for i, goal in enumerate(current_goals)
                         ],
                     ]

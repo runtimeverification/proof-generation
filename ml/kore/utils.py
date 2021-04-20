@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Mapping, List, Tuple, Optional, NewType, TypeVar, Union, Dict
 
+from io import StringIO
+
 from .ast import (
     Pattern,
     BaseAST,
@@ -27,6 +29,7 @@ from .visitors import (
     QuantifierTester,
     PatternVariableVisitor,
     SortVariableVisitor,
+    PrettyPrinter,
 )
 """
 Path to a subpattern of a pattern or an axiom
@@ -326,3 +329,10 @@ class KoreUtils:
             if not KoreUtils.is_concrete_sort(input_sort):
                 return False
         return KoreUtils.is_concrete_sort(symbol_definition.output_sort)
+
+    @staticmethod
+    def pretty_print(ast: BaseAST, *args, **kwargs) -> str:
+        stream = StringIO()
+        printer = PrettyPrinter(stream, *args, **kwargs)
+        printer.visit(ast)
+        return stream.getvalue()
