@@ -27,57 +27,101 @@ def definition_list(p: Pattern, existing_list: list[Pattern]) -> list[Pattern]:
     else:
         raise NotImplementedError
 
-def is_inconsistant(gamma: list[Pattern]) -> bool:
-    negated_atoms : set[Pattern] = set([phi.negate() for phi in gamma if isinstance(phi, (Symbol, EVar, SVar))])
-    return bool(negated_atoms.intersection(set(gamma)))
+@dataclass(frozen=True)
+class TracedPattern:
+    pattern: Pattern
+
+    "A list of definition constant indices"
+    regenerated: tuple[int, ...] = ()
+    trace_prefix: tuple[int, ...] = ()
+
+    def left(self) -> TracedPattern:
+        assert(isinstance(self.pattern, (App, DApp, Or, And)))
+        return TracedPattern(self.pattern.left, self.regenerated, self.trace_prefix + (0,))
+
+    def right(self) -> TracedPattern:
+        assert(isinstance(self.pattern, (App, DApp, Or, And)))
+        return TracedPattern(self.pattern.right, self.regenerated, self.trace_prefix + (1,))
+
+def is_inconsistant(gamma: frozenset[TracedPattern]) -> bool:
+    atoms         : frozenset[Pattern] = frozenset([phi.pattern             for phi in gamma if isinstance(phi.pattern, (Symbol, EVar, SVar))])
+    negated_atoms : frozenset[Pattern] = frozenset([phi.pattern.subpattern  for phi in gamma if isinstance(phi.pattern, Not)])
+    return bool(negated_atoms.intersection(atoms))
 
 def is_sat(p: Pattern) -> bool:
-    return is_satisfiable(frozenset([p]), frozenset(), definition_list(p, []), frozenset())
+    return is_satisfiable(frozenset([TracedPattern(p)]), frozenset(), definition_list(p, []), {})
 
-def is_satisfiable(gamma: frozenset[Pattern], processed: frozenset[Pattern], definition_list: list[Pattern], path: frozenset[frozenset[Pattern]]) -> bool:
+def is_prefix(prefix: tuple[int, ...], t: tuple[int, ...]) -> bool:
+    return prefix == t[0:len(prefix)]
+
+def all_traces_are_nu_traces( prevs: frozenset[TracedPattern]
+                            , currs: frozenset[TracedPattern]
+                            , definition_list: list[Pattern]
+                            ) -> bool:
+    for prev in prevs:
+        for curr in currs:
+            if not is_prefix(prev.trace_prefix, curr.trace_prefix): continue
+
+            assert len(curr.regenerated)  >= len(prev.regenerated)
+            regenerated = curr.regenerated[len(prev.regenerated):]
+            if not regenerated: continue
+
+            oldest_regenerated = min(regenerated)
+            if isinstance(definition_list[oldest_regenerated], Mu): return False
+    return True
+
+def is_satisfiable( gamma: frozenset[TracedPattern]
+                  , processed: frozenset[TracedPattern]
+                  , definition_list: list[Pattern]
+                  , path: dict[frozenset[Pattern], frozenset[TracedPattern]]
+                  ) -> bool:
+
     while gamma:
-        # p, *gamma = gamma, but for sets
+        # tp, *gamma = gamma, but for sets
         gamma_iter = iter(gamma)
-        p = next(gamma_iter)
+        tp = next(gamma_iter)
         gamma = frozenset(gamma_iter)
+        p = tp.pattern
 
         if   isinstance(p, (Symbol, App, DApp)):
-            processed = processed.union(set([p]))
+            processed = processed.union(set([tp]))
         elif isinstance(p, Not) and isinstance(p.subpattern, (Symbol)):
-            processed = processed.union(set([p]))
+            processed = processed.union(set([tp]))
         elif isinstance(p, And):
-            gamma = gamma.union(set([p.left, p.right]))
+            gamma = gamma.union(set([tp.left(), tp.right()]))
         elif isinstance(p, SVar) and isinstance(p.name, int): # Definitional Constant
-            return is_satisfiable(gamma.union(set([definition_list[p.name]])), processed, definition_list, path)
-        elif isinstance(p, Nu):
+            return is_satisfiable(gamma.union(set([TracedPattern(definition_list[p.name], tp.regenerated)])), processed, definition_list, path)
+        elif isinstance(p, Nu) or isinstance(p, Mu):
             # TODO: We should handle `Nu X . X`
-            return is_satisfiable(gamma.union(set([p.subpattern.substitute(p.bound, SVar(definition_list.index(p)))])), processed, definition_list, path)
+            return is_satisfiable( gamma.union(set([TracedPattern( p.subpattern.substitute(p.bound, SVar(definition_list.index(p)))
+                                                                 , tp.regenerated + (definition_list.index(p),) )
+                                                   ]))
+                                 , processed, definition_list, path)
         elif isinstance(p, Or):
-            return is_satisfiable(gamma.union(set([p.left])),  processed, definition_list, path) \
-                or is_satisfiable(gamma.union(set([p.right])), processed, definition_list, path)
+            return is_satisfiable(gamma.union(set([tp.left()])),  processed, definition_list, path) \
+                or is_satisfiable(gamma.union(set([tp.right()])), processed, definition_list, path)
         else:
             raise NotImplementedError(p)
 
-    print(processed)
+    if is_inconsistant(processed): print(processed); return False
 
-    if is_inconsistant(list(processed)): return False
-    if processed in path: return True
-    path = path.union([processed])
+    processed_patterns = frozenset(tp.pattern for tp in processed)
+    if processed_patterns in path:
+        return all_traces_are_nu_traces(path[processed_patterns], processed, definition_list)
+    path = { **path, processed_patterns : processed }
 
-    apps  = [phi for phi in processed if isinstance(phi, App)]
-    dapps = [phi for phi in processed if isinstance(phi, DApp)]
-    print('apps', apps)
-    left_partitions = powerset(dapps)
+    # print(processed)
+    apps  = [phi for phi in processed if isinstance(phi.pattern, App)]
+    dapps = [phi for phi in processed if isinstance(phi.pattern, DApp)]
+    partition_lefts = list(powerset(dapps))
 
-    for app in apps:
-        for left in left_partitions:
-            left_gamma  = frozenset([app.left]).union(frozenset(map(lambda p: p.left, left)))
-            right_gamma = frozenset([app.right]).union(frozenset(map(lambda p: p.right, set(dapps) - set(left))))
+    def partition_is_satisfiable(app: TracedPattern, partition_left: Iterable[TracedPattern]) -> bool:
+        assert(isinstance(app.pattern, App))
+        left_gamma  = frozenset([app.left()]).union(frozenset(map(lambda p: p.left(), partition_left)))
+        right_gamma = frozenset([app.right()]).union(frozenset(map(lambda p: p.right(), set(dapps) - set(partition_left))))
+        if not is_satisfiable(left_gamma, frozenset(), definition_list, path): return False
+        if not is_satisfiable(right_gamma, frozenset(), definition_list, path): return False
+        return True
 
-            if not is_satisfiable(left_gamma, frozenset(), definition_list, path): continue
-            if not is_satisfiable(right_gamma, frozenset(), definition_list, path): continue
-            break # break does not fallthrough to else block
-        else:
-            # No partition worked
-            return False
-    return True
+    ret = all(any(partition_is_satisfiable(app, partition_left) for partition_left in partition_lefts) for app in apps)
+    return ret

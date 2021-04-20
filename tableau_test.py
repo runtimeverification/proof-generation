@@ -4,7 +4,7 @@ from typing import Optional
 
 def test_definition_list() -> None:
     assert definition_list(SVar("X"), []) == []
-    assert definition_list(Mu(SVar("X"), App(Symbol("S"), SVar("X"))), []) == [Mu(SVar(0), App(Symbol("S"), SVar(0)))]
+    assert definition_list(Mu(SVar("X"), App(Symbol("S"), SVar("X"))), []) == [Mu(SVar("X"), App(Symbol("S"), SVar("X")))]
     assert definition_list(Mu(SVar("X"), Nu(SVar("Y"), App(Symbol("S"), SVar("X")))), []) \
         == [ Mu(SVar("X"), Nu(SVar("Y"), App(Symbol("S"), SVar("X"))))
            , Nu(SVar("Y"), App(Symbol("S"), SVar(0)))
@@ -46,3 +46,12 @@ def test_is_satisfiable() -> None:
                           , DApp(Not(Symbol("S")), Not(Symbol("Y")))
                           )
                      )
+
+    assert not is_sat(Mu(SVar("X"), App(Symbol("S"), SVar("X"))))
+
+    assert     is_sat(Nu(SVar("X"), And( Mu(SVar("Y"), Or(Symbol("p"), App(Symbol("next") , SVar("Y"))) )
+                                       , App(Symbol("next") , SVar("X"))
+                                       )))
+    assert not is_sat(Mu(SVar("X"), And( Nu(SVar("Y"), Or(Symbol("p"), App(Symbol("next") , SVar("Y"))) )
+                                       , App(Symbol("next") , SVar("X"))
+                                       )))
