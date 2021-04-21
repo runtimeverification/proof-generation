@@ -4,13 +4,13 @@ from aml import *
 from dataclasses import dataclass
 from itertools import chain, combinations, count, product
 
-from typing import Iterable, Iterator, Optional, TypeVar, Union
+from typing import Dict, FrozenSet, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union
 
 T = TypeVar('T')
-def powerset(s: list[T]) -> Iterator[Iterable[T]]:
+def powerset(s: List[T]) -> Iterator[Iterable[T]]:
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-def definition_list(p: Pattern, existing_list: list[Pattern]) -> list[Pattern]:
+def definition_list(p: Pattern, existing_list: List[Pattern]) -> List[Pattern]:
     if isinstance(p, SVar) or isinstance(p, EVar) or isinstance(p, Symbol):
         return existing_list
     elif isinstance(p, Not) and (isinstance(p.subpattern, (SVar, EVar, Symbol))):
@@ -32,8 +32,8 @@ class TracedPattern:
     pattern: Pattern
 
     "A list of definition constant indices"
-    regenerated: tuple[int, ...] = ()
-    trace_prefix: tuple[int, ...] = ()
+    regenerated: Tuple[int, ...] = ()
+    trace_prefix: Tuple[int, ...] = ()
 
     def left(self) -> TracedPattern:
         assert(isinstance(self.pattern, (App, DApp, Or, And)))
@@ -43,20 +43,20 @@ class TracedPattern:
         assert(isinstance(self.pattern, (App, DApp, Or, And)))
         return TracedPattern(self.pattern.right, self.regenerated, self.trace_prefix + (1,))
 
-def is_inconsistant(gamma: frozenset[TracedPattern]) -> bool:
-    atoms         : frozenset[Pattern] = frozenset([phi.pattern             for phi in gamma if isinstance(phi.pattern, (Symbol, EVar, SVar))])
-    negated_atoms : frozenset[Pattern] = frozenset([phi.pattern.subpattern  for phi in gamma if isinstance(phi.pattern, Not)])
+def is_inconsistant(gamma: FrozenSet[TracedPattern]) -> bool:
+    atoms         : FrozenSet[Pattern] = frozenset([phi.pattern             for phi in gamma if isinstance(phi.pattern, (Symbol, EVar, SVar))])
+    negated_atoms : FrozenSet[Pattern] = frozenset([phi.pattern.subpattern  for phi in gamma if isinstance(phi.pattern, Not)])
     return bool(negated_atoms.intersection(atoms))
 
 def is_sat(p: Pattern) -> bool:
     return is_satisfiable(frozenset([TracedPattern(p)]), frozenset(), definition_list(p, []), {})
 
-def is_prefix(prefix: tuple[int, ...], t: tuple[int, ...]) -> bool:
+def is_prefix(prefix: Tuple[int, ...], t: Tuple[int, ...]) -> bool:
     return prefix == t[0:len(prefix)]
 
-def all_traces_are_nu_traces( prevs: frozenset[TracedPattern]
-                            , currs: frozenset[TracedPattern]
-                            , definition_list: list[Pattern]
+def all_traces_are_nu_traces( prevs: FrozenSet[TracedPattern]
+                            , currs: FrozenSet[TracedPattern]
+                            , definition_list: List[Pattern]
                             ) -> bool:
     for prev in prevs:
         for curr in currs:
@@ -70,10 +70,10 @@ def all_traces_are_nu_traces( prevs: frozenset[TracedPattern]
             if isinstance(definition_list[oldest_regenerated], Mu): return False
     return True
 
-def is_satisfiable( gamma: frozenset[TracedPattern]
-                  , processed: frozenset[TracedPattern]
-                  , definition_list: list[Pattern]
-                  , path: dict[frozenset[Pattern], frozenset[TracedPattern]]
+def is_satisfiable( gamma: FrozenSet[TracedPattern]
+                  , processed: FrozenSet[TracedPattern]
+                  , definition_list: List[Pattern]
+                  , path: Dict[FrozenSet[Pattern], FrozenSet[TracedPattern]]
                   ) -> bool:
 
     while gamma:

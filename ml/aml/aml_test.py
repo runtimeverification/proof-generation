@@ -1,6 +1,5 @@
 from aml import *
 
-
 def test_free_variables() -> None:
     assert EVar("x").free_variables() == set([EVar("x")])
     assert SVar("x").free_variables() == set([SVar("x")])
@@ -29,7 +28,6 @@ def test_free_variables() -> None:
 
     assert Nu(SVar("x"), EVar("x")).free_variables() == set([EVar("x")])
     assert Nu(SVar("x"), SVar("x")).free_variables() == set()
-
 
 def test_substitute() -> None:
     assert Exists(EVar("x"), EVar("x")).substitute(EVar("x"), EVar("v")) == Exists(EVar("x"), EVar("x"))
@@ -74,15 +72,11 @@ def test_substitute() -> None:
 
     assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("a"), SVar("x")) \
         == And(Or(SVar("x"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e")))
-
     assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("b"), SVar("x")) \
         == And(Or(SVar("a"), SVar("x")), App(App(Symbol("c"), SVar("d")), SVar("e")))
-
     assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("c"), SVar("x")) \
         == And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e")))
-
     assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("d"), SVar("x")) \
         == And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("x")), SVar("e")))
-
     assert And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("e"))).substitute(SVar("e"), SVar("x")) \
         == And(Or(SVar("a"), SVar("b")), App(App(Symbol("c"), SVar("d")), SVar("x")))
