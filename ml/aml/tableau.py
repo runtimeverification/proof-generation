@@ -1,90 +1,127 @@
+from __future__ import annotations
+
 from aml import *
 from dataclasses import dataclass
-from itertools import chain, combinations, product
+from itertools import chain, combinations, count, product
 
-from typing import Iterable, Iterator, Union, List
+from typing import Iterable, Iterator, Optional, TypeVar, Union
 
+T = TypeVar('T')
+def powerset(s: list[T]) -> Iterator[Iterable[T]]:
+    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-def closure(p: Pattern) -> List[List[Pattern]]:
-    if (isinstance(p, SVar) or isinstance(p, EVar) or isinstance(p, Symbol) or isinstance(p, App)
-            or isinstance(p, Exists) or isinstance(p, Forall)):
-        return [[p]]
-    elif isinstance(p, And):
-        return closurePs([p.left, p.right])
-    elif isinstance(p, Or):
-        return closure(p.left) + closure(p.right)
+def definition_list(p: Pattern, existing_list: list[Pattern]) -> list[Pattern]:
+    if isinstance(p, SVar) or isinstance(p, EVar) or isinstance(p, Symbol):
+        return existing_list
+    elif isinstance(p, Not) and (isinstance(p.subpattern, (SVar, EVar, Symbol))):
+        return existing_list
+    elif isinstance(p, App) or isinstance(p, DApp) or isinstance(p, And) or isinstance(p, Or):
+        existing_list = definition_list(p.left,  existing_list)
+        existing_list = definition_list(p.right, existing_list)
+        return existing_list
     elif isinstance(p, Mu) or isinstance(p, Nu):
-        return closure(p.subpattern.substitute(p.bound, p))
+        if p not in existing_list:
+            existing_list = existing_list + [p]
+            existing_list = definition_list(p.subpattern.substitute(p.bound, SVar(existing_list.index(p))), existing_list)
+        return existing_list
     else:
         raise NotImplementedError
 
+@dataclass(frozen=True)
+class TracedPattern:
+    pattern: Pattern
 
-def closurePs(patterns: List[Pattern]) -> List[List[Pattern]]:
-    if patterns == []:
-        return [[]]
-    p, *ps = patterns
-    ret: List[List[Pattern]] = []
-    for l, r in product(closure(p), closurePs(ps)):
-        ret += [l + r]
+    "A list of definition constant indices"
+    regenerated: tuple[int, ...] = ()
+    trace_prefix: tuple[int, ...] = ()
+
+    def left(self) -> TracedPattern:
+        assert(isinstance(self.pattern, (App, DApp, Or, And)))
+        return TracedPattern(self.pattern.left, self.regenerated, self.trace_prefix + (0,))
+
+    def right(self) -> TracedPattern:
+        assert(isinstance(self.pattern, (App, DApp, Or, And)))
+        return TracedPattern(self.pattern.right, self.regenerated, self.trace_prefix + (1,))
+
+def is_inconsistant(gamma: frozenset[TracedPattern]) -> bool:
+    atoms         : frozenset[Pattern] = frozenset([phi.pattern             for phi in gamma if isinstance(phi.pattern, (Symbol, EVar, SVar))])
+    negated_atoms : frozenset[Pattern] = frozenset([phi.pattern.subpattern  for phi in gamma if isinstance(phi.pattern, Not)])
+    return bool(negated_atoms.intersection(atoms))
+
+def is_sat(p: Pattern) -> bool:
+    return is_satisfiable(frozenset([TracedPattern(p)]), frozenset(), definition_list(p, []), {})
+
+def is_prefix(prefix: tuple[int, ...], t: tuple[int, ...]) -> bool:
+    return prefix == t[0:len(prefix)]
+
+def all_traces_are_nu_traces( prevs: frozenset[TracedPattern]
+                            , currs: frozenset[TracedPattern]
+                            , definition_list: list[Pattern]
+                            ) -> bool:
+    for prev in prevs:
+        for curr in currs:
+            if not is_prefix(prev.trace_prefix, curr.trace_prefix): continue
+
+            assert len(curr.regenerated)  >= len(prev.regenerated)
+            regenerated = curr.regenerated[len(prev.regenerated):]
+            if not regenerated: continue
+
+            oldest_regenerated = min(regenerated)
+            if isinstance(definition_list[oldest_regenerated], Mu): return False
+    return True
+
+def is_satisfiable( gamma: frozenset[TracedPattern]
+                  , processed: frozenset[TracedPattern]
+                  , definition_list: list[Pattern]
+                  , path: dict[frozenset[Pattern], frozenset[TracedPattern]]
+                  ) -> bool:
+
+    while gamma:
+        # tp, *gamma = gamma, but for sets
+        gamma_iter = iter(gamma)
+        tp = next(gamma_iter)
+        gamma = frozenset(gamma_iter)
+        p = tp.pattern
+
+        if   isinstance(p, (Symbol, App, DApp)):
+            processed = processed.union(set([tp]))
+        elif isinstance(p, Not) and isinstance(p.subpattern, (Symbol)):
+            processed = processed.union(set([tp]))
+        elif isinstance(p, And):
+            gamma = gamma.union(set([tp.left(), tp.right()]))
+        elif isinstance(p, SVar) and isinstance(p.name, int): # Definitional Constant
+            return is_satisfiable(gamma.union(set([TracedPattern(definition_list[p.name], tp.regenerated)])), processed, definition_list, path)
+        elif isinstance(p, Nu) or isinstance(p, Mu):
+            # TODO: We should handle `Nu X . X`
+            return is_satisfiable( gamma.union(set([TracedPattern( p.subpattern.substitute(p.bound, SVar(definition_list.index(p)))
+                                                                 , tp.regenerated + (definition_list.index(p),) )
+                                                   ]))
+                                 , processed, definition_list, path)
+        elif isinstance(p, Or):
+            return is_satisfiable(gamma.union(set([tp.left()])),  processed, definition_list, path) \
+                or is_satisfiable(gamma.union(set([tp.right()])), processed, definition_list, path)
+        else:
+            raise NotImplementedError(p)
+
+    if is_inconsistant(processed): print(processed); return False
+
+    processed_patterns = frozenset(tp.pattern for tp in processed)
+    if processed_patterns in path:
+        return all_traces_are_nu_traces(path[processed_patterns], processed, definition_list)
+    path = { **path, processed_patterns : processed }
+
+    # print(processed)
+    apps  = [phi for phi in processed if isinstance(phi.pattern, App)]
+    dapps = [phi for phi in processed if isinstance(phi.pattern, DApp)]
+    partition_lefts = list(powerset(dapps))
+
+    def partition_is_satisfiable(app: TracedPattern, partition_left: Iterable[TracedPattern]) -> bool:
+        assert(isinstance(app.pattern, App))
+        left_gamma  = frozenset([app.left()]).union(frozenset(map(lambda p: p.left(), partition_left)))
+        right_gamma = frozenset([app.right()]).union(frozenset(map(lambda p: p.right(), set(dapps) - set(partition_left))))
+        if not is_satisfiable(left_gamma, frozenset(), definition_list, path): return False
+        if not is_satisfiable(right_gamma, frozenset(), definition_list, path): return False
+        return True
+
+    ret = all(any(partition_is_satisfiable(app, partition_left) for partition_left in partition_lefts) for app in apps)
     return ret
-
-
-Node = Union["OrNode", "AndNode", "SimpleNode"]
-
-# TODO: Make typing more generic.
-
-
-def powerset(s: List[DApp]) -> Iterator[Iterable[DApp]]:
-    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
-
-
-@dataclass
-class OrNode:
-    children: List[Node]
-
-
-@dataclass
-class AndNode:
-    children: List[Node]
-
-
-@dataclass
-class SimpleNode:
-    gamma: List[Pattern]
-
-    def is_consitant(self) -> bool:
-        atoms = set(
-            [
-                phi.negate() for phi in self.gamma
-                if isinstance(phi, Symbol) or isinstance(phi, SVar) or isinstance(phi, EVar)
-            ]
-        )
-        return not bool(atoms.intersection(set(self.gamma)))
-
-    def children(self) -> Node:
-        def project_left(p: DApp) -> Pattern:
-            return p.left
-
-        def project_right(p: DApp) -> Pattern:
-            return p.right
-
-        if not self.is_consitant():
-            return OrNode([])
-        apps = [phi for phi in self.gamma if isinstance(phi, App)]
-        dapps = [phi for phi in self.gamma if isinstance(phi, DApp)]
-        left_partitions = powerset(dapps)
-        return AndNode(
-            [
-                OrNode(
-                    [
-                        AndNode(
-                            [
-                                SimpleNode([app.left] + list(map(project_left, left))),
-                                SimpleNode([app.right] + list(map(project_right,
-                                                                  set(dapps) - set(left)))),
-                            ]
-                        ) for left in left_partitions
-                    ]
-                ) for app in apps
-            ]
-        )
