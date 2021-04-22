@@ -144,7 +144,6 @@ def main():
                     "--output",
                     output_path,
                     "--benchmark",
-                    "--cpython",
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,

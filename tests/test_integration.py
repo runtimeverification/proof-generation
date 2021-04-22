@@ -38,9 +38,9 @@ class TestIntegrationBase(unittest.TestCase):
                os.path.isfile(prelude_path), \
                "not in the right directory"
 
-        pgm_path = os.path.join(integration_path, pgm)
-        assert os.path.isdir(pgm_path), \
-               f"cannot find program path {pgm_path}"
+        task_path = os.path.join(integration_path, f"{pgm}.yml")
+        assert os.path.isfile(task_path), \
+               f"cannot find task file {task_path}"
 
         definition_name = pgm.split(".")[-1]
         definition_path = os.path.join(definitions_path, f"{definition_name}.kore")
@@ -56,8 +56,8 @@ class TestIntegrationBase(unittest.TestCase):
                 module_name,
                 "--prelude",
                 prelude_path,
-                "--snapshots",
-                pgm_path,
+                "--task",
+                task_path,
                 "--output",
                 self.output_proof_dir,
             ]

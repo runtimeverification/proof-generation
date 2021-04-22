@@ -274,3 +274,13 @@ class KoreTemplates:
             raise NotImplementedError("Should not be reachable because map patterns have distinct keys.")
 
         raise NotImplementedError()
+
+    @staticmethod
+    def strip_inj(pattern: kore.Pattern) -> kore.Pattern:
+        """
+        Strip call outermost injection calls
+        """
+        while (isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "inj"):
+            assert len(pattern.arguments) == 1
+            pattern = pattern.arguments[0]
+        return pattern

@@ -520,6 +520,7 @@ class PrettyPrinter(KoreVisitor):
             r"And\-": "&",
             r"Coln": ":",
             r"Pipe": "|",
+            r"Stop": ".",
         }
 
         pattern = "|".join(keyword_map.keys())
