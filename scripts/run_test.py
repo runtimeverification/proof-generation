@@ -54,7 +54,7 @@ def parse_kore_log(log_src: str) -> List[Tuple[str, str]]:
     log_items: List[Tuple[str, str]] = []
     current_item: Optional[str] = None
     current_content: List[str] = []
- 
+
     for line in log_src.split("\n"):
         match = re.match(r"kore-exec: \[\d+\] \w+ \((\w+)\):", line)
         if match is not None:
@@ -219,11 +219,13 @@ def gen_task(kompiled_dir: str, pgm: str) -> Dict:
     proc = run_command(
         [
             "krun",
-            "--directory", kompiled_dir,
+            "--directory",
+            kompiled_dir,
             "--haskell-backend-command",
             # to print logs about rewriting and substitutions
             "kore-exec --log-entries DebugRewriteSubstitution,DebugExecGoal",
-            "--output", "none",
+            "--output",
+            "none",
             pgm,
         ],
         stderr=subprocess.PIPE,
@@ -264,18 +266,22 @@ def gen_task(kompiled_dir: str, pgm: str) -> Dict:
                    "rule-id" in step_obj and "substitution" in step_obj, \
                    f"ill-formed rewrite log {step_obj}"
 
-            steps.append({
-                "type": step_obj["type"].strip(),
-                "from": step_obj["from"].strip(),
-                "rule-id": step_obj["rule-id"].strip(),
-                "substitution": [
-                    {
-                        "key": item["key"].strip(),
-                        "value": item["value"].strip(),
-                    }
-                    for item in step_obj["substitution"]
-                ],
-            })
+            steps.append(
+                {
+                    "type":
+                    step_obj["type"].strip(),
+                    "from":
+                    step_obj["from"].strip(),
+                    "rule-id":
+                    step_obj["rule-id"].strip(),
+                    "substitution": [
+                        {
+                            "key": item["key"].strip(),
+                            "value": item["value"].strip(),
+                        } for item in step_obj["substitution"]
+                    ],
+                }
+            )
 
     assert final is not None, f"unable to find exec goal log item"
 

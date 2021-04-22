@@ -49,21 +49,27 @@ class RewritingTask:
 
         validated = schema.Schema(
             {
-                "task": "rewriting",
-                "initial": schema.And(
+                "task":
+                "rewriting",
+                "initial":
+                schema.And(
                     str,
                     schema.Use(parse_and_strip_inj),
                 ),
-                "final": schema.And(
+                "final":
+                schema.And(
                     str,
                     schema.Use(parse_and_strip_inj),
                 ),
                 schema.Optional("steps"): [
                     schema.Or(
                         {
-                            "type": "rewriting",
-                            schema.Optional("from"): schema.And(str, schema.Use(parse_and_strip_inj)),
-                            schema.Optional("rule-id"): str,
+                            "type":
+                            "rewriting",
+                            schema.Optional("from"):
+                            schema.And(str, schema.Use(parse_and_strip_inj)),
+                            schema.Optional("rule-id"):
+                            str,
                             schema.Optional("substitution"): [
                                 {
                                     "key": schema.And(

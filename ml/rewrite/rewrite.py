@@ -100,7 +100,7 @@ class RewriteProofGenerator(ProofGenerator):
         if rule_hint is not None:
             assert rule_hint in self.env.rewrite_axioms, \
                    f"unable to find axiom with id {rule_hint} in the hint"
-            axioms = [ self.env.rewrite_axioms[rule_hint] ]
+            axioms = [self.env.rewrite_axioms[rule_hint]]
         else:
             axioms = list(self.env.rewrite_axioms.values())
 
@@ -190,7 +190,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # TODO: this is a hack to load all domain values
         self.env.encode_pattern(rewriting_step.initial)
-    
+
         return self.rewrite_from_pattern(rewriting_step.initial, rewriting_step.rule_id, rewriting_step.substitution)
 
     def prove_rewriting_task(
@@ -214,7 +214,7 @@ class RewriteProofGenerator(ProofGenerator):
         if current_pattern == task.final:
             return simplification_claim
 
-        step_claims = [ simplification_claim ]
+        step_claims = [simplification_claim]
 
         for i, step in enumerate(task.steps):
             print("==================")
@@ -668,7 +668,6 @@ class InnermostFunctionPathVisitor(KoreVisitor):
     Return a path of an application subpattern with a function-like head such that
     it doesn't have any (sub-)subpattern with a function-like head
     """
-
     """
     These symbols are marked as hooked function symbols
     but for the purpose of proof generation they should
@@ -712,7 +711,6 @@ class BuiltinFunctionEvaluator(ProofGenerator):
     """
     Common base class for evaluator of the builtin sort SortInt{}
     """
-
     def __init__(self, env: ProofEnvironment):
         super().__init__(env)
         self.axiom_counter = 0
