@@ -2,7 +2,7 @@
 
 ## Quick installation
 
-- Install Docker following [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/) (version ≥ `19.03.8`)
+- Install Docker following [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/) (version ≥ `19.03.8`).
 - Download the Docker image as `cav21-paper1-docker-image.tar.gz`.
 - Load and run the image:
 
@@ -48,7 +48,7 @@ Our paper evaluates the proof generator on a selected set of tests from the REC 
 $ python3 -m scripts.benchmark eval/* output.csv
 ```
 
-This will take a while (~40 min on a laptop with Intel i7 CPUs and 16 gigs of memory).
+This will take a while (~40 min on a laptop with Intel i7 CPUs and 16 gigs of memory). This also includes the running example of `two-counters`.
 
 When it finishes, `output.csv` will contain performance statistics on proof generation and proof checking (the time to generate proof parameters such as execution traces is not included). The columns in `output.csv` correspond to the columns in Table 1 of our paper in the following way:
 
@@ -72,7 +72,7 @@ We have uploaded the Docker image to Zenodo, and the permanent link should be pr
 
 To run our proof generation separately without using the Dockerfile, you would need to do the following:
 
-- Install the K framework `v5.0.0-bbc70cb` following [https://github.com/kframework/k/releases/tag/v5.0.0-bbc70cb](https://github.com/kframework/k/releases/tag/v5.0.0-bbc70cb). Note that newer versions may not work with our tool.
+- Install the K framework `v5.0.0-bbc70cb` following [https://github.com/kframework/k/releases/tag/v5.0.0-bbc70cb](https://github.com/kframework/k/releases/tag/v5.0.0-bbc70cb). Note that we have not fully tested our tool with newer versions of K.
 - Install Python 3.7+ and PyPy 3.7+ (see [https://www.pypy.org/download.html](https://www.pypy.org/download.html))
 - Install Metamath. If you are using Ubuntu 20.04+, you can use
 
