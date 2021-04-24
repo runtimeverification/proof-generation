@@ -49,7 +49,7 @@ class ANSIStyler(type):
 
         while i < len(styles):
             style = styles[i]
-            
+
             if style == "rgb" and i + 4 < len(styles):
                 kind = styles[i + 1]
                 assert kind == "fg" or kind == "bg", \
@@ -64,7 +64,7 @@ class ANSIStyler(type):
                     codes.append(f"\033[{38 if kind == 'fg' else 48};2;{r};{g};{b}m")
 
                 continue
-                
+
             # special case for bright_* colors
             if style == "bright" and i + 1 < len(styles):
                 styles[i + 1] = "bright_" + styles[i + 1]

@@ -34,7 +34,6 @@ from .visitors import (
     StringLiteral,
 )
 from .pretty import PrettyPrinter
-
 """
 Path to a subpattern of a pattern or an axiom
 """
