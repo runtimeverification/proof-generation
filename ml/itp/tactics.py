@@ -44,13 +44,12 @@ class Tactic:
         return substitution
 
 
-"""
-Apply a theorem on the top of the goal stack
-"""
-
-
 @ProofState.register_tactic("apply")
 class ApplyTactic(Tactic):
+    """
+    Apply a theorem on the top of the goal stack
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.use_claim = False
@@ -135,11 +134,11 @@ class ApplyTactic(Tactic):
         killed_svars = {var for var in killed_svars if state.get_schematic_variable_from_name(var) is not None}
         assert (not killed_svars), f"schematic variable(s) {killed_svars} killed before being assigned"
 
-    """
-    Construct a proof from given subproofs and the information inferred before
-    """
-
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        """
+        Construct a proof from given subproofs and the information inferred before
+        """
+
         assert self.theorem is not None
 
         num_essentials = len(self.theorem.essentials)
@@ -175,13 +174,12 @@ class ApplyTactic(Tactic):
             )
 
 
-"""
-Set some schematic variables to concrete terms (without schematic variables)
-"""
-
-
 @ProofState.register_tactic("let")
 class SetSchematicVariableTactic(Tactic):
+    """
+    Set some schematic variables to concrete terms (without schematic variables)
+    """
+
     def apply(self, state: ProofState, **options):
         substitution = self.parse_substitution(state, options)
 
@@ -206,13 +204,12 @@ class SetSchematicVariableTactic(Tactic):
         pass
 
 
-"""
-Move the current goal to the last
-"""
-
-
 @ProofState.register_tactic("meh")
 class ShuffleTactic(Tactic):
+    """
+    Move the current goal to the last
+    """
+
     def apply(self, state: ProofState):
         state.current_goals = [state.current_goals[-1]] + state.current_goals[:-1]
 
@@ -220,13 +217,12 @@ class ShuffleTactic(Tactic):
         pass
 
 
-"""
-Make a temporary claim and use it in other parts of the proof
-"""
-
-
 @ProofState.register_tactic("claim")
 class ClaimTactic(Tactic):
+    """
+    Make a temporary claim and use it in other parts of the proof
+    """
+    
     def find_free_theorem_name(self, state: ProofState, prefix: str) -> str:
         i = 0
         # TODO: well...

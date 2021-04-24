@@ -17,25 +17,24 @@ from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVis
 from ml.metamath.composer import Composer, Proof, Theorem
 
 from .extension import SchematicVariable, SubstitutionVisitor, CopyVisitor
-"""
-Tactic should raise this exception when there
-is no change in the proof state
-"""
 
 
 class NoStateChangeException(Exception):
+    """
+    Tactic should raise this exception when there
+    is no change in the proof state
+    """
     pass
 
 
-"""
-A goal is a tuple (id, statement, [claim label])
-All dependencies between goals
-are recorded in ProofState so that
-we can copy states more easily
-"""
-
-
 class Goal:
+    """
+    A goal is a tuple (id, statement, [claim label])
+    All dependencies between goals
+    are recorded in ProofState so that
+    we can copy states more easily
+    """
+
     def __init__(
         self,
         goal_id: int,
@@ -108,13 +107,13 @@ class ProofState:
 
         return copied_state
 
-    """
-    Find an essential usable by the current goal
-    NOTE: a goal is needed because inline claims may
-    have different essentials than the main goal
-    """
-
     def find_essential_for_goal(self, name: str, goal: Goal) -> Optional[Theorem]:
+        """
+        Find an essential usable by the current goal
+        NOTE: a goal is needed because inline claims may
+        have different essentials than the main goal
+        """
+
         if goal.claim_label is not None:
             theorem, _ = self.get_claim(goal.claim_label)
             for essential in theorem.essentials:
@@ -143,11 +142,11 @@ class ProofState:
             return []
         return [self.get_goal_by_id(dep) for dep in self.goal_dependencies[goal.goal_id]]
 
-    """
-    Check if there is a dependency cycle from the given goal
-    """
-
     def has_dependency_cycle_from(self, root: Goal) -> bool:
+        """
+        Check if there is a dependency cycle from the given goal
+        """
+
         reachable_goals = set()
 
         stack = self.get_goal_dependencies(root)
@@ -171,11 +170,10 @@ class ProofState:
         assert len(self.current_goals), "no goals left"
         return self.get_goal_by_id(self.current_goals[-1])
 
-    """
-    Get the current list of goals from top to bottom
-    """
-
     def get_current_goal_statements(self) -> List[StructuredStatement]:
+        """
+        Get the current list of goals from top to bottom
+        """
         return [self.get_goal_by_id(goal_id).statement for goal_id in self.current_goals][::-1]
 
     def resolve_current_goal(self, tactic) -> Goal:
@@ -204,14 +202,13 @@ class ProofState:
     def get_all_claims(self) -> List[Theorem]:
         return [theorem for theorem, _ in self.claims.values()]
 
-    """
-    Push a goal with no initial dependency (similar to the initial goal)
-    and optionally associate it with a claim label
-    """
-
     def push_isolated_goals(self,
                             statements: List[StructuredStatement],
                             claim_label: Optional[str] = None) -> List[Goal]:
+        """
+        Push a goal with no initial dependency (similar to the initial goal)
+        and optionally associate it with a claim label
+        """
         new_goals = [Goal(len(self.all_goals) + i, statement, claim_label) for i, statement in enumerate(statements)]
         self.all_goals += new_goals
 
@@ -231,11 +228,10 @@ class ProofState:
     def push_derived_goal(self, parent: Goal, statement: StructuredStatement):
         self.push_derived_goals(parent, [statement])
 
-    """
-    Apply some transformation on all current goals
-    """
-
     def transform_all_current_goals(self, transformation: Callable[[StructuredStatement], StructuredStatement]):
+        """
+        Apply some transformation on all current goals
+        """
         for goal_id in self.current_goals:
             goal = self.all_goals[goal_id] = self.all_goals[goal_id].copy()
             goal.statement = transformation(goal.statement)
@@ -263,22 +259,21 @@ class ProofState:
         else:
             self.schematic_var_assignment[svar.num] = term
 
-    """
-    A schematic variable is live if it appears in one of the goals
-    """
-
     def get_live_schematic_variables(self) -> Set[str]:
+        """
+        A schematic variable is live if it appears in one of the goals
+        """
         live_vars = set()
         for goal_id in self.current_goals:
             live_vars.update(self.get_goal_by_id(goal_id).statement.get_metavariables())
         return live_vars
 
-    """
-    (Recursively) resolve to the actual concrete term assigned to it
-    NOTE: by concrete I mean a term without schematic variables
-    """
-
     def resolve_schematic_variables(self, term: Term) -> Term:
+        """
+        (Recursively) resolve to the actual concrete term assigned to it
+        NOTE: by concrete I mean a term without schematic variables
+        """
+
         if isinstance(term, SchematicVariable):
             assert (term.num in self.schematic_var_assignment), f"schematic variable {term.name} has not been assigned"
             return self.resolve_schematic_variables(self.schematic_var_assignment[term.num])
@@ -297,32 +292,29 @@ class ProofState:
 
         return SubstitutionVisitor(schematic_substitution).visit(term)
 
-    """
-    Check if the given term has any schematic variables
-    """
-
     def is_concrete(self, term: Union[Term, StructuredStatement]) -> bool:
+        """
+        Check if the given term has any schematic variables
+        """
         metavars = term.get_metavariables()
         for metavar in metavars:
             if self.get_schematic_variable_from_name(metavar) is not None:
                 return False
         return True
 
-    """
-    Apply the given tactic on a copied state
-    """
-
     def apply_tactic(self, tactic, *args, **kwargs) -> ProofState:
+        """
+        Apply the given tactic on a copied state
+        """
         copied = self.copy()
         tactic.apply(copied, *args, **kwargs)
         return copied
 
-    """
-    Generate a proof for the given goal by tracing
-    through the DAG and obtaining subproofs
-    """
-
     def gen_proof_for_goal(self, goal: Goal, trace: List[int] = []) -> Proof:
+        """
+        Generate a proof for the given goal by tracing
+        through the DAG and obtaining subproofs
+        """
         assert (goal.goal_id not in trace), f"proof of goal {goal.statement} depends on itself"
 
         subproofs = [self.gen_proof_for_goal(dep, trace + [goal.goal_id]) for dep in self.get_goal_dependencies(goal)]
@@ -331,11 +323,10 @@ class ProofState:
 
         return tactic.resolve(self, subproofs)
 
-    """
-    Generate the proof for the initial goal
-    """
-
     def gen_proof(self) -> Proof:
+        """
+        Generate the proof for the initial goal
+        """
         assert not self.current_goals, "non empty goal stack"
         init_goal = self.get_goal_by_id(0)
         return self.gen_proof_for_goal(init_goal)

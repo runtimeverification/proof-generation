@@ -38,16 +38,36 @@ class ASTTransformer(Transformer):
 
         return Options(*positional_args, **keyword_args)
 
-    def command_or_empty(self, args):
+    def tactical_or_empty(self, args):
         if len(args):
             return args[0]
         return None
 
-    def command(self, args):
-        return Command(*args)
+    def atomic_tactical(self, args):
+        return AtomicTactical(*args)
 
-    def script(self, args):
-        return Script(args)
+    def tactical(self, args):
+        return args[0]
+
+    def paren_tactical(self, args):
+        return args[0]
+
+    def closure_tactical(self, args):
+        return args[0]
+
+    def plus_tactical(self, args):
+        return PlusTactical(args[0])
+
+    def star_tactical(self, args):
+        return StarTactical(args[0])
+
+    def and_tactical(self, args):
+        if len(args) == 1: return args[0]
+        return AndTactical(*args)
+
+    def or_tactical(self, args):
+        if len(args) == 1: return args[0]
+        return OrTactical(*args)
 
 
 syntax = r"""
@@ -59,12 +79,23 @@ INLINE_COMMENT: /\#[^\n]*/
 %ignore BLOCK_COMMENT
 %ignore INLINE_COMMENT
 %ignore /[ \n\t\f\r]+/
-TOKEN: /[^ \n\t\f\r=,\#]+/
+TOKEN: /[^ =,\#|+*&()]+/
 
 token: TOKEN
 
-command: token [options]
-command_or_empty: [command]
+atomic_tactical: token [options]
+               | "(" tactical ")"      -> paren_tactical
+
+closure_tactical: atomic_tactical
+                | closure_tactical "+" -> plus_tactical
+                | closure_tactical "*" -> star_tactical
+
+and_tactical: closure_tactical ("&" closure_tactical)*
+or_tactical: and_tactical ("|" and_tactical)*
+
+tactical: or_tactical
+
+tactical_or_empty: [tactical]
 
 options: option ("," option)*
 option: value           -> positional_option
@@ -74,15 +105,16 @@ value: STRING_LITERAL -> string
      | token
 """
 
-command_parser = Lark(
+
+tactical_parser = Lark(
     syntax,
-    start="command_or_empty",
+    start="tactical_or_empty",
     parser="lalr",
     lexer="standard",
     propagate_positions=True,
 )
 
 
-def parse_command(src: str) -> Optional[Command]:
-    tree = command_parser.parse(src)
+def parse_tactical(src: str) -> Optional[Tactical]:
+    tree = tactical_parser.parse(src)
     return ASTTransformer().transform(tree)
