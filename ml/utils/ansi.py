@@ -19,6 +19,13 @@ class ANSIStyler(type):
         "cyan": (36, 46),
         "white": (37, 47),
         "gray": (90, 100),
+        "bright_red": (91, 101),
+        "bright_green": (92, 102),
+        "bright_yellow": (93, 103),
+        "bright_blue": (94, 104),
+        "bright_magenta": (95, 105),
+        "bright_cyan": (96, 106),
+        "bright_white": (97, 107),
     }
 
     STYLE_CODES = {
@@ -35,11 +42,34 @@ class ANSIStyler(type):
             - <style> - single style
         """
 
+        styles = list(styles)
+
         codes = []
         i = 0
 
         while i < len(styles):
             style = styles[i]
+            
+            if style == "rgb" and i + 4 < len(styles):
+                kind = styles[i + 1]
+                assert kind == "fg" or kind == "bg", \
+                       f"invalid kind {kind}"
+
+                r = int(styles[i + 2])
+                g = int(styles[i + 3])
+                b = int(styles[i + 4])
+                i += 5
+
+                if ANSI.supports_true_color():
+                    codes.append(f"\033[{38 if kind == 'fg' else 48};2;{r};{g};{b}m")
+
+                continue
+                
+            # special case for bright_* colors
+            if style == "bright" and i + 1 < len(styles):
+                styles[i + 1] = "bright_" + styles[i + 1]
+                i += 1
+                continue
 
             if style in ANSIStyler.COLOR_CODES:
                 if i + 1 < len(styles):
@@ -62,6 +92,21 @@ class ANSIStyler(type):
 
         return "".join(codes)
 
+    def __getattr__(class_obj, key: str):
+        if key.startswith("in_"):
+            styles = key[len("in_"):].split("_")
+
+            def f(msg: str) -> str:
+                if not ANSI.supports_color():
+                    return msg
+                return f"{class_obj.get_code(styles)}{msg}{ANSIStyler.RESET}"
+
+            return f
+
+        raise AttributeError(key)
+
+
+class ANSI(metaclass=ANSIStyler):
     @staticmethod
     def supports_color() -> bool:
         """
@@ -76,19 +121,7 @@ class ANSIStyler(type):
         is_a_tty = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
         return supported_platform and is_a_tty
 
-    def __getattr__(class_obj, key: str):
-        if key.startswith("in_"):
-            styles = key[len("in_"):].split("_")
-
-            def f(msg: str) -> str:
-                if not ANSIStyler.supports_color():
-                    return msg
-                return f"{class_obj.get_code(styles)}{msg}{ANSIStyler.RESET}"
-
-            return f
-
-        raise AttributeError(key)
-
-
-class ANSI(metaclass=ANSIStyler):
-    pass
+    @staticmethod
+    def supports_true_color() -> bool:
+        colorterm = os.environ.get("COLORTERM", "")
+        return "truecolor" in colorterm or "24bit" in colorterm
