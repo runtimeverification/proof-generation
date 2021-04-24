@@ -39,14 +39,14 @@ class Options(BaseAST):
 
 
 class Tactical(BaseAST):
-    pass
+    def apply(self, state: ProofState) -> ProofState:
+        raise NotImplementedError()
 
 
 class AtomicTactical(Tactical):
     """
     A single tactic with no combinators
     """
-
     def __init__(self, tactic: str, options: Options = Options()):
         super().__init__()
         self.tactic = tactic
@@ -64,7 +64,6 @@ class OrTactical(BaseAST):
     """
     Apply the tacticals in sequence, until one of them succeeds
     """
-
     def __init__(self, *tacticals: Tactical):
         super().__init__()
         self.tacticals = tacticals
@@ -91,9 +90,9 @@ class OrTactical(BaseAST):
 
         msg = []
 
-        for tactical, exc in zip(self.tacticals, exceptions):
-            msg.append(f"  {tactical}: {exc}")
-            
+        for tactical, exception in zip(self.tacticals, exceptions):
+            msg.append(f"  {tactical}: {exception}")
+
         raise Exception("all tacticals failed:\n" + "\n".join(msg))
 
 
@@ -101,7 +100,6 @@ class AndTactical(BaseAST):
     """
     Apply the tacticals in sequence, fail if any of them fail
     """
-
     def __init__(self, *tacticals: Tactical):
         super().__init__()
         self.tacticals = tacticals
@@ -132,7 +130,6 @@ class PlusTactical(BaseAST):
     """
     Apply the tactical one or more times until it fails
     """
-
     def __init__(self, tactical: Tactical):
         super().__init__()
         self.tactical = tactical
@@ -166,7 +163,6 @@ class StarTactical(BaseAST):
     """
     Apply the tactical zero or more times until it fails
     """
-
     def __init__(self, tactical: Tactical):
         super().__init__()
         self.tactical = tactical

@@ -49,7 +49,6 @@ class ApplyTactic(Tactic):
     """
     Apply a theorem on the top of the goal stack
     """
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.use_claim = False
@@ -179,7 +178,6 @@ class SetSchematicVariableTactic(Tactic):
     """
     Set some schematic variables to concrete terms (without schematic variables)
     """
-
     def apply(self, state: ProofState, **options):
         substitution = self.parse_substitution(state, options)
 
@@ -209,7 +207,6 @@ class ShuffleTactic(Tactic):
     """
     Move the current goal to the last
     """
-
     def apply(self, state: ProofState):
         state.current_goals = [state.current_goals[-1]] + state.current_goals[:-1]
 
@@ -222,7 +219,6 @@ class ClaimTactic(Tactic):
     """
     Make a temporary claim and use it in other parts of the proof
     """
-    
     def find_free_theorem_name(self, state: ProofState, prefix: str) -> str:
         i = 0
         # TODO: well...

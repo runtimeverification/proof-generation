@@ -105,7 +105,6 @@ value: STRING_LITERAL -> string
      | token
 """
 
-
 tactical_parser = Lark(
     syntax,
     start="tactical_or_empty",

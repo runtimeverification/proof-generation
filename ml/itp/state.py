@@ -34,7 +34,6 @@ class Goal:
     are recorded in ProofState so that
     we can copy states more easily
     """
-
     def __init__(
         self,
         goal_id: int,
