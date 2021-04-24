@@ -3,13 +3,13 @@ from typing import Optional, Tuple, List
 import ml.kore.ast as kore
 from ml.kore.utils import KoreUtils, PatternPath
 from ml.kore.parser import parse_axiom, parse_pattern
-"""
-A utility class used to extract and identify
-certain information in a kompile-generated kore module
-"""
 
 
 class KoreTemplates:
+    """
+    A utility class used to extract and identify
+    certain information in a kompile-generated kore module
+    """
     @staticmethod
     def is_rewrite_axiom(axiom: kore.Axiom) -> bool:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
@@ -79,24 +79,22 @@ class KoreTemplates:
 
         return sort1, sort2
 
-    """
-    Get the content of the attribute UNIQUE'Unds'ID{}(...)
-    """
-
     @staticmethod
     def get_axiom_unique_id(axiom: kore.Axiom) -> Optional[str]:
+        """
+        Get the content of the attribute UNIQUE'Unds'ID{}(...)
+        """
         id_term = axiom.get_attribute_by_symbol("UNIQUE'Unds'ID")
         if id_term is None:
             return None
         assert len(id_term.arguments) == 1 and isinstance(id_term.arguments[0], kore.StringLiteral)
         return id_term.arguments[0].content
 
-    """
-    Get the corresponding symbol instance of the given functional axiom
-    """
-
     @staticmethod
-    def get_symbol_of_functional_axiom(axiom: kore.Axiom, ) -> Optional[kore.SymbolInstance]:
+    def get_symbol_of_functional_axiom(axiom: kore.Axiom) -> Optional[kore.SymbolInstance]:
+        """
+        Get the corresponding symbol instance of the given functional axiom
+        """
         if not isinstance(axiom.pattern, kore.MLPattern):
             return None
 
@@ -122,12 +120,11 @@ class KoreTemplates:
 
         return rhs.symbol
 
-    """
-    A no junk axiom should be a disjunction of existential patterns
-    """
-
     @staticmethod
-    def get_sort_symbol_of_no_junk_axiom(axiom: kore.Axiom, ) -> Optional[kore.SortInstance]:
+    def get_sort_symbol_of_no_junk_axiom(axiom: kore.Axiom) -> Optional[kore.SortInstance]:
+        """
+        A no junk axiom should be a disjunction of existential patterns
+        """
         axiom_body = KoreUtils.strip_forall(axiom.pattern)
         patterns = KoreUtils.decompose_disjunction(axiom_body)
 
@@ -145,13 +142,12 @@ class KoreTemplates:
 
         return sort
 
-    r"""
-    Axiom of the form
-    f(ph1, ..., phn) /\ f(ph1', ..., phn') => f(ph1 /\ ph1', ..., phn /\ phn')
-    """
-
     @staticmethod
-    def get_symbol_for_no_confusion_same_constructor_axiom(axiom: kore.Axiom, ) -> Optional[kore.SymbolInstance]:
+    def get_symbol_for_no_confusion_same_constructor_axiom(axiom: kore.Axiom) -> Optional[kore.SymbolInstance]:
+        r"""
+        Axiom of the form
+        f(ph1, ..., phn) /\ f(ph1', ..., phn') => f(ph1 /\ ph1', ..., phn /\ phn')
+        """
         axiom_body = KoreUtils.strip_forall(axiom.pattern)
         if not (isinstance(axiom_body, kore.MLPattern) and axiom_body.construct == kore.MLPattern.IMPLIES
                 and isinstance(axiom_body.arguments[0], kore.MLPattern) and axiom_body.arguments[0].construct
@@ -244,7 +240,7 @@ class KoreTemplates:
         left.arguments[1] = right
 
     @staticmethod
-    def get_path_to_smallest_key_in_map_pattern(pattern: kore.Pattern, ) -> Tuple[kore.Pattern, PatternPath]:
+    def get_path_to_smallest_key_in_map_pattern(pattern: kore.Pattern) -> Tuple[kore.Pattern, PatternPath]:
         r"""
         Return the path to the pattern with the smallest key.
         0 means "left branch" and 1 means "right branch".

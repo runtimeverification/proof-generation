@@ -23,7 +23,7 @@ from .tasks import RewritingStep, RewritingTask
 
 class RewriteProofGenerator(ProofGenerator):
     """
-    Generate proofs for one or multiple rewrite steps
+    Generate proofs for rewriting related claims
     """
     def __init__(self, env: ProofEnvironment):
         super().__init__(env)

@@ -15,10 +15,10 @@ from .equality import EqualityProofGenerator
 
 
 class QuantifierProofGenerator(ProofGenerator):
-    """
-    A wrapper to eliminate the top level forall
-    """
     def prove_forall_elim_single(self, provable: ProvableClaim, pattern: kore.Pattern) -> ProvableClaim:
+        """
+        A wrapper to eliminate the top level forall
+        """
         assert (
             isinstance(provable.claim.pattern, kore.MLPattern)
             and provable.claim.pattern.construct == kore.MLPattern.FORALL
@@ -27,23 +27,22 @@ class QuantifierProofGenerator(ProofGenerator):
         assert binding_var is not None
         return self.prove_forall_elim(provable, {binding_var: pattern})
 
-    r"""
-    Given a provable claim of the form
-    claim{...} \forall x1. ... \forall xn. phi(x1, ..., xn)
-
-    and a substitution on { x1, ..., xn }
-    
-    eliminate first n forall's by proving the functional property
-    of the patterns in the substitution and using kore-forall-elim
-
-    Currently we only support claims with 0 or 1 sort variables
-    """
-
     def prove_forall_elim(
         self,
         provable: ProvableClaim,
         substitution: Mapping[kore.Variable, kore.Pattern],
     ) -> ProvableClaim:
+        r"""
+        Given a provable claim of the form
+        claim{...} \forall x1. ... \forall xn. phi(x1, ..., xn)
+
+        and a substitution on { x1, ..., xn }
+        
+        eliminate first n forall's by proving the functional property
+        of the patterns in the substitution and using kore-forall-elim
+
+        Currently we only support claims with 0 or 1 sort variables
+        """
         thm_map = {
             0: "kore-forall-elim",
             1: "kore-forall-elim-v1",
@@ -114,29 +113,27 @@ class QuantifierProofGenerator(ProofGenerator):
         return ProvableClaim(final_claim, current_proof)
 
 
-r"""
-Given a pattern phi, generate a proof for the statement in the form
-
-|- ( \kore-forall \sort R ( \kore-exists Sort1 x ( \kore-equals Sort1 R x phi ) ) )
-
-that is, phi is a functional pattern that has a unique singleton interpretation in the domain of Sort1
-
-Almost all patterns used in the execution should have such property
-
-NOTE: only supports concrete patterns right now
-"""
-
-
 class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
-    """
-    Specical case: when A is not an immediate subsort of B,
-    we don't have the functional axiom of inj{A, B},
-    in which case we need to stitch the chain of subsorting
-    A < A1 < ... < B together to get a functional pattern
-    and then use the inj axiom to reduce that back to
-    a single injection.
+    r"""
+    Given a pattern phi, generate a proof for the statement in the form
+
+    |- ( \kore-forall \sort R ( \kore-exists Sort1 x ( \kore-equals Sort1 R x phi ) ) )
+
+    that is, phi is a functional pattern that has a unique singleton interpretation in the domain of Sort1
+
+    Almost all patterns used in the execution should have such property
+
+    NOTE: only supports concrete patterns right now
     """
     def prove_non_immediate_injection(self, application: kore.Application) -> ProvableClaim:
+        """
+        Specical case: when A is not an immediate subsort of B,
+        we don't have the functional axiom of inj{A, B},
+        in which case we need to stitch the chain of subsorting
+        A < A1 < ... < B together to get a functional pattern
+        and then use the inj axiom to reduce that back to
+        a single injection.
+        """
         assert application.symbol.definition == self.env.sort_injection_symbol
 
         sort1, sort2 = application.symbol.sort_arguments
@@ -182,16 +179,16 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
             inj_axiom_instance.proof,
         )
 
-    """
-    Given a functional axiom sigma and an application phi,
-    sigma should be in the form,
-    ( forall Sort_1 V_1 ... ( forall Sort_n V_n ( exists Sort_0 W ( equals Sort_0 R W <RHS> ) ) ) )
-    
-    Return the substitution that should be applied to the equation
-    """
-
     def get_substitution(self, axiom: kore.Axiom,
                          application: kore.Application) -> Mapping[kore.Variable, kore.Pattern]:
+        """
+        Given a functional axiom sigma and an application phi,
+        sigma should be in the form,
+        ( forall Sort_1 V_1 ... ( forall Sort_n V_n ( exists Sort_0 W ( equals Sort_0 R W <RHS> ) ) ) )
+        
+        Return the substitution that should be applied to the equation
+        """
+
         existential = KoreUtils.strip_forall(axiom.pattern)
         assert (isinstance(existential, kore.MLPattern) and existential.construct == kore.MLPattern.EXISTS)
 

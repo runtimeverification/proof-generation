@@ -23,14 +23,12 @@ class ProofGenerator:
         self.env = env
 
 
-"""
-A claim in kore and a metamath proof of its encoding
-This pair comes up often because we need to
-reuse some operations and information on the Kore ast
-"""
-
-
 class ProvableClaim:
+    """
+    A claim in kore and a metamath proof of its encoding
+    This pair comes up often because we need to
+    reuse some operations and information on the Kore ast
+    """
     def __init__(self, claim: kore.Claim, proof: Proof):
         encoded_claim = KorePatternEncoder().visit(claim)
         assert isinstance(proof, Proof)
@@ -41,13 +39,11 @@ class ProvableClaim:
         self.proof = proof
 
 
-"""
-A data structure that stores the subsort
-relation (a strict partial order)
-"""
-
-
 class SubsortRelation:
+    """
+    A data structure that stores the subsort
+    relation (a strict partial order)
+    """
     def __init__(self):
         self.adj_list: Dict[kore.SortInstance, List[Tuple[kore.SortInstance, Theorem]]] = {}
         # SortInstance -> [ ( supersort, subsorting lemma ) ... ]
@@ -61,13 +57,12 @@ class SubsortRelation:
                     break
         return subsorts
 
-    """
-    Return a chain of immediate subsorting: sort1 < A < B < ... < sort2,
-    if sort1 < sort2; otherwise return None
-    """
-
     def get_subsort_chain(self, sort1: kore.SortInstance,
                           sort2: kore.SortInstance) -> Optional[List[kore.SortInstance]]:
+        """
+        Return a chain of immediate subsorting: sort1 < A < B < ... < sort2,
+        if sort1 < sort2; otherwise return None
+        """
         if sort1 == sort2:
             return None
         if sort1 not in self.adj_list:
@@ -86,11 +81,10 @@ class SubsortRelation:
 
         return None
 
-    """
-    Add sort1 < sort2
-    """
-
     def add_subsort(self, sort1: kore.SortInstance, sort2: kore.SortInstance, subsort_axiom: Theorem):
+        """
+        Add sort1 < sort2
+        """
         assert (sort1 != sort2), f"subsort relation should be irreflexive: {sort1} </ {sort2}"
         assert (self.get_subsort_chain(sort2, sort1) is None), f"cyclic subsorting: {sort1} ? {sort2}"
 
@@ -107,13 +101,11 @@ class SubsortRelation:
         )
 
 
-"""
-ProofEnvironment holds a composer
-and useful information in the module
-"""
-
-
 class ProofEnvironment:
+    """
+    ProofEnvironment holds a composer
+    and useful information in the module
+    """
     def __init__(self, module: kore.Module, composer: Composer = Composer()):
         self.module = module
         self.loaded_modules: Dict[str, kore.Module] = {}
@@ -180,12 +172,11 @@ class ProofEnvironment:
         # metamath does not allow some characters in the label
         return re.sub(r"[^a-zA-Z0-9_\-.]", "", label)
 
-    """
-    Load metavariables into the composer
-    metavar_map: map from metavariable name to typecode
-    """
-
     def load_metavariables(self, metavar_map: Mapping[str, str]):
+        """
+        Load metavariables into the composer
+        metavar_map: map from metavariable name to typecode
+        """
         self.composer.start_segment("variable")
 
         # filter out existing metavariables and
@@ -271,28 +262,25 @@ class ProofEnvironment:
     def load_comment(self, comment: str):
         return self.load_metamath_statement(mm.Comment(comment))
 
-    """
-    Given a proof of some statement, turns it into a theorem
-    """
-
     def load_proof_as_theorem(self, label: str, proof: Proof) -> Theorem:
+        """
+        Given a proof of some statement, turns it into a theorem
+        """
         proof.statement.label = label
         return self.load_metamath_theorem(proof.statement)
 
-    """
-    Returns a new provable claim with the proof using the loaded theorem
-    """
-
     def load_provable_claim_as_theorem(self, label: str, provable: ProvableClaim) -> ProvableClaim:
+        """
+        Returns a new provable claim with the proof using the loaded theorem
+        """
         new_proof = self.load_proof_as_theorem(label, provable.proof).as_proof()
         return ProvableClaim(provable.claim, new_proof)
 
-    """
-    Encode and load a Kore axiom into the generator
-    and return the corresponding theorem object
-    """
-
     def load_axiom(self, axiom: kore.Axiom, label: str, comment=True, provable=False) -> Theorem:
+        """
+        Encode and load a Kore axiom into the generator
+        and return the corresponding theorem object
+        """
         term = self.encode_pattern(axiom)
 
         if comment:
@@ -370,11 +358,11 @@ class ProofEnvironment:
             )
         )
 
-    """
-    Generate constructor axioms for symbols marked with `constructor{}()` attribute
-    """
-
     def load_symbol_constructor_axioms(self, symbol_definition: kore.SymbolDefinition, label: str):
+        """
+        Generate constructor axioms for symbols marked with `constructor{}()` attribute
+        """
+
         # skip if not a constructor
         if symbol_definition.get_attribute_by_symbol("constructor") is None:
             return
@@ -490,11 +478,11 @@ class ProofEnvironment:
 
         self.all_sorts.append(sort_definition)
 
-    """
-    Load a domain value and generate the corresponding functional axiom
-    """
-
     def load_domain_values(self, domain_values: Set[Tuple[kore.Sort, kore.StringLiteral]]):
+        """
+        Load a domain value and generate the corresponding functional axiom
+        """
+
         new_domain_values = domain_values.difference(self.domain_values)
         offset = len(self.domain_values)
         self.domain_values.update(new_domain_values)
@@ -656,12 +644,11 @@ class ProofEnvironment:
 
         self.composer.end_segment()
 
-    """
-    Load a constant symbol into the composer
-    and generate appropriate axioms (e.g. substitution rule)
-    """
-
     def load_constant(self, symbol: str, arity: int, label: str):
+        """
+        Load a constant symbol into the composer
+        and generate appropriate axioms (e.g. substitution rule)
+        """
         # skip axioms for kore-inj
         if symbol == "\\kore-inj":
             self.substitution_axioms["\\kore-inj"] = self.composer.theorems["substitution-kore-inj"]
@@ -724,11 +711,11 @@ class ProofEnvironment:
         self.load_constant_substitution_lemma(symbol, arity, label)
         self.load_application_context_lemma(symbol, arity, label)
 
-    """
-    Get the name for the nth metavariable of the given typecode
-    """
-
     def get_metavariable_name(self, typecode: str, n: int) -> str:
+        """
+        Get the name for the nth metavariable of the given typecode
+        """
+
         if typecode == "#ElementVariable":
             return {0: "x", 1: "y", 2: "z", 3: "w"}.get(n, f"x{n}")
         elif typecode == "#Variable":
@@ -741,21 +728,19 @@ class ProofEnvironment:
     def find_metavariable(self, var: str) -> Optional[str]:
         return self.composer.find_metavariable(var)
 
-    """
-    Generate n metavariables
-    and add the new ones to the composer
-    """
-
     def gen_metavariables(self, typecode: str, n: int) -> List[str]:
+        """
+        Generate n metavariables
+        and add the new ones to the composer
+        """
         metavars = [self.get_metavariable_name(typecode, i) for i in range(n)]
         self.load_metavariables({var: typecode for var in metavars})
         return metavars
 
-    """
-    Generate n fresh variables other than the variables in `other_than`
-    """
-
     def gen_fresh_metavariables(self, typecode: str, n: int, other_than: Set[str]) -> List[str]:
+        """
+        Generate n fresh variables other than the variables in `other_than`
+        """
         metavars: Set[str] = set()
         current_extra = 0
         while len(metavars.difference(other_than)) < n:
@@ -783,11 +768,10 @@ class ProofEnvironment:
 
         return encoded_pattern
 
-    """
-    Add no-junk axioms for sorts
-    """
-
     def load_sort_constructor_axioms(self):
+        """
+        Add no-junk axioms for sorts
+        """
         # for usual user defined sort
         # if there is at least a constructor or a subsort
         # add the axiom that
@@ -883,11 +867,10 @@ class ProofEnvironment:
                     theorem = self.load_metamath_theorem(axiom)
                     self.no_confusion_hooked_sort[symbol_definition.symbol, sort_instance] = theorem
 
-    """
-    Load all relavent sentences
-    """
-
     def load_module_sentences(self, module: kore.Module):
+        """
+        Load all relavent sentences
+        """
         if module.name in self.loaded_modules:
             return
 

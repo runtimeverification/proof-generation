@@ -4,13 +4,13 @@ from ..ast import Metavariable, Term, Application, Statement, StructuredStatemen
 from ..composer import Composer, Proof, Theorem, MethodAutoProof
 
 from .notation import NotationProver
-"""
-An automated prover for statements of the form
-  #ApplicationContext x ph0
-"""
 
 
 class ApplicationContextProver:
+    """
+    An automated prover for statements of the form
+    #ApplicationContext x ph0
+    """
     @staticmethod
     def get_target(var: Metavariable, pattern: Term) -> StructuredStatement:
         return StructuredStatement(Statement.PROVABLE, [Application("#ApplicationContext"), var, pattern])

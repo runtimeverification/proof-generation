@@ -24,15 +24,14 @@ class NotationProver:
             ],
         )
 
-    """
-    A sugar axiom of symbol S should be of the form
-    $a #Notation ( S a b c ... ) phi $. for some phi, and metavariables a b c
-    and it should not have any essential hypotheses (the ones with essentials
-    are not supported right now)
-    """
-
     @staticmethod
     def find_sugar_axiom(composer: Composer, symbol: str) -> Optional[Theorem]:
+        """
+        A sugar axiom of symbol S should be of the form
+        $a #Notation ( S a b c ... ) phi $. for some phi, and metavariables a b c
+        and it should not have any essential hypotheses (the ones with essentials
+        are not supported right now)
+        """
         for theorem in composer.get_theorems_of_typecode(NotationProver.SYMBOL):
             if not (len(theorem.statement.terms) == 3 and len(theorem.essentials) == 0):
                 continue
@@ -61,22 +60,21 @@ class NotationProver:
 
         return None
 
-    """
-    A congruence lemma for a symbol S is of the form
-    ${
-        $e #Notation a a' $.
-        $e #Notation b b' $.
-        $p #Notation ( S a b c ) ( S a' b' c' ) $.
-    $}
-    Note that the hypotheses may not contain all immediate child terms
-    and the order may be different from the order in the application
-
-    The returned list indicates the order of children
-    appearing in the essential hypotheses
-    """
-
     @staticmethod
     def find_congruence_lemma(composer: Composer, symbol: str) -> Optional[Tuple[Theorem, List[int]]]:
+        """
+        A congruence lemma for a symbol S is of the form
+        ${
+            $e #Notation a a' $.
+            $e #Notation b b' $.
+            $p #Notation ( S a b c ) ( S a' b' c' ) $.
+        $}
+        Note that the hypotheses may not contain all immediate child terms
+        and the order may be different from the order in the application
+
+        The returned list indicates the order of children
+        appearing in the essential hypotheses
+        """
         for theorem in composer.get_theorems_of_typecode(NotationProver.SYMBOL):
             if len(theorem.statement.terms) != 3:
                 continue
@@ -129,32 +127,31 @@ class NotationProver:
 
         return None
 
-    """
-    notation algorithm: given two terms phi and psi, there are (wlog) 3 cases
-    1. phi and psi are both metavariables
-       - if phi == psi, use notation-reflexivity
-       - if phi != psi, try to find a essential hypothesis that asserts this fact
-       - otherwise fail
-    2. phi is a metavariable but psi is not
-       - try to find a hypothesis that asserts this
-       - otherwise fail
-    3. phi and psi are both applications
-       - if they have the same head, try to find a congruence lemma for the head
-         * if found, recursively show they have equal children
-         * if not found, try to reduce BOTH phi and psi using a sugar axiom
-         * if no sugar axiom is found, fail
-       - if they have different head, try to reduce one of them using a sugar axiom,
-         then try again.
-
-    some assumptions:
-    1. sugar axioms (of the form #Notation ( a ... ) ( b ... )) are "directed" in the sense
-       that it should intuitively mean ( a ... ) is defined as ( b ... ), not the other way around
-    2. congruence lemmas and sugar axioms are unique for each definition (if they exist)
-    3. no cycles of notation (except for common axioms like symmetry)
-    """
-
     @staticmethod
     def prove_notation(composer: Composer, left: Term, right: Term) -> Proof:
+        """
+        notation algorithm: given two terms phi and psi, there are (wlog) 3 cases
+        1. phi and psi are both metavariables
+        - if phi == psi, use notation-reflexivity
+        - if phi != psi, try to find a essential hypothesis that asserts this fact
+        - otherwise fail
+        2. phi is a metavariable but psi is not
+        - try to find a hypothesis that asserts this
+        - otherwise fail
+        3. phi and psi are both applications
+        - if they have the same head, try to find a congruence lemma for the head
+            * if found, recursively show they have equal children
+            * if not found, try to reduce BOTH phi and psi using a sugar axiom
+            * if no sugar axiom is found, fail
+        - if they have different head, try to reduce one of them using a sugar axiom,
+            then try again.
+
+        some assumptions:
+        1. sugar axioms (of the form #Notation ( a ... ) ( b ... )) are "directed" in the sense
+        that it should intuitively mean ( a ... ) is defined as ( b ... ), not the other way around
+        2. congruence lemmas and sugar axioms are unique for each definition (if they exist)
+        3. no cycles of notation (except for common axioms like symmetry)
+        """
         target = NotationProver.format_target(left, right)
         symmetric_target = NotationProver.format_target(right, left)
 
@@ -229,13 +226,12 @@ class NotationProver:
 
         assert False, f"ran out of tricks, cannot show {left} === {right}"
 
-    """
-    Look for heads that have sugar axiom and
-    expand all of them in the given term
-    """
-
     @staticmethod
     def expand_sugar(composer: Composer, term: Term, target_symbol: Optional[str] = None) -> Term:
+        """
+        Look for heads that have sugar axiom and
+        expand all of them in the given term
+        """
         expanded, _ = NotationProver.expand_sugar_with_proof(composer, term, target_symbol)
         return expanded
 

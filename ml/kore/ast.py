@@ -2,13 +2,12 @@ from __future__ import annotations
 from typing import List, Union, Optional, Any, Dict, Set, TypeVar, Generic, NoReturn
 
 from ml.utils.visitor import Visitor
-"""
-Visits a Kore AST in post-order traversal
-"""
 
 
 class KoreVisitor(Visitor):
-    pass
+    """
+    Visits a Kore AST in post-order traversal
+    """
 
 
 P = TypeVar("P")

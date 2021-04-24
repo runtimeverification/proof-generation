@@ -5,10 +5,6 @@ from ..visitors import SubstitutionVisitor
 
 
 class Unification:
-    """
-    Try to solve the given unification problem,
-    treating only <variable> as variables (this is primarily for the purpose of extending the AST)
-    """
     @staticmethod
     def unify(
         equations: List[Tuple[Term, Term]],
@@ -16,6 +12,10 @@ class Unification:
         substitution_visitor_class=SubstitutionVisitor,
         variable_order=lambda v1, v2: True,  # returns True iff v1 <= v2, False otherwise
     ) -> Optional[Mapping[str, Term]]:
+        """
+        Try to solve the given unification problem,
+        treating only <variable> as variables (this is primarily for the purpose of extending the AST)
+        """
         substitution = {}
 
         while len(equations):
@@ -72,13 +72,12 @@ class Unification:
             return None
         return Unification.unify(list(zip(stmt1.terms, stmt2.terms)), **kwargs)
 
-    """
-    Attempts to match the terms by paring up subterms in the same position
-    NOTE: this does not check the consistency of the resulting substitution
-    """
-
     @staticmethod
     def match_terms(term1: Term, term2: Term) -> Optional[List[Tuple[Term, Term]]]:
+        """
+        Attempts to match the terms by paring up subterms in the same position
+        NOTE: this does not check the consistency of the resulting substitution
+        """
         if isinstance(term1, Application) and isinstance(term2, Application):
             if term1.symbol == term2.symbol and len(term1.subterms) == len(term2.subterms):
                 matching = []
@@ -96,15 +95,14 @@ class Unification:
         else:
             return None
 
-    """
-    Attempt to match two statements
-    NOTE: this does not check the consistency of the resulting substitution
-    but only returns a list of equations that should hold if the two statements
-    are unifiable
-    """
-
     @staticmethod
     def match_statements(stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[List[Tuple[Term, Term]]]:
+        """
+        Attempt to match two statements
+        NOTE: this does not check the consistency of the resulting substitution
+        but only returns a list of equations that should hold if the two statements
+        are unifiable
+        """
         matching = []
 
         for term1, term2 in zip(stmt1.terms, stmt2.terms):
@@ -116,27 +114,25 @@ class Unification:
 
         return matching
 
-    """
-    Check if term2 is an instance of term1, that is, if
-    there is a substitution sigma such that term1[sigma] = term2
-    NOTE: note that term1 and term2 may not be unifiable
-    but term2 could still be an instance of term1
-    """
-
     @staticmethod
     def match_terms_as_instance(term1: Term, term2: Term) -> Optional[Mapping[str, Term]]:
+        """
+        Check if term2 is an instance of term1, that is, if
+        there is a substitution sigma such that term1[sigma] = term2
+        NOTE: note that term1 and term2 may not be unifiable
+        but term2 could still be an instance of term1
+        """
         solution = Unification.match_terms(term1, term2)
         if solution is None:
             return None
         return Unification.get_instance_substitution(solution)
 
-    """
-    Same as above but for statements
-    """
-
     @staticmethod
     def match_statements_as_instance(stmt1: StructuredStatement,
                                      stmt2: StructuredStatement) -> Optional[Mapping[str, Term]]:
+        """
+        Same as above but for statements
+        """
         solution = Unification.match_statements(stmt1, stmt2)
         if solution is None:
             return None

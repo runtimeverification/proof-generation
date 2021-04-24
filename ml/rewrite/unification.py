@@ -71,22 +71,19 @@ class Equation:
     def __str__(self):
         return type(self).__name__
 
-    """
-    Given a valid pattern |- phi and a path pointing to a subpattern
-    apply the equation to the subpattern to get an equivalent patten phi'
-    and return phi' and the proof of it
-    """
-
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
+        """
+        Given a valid pattern |- phi and a path pointing to a subpattern
+        apply the equation to the subpattern to get an equivalent patten phi'
+        and return phi' and the proof of it
+        """
         raise NotImplementedError()
 
 
-r"""
-phi /\ phi = phi
-"""
-
-
 class DuplicateConjunction(Equation):
+    r"""
+    phi /\ phi = phi
+    """
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
 
@@ -109,13 +106,11 @@ class DuplicateConjunction(Equation):
         )
 
 
-r"""
-If A < B < C
-inj{B, C}(inj{A, B}(X)) === inj{A, C}(X)
-"""
-
-
 class InjectionCombine(Equation):
+    r"""
+    If A < B < C
+    inj{B, C}(inj{A, B}(X)) === inj{A, C}(X)
+    """
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
         assert (

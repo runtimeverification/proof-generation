@@ -2,13 +2,13 @@ from typing import Tuple, List
 from lark import Lark, Transformer
 from lark.visitors import v_args
 from .ast import *
-"""
-A decorator to attach extra info on each
-AST node when doing tranformation
-"""
 
 
 def meta_info(f):
+    """
+    A decorator to attach extra info on each
+    AST node when doing tranformation
+    """
     @v_args(tree=True)
     def wrapper(self, tree):
         node = f(self, tree.children)
