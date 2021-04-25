@@ -158,6 +158,7 @@ class ApplyTactic(Tactic):
 
         if self.use_claim:
             # get an inline proof if the reference theorem is an inline claim
+            assert len(subproofs) != 0
             return self.theorem.inline_apply(
                 subproofs[0],
                 *subproofs[
@@ -167,8 +168,7 @@ class ApplyTactic(Tactic):
             )
         else:
             return self.theorem.apply(
-                subproofs[0],
-                *subproofs[1:],
+                *subproofs,
                 **full_substitution,
             )
 
