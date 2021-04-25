@@ -138,6 +138,13 @@ def main(argv: Optional[Sequence[str]] = None):
         default=False,
         help="output the time spent for translating module and proving rewriting",
     )
+    parser.add_argument(
+        "--dv-as-provable",
+        action="store_const",
+        const=True,
+        default=False,
+        help="generate domain facts as provable instead of axiom",
+    )
     args = parser.parse_args(argv)
 
     composer = Composer()
@@ -158,7 +165,7 @@ def main(argv: Optional[Sequence[str]] = None):
     module_begin = time.time()
 
     composer.start_segment("module")
-    env = ProofEnvironment(module, composer)
+    env = ProofEnvironment(module, composer, dv_as_provable=not args.dv_as_provable)
     composer.end_segment()
 
     module_elapsed = time.time() - module_begin

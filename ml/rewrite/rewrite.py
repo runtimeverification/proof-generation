@@ -770,7 +770,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
             claim,
             f"{self.env.sanitize_label_name(application.symbol.definition.symbol)}-domain-fact-{self.axiom_counter}",
             comment=False,
-            provable=True,
+            provable=self.env.dv_as_provable,
         )
         self.env.composer.end_segment()
 

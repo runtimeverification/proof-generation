@@ -166,7 +166,7 @@ class Theorem:
                 )
             else:
                 # should be a proof
-                assert isinstance(metavar_substituted, Proof)
+                assert isinstance(metavar_substituted, Proof), f"{metavar_substituted} is not a proof"
                 typecode_proof = metavar_substituted
 
             # check that the proof is in the right form (for floating statements)

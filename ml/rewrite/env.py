@@ -106,14 +106,19 @@ class ProofEnvironment:
     ProofEnvironment holds a composer
     and useful information in the module
     """
-    def __init__(self, module: kore.Module, composer: Composer = Composer()):
+    def __init__(self, module: kore.Module, composer: Composer = Composer(), dv_as_provable=False):
         self.module = module
         self.loaded_modules: Dict[str, kore.Module] = {}
         self.composer = composer
 
-        #################################
-        # some axioms that will be used later
-        #################################
+        ###########
+        # options #
+        ###########
+        self.dv_as_provable = dv_as_provable
+
+        #######################################
+        # some axioms that will be used later #
+        #######################################
 
         self.all_sorts: List[kore.SortDefinition] = []  # sort definitions
         # symbol definitions
@@ -135,10 +140,14 @@ class ProofEnvironment:
         # constructor axioms
         self.sort_to_constructors: Dict[kore.SortInstance,
                                         List[kore.SymbolDefinition]] = {}  # sort instance -> [ symbol definitions ]
+        self.hooked_sorts: List[kore.SortDefinition] = []
         self.no_confusion_same_constructor: Dict[str, Theorem] = {}  # constant symbol -> theorem
         self.no_confusion_diff_constructor: Dict[Tuple[str, str], Theorem] = {}  # (symbol, symbol) -> theorem
+        self.no_confusion_with_dv: Dict[str, Theorem] = {}  # symbol -> theorem
         self.no_confusion_hooked_sort: Dict[Tuple[str, kore.SortInstance],
                                             Theorem] = {}  # (kore symbol string, kore sort) -> theorem
+        # (sort symbol, sort symbol) -> theorem, different hooked sorts are disjoint
+        self.hooked_sort_disjoint_axioms: Dict[Tuple[str, str], Theorem] = {}
         self.no_junk_axioms: Dict[kore.SortInstance, Theorem] = {}  # sort instance -> theorem
         self.sort_components: Dict[kore.SortInstance, List[kore.Application]] = {
         }  # sort instance -> [ patterns (without existential quantifier) ]
@@ -371,7 +380,7 @@ class ProofEnvironment:
         num_sort_vars = len(symbol_definition.sort_variables)
         num_arguments = len(symbol_definition.input_sorts)
 
-        # generate noconfusion axiom for the same symbol
+        # generate no confusion axiom for the same symbol
         if num_arguments != 0:
             pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments * 2)
             pattern_vars = [mm.Metavariable(v) for v in pattern_var_names]
@@ -404,6 +413,24 @@ class ProofEnvironment:
             )
 
             self.no_confusion_same_constructor[encoded_symbol] = self.load_metamath_theorem(statement)
+
+        # generate no confusion axiom for \kore-dv
+        pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments + 2)
+        dv_sort_var, dv_body_var, *pattern_vars = [mm.Metavariable(v) for v in pattern_var_names]
+
+        left_pattern = mm.Application("\\kore-dv", [dv_sort_var, dv_body_var])
+        right_pattern = mm.Application(encoded_symbol, pattern_vars)
+        conj_pattern = mm.Application("\\and", [left_pattern, right_pattern])
+        not_conj_pattern = mm.Application("\\not", [conj_pattern])
+        statement = mm.StructuredStatement(
+            mm.Statement.AXIOM,
+            [
+                mm.Application("|-"),
+                not_conj_pattern,
+            ],
+            label=f"{label}-no-confusion-with-dv",
+        )
+        self.no_confusion_with_dv[encoded_symbol] = self.load_metamath_theorem(statement)
 
         # generate no confusion axioms for different symbols
         for other_constructor in self.constructors:
@@ -478,6 +505,31 @@ class ProofEnvironment:
 
         self.all_sorts.append(sort_definition)
 
+        # add axioms saying that hooked sorts are disjoint
+        if (sort_definition.hooked or sort_definition.sort_id == "SortId") \
+           and len(sort_definition.sort_variables) == 0:
+            # TODO: could there be hooked sorts with sort variables?
+            for other_hooked_sort in self.hooked_sorts:
+                encoded_other_sort = KorePatternEncoder.encode_sort(other_hooked_sort.sort_id)
+                self.hooked_sort_disjoint_axioms[encoded_sort, encoded_other_sort] = \
+                    self.load_metamath_theorem(
+                        mm.StructuredStatement(
+                            mm.Statement.AXIOM,
+                            [
+                                mm.Application("|-"),
+                                mm.Application("\\not", [
+                                    mm.Application("\\and", [
+                                        mm.Application("\\inh", [mm.Application(encoded_sort)]),
+                                        mm.Application("\\inh", [mm.Application(encoded_other_sort)]),
+                                    ]),
+                                ]),
+                            ],
+                            label=f"{label}-hooked-sort-disjoint-with-{self.sanitize_label_name(other_hooked_sort.sort_id)}",
+                        ),
+                    )
+
+            self.hooked_sorts.append(sort_definition)
+
     def load_domain_values(self, domain_values: Set[Tuple[kore.Sort, kore.StringLiteral]]):
         """
         Load a domain value and generate the corresponding functional axiom
@@ -540,11 +592,11 @@ class ProofEnvironment:
 
         self.composer.end_segment()
 
-    """
-    Generate and prove the substitution rule for the given symbol
-    """
-
     def load_constant_substitution_lemma(self, symbol: str, arity: int, label: str):
+        """
+        Generate and prove the substitution rule for the given symbol
+        """
+
         (subst_var, ) = self.gen_metavariables("#Variable", 1)
         pattern_var, *subpattern_vars = self.gen_metavariables("#Pattern", arity * 2 + 1)
 

@@ -10,6 +10,7 @@ from ml.metamath import ast as mm
 from ml.metamath.composer import Proof
 from ml.metamath.visitors import CopyVisitor
 from ml.metamath.auto.substitution import SubstitutionProver
+from ml.metamath.auto.sorting import SortingProver
 
 from .env import ProofGenerator
 from .encoder import KorePatternEncoder
@@ -374,7 +375,7 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         return disjointness_proof
 
-    def prove_disjointness_with_disjunction(self, left: kore.Application, components: List[kore.Application]) -> Proof:
+    def prove_disjointness_with_disjunction(self, left: kore.Pattern, components: List[kore.Application]) -> Proof:
         """
         Prove that the left pattern is disjoint from
         any of the components given
@@ -392,7 +393,7 @@ class DisjointnessProofGenerator(ProofGenerator):
             self.prove_disjointness_with_disjunction(left, components[1:]),
         )
 
-    def prove_sort_disjointness(self, left: kore.Application, right: kore.Variable) -> Proof:
+    def prove_symbol_sort_disjointness(self, left: kore.Pattern, right: kore.Variable) -> Proof:
         """
         Prove that a (concrete) pattern is not in a sort
         """
@@ -416,7 +417,7 @@ class DisjointnessProofGenerator(ProofGenerator):
                                  ).apply(self.env.get_theorem("rule-eq-to-iff").apply(no_junk_axiom.as_proof()), ),
         )
 
-        disjoint_with_sort_alt = self.env.get_theorem("disjointnesss-sort").match_and_apply(
+        disjoint_with_sort_alt = self.env.get_theorem("disjointness-sort").match_and_apply(
             self.get_disjointness_statement(left, right),
             disjoint_with_sort,
         )
@@ -486,9 +487,48 @@ class DisjointnessProofGenerator(ProofGenerator):
             ],
         )
 
-        return self.env.get_theorem("disjointnesss-sort").match_and_apply(
+        return self.env.get_theorem("disjointness-sort").match_and_apply(
             self.get_disjointness_statement(left, var),
             no_confusion.match_and_apply(instance),
+        )
+
+    def prove_dv_sort_disjointness(self, left: kore.MLPattern, right: kore.Variable) -> Proof:
+        """
+        Try to prove that a dv pattern is disjoint from a sort
+        """
+        dv_sort = left.sorts[0]
+        assert isinstance(dv_sort, kore.SortInstance) and \
+               len(dv_sort.arguments) == 0, f"parametric hooked sort {dv_sort} is not supported"
+
+        right_sort = right.sort
+        assert isinstance(right_sort, kore.SortInstance) and \
+               len(right_sort.arguments) == 0, f"parametric sort {right_sort} not supported"
+
+        dv_sort_encoded_id = KorePatternEncoder.encode_sort(dv_sort.get_sort_id())
+        right_sort_encoded_id = KorePatternEncoder.encode_sort(right_sort.get_sort_id())
+
+        # look up disjointness axiom
+        if (dv_sort_encoded_id, right_sort_encoded_id) in self.env.hooked_sort_disjoint_axioms:
+            disjoint_axiom = self.env.hooked_sort_disjoint_axioms[dv_sort_encoded_id, right_sort_encoded_id].as_proof()
+
+        elif (right_sort_encoded_id, dv_sort_encoded_id) in self.env.hooked_sort_disjoint_axioms:
+            disjoint_axiom = self.env.get_theorem("disjointness-symmetry").apply(
+                self.env.hooked_sort_disjoint_axioms[right_sort_encoded_id, dv_sort_encoded_id].as_proof()
+            )
+
+        else:
+            assert False, f"unable to find axiom to show the disjointness of sorts {dv_sort} and {right_sort}"
+
+        right_var_encoded = KorePatternEncoder.encode_variable(right)
+        dv_encoded = self.env.encode_pattern(left)
+
+        return self.env.get_theorem("disjointness-in-sort").apply(
+            SortingProver.auto,
+            self.env.get_theorem("disjointness-sort").apply(
+                disjoint_axiom,
+                x=mm.Metavariable(right_var_encoded),
+            ),
+            ph0=dv_encoded,
         )
 
     def prove_disjointness(self, left: kore.Pattern, right: kore.Pattern) -> Proof:
@@ -504,21 +544,20 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         right = KoreUtils.strip_exists(right)
 
-        assert isinstance(left, kore.Application), f"left pattern {left} should be an application"
         assert isinstance(right, kore.Application) or isinstance(
             right, kore.Variable
         ), f"right pattern {right} should be an application or a variable"
 
-        left_symbol = left.symbol
-
         if isinstance(right, kore.Application):
+            assert isinstance(left, kore.Application), f"left pattern {left} should be an application"
+
             # if both symbols are injections
             # it's enough to prove that the inner patterns are disjoint
-            if (left_symbol.definition == self.env.sort_injection_symbol
+            if (left.symbol.definition == self.env.sort_injection_symbol
                     and right.symbol.definition == self.env.sort_injection_symbol):
                 assert isinstance(right, kore.Application)
                 return self.prove_inj_disjointness(left, right)
-            elif left_symbol == right.symbol:
+            elif left.symbol == right.symbol:
                 # same symbol, try to find a argument pair that is disjoint
                 # then use no confusion to show that the full patterns are disjoint
 
@@ -541,9 +580,14 @@ class DisjointnessProofGenerator(ProofGenerator):
         else:
             assert isinstance(right, kore.Variable)
 
-            # right is a variable: use no junk of the sort
+            # right is a variable and it can be further decomposed, use no junk of the sort
             if right.sort in self.env.sort_components:
-                return self.prove_sort_disjointness(left, right)
+                return self.prove_symbol_sort_disjointness(left, right)
+
+            if isinstance(left, kore.MLPattern) and left.construct == kore.MLPattern.DV:
+                return self.prove_dv_sort_disjointness(left, right)
+
+            assert isinstance(left, kore.Application), f"left pattern {left} should be an application"
 
             # right is a variable of a hooked sort
             if (
