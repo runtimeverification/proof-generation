@@ -135,3 +135,16 @@ class EqualityProofGenerator(ProofGenerator):
         )
         rhs = equation.claim.pattern.arguments[1]
         return self.replace_equal_subpattern(provable, path, rhs, equation.proof)
+
+    def apply_symmetry(self, equation: ProvableClaim) -> ProvableClaim:
+        """
+        Apply symmetry to a given equation
+        """
+        proof = self.env.get_theorem("kore-equal-symmetry-v1").apply(equation.proof)
+
+        copied_claim = KoreUtils.copy_ast(self.env.module, equation.claim)
+        assert isinstance(copied_claim.pattern, kore.MLPattern)
+        copied_claim.pattern.arguments[0], copied_claim.pattern.arguments[1] = \
+            copied_claim.pattern.arguments[1], copied_claim.pattern.arguments[0]
+
+        return ProvableClaim(copied_claim, proof)

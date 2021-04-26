@@ -193,6 +193,37 @@ class RewriteProofGenerator(ProofGenerator):
 
         return self.rewrite_from_pattern(rewriting_step.initial, rewriting_step.rule_id, rewriting_step.substitution)
 
+    def check_equal_or_unify(self, given: kore.Pattern, expected: kore.Pattern) -> Optional[ProvableClaim]:
+        """
+        Check if <given> === <expected> syntactically
+        if not try to unify and return a proof that
+        given =>* expected
+        if they don't unify, raise an exception
+
+        NOTE: no rewriting is involved here, it's stated as a rewriting
+        claim so that we can apply transitivity more easily
+        """
+
+        if given == expected:
+            return None
+
+        unification_result = UnificationProofGenerator(self.env).unify_patterns(expected, given)
+        assert unification_result is not None, \
+               f"expecting the following patterns to be equal or unifiable: {given} and {expected}"
+
+        assert len(unification_result.substitution) == 0, \
+               "patterns should be concrete"
+
+        simplification_claim = self.apply_reflexivity(expected)
+
+        for equation, path in unification_result.applied_equations:
+            simplification_claim = equation.replace_equal_subpattern(simplification_claim, [0, 0] + path)
+
+        _, rhs = self.decompose_concrete_rewrite_claim(simplification_claim)
+        assert rhs == expected, "unexpected unification"
+
+        return simplification_claim
+
     def prove_rewriting_task(
         self,
         task: RewritingTask,
@@ -222,15 +253,21 @@ class RewriteProofGenerator(ProofGenerator):
 
             # check that the current pattern
             # is the same as expected
+            # otherwise try to unify
             assert step.initial is not None, "insufficient hints"
-            assert current_pattern == step.initial, \
-                   f"unexpected pattern at step {i}: {current_pattern}, expecting {step.initial}"
+
+            unification_claim = self.check_equal_or_unify(current_pattern, step.initial)
+            if unification_claim is not None:
+                step_claims.append(unification_claim)
+                _, current_pattern = self.decompose_concrete_rewrite_claim(unification_claim)
 
             step_claim = self.prove_rewriting_step(step)
+            lhs, rhs = self.decompose_concrete_rewrite_claim(step_claim)
 
-            _, rhs = self.decompose_concrete_rewrite_claim(step_claim)
+            assert step.initial == lhs, \
+                   f"unexpected rewriting claim, expected to rewrite from {step.initial}, but got {lhs}"
 
-            self.env.load_comment(f"\nrewriting step:\n{current_pattern}\n=>\n{rhs}\n")
+            self.env.load_comment(f"\nrewriting step:\n{lhs}\n=>\n{rhs}\n")
             step_claim = self.env.load_provable_claim_as_theorem(
                 f"rewrite-step-{self.rewrite_claim_counter}", step_claim
             )
@@ -239,8 +276,10 @@ class RewriteProofGenerator(ProofGenerator):
             step_claims.append(step_claim)
             current_pattern = rhs
 
-        assert current_pattern == task.final, \
-               f"unexpected pattern at final step: {current_pattern}, expecting {task.final}"
+        # unify with the final expected pattern
+        unification_claim = self.check_equal_or_unify(current_pattern, task.final)
+        if unification_claim is not None:
+            step_claims.append(unification_claim)
 
         final_claim = step_claims[0]
 

@@ -135,6 +135,7 @@ class ProofEnvironment:
         self.equational_axioms: Dict[kore.SymbolInstance, List[ProvableClaim]] = {}  # symbol instance -> provable claim
         # provable claim
         self.map_commutativity_axiom: Optional[ProvableClaim] = None
+        self.map_associativity_axiom: Optional[ProvableClaim] = None
         self.app_ctx_lemmas: Dict[str, List[Theorem]] = {}  # constant_symbol -> list of theorems, one for each argument
 
         # constructor axioms
@@ -950,12 +951,19 @@ class ProofEnvironment:
             equation_head_symbol = KoreTemplates.get_symbol_of_equational_axiom(axiom)
             subsort_tuple = KoreTemplates.get_sorts_of_subsort_axiom(axiom)
             is_map_commutativity = KoreTemplates.is_map_commutativity_axiom(axiom)
-            # is_map_associativity = KoreTemplates.is_map_associativity_axiom(axiom)
+            is_map_associativity = KoreTemplates.is_map_associativity_axiom(axiom)
 
             if is_map_commutativity:
                 assert self.map_commutativity_axiom is None
                 theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
                 self.map_commutativity_axiom = ProvableClaim(axiom, theorem.as_proof())
+                continue
+
+            if is_map_associativity:
+                assert self.map_associativity_axiom is None
+                theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
+                self.map_associativity_axiom = ProvableClaim(axiom, theorem.as_proof())
+                continue
 
             if (functional_symbol is not None or is_rewrite or is_anywhere or equation_head_symbol is not None
                     or subsort_tuple is not None):

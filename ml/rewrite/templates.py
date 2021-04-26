@@ -41,8 +41,12 @@ class KoreTemplates:
 
     @staticmethod
     def is_map_associativity_axiom(axiom: kore.Axiom) -> bool:
-        # TODO
-        return False
+        inner_pattern = KoreUtils.strip_forall(axiom.pattern)
+        if (axiom.has_attribute("assoc") and isinstance(inner_pattern, kore.MLPattern)
+                and inner_pattern.construct == kore.MLPattern.EQUALS and str(inner_pattern.sorts[0]) == r"SortMap{}"):
+            return True
+        else:
+            return False
 
     @staticmethod
     def get_symbol_of_equational_axiom(axiom: kore.Axiom, ) -> Optional[kore.SymbolInstance]:

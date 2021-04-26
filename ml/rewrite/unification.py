@@ -149,13 +149,6 @@ class MapCommutativity(Equation):
     r"""
     mapmerge(M1, M2) === mapmerge(M2, M1)
     """
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # If flag is true, apply the commutativity equation from left to right
-    #     # If flag is false, apply the equation from right to left
-    #     self.flag_left_to_right: bool = True
-
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
         assert isinstance(subpattern, kore.Application)
@@ -185,33 +178,61 @@ class MapCommutativity(Equation):
 class MapAssociativity(Equation):
     r"""
     mapmerge(mapmerge(M1, M2), M3) <==> mapmerge(M1, mapmerge(M2, M3))
-    We use a boolean rotate_right to control the direction.
+    We use a boolean rotate_left to control the direction.
     """
-    def __init__(self, rotate_right, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.rotate_right: bool = rotate_right
+    def __init__(self, env: ProofEnvironment, rotate_left: bool):
+        super().__init__(env)
+        self.rotate_left: bool = rotate_left
 
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
-        # TODO::
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
         assert isinstance(subpattern, kore.Application)
-        # TODO:: assert here that subpattern is a mapmerge
+        assert KoreTemplates.is_map_merge_pattern(subpattern)
 
         # get the two variable (names) in the commutativity axiom
-        assert self.env.map_commutativity_axiom is not None
-        assoc_axiom = self.env.map_commutativity_axiom
+        assert self.env.map_associativity_axiom is not None
+        assoc_axiom = self.env.map_associativity_axiom
 
         assoc_axiom_body = KoreUtils.strip_forall(assoc_axiom.claim.pattern)
-        assert isinstance(assoc_axiom_body, kore.Application)
+        assert isinstance(assoc_axiom_body, kore.MLPattern)
         assert isinstance(assoc_axiom_body.arguments[0], kore.Application)
 
-        var1, var2 = assoc_axiom_body.arguments[0].arguments
+        # get the universally quantified variables of the associativity axiom
+        left, var3 = assoc_axiom_body.arguments[0].arguments
+        assert isinstance(left, kore.Application) and isinstance(var3, kore.Variable)
+        var1, var2 = left.arguments
         assert isinstance(var1, kore.Variable) and isinstance(var2, kore.Variable)
 
-        subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
+        # depending on the direction, instantiate differently
+        if not self.rotate_left:
+            KoreUtils.pretty_print(subpattern)
+            assert isinstance(subpattern.arguments[0], kore.Application)
+            assert KoreTemplates.is_map_merge_pattern(subpattern.arguments[0])
+
+            subst = {
+                var1: subpattern.arguments[0].arguments[0],
+                var2: subpattern.arguments[0].arguments[1],
+                var3: subpattern.arguments[1],
+            }
+        else:
+            assert isinstance(subpattern.arguments[1], kore.Application)
+            assert KoreTemplates.is_map_merge_pattern(subpattern.arguments[1])
+
+            subst = {
+                var1: subpattern.arguments[0],
+                var2: subpattern.arguments[1].arguments[0],
+                var3: subpattern.arguments[1].arguments[1],
+            }
+
         axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(assoc_axiom, subst)
 
-        return EqualityProofGenerator(self.env).replace_equal_subpattern_with_equation(
+        eq_proof_gen = EqualityProofGenerator(self.env)
+
+        # apply symmetry
+        if self.rotate_left:
+            axiom_instance = eq_proof_gen.apply_symmetry(axiom_instance)
+
+        return eq_proof_gen.replace_equal_subpattern_with_equation(
             provable,
             path,
             axiom_instance,
@@ -534,7 +555,7 @@ class UnificationProofGenerator(ProofGenerator):
         applied_eqs2_reversed: List[Tuple[Equation, PatternPath]] = []
         for eq, path in reversed(applied_eqs2):
             if isinstance(eq, MapAssociativity):
-                eq.rotate_right = not eq.rotate_right
+                eq.rotate_left = not eq.rotate_left
             applied_eqs2_reversed = applied_eqs2_reversed + [(eq, path)]
 
         return UnificationResult({}, applied_eqs1 + applied_eqs2_reversed)
