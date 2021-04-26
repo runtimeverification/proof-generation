@@ -22,7 +22,7 @@ from .env import ProofEnvironment
 from .rewrite import RewriteProofGenerator
 from .preprocessor import KorePreprocessor
 from .disjointness import DisjointnessProofGenerator
-from .hints import RewritingHints
+from .tasks import RewritingTask
 
 
 def load_prelude(composer: Composer, args):
@@ -32,59 +32,23 @@ def load_prelude(composer: Composer, args):
     composer.load(prelude)
 
 
-def load_snapshots(module: Module, snapshot_dir: str) -> List[Pattern]:
-    """
-    Load all snapshots in a directory
-    as patterns in the given module
-    """
-    snapshot_steps = {}
-    max_step = 0
-
-    for file_name in os.listdir(snapshot_dir):
-        match = re.match(r"[^\d]*(\d+)\.kore", file_name)
-        if match is not None:
-            step = int(match.group(1))
-            assert step not in snapshot_steps, "duplicated snapshot for step {}".format(step)
-
-            max_step = max(max_step, step)
-
-            full_path = os.path.join(snapshot_dir, file_name)
-            with open(full_path) as snapshot:
-                # parse each snapshot
-                snapshot_pattern = parse_pattern(snapshot.read())
-
-                # resolve all references in the specified module
-                snapshot_pattern.resolve(module)
-                snapshot_steps[step] = snapshot_pattern
-
-    return [snapshot_steps[i] for i in range(max_step + 1)]
-
-
-def load_rewriting_hints(module: Module, hints_path: str) -> RewritingHints:
+def load_rewriting_task(module: Module, task_path: str) -> RewritingTask:
     """
     Load all rewriting information in a directory
     as substitutions (lists of tuples of patterns) in the given module
     """
-    with open(hints_path) as hints_file:
-        loaded_obj = yaml.load(hints_file, Loader=yaml.Loader)
-        return RewritingHints.load_from_object(module, loaded_obj)
+    with open(task_path) as task_file:
+        loaded_obj = yaml.load(task_file, Loader=yaml.Loader)
+        return RewritingTask.load_from_object(module, loaded_obj)
 
 
 def prove_rewriting(
     env: ProofEnvironment,
-    snapshots: List[Pattern],
-    rewriting_hints: Optional[RewritingHints],
+    task: RewritingTask,
 ):
-    """
-    Given a list of snapshots, prove that the first snapshot
-    rewrites to the second snapshot, and load all proofs into
-    the environment
-    """
-
     gen = RewriteProofGenerator(env)
-
-    final_claim = gen.prove_multiple_rewrite_steps(snapshots, rewriting_hints)
-    env.load_comment(f"\nfinal goal:\n{snapshots[0]}\n=>\n{snapshots[-1]}\n")
+    final_claim = gen.prove_rewriting_task(task)
+    env.load_comment(f"\nfinal goal:\n{task.initial}\n=>\n{task.final}\n")
     env.load_provable_claim_as_theorem("goal", final_claim)
 
 
@@ -164,12 +128,8 @@ def main(argv: Optional[Sequence[str]] = None):
     )
     parser.add_argument("--prelude", help="prelude mm file")
     parser.add_argument(
-        "--snapshots",
-        help="directory containing all snapshots in the format *-<step number>.kore",
-    )
-    parser.add_argument(
-        "--hints",
-        help="optional hint from the backend to aid the proof generator",
+        "--task",
+        help="a task description file in YAML. we currently only support rewriting tasks",
     )
     parser.add_argument(
         "--benchmark",
@@ -177,6 +137,13 @@ def main(argv: Optional[Sequence[str]] = None):
         const=True,
         default=False,
         help="output the time spent for translating module and proving rewriting",
+    )
+    parser.add_argument(
+        "--dv-as-provable",
+        action="store_const",
+        const=True,
+        default=False,
+        help="generate domain facts as provable instead of axiom",
     )
     args = parser.parse_args(argv)
 
@@ -198,29 +165,22 @@ def main(argv: Optional[Sequence[str]] = None):
     module_begin = time.time()
 
     composer.start_segment("module")
-    env = ProofEnvironment(module, composer)
+    env = ProofEnvironment(module, composer, dv_as_provable=not args.dv_as_provable)
     composer.end_segment()
 
     module_elapsed = time.time() - module_begin
 
     # TODO: currently only supports rewriting hints
-    rewriting_hints: Optional[RewritingHints] = None
+    rewriting_task: Optional[RewritingTask] = None
 
-    if args.hints is not None:
-        rewriting_hints = load_rewriting_hints(module, args.hints)
+    if args.task is not None:
+        rewriting_task = load_rewriting_task(module, args.task)
 
-    if args.snapshots is not None:
-        snapshots = load_snapshots(module, args.snapshots)
-
-        if len(snapshots) >= 2:
-            rewrite_begin = time.time()
-            composer.start_segment("rewrite")
-            prove_rewriting(env, snapshots, rewriting_hints)
-            composer.end_segment()
-            rewrite_elapsed = time.time() - rewrite_begin
-        else:
-            rewrite_elapsed = 0
-            print("only one snapshot, nothing to prove")
+        rewrite_begin = time.time()
+        composer.start_segment("rewrite")
+        prove_rewriting(env, rewriting_task)
+        composer.end_segment()
+        rewrite_elapsed = time.time() - rewrite_begin
 
     if args.output is not None:
         output_theory(
@@ -228,7 +188,7 @@ def main(argv: Optional[Sequence[str]] = None):
             args.prelude,
             args.output,
             standalone=args.standalone,
-            include_rewrite_proof=args.snapshots is not None,
+            include_rewrite_proof=args.task is not None,
         )
 
     if args.benchmark:

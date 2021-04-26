@@ -68,11 +68,10 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
     def prove_substitution(self, pattern_or_sort: PAS) -> Proof:
         return self.prove_substitution_with_result(pattern_or_sort)[0]
 
-    """
-    In addition to the substitution proof, also return a actual substituted pattern/sort
-    """
-
     def prove_substitution_with_result(self, pattern_or_sort: PAS) -> Tuple[Proof, PAS]:
+        """
+        In addition to the substitution proof, also return a actual substituted pattern/sort
+        """
         substituted = self.get_substituted_ast(pattern_or_sort)
 
         # look up proof cache

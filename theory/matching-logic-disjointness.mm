@@ -237,14 +237,14 @@ $}
 
 ${
     $d x ph1 $.
-    disjointnesss-sort.0 $e |- ( \not ( \and ph0 ( \inh ph1 ) ) ) $.
-    disjointnesss-sort $p |- ( \not ( \and ph0 ( \sorted-exists x ph1 x ) ) ) $=
+    disjointness-sort.0 $e |- ( \not ( \and ph0 ( \inh ph1 ) ) ) $.
+    disjointness-sort $p |- ( \not ( \and ph0 ( \sorted-exists x ph1 x ) ) ) $=
         $(
             apply "disjointness-simplify"
-            apply "disjointnesss-sort.0"
+            apply "disjointness-sort.0"
             apply "sorted-exists-to-inh"
         $)
-        ph0-is-pattern ph1-is-pattern inh-is-pattern ph1-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var sorted-exists-is-pattern disjointnesss-sort.0 ph1-is-pattern x-is-element-var sorted-exists-to-inh disjointness-simplify $.
+        ph0-is-pattern ph1-is-pattern inh-is-pattern ph1-is-pattern x-is-element-var element-var-is-var var-is-pattern x-is-element-var sorted-exists-is-pattern disjointness-sort.0 ph1-is-pattern x-is-element-var sorted-exists-to-inh disjointness-simplify $.
 $}
 
 ${
@@ -296,4 +296,25 @@ ${
             apply "disjointness-alt.0"
         $)
         ph0-is-pattern ph2-is-pattern ph1-is-pattern x-is-element-var sorted-exists-is-pattern and-is-pattern ceil-is-pattern not-is-pattern ph2-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ceil-is-pattern x-is-element-var sorted-exists-is-pattern not-is-pattern ph2-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ceil-is-pattern x-is-element-var sorted-exists-is-pattern ph0-is-pattern ph2-is-pattern ph1-is-pattern x-is-element-var sorted-exists-is-pattern and-is-pattern ceil-is-pattern ph0-is-pattern ph1-is-pattern ph2-is-pattern x-is-element-var disjointness-alt-lemma rule-contrapositive-sugar ph0-is-pattern ph2-is-pattern ph1-is-pattern x-is-element-var sorted-exists-is-pattern and-is-pattern disjointness-alt.0 lemma-not-ceil-elim proof-rule-mp $.
+$}
+
+${
+    disjointness-in-sort.0 $e |- ( \in-sort ph0 ph2 ) $.
+    disjointness-in-sort.1 $e |- ( \not ( \and ( \inh ph2 ) ph1 ) ) $.
+    disjointness-in-sort $p |- ( \not ( \and ph0 ph1 ) ) $=
+        $(
+            apply "proof-rule-mp"
+            apply "rule-contrapositive-sugar"
+            apply "rule-and-intro-alt2-sugar"
+            apply "rule-imp-transitivity"
+            apply "and-elim-left-sugar"
+            apply "lemma-floor-elim"
+            let $5 = "( \inh ph2 )"
+            apply "notation-proof"
+            apply "disjointness-in-sort.0"
+            notation
+            apply "and-elim-right-sugar"
+            apply "disjointness-in-sort.1"
+        $)
+        ph2-is-pattern inh-is-pattern ph1-is-pattern and-is-pattern not-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern not-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern inh-is-pattern ph1-is-pattern and-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph2-is-pattern inh-is-pattern ph1-is-pattern ph0-is-pattern ph1-is-pattern and-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern ph0-is-pattern ph1-is-pattern and-elim-left-sugar ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern in-sort-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern disjointness-in-sort.0 ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern in-sort-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern floor-is-sugar ph0-is-pattern ph2-is-pattern in-sort-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern in-sort-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern in-sort-is-sugar ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-sugar ph0-is-pattern ph2-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern included-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern included-is-sugar ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern floor-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern floor-is-sugar ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern not-is-sugar ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern ph2-is-pattern inh-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern bot-is-pattern imp-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-symmetry notation-symmetry notation-transitivity notation-symmetry notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-symmetry notation-transitivity notation-proof lemma-floor-elim rule-imp-transitivity ph0-is-pattern ph1-is-pattern and-elim-right-sugar rule-and-intro-alt2-sugar rule-contrapositive-sugar disjointness-in-sort.1 proof-rule-mp $.
 $}

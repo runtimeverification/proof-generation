@@ -10,12 +10,12 @@ from .auto.unification import Unification
 
 from .ast import *
 from .visitors import SubstitutionVisitor, CopyVisitor
-"""
-A proof is a list of (theorem) labels and a final statement that it proves
-"""
 
 
 class Proof:
+    """
+    A proof is a list of (theorem) labels and a final statement that it proves
+    """
     def __init__(self, statement: StructuredStatement, script: List[str]):
         self.statement = statement
         self.script = script
@@ -24,13 +24,11 @@ class Proof:
         return str(self.statement)
 
 
-"""
-A proof generator that's supposed to prove the statement given to it,
-if not, it will raise an error
-"""
-
-
 class AutoProof:
+    """
+    A proof generator that's supposed to prove the statement given to it,
+    if not, it will raise an error
+    """
     def prove(self, composer: Composer, statement: StructuredStatement) -> Proof:
         raise NotImplementedError()
 
@@ -43,12 +41,10 @@ class MethodAutoProof(AutoProof):
         return self.method(composer, statement)
 
 
-"""
-A Theorem is any (structured) statement that can be used in a proof
-"""
-
-
 class Theorem:
+    """
+    A Theorem is any (structured) statement that can be used in a proof
+    """
     def __init__(
         self,
         composer: Composer,
@@ -76,12 +72,11 @@ class Theorem:
         instance.statement_type = Statement.PROVABLE
         return instance
 
-    """
-    Treat the theorem itself as a proof of itself, provided
-    no essential is needed
-    """
-
     def as_proof(self):
+        """
+        Treat the theorem itself as a proof of itself, provided
+        no essential is needed
+        """
         assert len(self.essentials) == 0
         script = [label for _, _, label in self.floatings]
         script.append(self.statement.label)
@@ -90,13 +85,12 @@ class Theorem:
         copied_statement.statement_type = Statement.PROVABLE
         return Proof(copied_statement, script)
 
-    """
-    Unify the theorem statement with a target,
-    infer as many metavariables as possible, and
-    then call self.apply
-    """
-
     def match_and_apply(self, target: StructuredStatement, *args, **kwargs):
+        """
+        Unify the theorem statement with a target,
+        infer as many metavariables as possible, and
+        then call self.apply
+        """
         substitution = Unification.match_statements(self.statement, target)
         assert (substitution is not None
                 ), "failed to unify the target statement `{}` and the theorem `{}`".format(target, self.statement)
@@ -117,12 +111,11 @@ class Theorem:
 
         return self.apply(*args, **kwargs)
 
-    """
-    Infer a list of subproofs for the hypotheses from the information given
-    """
-
     def infer_hypotheses(self, *essential_proofs: Union[Proof, AutoProof],
                          **metavar_substitution) -> Tuple[List[Proof], Mapping[str, Term]]:
+        """
+        Infer a list of subproofs for the hypotheses from the information given
+        """
         substitution = {}
         floating_proofs = []
 
@@ -173,7 +166,7 @@ class Theorem:
                 )
             else:
                 # should be a proof
-                assert isinstance(metavar_substituted, Proof)
+                assert isinstance(metavar_substituted, Proof), f"{metavar_substituted} is not a proof"
                 typecode_proof = metavar_substituted
 
             # check that the proof is in the right form (for floating statements)
@@ -205,15 +198,14 @@ class Theorem:
 
         return floating_proofs + final_essential_proofs, substitution
 
-    """
-    Applies the theorem, given the following arguments:
-      - a list of essential proofs, from which we may infer some of
-        the metavariables by unification
-      - a map from metavariable name -> proof or term (in the latter case we
-        will try to prove the typecode automatically)
-    """
-
     def apply(self, *essential_proofs: Union[Proof, AutoProof], **metavar_substitution) -> Proof:
+        """
+        Applies the theorem, given the following arguments:
+        - a list of essential proofs, from which we may infer some of
+            the metavariables by unification
+        - a map from metavariable name -> proof or term (in the latter case we
+            will try to prove the typecode automatically)
+        """
         subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
 
         assert (self.statement.label is not None), f"applying a theorem without label: {self.statement}"
@@ -227,13 +219,12 @@ class Theorem:
 
         return Proof(instance, proof_script)
 
-    """
-    Instead of explicitly referencing the labeled statement,
-    we can inline the proof in some other proof to remove
-    the dependency. However, the proof script will be longer
-    """
-
     def inline_apply(self, proof_of_theorem: Proof, *essential_proofs: Proof, **metavar_substitution) -> Proof:
+        """
+        Instead of explicitly referencing the labeled statement,
+        we can inline the proof in some other proof to remove
+        the dependency. However, the proof script will be longer
+        """
         subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
 
         # labels of hypotheses
@@ -262,24 +253,23 @@ class Theorem:
         return Proof(instance, proof_script)
 
 
-"""
-Proof cache holds a list of generated proofs
-and their corresponding statements.
-
-When a new proof is generated, if one passes
-the proof through the `cache` method, it would
-return a proof with the same statement except that:
-  - if the proof is already in the cache, return the
-    original proof
-  - if not, load this proof into the composer as a theorem
-    and return a proof using the theorem
-
-TODO: add cache eviction when the cache map gets too large
-TODO: add heuristics to not cache "small" and "infrequent" proofs
-"""
-
-
 class ProofCache:
+    """
+    Proof cache holds a list of generated proofs
+    and their corresponding statements.
+
+    When a new proof is generated, if one passes
+    the proof through the `cache` method, it would
+    return a proof with the same statement except that:
+    - if the proof is already in the cache, return the
+        original proof
+    - if not, load this proof into the composer as a theorem
+        and return a proof using the theorem
+
+    TODO: add cache eviction when the cache map gets too large
+    TODO: add heuristics to not cache "small" and "infrequent" proofs
+    """
+
     # if the proof script size exceeds this
     # number of labels, the proof will be cached
     # as a theorem in the database
@@ -297,11 +287,10 @@ class ProofCache:
         self.stat_cache_miss = 0
         self.stat_theorem_cache = 0
 
-    """
-    Get the next available label with the given prefix
-    """
-
     def get_next_label(self, domain: str) -> str:
+        """
+        Get the next available label with the given prefix
+        """
         domain = re.sub(r"[^a-zA-Z0-9_\-.]", "", domain)
 
         if domain not in self.label_map:
@@ -311,11 +300,10 @@ class ProofCache:
         self.label_map[domain] += 1
         return f"{domain}-{idx}"
 
-    """
-    Find an existing cached proof by looking up the statement
-    """
-
     def lookup(self, domain: str, statement: Union[StructuredStatement, List[Term]]) -> Optional[Proof]:
+        """
+        Find an existing cached proof by looking up the statement
+        """
         if isinstance(statement, StructuredStatement):
             statement = statement.terms
         terms = tuple(statement)
@@ -364,12 +352,10 @@ class ProofCache:
         return proof
 
 
-"""
-A linked list recording the current theorem context
-"""
-
-
 class Context:
+    """
+    A linked list recording the current theorem context
+    """
     def __init__(self, prev: Context = None):
         self.prev = prev
 
@@ -382,22 +368,20 @@ class Context:
     def add_essential(self, stmt: StructuredStatement):
         self.active_essentials.append(stmt)
 
-    """
-    return a fraction of self.metavariables according to the given set
-    """
-
     def find_floatings(self, metavariables: Set[str]) -> List[Tuple[str, str, str]]:
+        """
+        return a fraction of self.metavariables according to the given set
+        """
         fraction = [(typecode, var, label) for typecode, var, label in self.active_floatings if var in metavariables]
         if self.prev is not None:
             return self.prev.find_floatings(metavariables) + fraction
         else:
             return fraction.copy()
 
-    """
-    return all metavariables of the given typecode
-    """
-
     def find_floatings_of_typecode(self, expected_typcode: str) -> List[str]:
+        """
+        return all metavariables of the given typecode
+        """
         current = [var for typecode, var, _ in self.active_floatings if typecode == expected_typcode]
         if self.prev is not None:
             return self.find_floatings_of_typecode(expected_typcode) + current
@@ -427,13 +411,11 @@ class Context:
             return self.active_essentials.copy()
 
 
-"""
-Composer is a utility class used for
-emitting metamath statements and proofs
-"""
-
-
 class Composer:
+    """
+    Composer is a utility class used for
+    emitting metamath statements and proofs
+    """
     def __init__(self):
         self.context = Context()  # outermost context for a database
         self.theorems = {}  # label -> Theorem
@@ -531,32 +513,29 @@ class Composer:
             self.segments[name] = []
         self.segments[name] += indices
 
-    """
-    look up a metavariable, if found, return the typecode,
-    otherwise, return None
-    """
-
     def find_metavariable(self, var: str) -> Optional[str]:
+        """
+        look up a metavariable, if found, return the typecode,
+        otherwise, return None
+        """
         found = self.context.find_floatings({var})
         if not found:
             return None
         return found[0][0]
 
-    """
-    find metavariables of the given typecode
-    """
-
     def find_metavariables_of_typecode(self, typecode: str) -> List[str]:
+        """
+        find metavariables of the given typecode
+        """
         return self.context.find_floatings_of_typecode(typecode)
 
     def get_all_metavariables(self) -> List[str]:
         return [var for _, var, _ in self.context.get_all_floatings()]
 
-    """
-    Index the statement for more efficient search later
-    """
-
     def index_statement(self, stmt: StructuredStatement):
+        """
+        Index the statement for more efficient search later
+        """
         # index by the typecode
         if (len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0):
             self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])

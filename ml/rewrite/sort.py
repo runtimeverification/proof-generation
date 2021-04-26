@@ -11,16 +11,16 @@ from .substitution import SingleSubstitutionProofGenerator
 
 
 class SortProofGenerator(ProofGenerator):
-    """
-    Return a provable claim of the form
-    `forall x. inj{sort2, sort3}(inj{sort1, sort2}(x)) = inj{sort1, sort3}(x)`
-    """
     def get_inj_instance(
         self,
         sort1: kore.Sort,
         sort2: kore.Sort,
         sort3: kore.Sort,
     ) -> ProvableClaim:
+        """
+        Return a provable claim of the form
+        `forall x. inj{sort2, sort3}(inj{sort1, sort2}(x)) = inj{sort1, sort3}(x)`
+        """
         # NOTE: this depends on the order in which the parametric sort variables
         # are generated
 

@@ -1,9 +1,7 @@
-"""
-A general visitor base class
-"""
-
-
 class Visitor:
+    """
+    A general visitor base class
+    """
     def previsit_default(self, x):
         return x
 

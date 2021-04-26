@@ -7,13 +7,14 @@ from ml.kore.ast import KoreVisitor
 from ml.kore.utils import KoreUtils
 
 from ml.metamath import ast as mm
-"""
-Encode a kore pattern as a Term and collect all metavariables
-and constant symbols
-"""
 
 
 class KorePatternEncoder(KoreVisitor):
+    """
+    Encode a kore pattern as a Term and collect all metavariables
+    and constant symbols
+    """
+
     TOP = "\\kore-top"
     BOTTOM = "\\kore-bottom"
     NOT = "\\kore-not"

@@ -38,9 +38,9 @@ class TestIntegrationBase(unittest.TestCase):
                os.path.isfile(prelude_path), \
                "not in the right directory"
 
-        pgm_path = os.path.join(integration_path, pgm)
-        assert os.path.isdir(pgm_path), \
-               f"cannot find program path {pgm_path}"
+        task_path = os.path.join(integration_path, f"{pgm}.yml")
+        assert os.path.isfile(task_path), \
+               f"cannot find task file {task_path}"
 
         definition_name = pgm.split(".")[-1]
         definition_path = os.path.join(definitions_path, f"{definition_name}.kore")
@@ -48,7 +48,7 @@ class TestIntegrationBase(unittest.TestCase):
         assert os.path.isfile(definition_path), \
                f"cannot find definition {definition_path} inferred from program name {pgm}"
 
-        module_name = definition_name.upper().replace("-", "_")
+        module_name = definition_name.upper()
 
         rewrite_main(
             [
@@ -56,8 +56,8 @@ class TestIntegrationBase(unittest.TestCase):
                 module_name,
                 "--prelude",
                 prelude_path,
-                "--snapshots",
-                pgm_path,
+                "--task",
+                task_path,
                 "--output",
                 self.output_proof_dir,
             ]
@@ -65,9 +65,15 @@ class TestIntegrationBase(unittest.TestCase):
 
 
 class TestRewriteProofGeneratorIntegeration(TestIntegrationBase):
-    def test_rewrite_proof_gen(self):
+    # TODO: verify using metamath
+    def test_foo(self):
         self.run_rewrite_proof_gen("pgm-1.foo")
+
+    def test_lambda(self):
         self.run_rewrite_proof_gen("pgm-1.lambda")
+
+    def test_imp(self):
         self.run_rewrite_proof_gen("pgm-1.imp")
 
-        # TODO: verify using metamath
+    def test_map_test(self):
+        self.run_rewrite_proof_gen("pgm-comm.map-test")

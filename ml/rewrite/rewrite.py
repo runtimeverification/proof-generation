@@ -18,13 +18,13 @@ from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
 from .unification import UnificationProofGenerator, InjectionCombine
 from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
-from .hints import RewritingHints
-"""
-Generate proofs for one or multiple rewrite steps
-"""
+from .tasks import RewritingStep, RewritingTask
 
 
 class RewriteProofGenerator(ProofGenerator):
+    """
+    Generate proofs for rewriting related claims
+    """
     def __init__(self, env: ProofEnvironment):
         super().__init__(env)
         self.owise_assumption_counter = 0
@@ -44,23 +44,13 @@ class RewriteProofGenerator(ProofGenerator):
         }
         self.disjoint_gen = DisjointnessProofGenerator(env)
 
-    """
-    Strip call outermost injection calls
-    """
-
-    def strip_inj(self, pattern: kore.Pattern) -> kore.Pattern:
-        while (isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "inj"):
-            assert len(pattern.arguments) == 1
-            pattern = pattern.arguments[0]
-        return pattern
-
-    """
-    Returns (lhs, lhs requires, rhs, rhs ensures)
-    """
-
     def decompose_rewrite_axiom(
         self, pattern: kore.Pattern
     ) -> Tuple[kore.Pattern, Optional[kore.Pattern], kore.Pattern, Optional[kore.Pattern]]:
+        """
+        Returns (lhs, lhs requires, rhs, rhs ensures)
+        """
+
         rewrite_pattern = KoreUtils.strip_forall(pattern)
 
         assert isinstance(rewrite_pattern, kore.MLPattern) and (
@@ -85,30 +75,36 @@ class RewriteProofGenerator(ProofGenerator):
 
         return lhs_body, lhs_requires, rhs_body, rhs_ensures
 
-    """
-    Given a provable claim of the form
-    ph1 => ph2 or ph1 =>* ph2,
-    return (ph1, ph2)
-    """
-
     def decompose_concrete_rewrite_claim(self, provable: ProvableClaim) -> Tuple[kore.Pattern, kore.Pattern]:
+        """
+        Given a provable claim of the form
+        ph1 => ph2 or ph1 =>* ph2,
+        return (ph1, ph2)
+        """
         rewrite_pattern = provable.claim.pattern
         lhs, _, rhs, _ = self.decompose_rewrite_axiom(rewrite_pattern)
         return lhs, rhs
 
-    """
-    Find and instantiate a rewrite axiom for the given pattern,
-    and then resolve all the functions in the RHS
-    """
-
     def rewrite_from_pattern(
         self,
         pattern: kore.Pattern,
+        rule_hint: Optional[str] = None,
         substitution_hints: Optional[Mapping[kore.Variable, kore.Pattern]] = None,
     ) -> ProvableClaim:
+        """
+        Find and instantiate a rewrite axiom for the given pattern,
+        and then resolve all the functions in the RHS
+        """
         unification_gen = UnificationProofGenerator(self.env)
 
-        for _, rewrite_axiom in self.env.rewrite_axioms.items():
+        if rule_hint is not None:
+            assert rule_hint in self.env.rewrite_axioms, \
+                   f"unable to find axiom with id {rule_hint} in the hint"
+            axioms = [self.env.rewrite_axioms[rule_hint]]
+        else:
+            axioms = list(self.env.rewrite_axioms.values())
+
+        for rewrite_axiom in axioms:
             print(f"> trying axiom {KoreTemplates.get_axiom_unique_id(rewrite_axiom.claim)}")
             lhs, _, _, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
 
@@ -183,97 +179,80 @@ class RewriteProofGenerator(ProofGenerator):
 
         assert False, "unable to find axiom to rewrite `{}`".format(pattern)
 
-    def prove_rewrite_step(
+    def prove_rewriting_step(
         self,
-        from_pattern: kore.Pattern,
-        to_pattern: kore.Pattern,
-        substitution_hints: Optional[Mapping[kore.Variable, kore.Pattern]] = None,
-        simplify_initial_pattern: bool = True,
+        rewriting_step: RewritingStep,
     ) -> ProvableClaim:
-        # strip the outermost inj
-        # TODO: re-add these in the end
-        from_pattern = self.strip_inj(from_pattern)
-        to_pattern = self.strip_inj(to_pattern)
-
-        simplification_claim = None
+        """
+        Prove a single rewriting step
+        """
+        assert rewriting_step.initial is not None
 
         # TODO: this is a hack to load all domain values
-        self.env.encode_pattern(from_pattern)
-        self.env.encode_pattern(to_pattern)
+        self.env.encode_pattern(rewriting_step.initial)
 
-        if simplify_initial_pattern:
-            # simplify before rewriting
-            simplification_claim = self.apply_reflexivity(from_pattern)
-            simplification_claim = self.simplify_pattern(simplification_claim, [0, 1])
+        return self.rewrite_from_pattern(rewriting_step.initial, rewriting_step.rule_id, rewriting_step.substitution)
 
-            _, rhs = self.decompose_concrete_rewrite_claim(simplification_claim)
-
-            # if the RHS is already the same as to_pattern, no need to do more
-            if rhs == to_pattern:
-                return simplification_claim
-
-            from_pattern = rhs
-
-        concrete_rewrite_claim = self.rewrite_from_pattern(from_pattern, substitution_hints)
-
-        # check that the proven statement is actually what we want
-        # the result should be of the form |- ( \kore-valid <top level sort> ( \kore-rewrite LHS RHS ) )
-        _, rhs = self.decompose_concrete_rewrite_claim(concrete_rewrite_claim)
-
-        assert rhs == to_pattern, "unexpected RHS: {} vs {}".format(rhs, to_pattern)
-
-        # connect the simplification claim too
-        if simplification_claim is not None:
-            concrete_rewrite_claim = self.apply_rewrite_star_transitivity(
-                simplification_claim,
-                concrete_rewrite_claim,
-            )
-
-        return concrete_rewrite_claim
-
-    """
-    Prove multiple rewrite steps
-    """
-
-    def prove_multiple_rewrite_steps(
+    def prove_rewriting_task(
         self,
-        patterns: List[kore.Pattern],
-        rewriting_hints: Optional[RewritingHints] = None,
+        task: RewritingTask,
     ) -> ProvableClaim:
-        assert len(patterns) > 1, "expecting more than one patterns"
+        """
+        Prove a rewriting task which may contain multiple rewrite steps,
+        from the given hints
+        """
+        current_pattern = task.initial
 
-        final_claim = None
+        # simplify before rewriting
+        print("==================")
+        print("simplifying initial pattern")
+        simplification_claim = self.apply_reflexivity(current_pattern)
+        simplification_claim = self.simplify_pattern(simplification_claim, [0, 1])
+        _, current_pattern = self.decompose_concrete_rewrite_claim(simplification_claim)
 
-        for step, (from_pattern, to_pattern) in enumerate(zip(patterns[:-1], patterns[1:])):
+        # if the RHS is already the same as to_pattern, no need to do more
+        if current_pattern == task.final:
+            return simplification_claim
+
+        step_claims = [simplification_claim]
+
+        for i, step in enumerate(task.steps):
             print("==================")
-            print("proving rewriting step {}".format(step))
+            print("proving rewriting step {}".format(i))
 
-            step_claim = self.prove_rewrite_step(
-                from_pattern,
-                to_pattern,
-                rewriting_hints.get_substitution_for_step(step) if rewriting_hints is not None else None,
-                simplify_initial_pattern=step == 0,
-            )
-            self.env.load_comment(f"\nrewriting step:\n{from_pattern}\n=>\n{to_pattern}\n")
+            # check that the current pattern
+            # is the same as expected
+            assert step.initial is not None, "insufficient hints"
+            assert current_pattern == step.initial, \
+                   f"unexpected pattern at step {i}: {current_pattern}, expecting {step.initial}"
+
+            step_claim = self.prove_rewriting_step(step)
+
+            _, rhs = self.decompose_concrete_rewrite_claim(step_claim)
+
+            self.env.load_comment(f"\nrewriting step:\n{current_pattern}\n=>\n{rhs}\n")
             step_claim = self.env.load_provable_claim_as_theorem(
                 f"rewrite-step-{self.rewrite_claim_counter}", step_claim
             )
             self.rewrite_claim_counter += 1
 
-            if final_claim is None:
-                final_claim = step_claim
-            else:
-                final_claim = self.apply_rewrite_star_transitivity(final_claim, step_claim)
+            step_claims.append(step_claim)
+            current_pattern = rhs
 
-        assert final_claim is not None
+        assert current_pattern == task.final, \
+               f"unexpected pattern at final step: {current_pattern}, expecting {task.final}"
+
+        final_claim = step_claims[0]
+
+        for claim in step_claims[1:]:
+            final_claim = self.apply_rewrite_star_transitivity(final_claim, claim)
 
         return final_claim
 
-    """
-    Transform a rewrite claim to a rewrite-star claim
-    """
-
     def apply_rewrite_star_intro(self, step: ProvableClaim) -> ProvableClaim:
+        """
+        Transform a rewrite claim to a rewrite-star claim
+        """
         lhs, rhs = self.decompose_concrete_rewrite_claim(step)
         pattern_sort = KoreUtils.infer_sort(lhs)
 
@@ -293,11 +272,11 @@ class RewriteProofGenerator(ProofGenerator):
             ),
         )
 
-    """
-    Connect two rewrite-star claims
-    """
-
     def apply_rewrite_star_transitivity(self, step1: ProvableClaim, step2: ProvableClaim) -> ProvableClaim:
+        """
+        Connect two rewrite-star claims
+        """
+
         lhs1, rhs1 = self.decompose_concrete_rewrite_claim(step1)
         lhs2, rhs2 = self.decompose_concrete_rewrite_claim(step2)
         assert rhs1 == lhs2, "unable to apply transitivity"
@@ -341,16 +320,16 @@ class RewriteProofGenerator(ProofGenerator):
 
         return lhs, requires, rhs, ensures
 
-    r"""
-    Prove a pattern of the form
-    - top{S{}}(), or
-    - \equals{...}(..., ...)
-
-    For \equals, it can have either a concrete sort
-    or a sort variable as the output sort
-    """
-
     def prove_requires_clause(self, pattern: kore.Pattern) -> Optional[Proof]:
+        r"""
+        Prove a pattern of the form
+        - top{S{}}(), or
+        - \equals{...}(..., ...)
+
+        For \equals, it can have either a concrete sort
+        or a sort variable as the output sort
+        """
+
         assert isinstance(pattern, kore.MLPattern)
 
         # if the pattern is top, then it's trivially true
@@ -533,11 +512,11 @@ class RewriteProofGenerator(ProofGenerator):
 
         return instantiated_axiom
 
-    """
-    Find and instantiate a anywhere/function axiom for the given (function) pattern
-    """
-
     def find_anywhere_axiom_for_pattern(self, pattern: kore.Pattern) -> ProvableClaim:
+        """
+        Find and instantiate a anywhere/function axiom for the given (function) pattern
+        """
+
         assert isinstance(pattern, kore.Application), f"{pattern} is not an application"
 
         head_symbol = pattern.symbol
@@ -569,12 +548,12 @@ class RewriteProofGenerator(ProofGenerator):
 
         raise Exception(f"unable to find anywhere/function rule to rewrite term {pattern}")
 
-    """
-    Checks if the given pattern is "simplifiable", that is, if
-    it contains duplicate injections and/or unevaluated functions
-    """
-
     def is_simplifiable(self, pattern: kore.Pattern) -> bool:
+        """
+        Checks if the given pattern is "simplifiable", that is, if
+        it contains duplicate injections and/or unevaluated functions
+        """
+
         nested_inj_path = InnermostNestedInjectionPathVisitor(self.env).visit(pattern)
         if nested_inj_path is not None:
             return True
@@ -585,14 +564,14 @@ class RewriteProofGenerator(ProofGenerator):
 
         return False
 
-    """
-    Simplify the subpattern indicated by the path by
-      - resolving functions
-      - simplify nested injections
-    at most <bound> times
-    """
-
     def simplify_pattern(self, provable: ProvableClaim, path: PatternPath, bound: int = -1) -> ProvableClaim:
+        """
+        Simplify the subpattern indicated by the path by
+        - resolving functions
+        - simplify nested injections
+        at most <bound> times
+        """
+
         num_simplifications = 0
 
         while bound == -1 or num_simplifications < bound:
@@ -684,19 +663,16 @@ class InnermostNestedInjectionPathVisitor(KoreVisitor):
         return None
 
 
-"""
-Return a path of an application subpattern with a function-like head such that
-it doesn't have any (sub-)subpattern with a function-like head
-"""
-
-
 class InnermostFunctionPathVisitor(KoreVisitor):
+    """
+    Return a path of an application subpattern with a function-like head such that
+    it doesn't have any (sub-)subpattern with a function-like head
+    """
     """
     These symbols are marked as hooked function symbols
     but for the purpose of proof generation they should
     be constructors
     """
-
     EXCEPTIONS = {
         r"Lbl'UndsPipe'-'-GT-Unds'",
         r"Lbl'Unds'Map'Unds'",
@@ -731,12 +707,10 @@ class InnermostFunctionPathVisitor(KoreVisitor):
         return None
 
 
-"""
-Common base class for evaluator of the builtin sort SortInt{}
-"""
-
-
 class BuiltinFunctionEvaluator(ProofGenerator):
+    """
+    Common base class for evaluator of the builtin sort SortInt{}
+    """
     def __init__(self, env: ProofEnvironment):
         super().__init__(env)
         self.axiom_counter = 0
@@ -796,7 +770,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
             claim,
             f"{self.env.sanitize_label_name(application.symbol.definition.symbol)}-domain-fact-{self.axiom_counter}",
             comment=False,
-            provable=True,
+            provable=self.env.dv_as_provable,
         )
         self.env.composer.end_segment()
 

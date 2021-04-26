@@ -4,25 +4,25 @@ from typing import TextIO, Optional, List, Set, Union, Iterable
 from io import StringIO
 
 from ml.utils.visitor import Visitor
-"""
-This is a less general version
-of metamath that preseves certain structures
-in the source file. All "terms" should look like
-S-expressions. A term without arguments should be
-used without parentheses
-
-All statements are in the form
-
-<t_1> [<t_2> ...]
-
-where t_i's are terms
-
-All terms basically consists only of constant symbols
-with the only exception being metavariables.
-"""
 
 
 class MetamathVisitor(Visitor):
+    """
+    This is a less general version
+    of metamath that preseves certain structures
+    in the source file. All "terms" should look like
+    S-expressions. A term without arguments should be
+    used without parentheses
+
+    All statements are in the form
+
+    <t_1> [<t_2> ...]
+
+    where t_i's are terms
+
+    All terms basically consists only of constant symbols
+    with the only exception being metavariables.
+    """
     def visit_children_of_application(self, application: Application):
         return [
             [subterm.visit(self) for subterm in application.subterms],
@@ -217,13 +217,11 @@ class IncludeStatement(Statement):
         return visitor.postvisit_include_statement(self, *children)
 
 
-"""
-A list of tokens without any structures.
-Constant and variable statements are of this kind
-"""
-
-
 class RawStatement(Statement):
+    """
+    A list of tokens without any structures.
+    Constant and variable statements are of this kind
+    """
     def __init__(self, statement_type: str, tokens: List[str], label: Optional[str] = None):
         super().__init__()
         self.statement_type = statement_type
@@ -250,12 +248,10 @@ class RawStatement(Statement):
         return visitor.postvisit_raw_statement(self, *children)
 
 
-"""
-Structured statement will be parsed as a list of S-expressions
-"""
-
-
 class StructuredStatement(Statement):
+    """
+    Structured statement will be parsed as a list of S-expressions
+    """
     def __init__(
         self,
         statement_type: str,
@@ -312,13 +308,11 @@ class StructuredStatement(Statement):
         return False
 
 
-"""
-A block is a list of statements,
-while itself is also a statement
-"""
-
-
 class Block(Statement):
+    """
+    A block is a list of statements,
+    while itself is also a statement
+    """
     def __init__(self, statements: Iterable[Statement]):
         self.statements = list(statements)
 
@@ -335,14 +329,12 @@ class Block(Statement):
         return visitor.postvisit_block(self, *children)
 
 
-"""
-A database consists of a single outermost block
-and some auxiliary information
-e.g. set of variables and mapping from labels to statements
-"""
-
-
 class Database(BaseAST):
+    """
+    A database consists of a single outermost block
+    and some auxiliary information
+    e.g. set of variables and mapping from labels to statements
+    """
     def __init__(self, statements: List[Statement]):
         self.statements = statements
 

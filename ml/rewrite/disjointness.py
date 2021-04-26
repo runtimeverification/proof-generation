@@ -10,24 +10,25 @@ from ml.metamath import ast as mm
 from ml.metamath.composer import Proof
 from ml.metamath.visitors import CopyVisitor
 from ml.metamath.auto.substitution import SubstitutionProver
+from ml.metamath.auto.sorting import SortingProver
 
 from .env import ProofGenerator
 from .encoder import KorePatternEncoder
-r"""
-The disjointness proof generator generates proof for
-patterns of the form
-
-phi /\ not (exists x1, ..., xn. psi(x1, ..., xn))
-
-where phi is expected to be a functional pattern
-
-The primary usage of it is to prove conditions for
-[owise] rules, which assumes that a pattern
-does NOT unify with a pattern.
-"""
 
 
 class DisjointnessProofGenerator(ProofGenerator):
+    r"""
+    The disjointness proof generator generates proof for
+    patterns of the form
+
+    phi /\ not (exists x1, ..., xn. psi(x1, ..., xn))
+
+    where phi is expected to be a functional pattern
+
+    The primary usage of it is to prove conditions for
+    [owise] rules, which assumes that a pattern
+    does NOT unify with a pattern.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -37,12 +38,12 @@ class DisjointnessProofGenerator(ProofGenerator):
         free_vars.sort(key=lambda v: v.name, reverse=True)
         return free_vars
 
-    r"""
-    Given a Kore pattern, existentially quantify all free variables using \sorted-exists
-    then return the encoded metamath pattern
-    """
-
     def existentially_quantify_free_variables(self, pattern: kore.Pattern) -> mm.Term:
+        r"""
+        Given a Kore pattern, existentially quantify all free variables using \sorted-exists
+        then return the encoded metamath pattern
+        """
+
         free_vars = self.get_free_vars_in_pattern(pattern)
         encoded_pattern = self.env.encode_pattern(pattern)
 
@@ -58,21 +59,16 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         return encoded_pattern
 
-    r"""
-    Return the metamath term
-    not (<left> /\ exists x1, ..., xn. <right>)
-    all free variables should be exitentially quantified
-    """
-
     def get_disjointness_pattern(self, left: kore.Pattern, right: kore.Pattern, quantify: bool = True) -> mm.Term:
+        r"""
+        Return the metamath term
+        not (<left> /\ exists x1, ..., xn. <right>)
+        all free variables should be exitentially quantified
+        """
         left_term = (self.existentially_quantify_free_variables(left) if quantify else self.env.encode_pattern(left))
         right_term = (self.existentially_quantify_free_variables(right) if quantify else self.env.encode_pattern(right))
 
         return mm.Application("\\not", [mm.Application("\\and", [left_term, right_term])])
-
-    """
-    Same as above but wraps it in a metamath statement
-    """
 
     def get_disjointness_statement(
         self,
@@ -81,6 +77,9 @@ class DisjointnessProofGenerator(ProofGenerator):
         label: Optional[str] = None,
         quantify: bool = True,
     ) -> mm.StructuredStatement:
+        """
+        Same as above but wraps it in a metamath statement
+        """
         disjointness = self.get_disjointness_pattern(left, right, quantify)
         return mm.StructuredStatement(
             mm.Statement.PROVABLE,
@@ -88,13 +87,13 @@ class DisjointnessProofGenerator(ProofGenerator):
             label=label,
         )
 
-    """
-    Given an application f(ph1, ...)
-    make a "hole" at the ith argument to make it an application context,
-    and return the proof that it is an application context
-    """
-
     def make_app_context(self, app: mm.Application, i: int) -> Proof:
+        """
+        Given an application f(ph1, ...)
+        make a "hole" at the ith argument to make it an application context,
+        and return the proof that it is an application context
+        """
+
         metavars = app.get_metavariables()
         (free_var_name, ) = self.env.gen_fresh_metavariables("#ElementVariable", 1, metavars)
         free_var = mm.Metavariable(free_var_name)
@@ -119,14 +118,13 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         return app_ctx_proof
 
-    """
-    Propagate all existential quantifiers at the ith argument out
-    Given an application f(..., sorted-exists x y. phi(x, y), ...)
-    Return the proof of
-      (sorted-exists x y. f(..., phi(x, y), ...)) -> f(..., sorted-exists x y. phi(x, y), ...)
-    """
-
     def propagate_exists_out(self, app: mm.Application, i: int) -> Proof:
+        """
+        Propagate all existential quantifiers at the ith argument out
+        Given an application f(..., sorted-exists x y. phi(x, y), ...)
+        Return the proof of
+        (sorted-exists x y. f(..., phi(x, y), ...)) -> f(..., sorted-exists x y. phi(x, y), ...)
+        """
         assert i < len(app.subterms)
         ith_arg = app.subterms[i]
 
@@ -199,14 +197,13 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
     # TODO: this probably belows to somewhere else
-    """
-    Given an application f(ph0, ph1, ...)
-    and a proof of, e.g., |- ph0 -> psi for some psi
-    prove that
-      f(ph0, ph1, ...) -> f(ph0, psi, ...)
-    """
-
     def apply_framing_on_application(self, app: mm.Application, i: int, imp: Proof) -> Proof:
+        """
+        Given an application f(ph0, ph1, ...)
+        and a proof of, e.g., |- ph0 -> psi for some psi
+        prove that
+        f(ph0, ph1, ...) -> f(ph0, psi, ...)
+        """
         app_ctx_proof = self.make_app_context(app, i)
 
         # |- ph0 -> ph1
@@ -230,12 +227,12 @@ class DisjointnessProofGenerator(ProofGenerator):
             ph2=right_subst_app,
         )
 
-    """
-    Given an application with the ith argument being falsum
-    return a proof that the entire pattern implies falsum
-    """
-
     def apply_bot_propagation(self, app: mm.Application, i: int) -> Proof:
+        """
+        Given an application with the ith argument being falsum
+        return a proof that the entire pattern implies falsum
+        """
+
         assert app.subterms[i] == mm.Application("\\bot")
 
         return self.env.get_theorem("proof-rule-propagation-bot").apply(
@@ -244,12 +241,6 @@ class DisjointnessProofGenerator(ProofGenerator):
             ph1=app,
         )
 
-    """
-    Given an integer i, left and right (applicatoin) patterns f(...), g(...)
-    and a proof that the ith argument is disjoint, return a proof that
-    f(...) and exists x1, ..., xn. g(...) are disjoint
-    """
-
     def prove_argument_disjointness(
         self,
         left: kore.Application,
@@ -257,6 +248,12 @@ class DisjointnessProofGenerator(ProofGenerator):
         i: int,
         argument_disjointness: Proof,
     ) -> Proof:
+        """
+        Given an integer i, left and right (applicatoin) patterns f(...), g(...)
+        and a proof that the ith argument is disjoint, return a proof that
+        f(...) and exists x1, ..., xn. g(...) are disjoint
+        """
+
         assert left.symbol == right.symbol
 
         # proof strategy:
@@ -378,12 +375,12 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         return disjointness_proof
 
-    """
-    Prove that the left pattern is disjoint from
-    any of the components given
-    """
+    def prove_disjointness_with_disjunction(self, left: kore.Pattern, components: List[kore.Application]) -> Proof:
+        """
+        Prove that the left pattern is disjoint from
+        any of the components given
+        """
 
-    def prove_disjointness_with_disjunction(self, left: kore.Application, components: List[kore.Application]) -> Proof:
         assert len(components) != 0
 
         first_disjointness = self.prove_disjointness(left, components[0])
@@ -396,11 +393,11 @@ class DisjointnessProofGenerator(ProofGenerator):
             self.prove_disjointness_with_disjunction(left, components[1:]),
         )
 
-    """
-    Prove that a (concrete) pattern is not in a sort
-    """
+    def prove_symbol_sort_disjointness(self, left: kore.Pattern, right: kore.Variable) -> Proof:
+        """
+        Prove that a (concrete) pattern is not in a sort
+        """
 
-    def prove_sort_disjointness(self, left: kore.Application, right: kore.Variable) -> Proof:
         assert (
             isinstance(right.sort, kore.SortInstance) and right.sort in self.env.no_junk_axioms
             and right.sort in self.env.sort_components
@@ -420,7 +417,7 @@ class DisjointnessProofGenerator(ProofGenerator):
                                  ).apply(self.env.get_theorem("rule-eq-to-iff").apply(no_junk_axiom.as_proof()), ),
         )
 
-        disjoint_with_sort_alt = self.env.get_theorem("disjointnesss-sort").match_and_apply(
+        disjoint_with_sort_alt = self.env.get_theorem("disjointness-sort").match_and_apply(
             self.get_disjointness_statement(left, right),
             disjoint_with_sort,
         )
@@ -490,39 +487,77 @@ class DisjointnessProofGenerator(ProofGenerator):
             ],
         )
 
-        return self.env.get_theorem("disjointnesss-sort").match_and_apply(
+        return self.env.get_theorem("disjointness-sort").match_and_apply(
             self.get_disjointness_statement(left, var),
             no_confusion.match_and_apply(instance),
         )
 
-    r"""
-    Prove that the given patterns are disjoint, that is
-    not (<left> /\ exists x. <right>)
+    def prove_dv_sort_disjointness(self, left: kore.MLPattern, right: kore.Variable) -> Proof:
+        """
+        Try to prove that a dv pattern is disjoint from a sort
+        """
+        dv_sort = left.sorts[0]
+        assert isinstance(dv_sort, kore.SortInstance) and \
+               len(dv_sort.arguments) == 0, f"parametric hooked sort {dv_sort} is not supported"
 
-    Currently only <right> is allowed to have free variables
-    which are existentially quantified
-    """
+        right_sort = right.sort
+        assert isinstance(right_sort, kore.SortInstance) and \
+               len(right_sort.arguments) == 0, f"parametric sort {right_sort} not supported"
+
+        dv_sort_encoded_id = KorePatternEncoder.encode_sort(dv_sort.get_sort_id())
+        right_sort_encoded_id = KorePatternEncoder.encode_sort(right_sort.get_sort_id())
+
+        # look up disjointness axiom
+        if (dv_sort_encoded_id, right_sort_encoded_id) in self.env.hooked_sort_disjoint_axioms:
+            disjoint_axiom = self.env.hooked_sort_disjoint_axioms[dv_sort_encoded_id, right_sort_encoded_id].as_proof()
+
+        elif (right_sort_encoded_id, dv_sort_encoded_id) in self.env.hooked_sort_disjoint_axioms:
+            disjoint_axiom = self.env.get_theorem("disjointness-symmetry").apply(
+                self.env.hooked_sort_disjoint_axioms[right_sort_encoded_id, dv_sort_encoded_id].as_proof()
+            )
+
+        else:
+            assert False, f"unable to find axiom to show the disjointness of sorts {dv_sort} and {right_sort}"
+
+        right_var_encoded = KorePatternEncoder.encode_variable(right)
+        dv_encoded = self.env.encode_pattern(left)
+
+        return self.env.get_theorem("disjointness-in-sort").apply(
+            SortingProver.auto,
+            self.env.get_theorem("disjointness-sort").apply(
+                disjoint_axiom,
+                x=mm.Metavariable(right_var_encoded),
+            ),
+            ph0=dv_encoded,
+        )
 
     def prove_disjointness(self, left: kore.Pattern, right: kore.Pattern) -> Proof:
+        r"""
+        Prove that the given patterns are disjoint, that is
+        not (<left> /\ exists x. <right>)
+
+        Currently only <right> is allowed to have free variables
+        which are existentially quantified
+        """
+
         assert KoreUtils.is_concrete(left), f"currently only supports concrete left pattern, but {left} is given"
 
         right = KoreUtils.strip_exists(right)
 
-        assert isinstance(left, kore.Application), f"left pattern {left} should be an application"
         assert isinstance(right, kore.Application) or isinstance(
             right, kore.Variable
         ), f"right pattern {right} should be an application or a variable"
 
-        left_symbol = left.symbol
-
         if isinstance(right, kore.Application):
+            assert isinstance(left, kore.Application), f"left pattern {left} should be an application"
+
             # if both symbols are injections
             # it's enough to prove that the inner patterns are disjoint
-            if (left_symbol.definition == self.env.sort_injection_symbol
+            if (left.symbol.definition == self.env.sort_injection_symbol
                     and right.symbol.definition == self.env.sort_injection_symbol):
                 assert isinstance(right, kore.Application)
                 return self.prove_inj_disjointness(left, right)
-            elif left_symbol == right.symbol:
+            elif left.symbol == right.symbol:
                 # same symbol, try to find a argument pair that is disjoint
                 # then use no confusion to show that the full patterns are disjoint
 
@@ -545,9 +580,14 @@ class DisjointnessProofGenerator(ProofGenerator):
         else:
             assert isinstance(right, kore.Variable)
 
-            # right is a variable: use no junk of the sort
+            # right is a variable and it can be further decomposed, use no junk of the sort
             if right.sort in self.env.sort_components:
-                return self.prove_sort_disjointness(left, right)
+                return self.prove_symbol_sort_disjointness(left, right)
+
+            if isinstance(left, kore.MLPattern) and left.construct == kore.MLPattern.DV:
+                return self.prove_dv_sort_disjointness(left, right)
+
+            assert isinstance(left, kore.Application), f"left pattern {left} should be an application"
 
             # right is a variable of a hooked sort
             if (

@@ -1,0 +1,56 @@
+final: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa Cl
+  */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli */ /*
+  Inj: */ inj{SortFoo{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lblfoo''LParUndsRParUnds''FOO''Unds''Foo''Unds''Int{}(
+  /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("13") ) ), /* Fl Fn D Sfa Cl
+  */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}( /*
+  Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0") ) )'
+initial: inj{SortGeneratedTopCell{}, SortKItem{}}(Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortFoo{},
+  SortKItem{}}(Lblbar'LParUndsCommUndsRParUnds'FOO'Unds'Foo'Unds'Foo'Unds'Foo{}(Lblid'LParUndsRParUnds'FOO'Unds'Foo'Unds'Foo{}(Lblfoo'LParUndsRParUnds'FOO'Unds'Foo'Unds'Int{}(\dv{SortInt{}}("13"))),
+  Lblid'LParUndsRParUnds'FOO'Unds'Foo'Unds'Foo{}(Lblfoo'LParUndsRParUnds'FOO'Unds'Foo'Unds'Int{}(\dv{SortInt{}}("12"))))),
+  dotk{}())), Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))))
+steps:
+- from: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa Cl
+    */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli */
+    /* Inj: */ inj{SortFoo{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lblbar''LParUndsCommUndsRParUnds''FOO''Unds''Foo''Unds''Foo''Unds''Foo{}(
+    /* Fl Fn D Sfa Cl */ Lblid''LParUndsRParUnds''FOO''Unds''Foo''Unds''Foo{}( /*
+    Fl Fn D Sfa Cl */ Lblfoo''LParUndsRParUnds''FOO''Unds''Foo''Unds''Int{}( /* Fl
+    Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("13") ) ), /* Fl Fn D Sfa Cl */ Lblid''LParUndsRParUnds''FOO''Unds''Foo''Unds''Foo{}(
+    /* Fl Fn D Sfa Cl */ Lblfoo''LParUndsRParUnds''FOO''Unds''Foo''Unds''Int{}( /*
+    Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("12") ) ) ) ), /* Fl Fn D Sfa
+    Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}(
+    /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0") ) )'
+  rule-id: c68ee9c6f752181f872d1100e6bbfb4a27322fc37ca0856560c714c20978d894
+  substitution:
+  - key: Var'Unds'DotVar0:SortGeneratedCounterCell{}
+    value: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}( /* Fl Fn D
+      Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0") )'
+  - key: Var'Unds'DotVar1:SortK{}
+    value: /* Fl Fn D Sfa Cl */ dotk{}()
+  - key: VarX:SortFoo{}
+    value: '/* Fl Fn D Sfa Cl */ Lblid''LParUndsRParUnds''FOO''Unds''Foo''Unds''Foo{}(
+      /* Fl Fn D Sfa Cl */ Lblfoo''LParUndsRParUnds''FOO''Unds''Foo''Unds''Int{}(
+      /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("13") ) )'
+  - key: VarY:SortFoo{}
+    value: '/* Fl Fn D Sfa Cl */ Lblid''LParUndsRParUnds''FOO''Unds''Foo''Unds''Foo{}(
+      /* Fl Fn D Sfa Cl */ Lblfoo''LParUndsRParUnds''FOO''Unds''Foo''Unds''Int{}(
+      /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("12") ) )'
+  type: rewriting
+- from: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa Cl
+    */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli */
+    /* Inj: */ inj{SortFoo{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lblid''LParUndsRParUnds''FOO''Unds''Foo''Unds''Foo{}(
+    /* Fl Fn D Sfa Cl */ Lblfoo''LParUndsRParUnds''FOO''Unds''Foo''Unds''Int{}( /*
+    Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("13") ) ) ), /* Fl Fn D Sfa Cl
+    */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}( /*
+    Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0") ) )'
+  rule-id: 9df58d519f0ac3563b432908d0958fe2843cb60c17168d6ac902920da21191aa
+  substitution:
+  - key: Var'Unds'DotVar0:SortGeneratedCounterCell{}
+    value: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}( /* Fl Fn D
+      Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0") )'
+  - key: Var'Unds'DotVar1:SortK{}
+    value: /* Fl Fn D Sfa Cl */ dotk{}()
+  - key: VarX:SortFoo{}
+    value: '/* Fl Fn D Sfa Cl */ Lblfoo''LParUndsRParUnds''FOO''Unds''Foo''Unds''Int{}(
+      /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("13") )'
+  type: rewriting
+task: rewriting

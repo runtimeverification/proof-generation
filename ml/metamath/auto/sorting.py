@@ -4,36 +4,36 @@ from ..ast import Metavariable, Term, Application, Statement, StructuredStatemen
 from ..composer import Composer, Theorem, Proof, MethodAutoProof, ProofCache
 
 from .unification import Unification
-r"""
-The goal of this prover is to prove
-statements of the form
-
-|- ( \imp ( ... ) ( \in-sort ph1 ph0 ) )
-
-given only ph1
-
-Suppose ph1 is a term with metavariables v1, ..., vn
-Each vi can be:
-  - a pattern variable
-  - an element variable
-  - a set variable
-
-Suppose we separate them so that
-  - psi1, ..., psik are the pattern variables appearing in ph1
-  - xX1, ..., xXl are the element/set variables appearing in ph1
-
-In the case when l = 0, we will try to prove the statement
-    |- ( \in-sort ph1 ph0 )
-
-Otherwise, we will try to prove
-    |- ( \imp ( ( \in-sort xX1 ) /\ ... /\ ( \in-sort xXl ) ) ( \in-sort ph1 ph0 ) )
-
-Whenever it comes to the point that we need to show ( \in-sort psij ph0 ), for some 1 <= j <= k
-we will scan the essentials to show that
-"""
 
 
 class SortingProver:
+    r"""
+    The goal of this prover is to prove
+    statements of the form
+
+    |- ( \imp ( ... ) ( \in-sort ph1 ph0 ) )
+
+    given only ph1
+
+    Suppose ph1 is a term with metavariables v1, ..., vn
+    Each vi can be:
+    - a pattern variable
+    - an element variable
+    - a set variable
+
+    Suppose we separate them so that
+    - psi1, ..., psik are the pattern variables appearing in ph1
+    - xX1, ..., xXl are the element/set variables appearing in ph1
+
+    In the case when l = 0, we will try to prove the statement
+        |- ( \in-sort ph1 ph0 )
+
+    Otherwise, we will try to prove
+        |- ( \imp ( ( \in-sort xX1 ) /\ ... /\ ( \in-sort xXl ) ) ( \in-sort ph1 ph0 ) )
+
+    Whenever it comes to the point that we need to show ( \in-sort psij ph0 ), for some 1 <= j <= k
+    we will scan the essentials to show that
+    """
     @staticmethod
     def in_sort(term: Term, sort: Term) -> Application:
         return Application("\\in-sort", [term, sort])

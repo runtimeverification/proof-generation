@@ -1,4 +1,4 @@
-from typing import List, Optional, Mapping
+from typing import List, Optional, Mapping, Tuple, BinaryIO, Dict
 
 import os
 import re
@@ -7,6 +7,8 @@ import shlex
 import shutil
 import argparse
 import subprocess
+
+import yaml
 
 import ml.kore.ast as kore
 from ml.kore.parser import parse_definition, parse_pattern
@@ -27,16 +29,49 @@ def get_mtime(path: str) -> float:
     return os.stat(path).st_mtime
 
 
-"""
-Check if any of the dependencies is younger than
-any of the targets
-"""
-
-
 def check_dependency_change(targets: List[str], dependencies: List[str]) -> bool:
+    """
+    Check if any of the dependencies is younger than
+    any of the targets
+    """
     min_target_mtime = min([get_mtime(path) for path in targets])
     max_dep_mtime = max([get_mtime(path) for path in dependencies])
     return max_dep_mtime > min_target_mtime
+
+
+def parse_kore_log(log_src: str) -> List[Tuple[str, str]]:
+    """
+    Parse kore log and return a list of
+    (<log name>, <message content>)
+
+    assumed log format:
+    kore-exec: [some number] <level> (<log name>):
+    ...
+    kore-exec: [some number] <level> (<log name>):
+    ...
+    """
+
+    log_items: List[Tuple[str, str]] = []
+    current_item: Optional[str] = None
+    current_content: List[str] = []
+
+    for line in log_src.split("\n"):
+        match = re.match(r"kore-exec: \[\d+\] \w+ \((\w+)\):", line)
+        if match is not None:
+            if current_item is not None:
+                content = "\n".join(current_content)
+                log_items.append((current_item, content))
+
+            current_item = match.group(1)
+            current_content = []
+        else:
+            current_content.append(line)
+
+    if current_item is not None:
+        content = "\n".join(current_content)
+        log_items.append((current_item, content))
+
+    return log_items
 
 
 class Initializer(KoreVisitor, PatternOnlyVisitorStructure):
@@ -90,14 +125,182 @@ def gen_init_config(kore_def_path: str, module: str, pgm_src: str) -> str:
     return f"inj{{SortGeneratedTopCell{{}}, SortKItem{{}}}}({init_config_pattern})"
 
 
+def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict:
+    """
+    Generate hints without modified backend
+    This will not include substitutions or rule ids
+    """
+
+    # generate the initial configuration
+    # TODO: technically initial configuration is also generated through equations
+    # in the kore definition, but we are skipping that since we don't support map yet.
+    proc = run_command(
+        [
+            "kast",
+            "--directory",
+            kompiled_dir,
+            "--output",
+            "kore",
+            pgm,
+        ],
+        stdout=subprocess.PIPE,
+    )
+    assert proc.stdout is not None
+    init_config = proc.stdout.read().decode()
+    exit_code = proc.wait()
+    assert exit_code == 0, f"kast failed with exit code {exit_code}"
+
+    # generate snapshots from step 1 to the end
+    # (the initial configuration has to be obtained differently)
+    current_depth = 0
+
+    last_config = None
+    snapshots = []
+
+    while True:
+        proc = run_command(
+            [
+                "krun",
+                "--directory",
+                kompiled_dir,
+                "--depth",
+                str(current_depth),
+                "--output",
+                "kore",
+                pgm,
+            ],
+            stdout=subprocess.PIPE,
+        )
+        assert proc.stdout is not None
+        stdout = proc.stdout.read().decode()
+        exit_code = proc.wait()
+        assert exit_code == 0, f"krun failed with exit code {exit_code}"
+
+        if last_config != stdout:
+            snapshots.append(stdout)
+            last_config = stdout
+        else:
+            break
+
+        current_depth += 1
+
+    steps = []
+    for from_pattern in snapshots[:-1]:
+        steps.append({
+            "type": "rewriting",
+            "from": from_pattern,
+        })
+
+    return {
+        "task": "rewriting",
+        "initial": init_config,
+        "final": snapshots[-1],
+        "steps": steps,
+    }
+
+
+def gen_task(kompiled_dir: str, pgm: str) -> Dict:
+    proc = run_command(
+        [
+            "kast",
+            "--directory",
+            kompiled_dir,
+            "--output",
+            "kore",
+            pgm,
+        ],
+        stdout=subprocess.PIPE,
+    )
+    assert proc.stdout is not None
+    init_config = proc.stdout.read().decode()
+    exit_code = proc.wait()
+    assert exit_code == 0, f"kast failed with exit code {exit_code}"
+
+    proc = run_command(
+        [
+            "krun",
+            "--directory",
+            kompiled_dir,
+            "--haskell-backend-command",
+            # to print logs about rewriting and substitutions
+            "kore-exec --log-entries DebugRewriteSubstitution,DebugExecGoal",
+            "--output",
+            "none",
+            pgm,
+        ],
+        stderr=subprocess.PIPE,
+    )
+    assert proc.stderr is not None
+    stderr = proc.stderr.read().decode()
+    exit_code = proc.wait()
+    assert exit_code == 0, f"krun failed with exit code {exit_code}"
+
+    log_items = parse_kore_log(stderr)
+
+    steps = []
+    initial: Optional[str] = None
+    final: Optional[str] = None
+
+    for name, content in log_items:
+        if name == "DebugExecGoal":
+            assert final is None, "multiple exec goal logs"
+
+            obj = yaml.load(content, Loader=yaml.Loader)
+            assert "initial" in obj and "final" in obj, f"ill-formed exec goal log: {obj}"
+
+            initial = obj["initial"].strip()
+            final = obj["final"].strip()
+
+        elif name == "DebugRewriteSubstitution":
+            if content.strip() == "":
+                continue
+
+            obj = yaml.load(content, Loader=yaml.Loader)
+            assert isinstance(obj, list), \
+                   f"ill-formed rewrite log {content}"
+
+            assert len(obj) == 1, "non-determinism not supported"
+            step_obj = obj[0]
+
+            assert "type" in step_obj and "from" in step_obj and \
+                   "rule-id" in step_obj and "substitution" in step_obj, \
+                   f"ill-formed rewrite log {step_obj}"
+
+            steps.append(
+                {
+                    "type":
+                    step_obj["type"].strip(),
+                    "from":
+                    step_obj["from"].strip(),
+                    "rule-id":
+                    step_obj["rule-id"].strip(),
+                    "substitution": [
+                        {
+                            "key": item["key"].strip(),
+                            "value": item["value"].strip(),
+                        } for item in step_obj["substitution"]
+                    ],
+                }
+            )
+
+    assert final is not None, f"unable to find exec goal log item"
+
+    return {
+        "task": "rewriting",
+        "initial": init_config,
+        "final": final,
+        "steps": steps,
+    }
+
+
 def gen_proof(
     kdef: str,
     module: str,
     pgm: str,
     output: Optional[str] = None,
     benchmark: bool = False,
-    cpython: bool = False,
-    hints: Optional[str] = None,
+    pypy: bool = False,
+    no_backend_hints: bool = False,
 ):
     kdef = os.path.realpath(kdef)
     pgm = os.path.realpath(pgm)
@@ -144,102 +347,38 @@ def gen_proof(
     ### step 2. generate snapshots and rewriting information
     print(f"- generating snapshots")
     kore_definition = os.path.join(kompiled_dir, "definition.kore")
+    task_path = os.path.join(cache_dir, f"rewriting-task-{pgm_name}.yml")
 
-    snapshot_dir = os.path.join(cache_dir, f"snapshots-{pgm_name}")
+    if check_dependency_change([task_path], [kompile_timestamp, pgm]):
+        if no_backend_hints:
+            task_obj = gen_task_legacy(cache_dir, pgm)
+        else:
+            task_obj = gen_task(cache_dir, pgm)
 
-    if not os.path.isdir(snapshot_dir):
-        new_snapshots = True
-        os.mkdir(snapshot_dir)
-    else:
-        new_snapshots = False
+        # TODO: for now since we don't support maps yet
+        # we will manually initialize the configuration
+        task_obj["initial"] = gen_init_config(kore_definition, module, task_obj["initial"])
 
-    snapshot_0 = os.path.join(snapshot_dir, f"snapshot-0.kore")
-
-    if check_dependency_change([snapshot_0], [kompile_timestamp, pgm]):
-        if not new_snapshots:
-            shutil.rmtree(snapshot_dir)
-            os.mkdir(snapshot_dir)
-
-        # generate the initial configuration
-        # TODO: technically initial configuration is also generated through equations
-        # in the kore definition, but we are skipping that since we don't support map yet.
-        proc = run_command(
-            [
-                "kast",
-                "--directory",
-                cache_dir,
-                "--output",
-                "kore",
-                pgm,
-            ],
-            stdout=subprocess.PIPE,
-        )
-        assert proc.stdout is not None
-        stdout = proc.stdout.read().decode()
-        exit_code = proc.wait()
-        assert exit_code == 0, f"kast failed with exit code {exit_code}"
-
-        init_config = gen_init_config(kore_definition, module, stdout)
-        with open(snapshot_0, "w") as f:
-            f.write(init_config)
-
-        # generate snapshots from step 1 to the end
-        # (the initial configuration has to be obtained differently)
-        current_depth = 1
-        last_config = init_config
-
-        while True:
-            snapshot_path = os.path.join(snapshot_dir, f"snapshot-{current_depth}.kore")
-
-            proc = run_command(
-                [
-                    "krun",
-                    "--directory",
-                    cache_dir,
-                    "--depth",
-                    str(current_depth),
-                    "--output",
-                    "kore",
-                    pgm,
-                ],
-                stdout=subprocess.PIPE,
-            )
-            assert proc.stdout is not None
-            stdout = proc.stdout.read().decode()
-            exit_code = proc.wait()
-            assert exit_code == 0, f"krun failed with exit code {exit_code}"
-
-            if last_config != stdout:
-                with open(snapshot_path, "w") as f:
-                    f.write(stdout)
-
-                last_config = stdout
-            else:
-                break
-
-            current_depth += 1
-
-        # generate rewriting information from step 1 to the end
-        # (TODO:: get rewriting information from K debugger)
-        # (For now, it is added separately.)
+        with open(task_path, "w") as f:
+            yaml.dump(task_obj, f)
 
     ### step 4. generate proof object
     if output is not None:
         print(f"- generating proof")
         proc = run_command(
             [
-                "python3" if cpython else "pypy3",
+                "pypy3" if pypy else "python3",
                 "-m",
                 "ml.rewrite",
                 kore_definition,
                 module,
                 "--prelude",
                 "theory/prelude.mm",
-                "--snapshots",
-                snapshot_dir,
+                "--task",
+                task_path,
                 "--output",
                 output,
-            ] + (["--benchmark"] if benchmark else []) + (["--hints", hints] if hints is not None else [])
+            ] + (["--benchmark"] if benchmark else [])
         )
         exit_code = proc.wait()
         assert exit_code == 0, f"ml.rewrite failed with exit code {exit_code}"
@@ -251,13 +390,19 @@ def main():
     parser.add_argument("module", help="The main module")
     parser.add_argument("pgm", help="The program to run")
     parser.add_argument("-o", "--output", help="output directory for the proof object")
-    parser.add_argument("--hints", help="optional hint from the backend to aid the proof generator")
     parser.add_argument(
-        "--cpython",
+        "--no-backend-hints",
         action="store_const",
         const=True,
         default=False,
-        help="use CPython instead of PyPy",
+        help="do not use/expect hints from the backend but generate snapshots using well-defined interface",
+    )
+    parser.add_argument(
+        "--pypy",
+        action="store_const",
+        const=True,
+        default=False,
+        help="use PyPy instead of CPython",
     )
     parser.add_argument(
         "--benchmark",
@@ -274,8 +419,8 @@ def main():
         args.pgm,
         output=args.output,
         benchmark=args.benchmark,
-        cpython=args.cpython,
-        hints=args.hints,
+        pypy=args.pypy,
+        no_backend_hints=args.no_backend_hints,
     )
 
 
