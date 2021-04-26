@@ -5,3 +5,4 @@ set -euo pipefail
 mypy --strict ml/aml
 mypy ml scripts tests
 pytest "$@"
+pylint ml/aml

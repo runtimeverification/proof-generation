@@ -1,57 +1,62 @@
 from aml import *
 from tableau import *
-from typing import Optional
+
+S = Symbol("S")
+C = Symbol("C")
+NEXT = Symbol("next")
+X = SVar("X")
+Y = SVar("Y")
 
 def test_definition_list() -> None:
-    assert definition_list(SVar("X"), []) == []
-    assert definition_list(Mu(SVar("X"), App(Symbol("S"), SVar("X"))), []) == [Mu(SVar("X"), App(Symbol("S"), SVar("X")))]
-    assert definition_list(Mu(SVar("X"), Nu(SVar("Y"), App(Symbol("S"), SVar("X")))), []) \
-        == [ Mu(SVar("X"), Nu(SVar("Y"), App(Symbol("S"), SVar("X"))))
-           , Nu(SVar("Y"), App(Symbol("S"), SVar(0)))
+    assert definition_list(X, []) == []
+    assert definition_list(Mu(X, App(S, X)), []) == [Mu(X, App(S, X))]
+    assert definition_list(Mu(X, Nu(Y, App(S, X))), []) \
+        == [ Mu(X, Nu(Y, App(S, X)))
+           , Nu(Y, App(S, SVar(0)))
            ]
 
 def test_is_satisfiable() -> None:
-    assert     is_sat(Symbol("S"))
-    assert     is_sat(Not(Symbol("S")))
+    assert     is_sat(S)
+    assert     is_sat(Not(S))
 
-    assert     is_sat(App(Symbol("S"), Symbol("Y")))
-    assert     is_sat(DApp(Not(Symbol("S")), Not(Symbol("Y"))))
+    assert     is_sat(App(S, C))
+    assert     is_sat(DApp(Not(S), Not(C)))
 
-    assert     is_sat(And(Symbol("S"), Not(Symbol("Y"))))
-    assert not is_sat(And(Symbol("S"), Not(Symbol("S"))))
-    assert not is_sat(And(  App(Symbol("S"), Symbol("Y"))
-                         , DApp(Not(Symbol("S")), Not(Symbol("Y")))
+    assert     is_sat(And(S, Not(C)))
+    assert not is_sat(And(S, Not(S)))
+    assert not is_sat(And(  App(S, C)
+                         , DApp(Not(S), Not(C))
                          )
                       )
 
-    assert     is_sat(And(Symbol("S"), Not(Symbol("Y"))))
-    assert not is_sat(And(Symbol("S"), Not(Symbol("S"))))
-    assert not is_sat(And(  App(Symbol("S"), Symbol("Y"))
-                         , DApp(Not(Symbol("S")), Not(Symbol("Y")))
+    assert     is_sat(And(S, Not(C)))
+    assert not is_sat(And(S, Not(S)))
+    assert not is_sat(And(  App(S, C)
+                         , DApp(Not(S), Not(C))
                          )
                       )
 
-    assert     is_sat(Or(Symbol("S"), Not(Symbol("S"))))
-    assert     is_sat(Or(  App(Symbol("S"), Symbol("Y"))
-                        , DApp(Not(Symbol("S")), Not(Symbol("Y")))
+    assert     is_sat(Or(S, Not(S)))
+    assert     is_sat(Or(  App(S, C)
+                        , DApp(Not(S), Not(C))
                         )
                       )
-    assert not is_sat(Or( And(Symbol("S"), Not(Symbol("S")))
-                        , And(Symbol("S"), Not(Symbol("S")))
+    assert not is_sat(Or( And(S, Not(S))
+                        , And(S, Not(S))
                         )
                      )
 
-    assert     is_sat( Nu(SVar("X"), App(Symbol("S"), SVar("X"))))
-    assert not is_sat( And( Nu(SVar("X"), And(Symbol("Y"), App(Symbol("S"), SVar("X"))))
-                          , DApp(Not(Symbol("S")), Not(Symbol("Y")))
+    assert     is_sat( Nu(X, App(S, X)))
+    assert not is_sat( And( Nu(X, And(C, App(S, X)))
+                          , DApp(Not(S), Not(C))
                           )
                      )
 
-    assert not is_sat(Mu(SVar("X"), App(Symbol("S"), SVar("X"))))
+    assert not is_sat(Mu(X, App(S, X)))
 
-    assert     is_sat(Nu(SVar("X"), And( Mu(SVar("Y"), Or(Symbol("p"), App(Symbol("next") , SVar("Y"))) )
-                                       , App(Symbol("next") , SVar("X"))
+    assert     is_sat(Nu(X, And( Mu(Y, Or(C, App(NEXT , Y)) )
+                                       , App(NEXT , X)
                                        )))
-    assert not is_sat(Mu(SVar("X"), And( Nu(SVar("Y"), Or(Symbol("p"), App(Symbol("next") , SVar("Y"))) )
-                                       , App(Symbol("next") , SVar("X"))
+    assert not is_sat(Mu(X, And( Nu(Y, Or(C, App(NEXT , Y)) )
+                                       , App(NEXT , X)
                                        )))

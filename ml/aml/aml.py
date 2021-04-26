@@ -10,7 +10,7 @@ class Pattern:
         raise NotImplementedError
 
     @abstractmethod
-    def substitute(self, p: 'Var', v: 'Pattern') -> 'Pattern':
+    def substitute(self, x: 'Var', v: 'Pattern') -> 'Pattern':
         raise NotImplementedError
 
     @abstractmethod
@@ -27,7 +27,7 @@ class Symbol(Pattern):
     def free_variables(self) -> FrozenSet[Var]:
         return frozenset()
 
-    def substitute(self, x: Var, v: Pattern) -> 'Symbol':
+    def substitute(self, _x: Var, _v: Pattern) -> 'Symbol':
         return self
 
     def subpatterns(self) -> FrozenSet[Pattern]:
@@ -231,4 +231,3 @@ class Nu(Pattern):
 
     def alpha_rename(self, v: SVar) -> 'Nu':
         return Nu(v, self.subpattern.substitute(self.bound, v))
-
