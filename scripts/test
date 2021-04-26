@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-yapf --recursive --diff ml scripts tests
 mypy --strict ml/aml
 mypy ml scripts tests
 pytest "$@"
