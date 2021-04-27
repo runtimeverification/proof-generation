@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
+from ml.metamath.parser import load_database
+from ml.metamath.composer import Composer
 
 
 def number_to_letter(n):
@@ -38,26 +40,43 @@ def compress(mandatory, proof):
 
 
 # assumse that each proof is on a single line
-# also assumes that there are no mandatory hypothessis
 for file_name in sys.argv[1:]:
 
+    print("Rewriting " + file_name)
     with open(file_name, "r") as f:
-        with open(file_name + "_compressed", "x") as f2:
-            print("Rewriting " + file_name)
+        with open(file_name + "_compressed", "w") as f2:
+            print("loading" + file_name)
+            ast = load_database(file_name)
+            print("Finished loading ast for " + file_name)
+            composer = Composer()
+            composer.load(ast)
+
             new_contents = []
             contents = f.read()
 
             for line in contents.splitlines():
+
                 new_line = line
-                if line.find("$p") >= 0:
+                p_location = line.find("$p")
+                if p_location >= 0:
+
+                    label = line[:p_location].strip()
+                    theorem = composer.get_theorem(label)
+                    mandatory = [x[2] for x in theorem.floatings] + [
+                        x.label for x in theorem.essentials if x.label is not None
+                    ]
+
                     left = line.find("$=")
                     right = line.find("$.")
 
                     proof_labels = line[left + 2 : right].split()
-                    # print(proof_labels)
+
                     if line[0] != "(":
                         new_line = (
-                            line[:left] + " $= " + compress([], proof_labels) + " $."
+                            line[:left]
+                            + " $= "
+                            + compress(mandatory, proof_labels)
+                            + " $."
                         )
 
                 new_contents.append(new_line)
