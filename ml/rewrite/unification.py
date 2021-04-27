@@ -178,11 +178,11 @@ class MapCommutativity(Equation):
 class MapAssociativity(Equation):
     r"""
     mapmerge(mapmerge(M1, M2), M3) <==> mapmerge(M1, mapmerge(M2, M3))
-    We use a boolean rotate_left to control the direction.
+    We use a boolean rotate_right to control the direction.
     """
-    def __init__(self, env: ProofEnvironment, rotate_left: bool):
+    def __init__(self, env: ProofEnvironment, rotate_right: bool):
         super().__init__(env)
-        self.rotate_left: bool = rotate_left
+        self.rotate_right: bool = rotate_right
 
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
@@ -204,7 +204,7 @@ class MapAssociativity(Equation):
         assert isinstance(var1, kore.Variable) and isinstance(var2, kore.Variable)
 
         # depending on the direction, instantiate differently
-        if not self.rotate_left:
+        if self.rotate_right:
             KoreUtils.pretty_print(subpattern)
             assert isinstance(subpattern.arguments[0], kore.Application)
             assert KoreTemplates.is_map_merge_pattern(subpattern.arguments[0])
@@ -229,7 +229,7 @@ class MapAssociativity(Equation):
         eq_proof_gen = EqualityProofGenerator(self.env)
 
         # apply symmetry
-        if self.rotate_left:
+        if not self.rotate_right:
             axiom_instance = eq_proof_gen.apply_symmetry(axiom_instance)
 
         return eq_proof_gen.replace_equal_subpattern_with_equation(
@@ -555,7 +555,7 @@ class UnificationProofGenerator(ProofGenerator):
         applied_eqs2_reversed: List[Tuple[Equation, PatternPath]] = []
         for eq, path in reversed(applied_eqs2):
             if isinstance(eq, MapAssociativity):
-                eq.rotate_left = not eq.rotate_left
+                eq.rotate_right = not eq.rotate_right
             applied_eqs2_reversed = applied_eqs2_reversed + [(eq, path)]
 
         return UnificationResult({}, applied_eqs1 + applied_eqs2_reversed)
