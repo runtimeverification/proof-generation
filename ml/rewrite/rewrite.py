@@ -217,6 +217,7 @@ class RewriteProofGenerator(ProofGenerator):
         simplification_claim = self.apply_reflexivity(expected)
 
         for equation, path in unification_result.applied_equations:
+            print("> applying unification equation", equation)
             simplification_claim = equation.replace_equal_subpattern(simplification_claim, [0, 0] + path)
 
         _, rhs = self.decompose_concrete_rewrite_claim(simplification_claim)
@@ -713,8 +714,9 @@ class InnermostFunctionPathVisitor(KoreVisitor):
     be constructors
     """
     EXCEPTIONS = {
-        r"Lbl'UndsPipe'-'-GT-Unds'",
-        r"Lbl'Unds'Map'Unds'",
+        "Lbl'UndsPipe'-'-GT-Unds'",
+        "Lbl'Unds'Map'Unds'",
+        "Lbl'Stop'Map",
     }
 
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
