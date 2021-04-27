@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-#
+
 import sys
-import os
-import re
 
 
 def number_to_letter(n):
@@ -39,24 +37,29 @@ def compress(mandatory, proof):
     return labels_str + letters_str
 
 
-files = sys.argv
-
+# assumse that each proof is on a single line
+# also assumes that there are no mandatory hypothessis
 for file_name in sys.argv[1:]:
 
-    with open(file_name, "r+") as f:
-        print("Rewriting " + file_name)
-        new_contents = []
-        contents = f.read()
+    with open(file_name, "r") as f:
+        with open(file_name + "_compressed", "x") as f2:
+            print("Rewriting " + file_name)
+            new_contents = []
+            contents = f.read()
 
-        for line in contents.splitlines():
-            if line.find("$p") >= 0:
-                left = line.find("$=")
-                right = line.find("$.")
+            for line in contents.splitlines():
+                new_line = line
+                if line.find("$p") >= 0:
+                    left = line.find("$=")
+                    right = line.find("$.")
 
-                proof_labels = line[left + 2 : right].split(" ")
-                if line[0] != "(":
-                    new_line = line[:left] + "$=" + compress([], proof_labels) + "$."
+                    proof_labels = line[left + 2 : right].split()
+                    # print(proof_labels)
+                    if line[0] != "(":
+                        new_line = (
+                            line[:left] + " $= " + compress([], proof_labels) + " $."
+                        )
 
-                    new_contents.append(new_line)
+                new_contents.append(new_line)
 
-        f.writelines(new_contents)
+            f2.writelines("\n".join(new_contents))
