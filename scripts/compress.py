@@ -40,6 +40,8 @@ def compress(mandatory, proof):
 
 
 # assumse that each proof is on a single line
+# Usage: takes in the files from the command line arguments
+# and will output the compressed version to "filename"_compressed
 for file_name in sys.argv[1:]:
 
     print("Rewriting " + file_name)
