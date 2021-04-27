@@ -133,6 +133,7 @@ module MAP-TEST
   hooked-symbol Lblkeys'LParUndsRParUnds'MAP'Unds'Set'Unds'Map{}(SortMap{}) : SortSet{} [functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/media/rodlin/ext4/matching-logic-proof-checker-k/k-distribution/target/release/k/include/kframework/builtin/domains.k)"), priorities{}(), right{}(), terminals{}("1101"), klabel{}("keys"), hook{}("MAP.keys"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(143,18,143,86)"), left{}(), format{}("%ckeys%r %c(%r %1 %c)%r"), function{}()]
   hooked-symbol Lblkeys'Unds'list'LParUndsRParUnds'MAP'Unds'List'Unds'Map{}(SortMap{}) : SortList{} [org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/media/rodlin/ext4/matching-logic-proof-checker-k/k-distribution/target/release/k/include/kframework/builtin/domains.k)"), priorities{}(), right{}(), terminals{}("1101"), hook{}("MAP.keys_list"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(144,19,144,79)"), left{}(), format{}("%ckeys_list%r %c(%r %1 %c)%r"), function{}()]
   hooked-symbol LblmakeList'LParUndsCommUndsRParUnds'LIST'Unds'List'Unds'Int'Unds'KItem{}(SortInt{}, SortKItem{}) : SortList{} [org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/media/rodlin/ext4/matching-logic-proof-checker-k/k-distribution/target/release/k/include/kframework/builtin/domains.k)"), priorities{}(), right{}(), terminals{}("110101"), klabel{}("makeList"), hook{}("LIST.make"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(304,19,304,81)"), left{}(), format{}("%cmakeList%r %c(%r %1 %c,%r %2 %c)%r"), function{}()]
+  symbol Lblmerge'LParUndsCommUndsRParUnds'MAP-TEST'Unds'Map'Unds'Map'Unds'Map{}(SortMap{}, SortMap{}) : SortMap{} [functional{}(), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/map-test/map-test.k)"), priorities{}(), right{}(), terminals{}("110101"), klabel{}("merge"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(7,20,7,57)"), left{}(), format{}("%cmerge%r %c(%r %1 %c,%r %2 %c)%r"), function{}()]
   symbol LblnoGeneratedCounterCell{}() : SortGeneratedCounterCellOpt{} [functional{}(), constructor{}(), cellOptAbsent{}("GeneratedCounterCell"), priorities{}(), right{}(), terminals{}("1"), left{}(), format{}("%cnoGeneratedCounterCell%r"), injective{}()]
   symbol LblnoKCell{}() : SortKCellOpt{} [functional{}(), constructor{}(), cellOptAbsent{}("KCell"), priorities{}(), right{}(), terminals{}("1"), left{}(), format{}("%cnoKCell%r"), injective{}()]
   symbol Lblproject'Coln'Bool{}(SortK{}) : SortBool{} [priorities{}(), right{}(), terminals{}("1101"), projection{}(), left{}(), format{}("%cproject:Bool%r %c(%r %1 %c)%r"), function{}()]
@@ -215,6 +216,7 @@ module MAP-TEST
   axiom{R} \exists{R} (Val:SortSet{}, \equals{SortSet{}, R} (Val:SortSet{}, Lbl'UndsPipe'Set'UndsUnds'SET'Unds'Set'Unds'Set'Unds'Set{}(K0:SortSet{}, K1:SortSet{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortSet{}, \equals{SortSet{}, R} (Val:SortSet{}, LblintersectSet'LParUndsCommUndsRParUnds'SET'Unds'Set'Unds'Set'Unds'Set{}(K0:SortSet{}, K1:SortSet{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortSet{}, \equals{SortSet{}, R} (Val:SortSet{}, Lblkeys'LParUndsRParUnds'MAP'Unds'Set'Unds'Map{}(K0:SortMap{}))) [functional{}()] // functional
+  axiom{R} \exists{R} (Val:SortMap{}, \equals{SortMap{}, R} (Val:SortMap{}, Lblmerge'LParUndsCommUndsRParUnds'MAP-TEST'Unds'Map'Unds'Map'Unds'Map{}(K0:SortMap{}, K1:SortMap{}))) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortGeneratedCounterCellOpt{}, \equals{SortGeneratedCounterCellOpt{}, R} (Val:SortGeneratedCounterCellOpt{}, LblnoGeneratedCounterCell{}())) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortKCellOpt{}, \equals{SortKCellOpt{}, R} (Val:SortKCellOpt{}, LblnoKCell{}())) [functional{}()] // functional
   axiom{R} \exists{R} (Val:SortMap{}, \equals{SortMap{}, R} (Val:SortMap{}, LblremoveAll'LParUndsCommUndsRParUnds'MAP'Unds'Map'Unds'Map'Unds'Set{}(K0:SortMap{}, K1:SortSet{}))) [functional{}()] // functional
@@ -241,17 +243,17 @@ module MAP-TEST
   axiom{} \or{SortGeneratedTopCellFragment{}} (\exists{SortGeneratedTopCellFragment{}} (X0:SortKCellOpt{}, \exists{SortGeneratedTopCellFragment{}} (X1:SortGeneratedCounterCellOpt{}, Lbl'-LT-'generatedTop'-GT-'-fragment{}(X0:SortKCellOpt{}, X1:SortGeneratedCounterCellOpt{}))), \bottom{SortGeneratedTopCellFragment{}}()) [constructor{}()] // no junk
 
 // rules
-// rule `<generatedTop>`(`<k>`(`select(_,_)_MAP-TEST_KItem_Map_KItem`(`_Map_`(`_|->_`(Key,Val),M),Key)~>_DotVar1),_DotVar0)=>`<generatedTop>`(`<k>`(Val~>_DotVar1),_DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(f5717fdd37bed4e97a784c1d610eeb10a753553aacf910e3973b9de3a89071dd), contentStartColumn(10), contentStartLine(9), org.kframework.attributes.Location(Location(9,10,9,47)), org.kframework.attributes.Source(Source(/home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/map-test/map-test.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
-  alias rule0LHS{}(SortKItem{},SortMap{},SortKItem{},SortGeneratedCounterCell{},SortK{}) : SortGeneratedTopCell{}
-  where rule0LHS{}(VarKey:SortKItem{},VarM:SortMap{},VarVal:SortKItem{},Var'Unds'DotVar0:SortGeneratedCounterCell{},Var'Unds'DotVar1:SortK{}) :=
+// rule `<generatedTop>`(`<k>`(`select(_,_)_MAP-TEST_KItem_Map_KItem`(`_Map_`(`_|->_`(Key,Val),_0),Key)~>_DotVar1),_DotVar0)=>`<generatedTop>`(`<k>`(Val~>_DotVar1),_DotVar0) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(f5717fdd37bed4e97a784c1d610eeb10a753553aacf910e3973b9de3a89071dd), contentStartColumn(10), contentStartLine(10), org.kframework.attributes.Location(Location(10,10,10,47)), org.kframework.attributes.Source(Source(/home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/map-test/map-test.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  alias rule0LHS{}(SortKItem{},SortKItem{},SortMap{},SortGeneratedCounterCell{},SortK{}) : SortGeneratedTopCell{}
+  where rule0LHS{}(VarKey:SortKItem{},VarVal:SortKItem{},Var'Unds'0:SortMap{},Var'Unds'DotVar0:SortGeneratedCounterCell{},Var'Unds'DotVar1:SortK{}) :=
     \and{SortGeneratedTopCell{}} (
-      \top{SortGeneratedTopCell{}}(), Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(Lblselect'LParUndsCommUndsRParUnds'MAP-TEST'Unds'KItem'Unds'Map'Unds'KItem{}(Lbl'Unds'Map'Unds'{}(Lbl'UndsPipe'-'-GT-Unds'{}(VarKey:SortKItem{},VarVal:SortKItem{}),VarM:SortMap{}),VarKey:SortKItem{}),Var'Unds'DotVar1:SortK{})),Var'Unds'DotVar0:SortGeneratedCounterCell{})) []
+      \top{SortGeneratedTopCell{}}(), Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(Lblselect'LParUndsCommUndsRParUnds'MAP-TEST'Unds'KItem'Unds'Map'Unds'KItem{}(Lbl'Unds'Map'Unds'{}(Lbl'UndsPipe'-'-GT-Unds'{}(VarKey:SortKItem{},VarVal:SortKItem{}),Var'Unds'0:SortMap{}),VarKey:SortKItem{}),Var'Unds'DotVar1:SortK{})),Var'Unds'DotVar0:SortGeneratedCounterCell{})) []
 
   axiom{} \rewrites{SortGeneratedTopCell{}} (
-    rule0LHS{}(VarKey:SortKItem{},VarM:SortMap{},VarVal:SortKItem{},Var'Unds'DotVar0:SortGeneratedCounterCell{},Var'Unds'DotVar1:SortK{}),
+    rule0LHS{}(VarKey:SortKItem{},VarVal:SortKItem{},Var'Unds'0:SortMap{},Var'Unds'DotVar0:SortGeneratedCounterCell{},Var'Unds'DotVar1:SortK{}),
     \and{SortGeneratedTopCell{}} (
       \top{SortGeneratedTopCell{}}(), Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(VarVal:SortKItem{},Var'Unds'DotVar1:SortK{})),Var'Unds'DotVar0:SortGeneratedCounterCell{})))
-  [org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/map-test/map-test.k)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), contentStartLine{}("9"), contentStartColumn{}("10"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(9,10,9,47)"), UNIQUE'Unds'ID{}("f5717fdd37bed4e97a784c1d610eeb10a753553aacf910e3973b9de3a89071dd")]
+  [org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/map-test/map-test.k)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), contentStartLine{}("10"), contentStartColumn{}("10"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(10,10,10,47)"), UNIQUE'Unds'ID{}("f5717fdd37bed4e97a784c1d610eeb10a753553aacf910e3973b9de3a89071dd")]
 
 // rule `_|Set__SET_Set_Set_Set`(S1,S2)=>`_Set_`(S1,`Set:difference`(S2,S1)) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(e9a710d8d1ca5c799420161879cbbff926de45a5bddd820d646f51d43eb67e62), contentStartColumn(8), contentStartLine(250), org.kframework.attributes.Location(Location(250,8,250,45)), org.kframework.attributes.Source(Source(/media/rodlin/ext4/matching-logic-proof-checker-k/k-distribution/target/release/k/include/kframework/builtin/domains.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
   axiom{R} \implies{R} (
@@ -859,6 +861,16 @@ module MAP-TEST
       \top{R}()))
   []
 
+// rule `merge(_,_)_MAP-TEST_Map_Map_Map`(M1,M2)=>`_Map_`(M1,M2) requires #token("true","Bool") ensures #token("true","Bool") [UNIQUE_ID(22f0be9776ae4f02e638cfb7eb107697aeb7ff32ffcebfc65625c996b13d3ff0), contentStartColumn(10), contentStartLine(12), org.kframework.attributes.Location(Location(12,10,12,32)), org.kframework.attributes.Source(Source(/home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/map-test/map-test.k)), org.kframework.definition.Production(syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol])]
+  axiom{R} \implies{R} (
+    \top{R}(),
+    \and{R} (
+      \equals{SortMap{},R} (
+        Lblmerge'LParUndsCommUndsRParUnds'MAP-TEST'Unds'Map'Unds'Map'Unds'Map{}(VarM1:SortMap{},VarM2:SortMap{}),
+        Lbl'Unds'Map'Unds'{}(VarM1:SortMap{},VarM2:SortMap{})),
+      \top{R}()))
+  [org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/map-test/map-test.k)"), org'Stop'kframework'Stop'definition'Stop'Production{}("syntax #RuleContent ::= #RuleBody [klabel(#ruleNoConditions), symbol]"), contentStartLine{}("12"), contentStartColumn{}("10"), org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(12,10,12,32)"), UNIQUE'Unds'ID{}("22f0be9776ae4f02e638cfb7eb107697aeb7ff32ffcebfc65625c996b13d3ff0")]
+
 // rule `project:Bool`(inj{Bool,KItem}(K))=>K requires #token("true","Bool") ensures #token("true","Bool") [projection]
   axiom{R} \implies{R} (
     \top{R}(),
@@ -1011,4 +1023,4 @@ module MAP-TEST
 
 
 // priority groups
-endmodule [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(3,1,11,9)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/map-test/map-test.k)")]
+endmodule [org'Stop'kframework'Stop'attributes'Stop'Location{}("Location(3,1,14,9)"), org'Stop'kframework'Stop'attributes'Stop'Source{}("Source(/home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/map-test/map-test.k)")]

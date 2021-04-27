@@ -77,3 +77,4 @@ class TestRewriteProofGeneratorIntegeration(TestIntegrationBase):
 
     def test_map_test(self):
         self.run_rewrite_proof_gen("pgm-comm.map-test")
+        self.run_rewrite_proof_gen("pgm-ac-hard.map-test")

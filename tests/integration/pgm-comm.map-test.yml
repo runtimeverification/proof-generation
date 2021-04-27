@@ -25,6 +25,12 @@ steps:
     /* builtin: */ \dv{SortInt{}}("0") ) )'
   rule-id: f5717fdd37bed4e97a784c1d610eeb10a753553aacf910e3973b9de3a89071dd
   substitution:
+  - key: Var'Unds'0:SortMap{}
+    value: '/* Fl Fn D Sfa Cl */ /* builtin: */ /* concrete element: */ Lbl''UndsPipe''-''-GT-Unds''{}(
+      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortKItem{}}( /* Fl Fn D Sfa
+      Cl */ /* builtin: */ \dv{SortInt{}}("1") ), /* Fl Fn D Sfa Cli */ /* Inj: */
+      inj{SortInt{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("2")
+      ) )'
   - key: Var'Unds'DotVar0:SortGeneratedCounterCell{}
     value: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}( /* Fl Fn D
       Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0") )'
@@ -33,12 +39,6 @@ steps:
   - key: VarKey:SortKItem{}
     value: '/* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortKItem{}}( /* Fl Fn
       D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("2") )'
-  - key: VarM:SortMap{}
-    value: '/* Fl Fn D Sfa Cl */ /* builtin: */ /* concrete element: */ Lbl''UndsPipe''-''-GT-Unds''{}(
-      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortKItem{}}( /* Fl Fn D Sfa
-      Cl */ /* builtin: */ \dv{SortInt{}}("1") ), /* Fl Fn D Sfa Cli */ /* Inj: */
-      inj{SortInt{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("2")
-      ) )'
   - key: VarVal:SortKItem{}
     value: '/* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortKItem{}}( /* Fl Fn
       D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("3") )'

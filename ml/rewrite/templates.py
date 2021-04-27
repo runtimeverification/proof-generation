@@ -181,7 +181,9 @@ class KoreTemplates:
 
         return left.symbol, right.symbol
 
-    # Utils methods for map patterns.
+    ###################################
+    # Utils methods for map patterns. #
+    ###################################
 
     @staticmethod
     def is_map_merge_pattern(pattern: kore.Pattern) -> bool:
@@ -199,8 +201,7 @@ class KoreTemplates:
 
     @staticmethod
     def is_map_pattern(pattern: kore.Pattern) -> bool:
-        # TODO
-        # Add here unit pattern.
+        # TODO: add unit pattern
         return KoreTemplates.is_map_merge_pattern(pattern) or KoreTemplates.is_map_mapsto_pattern(pattern)
 
     @staticmethod
@@ -216,15 +217,14 @@ class KoreTemplates:
         return pattern.arguments[1]
 
     @staticmethod
-    def deep_swap_map_merge_pattern(pattern: kore.Pattern):
+    def in_place_swap_map_merge_pattern(pattern: kore.Pattern):
         assert KoreTemplates.is_map_merge_pattern(pattern)
         assert isinstance(pattern, kore.Application)
-        tmp = pattern.arguments[0]
-        pattern.arguments[0] = pattern.arguments[1]
-        pattern.arguments[1] = tmp
+        pattern.arguments[0], pattern.arguments[1] = \
+            pattern.arguments[1], pattern.arguments[0]
 
     @staticmethod
-    def deep_rotate_right_map_merge_pattern(pattern: kore.Pattern):
+    def in_place_rotate_right_map_merge_pattern(pattern: kore.Pattern):
         assert KoreTemplates.is_map_merge_pattern(pattern)
         assert isinstance(pattern, kore.Application)
 
@@ -254,26 +254,26 @@ class KoreTemplates:
         assert isinstance(pattern, kore.Application)
 
         if KoreTemplates.is_map_mapsto_pattern(pattern):
-            return (pattern, [])
+            return pattern, []
 
-        if KoreTemplates.is_map_merge_pattern(pattern):
-            lhs = KoreTemplates.get_map_merge_left(pattern)
-            rhs = KoreTemplates.get_map_merge_right(pattern)
+        assert KoreTemplates.is_map_merge_pattern(pattern), \
+               f"expecting a map merge, got {pattern}"
 
-            p, lp = KoreTemplates.get_path_to_smallest_key_in_map_pattern(lhs)
-            q, lq = KoreTemplates.get_path_to_smallest_key_in_map_pattern(rhs)
+        lhs = KoreTemplates.get_map_merge_left(pattern)
+        rhs = KoreTemplates.get_map_merge_right(pattern)
 
-            assert isinstance(p, kore.Application)
-            assert isinstance(q, kore.Application)
+        p, lp = KoreTemplates.get_path_to_smallest_key_in_map_pattern(lhs)
+        q, lq = KoreTemplates.get_path_to_smallest_key_in_map_pattern(rhs)
 
-            if p.arguments[0] < q.arguments[0]:
-                return (p, [0] + lp)  # left
-            elif q.arguments[0] < p.arguments[0]:
-                return (q, [1] + lq)  # right
+        assert isinstance(p, kore.Application)
+        assert isinstance(q, kore.Application)
 
-            raise NotImplementedError("Should not be reachable because map patterns have distinct keys.")
+        if p.arguments[0] < q.arguments[0]:
+            return p, [0] + lp  # left
+        elif q.arguments[0] < p.arguments[0]:
+            return q, [1] + lq  # right
 
-        raise NotImplementedError()
+        assert False, f"same key in map: {p.arguments[0]} and {q.arguments[0]}"
 
     @staticmethod
     def strip_inj(pattern: kore.Pattern) -> kore.Pattern:
