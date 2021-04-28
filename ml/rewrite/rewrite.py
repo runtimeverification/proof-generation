@@ -34,6 +34,7 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'UndsPlus'Int'Unds'": IntegerAdditionEvaluator(env),
             "Lbl'Unds'-Int'Unds'": IntegerSubtractionEvaluator(env),
             "Lbl'UndsStar'Int'Unds'": IntegerMultiplicationEvaluator(env),
+            "Lbl'UndsSlsh'Int'Unds'": IntegerDivisionEvaluator(env),
             "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(env),
             "Lbl'Unds-LT-Eqls'Int'Unds'": IntegerLessThanOrEqualToEvaluator(env),
             "Lbl'UndsEqlsEqls'Int'Unds'": IntegerEqualityEvaluator(env),
@@ -848,6 +849,12 @@ class IntegerMultiplicationEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) * self.parse_int(b))
+
+
+class IntegerDivisionEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, self.parse_int(a) // self.parse_int(b))
 
 
 class IntegerGreaterThanOrEqualToEvaluator(BuiltinFunctionEvaluator):
