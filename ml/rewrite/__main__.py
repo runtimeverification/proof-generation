@@ -16,7 +16,7 @@ from ml.kore.utils import KoreUtils
 
 from ml.metamath.parser import load_database
 from ml.metamath.ast import Statement, StructuredStatement, IncludeStatement, Comment
-from ml.metamath.composer import Composer
+from ml.metamath.composer import Composer, ProofCache
 
 from .env import ProofEnvironment
 from .rewrite import RewriteProofGenerator
@@ -145,7 +145,16 @@ def main(argv: Optional[Sequence[str]] = None):
         default=False,
         help="generate domain facts as provable instead of axiom",
     )
+    parser.add_argument(
+        "--proof-cache-threshold",
+        type=int,
+        default=ProofCache.THEOREM_CACHE_THRESHOLD,
+        help="maximum uncached proof size",
+    )
     args = parser.parse_args(argv)
+
+    # TODO: this is a bit hacky
+    ProofCache.THEOREM_CACHE_THRESHOLD = args.proof_cache_threshold
 
     composer = Composer()
 
@@ -165,7 +174,7 @@ def main(argv: Optional[Sequence[str]] = None):
     module_begin = time.time()
 
     composer.start_segment("module")
-    env = ProofEnvironment(module, composer, dv_as_provable=not args.dv_as_provable)
+    env = ProofEnvironment(module, composer, dv_as_provable=args.dv_as_provable)
     composer.end_segment()
 
     module_elapsed = time.time() - module_begin

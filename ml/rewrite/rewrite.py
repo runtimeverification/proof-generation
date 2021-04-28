@@ -130,9 +130,11 @@ class RewriteProofGenerator(ProofGenerator):
 
             assert requires is not None
 
-            assert (
-                isinstance(ensures, kore.MLPattern) and ensures.construct == kore.MLPattern.TOP
-            ), f"non-top ensures clause is not supported: {ensures}"
+            # assert (
+            #     isinstance(ensures, kore.MLPattern) and ensures.construct == kore.MLPattern.TOP
+            # ), f"non-top ensures clause is not supported: {ensures}"
+            if not (isinstance(ensures, kore.MLPattern) and ensures.construct == kore.MLPattern.TOP):
+                print(f"> warning: non-top ensures clause ignored: {ensures}")
 
             # trying to prove the requires clause
             # if failed, continue searching for an axiom
@@ -772,31 +774,19 @@ class BuiltinFunctionEvaluator(ProofGenerator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         raise NotImplementedError()
 
-    def build_arithmetic_equation(self, application: kore.Application, result: Union[int, bool]) -> ProvableClaim:
-        """
-        Build an axiom that says the given pattern
-        is equal to the result, which is either an integer
-        or a boolean
-
-        Then we will potentially discharge a proof obligation to some domain value reasoning tool
-        """
-        assert isinstance(application.symbol.definition, kore.SymbolDefinition)
-        output_sort = application.symbol.definition.output_sort
+    def build_equation(self, application: kore.Application, result: kore.Pattern) -> ProvableClaim:
         sort_var = kore.SortVariable("R")
+        output_sort = KoreUtils.infer_sort(application)
 
-        if type(result) is bool:
-            result_literal = "true" if result else "false"
-        else:
-            result_literal = str(result)
-
-        domain_value = kore.MLPattern(kore.MLPattern.DV, [output_sort], [kore.StringLiteral(result_literal)])
+        assert output_sort == KoreUtils.infer_sort(result), \
+               f"result {result} has a different sort than {application}"
 
         claim = kore.Claim(
             [sort_var],
             kore.MLPattern(
                 kore.MLPattern.EQUALS,
                 [output_sort, sort_var],
-                [application, domain_value],
+                [application, result],
             ),
             [],
         )
@@ -809,7 +799,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         self.env.load_comment("NOTE: domain value reasoning checked by external tool")
         thm = self.env.load_axiom(
             claim,
-            f"{self.env.sanitize_label_name(application.symbol.definition.symbol)}-domain-fact-{self.axiom_counter}",
+            f"{self.env.sanitize_label_name(application.symbol.get_symbol_name())}-domain-fact-{self.axiom_counter}",
             comment=False,
             provable=self.env.dv_as_provable,
         )
@@ -820,6 +810,26 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         self.axiom_counter += 1
 
         return ProvableClaim(claim, thm.as_proof())
+
+    def build_arithmetic_equation(self, application: kore.Application, result: Union[int, bool]) -> ProvableClaim:
+        """
+        Build an axiom that says the given pattern
+        is equal to the result, which is either an integer
+        or a boolean
+
+        Then we will potentially discharge a proof obligation to some domain value reasoning tool
+        """
+        output_sort = KoreUtils.infer_sort(application)
+
+        if type(result) is bool:
+            result_literal = "true" if result else "false"
+        else:
+            result_literal = str(result)
+
+        domain_value = kore.MLPattern(kore.MLPattern.DV, [output_sort], [kore.StringLiteral(result_literal)])
+        domain_value.resolve(self.env.module)
+
+        return self.build_equation(application, domain_value)
 
 
 class IntegerAdditionEvaluator(BuiltinFunctionEvaluator):
