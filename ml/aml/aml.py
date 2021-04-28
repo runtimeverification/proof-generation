@@ -14,10 +14,6 @@ class Pattern:
         raise NotImplementedError
 
     @abstractmethod
-    def subpatterns(self) -> FrozenSet['Pattern']:
-        raise NotImplementedError
-
-    @abstractmethod
     def negate(self) -> 'Pattern':
         raise NotImplementedError
 
@@ -29,9 +25,6 @@ class Symbol(Pattern):
 
     def substitute(self, _x: Var, _v: Pattern) -> 'Symbol':
         return self
-
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return frozenset([self])
 
     def negate(self) -> 'Not':
         return Not(self)
@@ -47,9 +40,6 @@ class EVar(Pattern):
         if x == self: return v
         else:         return self
 
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return frozenset([self])
-
     def negate(self) -> 'Not':
         return Not(self)
 
@@ -63,9 +53,6 @@ class SVar(Pattern):
     def substitute(self, x: Var, v: Pattern) -> Pattern:
         if x == self: return v
         else:         return self
-
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return frozenset([self])
 
     def negate(self) -> 'Not':
         return Not(self)
@@ -81,9 +68,6 @@ class And(Pattern):
     def substitute(self, x: Var, v: Pattern) -> 'And':
         return And(self.left.substitute(x, v), self.right.substitute(x, v))
 
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
-
     def negate(self) -> 'Or':
         return Or(self.left.negate(), self.right.negate())
 
@@ -98,9 +82,6 @@ class Or(Pattern):
     def substitute(self, x: Var, v: Pattern) -> 'Or':
         return Or(self.left.substitute(x, v), self.right.substitute(x, v))
 
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
-
     def negate(self) -> And:
         return And(self.left.negate(), self.right.negate())
 
@@ -113,9 +94,6 @@ class Not(Pattern):
 
     def substitute(self, x: Var, v: Pattern) -> 'Not':
         return Not(self.subpattern.substitute(x, v))
-
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return self.subpattern.subpatterns().union(frozenset([self]))
 
     def negate(self) -> Pattern:
         return self.subpattern
@@ -131,9 +109,6 @@ class App(Pattern):
     def substitute(self, x: Var, v: Pattern) -> 'App':
         return App(self.left.substitute(x, v), self.right.substitute(x, v))
 
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
-
     def negate(self) -> 'DApp':
         return DApp(self.left.negate(), self.right.negate())
 
@@ -147,9 +122,6 @@ class DApp(Pattern):
 
     def substitute(self, x: Var, v: Pattern) -> 'DApp':
         return DApp(self.left.substitute(x, v), self.right.substitute(x, v))
-
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return self.left.subpatterns().union(frozenset([self])).union(self.right.subpatterns())
 
     def negate(self) -> App:
         return App(self.left.negate(), self.right.negate())
@@ -166,9 +138,6 @@ class Exists(Pattern):
         if x == self.bound: return self
         else:               return Exists(self.bound, self.subpattern.substitute(x, v))
 
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return self.subpattern.subpatterns().union(frozenset([self]))
-
     def negate(self) -> 'Forall':
         return Forall(self.bound, self.subpattern.negate())
 
@@ -184,9 +153,6 @@ class Forall(Pattern):
         if x == self.bound: return self
         else:               return Forall(self.bound, self.subpattern.substitute(x, v))
 
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return self.subpattern.subpatterns().union(frozenset([self]))
-
     def negate(self) -> Exists:
         return Exists(self.bound, self.subpattern.negate())
 
@@ -201,9 +167,6 @@ class Mu(Pattern):
     def substitute(self, x: Var, v: Pattern) -> 'Mu':
         if x == self.bound: return self
         else:               return Mu(self.bound, self.subpattern.substitute(x, v))
-
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return self.subpattern.subpatterns().union(frozenset([self]))
 
     def negate(self) -> 'Nu':
         return Nu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
@@ -222,9 +185,6 @@ class Nu(Pattern):
     def substitute(self, x: Var, v: Pattern) -> 'Nu':
         if x == self.bound: return self
         else:               return Nu(self.bound, self.subpattern.substitute(x, v))
-
-    def subpatterns(self) -> FrozenSet[Pattern]:
-        return self.subpattern.subpatterns().union(frozenset([self]))
 
     def negate(self) -> Mu:
         return Mu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
