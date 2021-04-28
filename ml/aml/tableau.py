@@ -25,7 +25,7 @@ def definition_list(p: Pattern, def_list: List[Pattern]) -> List[Pattern]:
             def_list = definition_list(p.subpattern.substitute(p.bound, SVar(def_list.index(p))), def_list)
         return def_list
     else:
-        raise NotImplementedError
+        raise RuntimeError("Unsupported pattern: " + str(p))
 
 @dataclass(frozen=True)
 class TracedPattern:
@@ -49,6 +49,7 @@ def is_inconsistant(gamma: FrozenSet[TracedPattern]) -> bool:
     return bool(negated_atoms.intersection(atoms))
 
 def is_sat(p: Pattern) -> bool:
+    p = p.to_positive_normal_form()
     return is_satisfiable(frozenset([TracedPattern(p)]), frozenset(), definition_list(p, []), {})
 
 def is_prefix(prefix: Tuple[int, ...], t: Tuple[int, ...]) -> bool:
@@ -105,16 +106,15 @@ def is_satisfiable( gamma: FrozenSet[TracedPattern]
             return is_satisfiable(gamma.union([tp.left()]),  processed, def_list, path) \
                 or is_satisfiable(gamma.union([tp.right()]), processed, def_list, path)
         else:
-            raise NotImplementedError(p)
+            raise RuntimeError("Unsupported pattern: " + str(p))
 
-    if is_inconsistant(processed): print(processed); return False
+    if is_inconsistant(processed): return False
 
     processed_patterns = frozenset(tp.pattern for tp in processed)
     if processed_patterns in path:
         return all_traces_are_nu_traces(path[processed_patterns], processed, def_list)
     path = { **path, processed_patterns : processed }
 
-    # print(processed)
     apps  = [phi for phi in processed if isinstance(phi.pattern, App)]
     dapps = [phi for phi in processed if isinstance(phi.pattern, DApp)]
     partition_lefts = list(powerset(dapps))

@@ -24,11 +24,11 @@ def test_free_variables() -> None:
     assert Not(And(x, SVar("x"))).free_variables() == set([x, SVar("x")])
     assert Not(And(x, SVar("y"))).free_variables() == set([x, SVar("y")])
 
-    assert Exists(x, SVar("x")).free_variables() == set([SVar("x")])
-    assert Exists(x, x).free_variables() == set()
+    assert Exists([x], SVar("x")).free_variables() == set([SVar("x")])
+    assert Exists([x], x).free_variables() == set()
 
-    assert Forall(x, SVar("x")).free_variables() == set([SVar("x")])
-    assert Forall(x, x).free_variables() == set()
+    assert Forall([x], SVar("x")).free_variables() == set([SVar("x")])
+    assert Forall([x], x).free_variables() == set()
 
     assert Mu(SVar("x"), x).free_variables() == set([x])
     assert Mu(SVar("x"), SVar("x")).free_variables() == set()

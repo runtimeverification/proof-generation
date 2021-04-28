@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import FrozenSet, Hashable, Union
+from typing import FrozenSet, Hashable, Iterable, Union
 from abc import abstractmethod
 
 Var = Union['SVar', 'EVar']
@@ -17,6 +17,37 @@ class Pattern:
     def negate(self) -> 'Pattern':
         raise NotImplementedError
 
+    def to_positive_normal_form(self) -> 'Pattern':
+        raise NotImplementedError
+
+@dataclass(frozen=True)
+class Top(Pattern):
+    def free_variables(self) -> FrozenSet[Var]:
+        return frozenset()
+
+    def substitute(self, _x: Var, _v: Pattern) -> 'Top':
+        return self
+
+    def negate(self) -> 'Bottom':
+        return Bottom()
+
+    def to_positive_normal_form(self) -> Pattern:
+        return self
+
+@dataclass(frozen=True)
+class Bottom(Pattern):
+    def free_variables(self) -> FrozenSet[Var]:
+        return frozenset()
+
+    def substitute(self, _x: Var, _v: Pattern) -> 'Bottom':
+        return self
+
+    def negate(self) -> Top:
+        return Top()
+
+    def to_positive_normal_form(self) -> Pattern:
+        return self
+
 @dataclass(frozen=True)
 class Symbol(Pattern):
     name: str
@@ -28,6 +59,9 @@ class Symbol(Pattern):
 
     def negate(self) -> 'Not':
         return Not(self)
+
+    def to_positive_normal_form(self) -> Pattern:
+        return self
 
 @dataclass(frozen=True)
 class EVar(Pattern):
@@ -43,6 +77,9 @@ class EVar(Pattern):
     def negate(self) -> 'Not':
         return Not(self)
 
+    def to_positive_normal_form(self) -> Pattern:
+        return self
+
 @dataclass(frozen=True)
 class SVar(Pattern):
     name: Hashable
@@ -56,6 +93,9 @@ class SVar(Pattern):
 
     def negate(self) -> 'Not':
         return Not(self)
+
+    def to_positive_normal_form(self) -> Pattern:
+        return self
 
 @dataclass(frozen=True)
 class And(Pattern):
@@ -71,6 +111,9 @@ class And(Pattern):
     def negate(self) -> 'Or':
         return Or(self.left.negate(), self.right.negate())
 
+    def to_positive_normal_form(self) -> 'And':
+        return And(self.left.to_positive_normal_form(), self.right.to_positive_normal_form())
+
 @dataclass(frozen=True)
 class Or(Pattern):
     left: Pattern
@@ -85,6 +128,9 @@ class Or(Pattern):
     def negate(self) -> And:
         return And(self.left.negate(), self.right.negate())
 
+    def to_positive_normal_form(self) -> 'Or':
+        return Or(self.left.to_positive_normal_form(), self.right.to_positive_normal_form())
+
 @dataclass(frozen=True)
 class Not(Pattern):
     subpattern: Pattern
@@ -97,6 +143,9 @@ class Not(Pattern):
 
     def negate(self) -> Pattern:
         return self.subpattern
+
+    def to_positive_normal_form(self) -> Pattern:
+        return self.subpattern.negate()
 
 @dataclass(frozen=True)
 class App(Pattern):
@@ -112,6 +161,9 @@ class App(Pattern):
     def negate(self) -> 'DApp':
         return DApp(self.left.negate(), self.right.negate())
 
+    def to_positive_normal_form(self) -> 'App':
+        return App(self.left.to_positive_normal_form(), self.right.to_positive_normal_form())
+
 @dataclass(frozen=True)
 class DApp(Pattern):
     left: Pattern
@@ -126,35 +178,72 @@ class DApp(Pattern):
     def negate(self) -> App:
         return App(self.left.negate(), self.right.negate())
 
+    def to_positive_normal_form(self) -> 'DApp':
+        return DApp(self.left.to_positive_normal_form(), self.right.to_positive_normal_form())
+
 @dataclass(frozen=True)
 class Exists(Pattern):
-    bound: EVar
+    bound: frozenset[EVar]
     subpattern: Pattern
+    guard: Pattern
+
+    def __init__( self
+                , bound: Union[EVar, Iterable[EVar]]
+                , subpattern: Pattern
+                , guard: Pattern = Top()
+                ):
+        if   isinstance(bound, EVar): bound = frozenset([bound])
+        else:                         bound = frozenset(bound)
+
+        # workaround for frozen
+        object.__setattr__(self, "bound", bound)
+        object.__setattr__(self, "subpattern", subpattern)
+        object.__setattr__(self, "guard", guard)
 
     def free_variables(self) -> FrozenSet[Var]:
-        return self.subpattern.free_variables() - frozenset([self.bound])
+        return self.subpattern.free_variables().union(self.guard.free_variables()) - self.bound
 
     def substitute(self, x: Var, v: Pattern) -> 'Exists':
-        if x == self.bound: return self
-        else:               return Exists(self.bound, self.subpattern.substitute(x, v))
+        if x in self.bound: return self
+        else:               return Exists(self.bound, self.subpattern.substitute(x, v), guard=self.guard.substitute(x, v))
 
     def negate(self) -> 'Forall':
-        return Forall(self.bound, self.subpattern.negate())
+        return Forall(self.bound, self.subpattern.negate(), guard=self.guard)
+
+    def to_positive_normal_form(self) -> Pattern:
+        return Exists(self.bound, self.subpattern.to_positive_normal_form(), guard=self.guard.to_positive_normal_form())
 
 @dataclass(frozen=True)
 class Forall(Pattern):
-    bound: EVar
+    bound: frozenset[EVar]
     subpattern: Pattern
+    guard: Pattern = Top()
+
+    def __init__( self
+                , bound: Union[EVar, Iterable[EVar]]
+                , subpattern: Pattern
+                , guard: Pattern = Top()
+                ):
+        if   isinstance(bound, EVar): bound = frozenset([bound])
+        else:                         bound = frozenset(bound)
+
+        # workaround for frozen
+        object.__setattr__(self, "bound", bound)
+        object.__setattr__(self, "subpattern", subpattern)
+        object.__setattr__(self, "guard", guard)
 
     def free_variables(self) -> FrozenSet[Var]:
-        return self.subpattern.free_variables() - frozenset([self.bound])
+        return self.subpattern.free_variables().union(self.guard.free_variables()) - self.bound
 
     def substitute(self, x: Var, v: Pattern) -> 'Forall':
-        if x == self.bound: return self
-        else:               return Forall(self.bound, self.subpattern.substitute(x, v))
+        if x in self.bound: return self
+        else:               return Forall(self.bound, self.subpattern.substitute(x, v), guard=self.guard.substitute(x, v))
 
     def negate(self) -> Exists:
-        return Exists(self.bound, self.subpattern.negate())
+        return Exists(self.bound, self.subpattern.negate(), guard=self.guard)
+
+    def to_positive_normal_form(self) -> Pattern:
+        return Forall(self.bound, self.subpattern.to_positive_normal_form(), guard=self.guard.to_positive_normal_form())
 
 @dataclass(frozen=True)
 class Mu(Pattern):
@@ -170,6 +259,9 @@ class Mu(Pattern):
 
     def negate(self) -> 'Nu':
         return Nu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
+
+    def to_positive_normal_form(self) -> 'Mu':
+        return Mu(self.bound, self.subpattern.to_positive_normal_form())
 
     def alpha_rename(self, v: SVar) -> 'Mu':
         return Mu(v, self.subpattern.substitute(self.bound, v))
@@ -189,5 +281,11 @@ class Nu(Pattern):
     def negate(self) -> Mu:
         return Mu(self.bound, self.subpattern.substitute(self.bound, Not(self.bound)).negate())
 
+    def to_positive_normal_form(self) -> 'Nu':
+        return Nu(self.bound, self.subpattern.to_positive_normal_form())
+
     def alpha_rename(self, v: SVar) -> 'Nu':
         return Nu(v, self.subpattern.substitute(self.bound, v))
+
+def implies(phi: Pattern, psi: Pattern) -> Pattern:
+    return Or(Not(phi), psi)
