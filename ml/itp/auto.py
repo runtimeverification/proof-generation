@@ -21,7 +21,7 @@ from ml.metamath.auto.context import ApplicationContextProver
 
 from .state import ProofState, Goal, NoStateChangeException
 from .tactics import Tactic, ApplyTactic
-from .extension import SubstitutionVisitor, SchematicVariable
+from .extension import SubstitutionVisitor, SchematicVariable, CopyVisitor
 
 
 @ProofState.register_tactic("search")
@@ -184,122 +184,33 @@ class DesugarTactic(Tactic):
 
         typecode = statement.terms[0]
 
-        if typecode == Application("|-"):
-            # definition preseves provability
-            assert (len(statement.terms) == 2), f"ill-formed provability claim {statement}"
-            _, term = statement.terms
+        assert isinstance(typecode, Application) and len(typecode.subterms) == 0, \
+               f"missing typecode: {statement}"
 
-            assert state.is_concrete(term), f"term {term} is not concrete"
+        assert typecode.symbol in NotationProver.METALEVEL_CONGRUENCE_AXIOMS, \
+               f"unsupported metalevel relation: {statement}"
 
-            expanded = self.desugar(state, term, target_symbol)
-            self.notation_proofs = [NotationProver.prove_notation(state.composer, term, expanded)]
-            self.theorem = state.composer.theorems["notation-proof"]
+        theorem_label, positions = NotationProver.METALEVEL_CONGRUENCE_AXIOMS[typecode.symbol]
 
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        expanded,
-                    ],
-                ),
-            )
-        elif typecode == Application("#Fresh"):
-            # definition preserves freshness
-            assert len(statement.terms) == 3, f"ill-formed #Fresh claim {statement}"
-            _, var, term = statement.terms
+        self.theorem = state.composer.get_theorem(theorem_label)
+        self.notation_proofs = []
 
-            assert state.is_concrete(term), f"term {term} is not concrete"
+        new_goal_statement = CopyVisitor().visit(statement)
+        new_goal_statement.statement_type = Statement.PROVABLE
 
-            expanded = self.desugar(state, term, target_symbol)
-            self.notation_proofs = [NotationProver.prove_notation(state.composer, term, expanded)]
-            self.theorem = self.theorem = state.composer.theorems["notation-fresh"]
+        # desugar subterms that are expected to hold patterns
+        for position in positions:
+            assert position < len(statement.terms), f"ill-formed goal: {statement}"
+            term = statement.terms[position]
 
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        var,
-                        expanded,
-                    ],
-                ),
-            )
-        elif typecode == Application("#Positive"):
-            # definition preserves freshness
-            assert len(statement.terms) == 3, f"ill-formed #Positive claim {statement}"
-            _, var, term = statement.terms
+            expanded_term = self.desugar(state, term, target_symbol)
+            notation_proof = NotationProver.prove_notation(state.composer, term, expanded_term)
 
-            assert state.is_concrete(term), f"term {term} is not concrete"
+            self.notation_proofs.append(notation_proof)
 
-            expanded = self.desugar(state, term, target_symbol)
-            self.notation_proofs = [NotationProver.prove_notation(state.composer, term, expanded)]
-            self.theorem = self.theorem = state.composer.theorems["notation-positive"]
+            new_goal_statement.terms[position] = expanded_term
 
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        var,
-                        expanded,
-                    ],
-                ),
-            )
-        elif typecode == Application("#ApplicationContext"):
-            # definition preserves freshness
-            assert (len(statement.terms) == 3), f"ill-formed #ApplicationContext claim {statement}"
-            _, var, term = statement.terms
-
-            assert state.is_concrete(term), f"term {term} is not concrete"
-
-            expanded = self.desugar(state, term, target_symbol)
-            self.notation_proofs = [NotationProver.prove_notation(state.composer, term, expanded)]
-            self.theorem = self.theorem = state.composer.theorems["notation-application-context"]
-
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        var,
-                        expanded,
-                    ],
-                ),
-            )
-        elif typecode == Application("#Substitution"):
-            assert (len(statement.terms) == 5), f"ill-formed #Substitution claim {statement}"
-            _, t1, t2, t3, var = statement.terms
-
-            assert state.is_concrete(t1), f"term {t1} is not concrete"
-            assert state.is_concrete(t2), f"term {t2} is not concrete"
-            assert state.is_concrete(t3), f"term {t3} is not concrete"
-
-            expanded_terms = [self.desugar(state, term, target_symbol) for term in (t1, t2, t3)]
-
-            self.notation_proofs = [
-                NotationProver.prove_notation(state.composer, term, expanded)
-                for term, expanded in zip((t1, t2, t3), expanded_terms)
-            ]
-            self.theorem = state.composer.theorems["notation-substitution"]
-
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        *expanded_terms,
-                        var,
-                    ],
-                ),
-            )
-        else:
-            assert False, f"unsupported goal {statement} for desugaring"
+        state.push_derived_goal(goal, new_goal_statement)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         assert len(subproofs) == 1

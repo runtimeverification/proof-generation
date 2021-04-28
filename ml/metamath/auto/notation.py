@@ -12,6 +12,18 @@ class NotationProver:
     SYM = "notation-symmetry"
     REFL = "notation-reflexivity"
     TRANS = "notation-transitivity"
+    """
+    Labels for the notation congruence axioms
+    for metalevel relations, along with the indices
+    pointing to subterms that need to be expanded
+    """
+    METALEVEL_CONGRUENCE_AXIOMS = {
+        "|-": ("notation-proof", [1]),
+        "#Fresh": ("notation-fresh", [2]),
+        "#Positive": ("notation-positive", [2]),
+        "#ApplicationContext": ("notation-application-context", [2]),
+        "#Substitution": ("notation-substitution", [1, 2, 3]),
+    }
 
     @staticmethod
     def format_target(left: Term, right: Term) -> StructuredStatement:

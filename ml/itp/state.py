@@ -291,6 +291,11 @@ class ProofState:
 
         return SubstitutionVisitor(schematic_substitution).visit(term)
 
+    def resolve_schematic_variables_in_statement(self, stmt: StructuredStatement) -> StructuredStatement:
+        copied_stmt = CopyVisitor().visit(stmt)
+        copied_stmt.terms = [self.resolve_schematic_variables(term) for term in copied_stmt.terms]
+        return copied_stmt
+
     def is_concrete(self, term: Union[Term, StructuredStatement]) -> bool:
         """
         Check if the given term has any schematic variables

@@ -1,4 +1,4 @@
-from typing import Mapping, Optional, List
+from typing import Mapping, Optional, List, Tuple
 
 from ml.metamath.parser import (
     parse_term_with_metavariables,
@@ -7,6 +7,7 @@ from ml.metamath.parser import (
 from ml.metamath.ast import Term, StructuredStatement, Statement, Application
 from ml.metamath.composer import Theorem, Proof
 from ml.metamath.visitors import CopyVisitor
+from ml.metamath.auto.notation import NotationProver
 
 from ml.metamath.auto.unification import Unification
 
@@ -52,6 +53,42 @@ class ApplyTactic(Tactic):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.use_claim = False
+        self.applied_notation = False
+
+    def apply_sugar_axiom(self, term: Term, axiom: Theorem) -> Term:
+        assert len(axiom.statement.terms) == 3, \
+               f"invalid sugar axiom {axiom}"
+
+        substitution = Unification.match_terms_as_instance(axiom.statement.terms[1], term)
+        assert substitution is not None, \
+               f"invalid sugar axiom {axiom}"
+
+        return SubstitutionVisitor(substitution).visit(axiom.statement.terms[2])
+
+    def unify_modulo_notation(self, state: ProofState, left: Term, right: Term) -> Optional[List[Tuple[Term, Term]]]:
+        """
+        Additional unification rules
+        if the heads of left and right are different,
+        try to apply notation axiom to one of them
+        """
+
+        if not isinstance(left, Application) or \
+           not isinstance(right, Application):
+            return None
+
+        left_sugar_axiom = NotationProver.find_sugar_axiom(state.composer, left.symbol)
+        if left_sugar_axiom is not None:
+            self.applied_notation = True
+            left_expanded = self.apply_sugar_axiom(left, left_sugar_axiom)
+            return [(left_expanded, right)]
+
+        right_sugar_axiom = NotationProver.find_sugar_axiom(state.composer, right.symbol)
+        if right_sugar_axiom is not None:
+            self.applied_notation = True
+            right_expanded = self.apply_sugar_axiom(right, right_sugar_axiom)
+            return [(left, right_expanded)]
+
+        return None
 
     def apply(self, state: ProofState, theorem_name: str, **options):
         substitution = self.parse_substitution(state, options)
@@ -109,6 +146,8 @@ class ApplyTactic(Tactic):
             # newer schematic variable are used as substitution variables
             # with higher priority than older schematic variables
             variable_order=lambda v1, v2: v1.num > v2.num,
+            # add extra unification algorithm for notations
+            additional_unifier=lambda t1, t2: self.unify_modulo_notation(state, t1, t2),
         )
         assert (
             schematic_substitution is not None
@@ -131,6 +170,9 @@ class ApplyTactic(Tactic):
         live_svars = state.get_live_schematic_variables()
         killed_svars = top_goal_statement.get_metavariables().difference(live_svars)
         killed_svars = {var for var in killed_svars if state.get_schematic_variable_from_name(var) is not None}
+
+        self.original_goal = top_goal_statement
+
         assert (not killed_svars), f"schematic variable(s) {killed_svars} killed before being assigned"
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
@@ -154,12 +196,10 @@ class ApplyTactic(Tactic):
             for var, term in self.metavars_substitution.items()
         }
 
-        # print(self.theorem.statement.label)
-
         if self.use_claim:
             # get an inline proof if the reference theorem is an inline claim
             assert len(subproofs) != 0
-            return self.theorem.inline_apply(
+            proof = self.theorem.inline_apply(
                 subproofs[0],
                 *subproofs[
                     1:
@@ -167,9 +207,44 @@ class ApplyTactic(Tactic):
                 **full_substitution,
             )
         else:
-            return self.theorem.apply(
+            proof = self.theorem.apply(
                 *subproofs,
                 **full_substitution,
+            )
+
+        if not self.applied_notation:
+            return proof
+        else:
+            # if we applied any notation
+            # make sure we generate a notation proof
+            original_concrete_goal = state.resolve_schematic_variables_in_statement(self.original_goal)
+
+            assert state.is_concrete(original_concrete_goal)
+            assert len(original_concrete_goal.terms) == len(proof.statement.terms) != 0 and \
+                   isinstance(original_concrete_goal.terms[0], Application), \
+                   f"unexpected original goal: {original_concrete_goal}"
+
+            meta_relation = original_concrete_goal.terms[0].symbol
+            assert meta_relation in NotationProver.METALEVEL_CONGRUENCE_AXIOMS, \
+                   f"metalevel relation not supported: {original_concrete_goal}"
+
+            theorem_label, positions = NotationProver.METALEVEL_CONGRUENCE_AXIOMS[meta_relation]
+            notation_proofs = []
+
+            # prove notation at each subpattern
+            for position in positions:
+                assert position < len(original_concrete_goal.terms), f"ill-formed goal: {original_concrete_goal}"
+
+                original_term = original_concrete_goal.terms[position]
+                expanded_term = proof.statement.terms[position]
+
+                notation_proof = NotationProver.prove_notation(state.composer, original_term, expanded_term)
+                notation_proofs.append(notation_proof)
+
+            # apply suitable congruence axiom
+            return state.composer.get_theorem(theorem_label).apply(
+                proof,
+                *notation_proofs,
             )
 
 

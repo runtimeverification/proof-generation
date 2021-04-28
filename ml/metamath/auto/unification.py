@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Mapping, Dict
+from typing import Optional, List, Tuple, Mapping, Dict, Callable
 
 from ..ast import Metavariable, Term, Statement, Application, StructuredStatement
 from ..visitors import SubstitutionVisitor
@@ -11,6 +11,8 @@ class Unification:
         variable_class=Metavariable,
         substitution_visitor_class=SubstitutionVisitor,
         variable_order=lambda v1, v2: True,  # returns True iff v1 <= v2, False otherwise
+        # allow user to supply extra unifiction rules
+        additional_unifier: Optional[Callable[[Term, Term], Optional[List[Tuple[Term, Term]]]]] = None,
     ) -> Optional[Mapping[str, Term]]:
         """
         Try to solve the given unification problem,
@@ -30,13 +32,25 @@ class Unification:
                     return None
 
                 if left.symbol != right.symbol:
-                    return None
-                if len(left.subterms) != len(right.subterms):
-                    return None
-                equations.extend(zip(left.subterms, right.subterms))
-                continue
+                    # unable to unify the head,
+                    # try additional unification algorithm
+                    # if available
 
-            if isinstance(left, variable_class):
+                    if additional_unifier is None:
+                        return None
+
+                    subequations = additional_unifier(left, right)
+                    if subequations is None:
+                        return None
+
+                    equations.extend(subequations)
+                else:
+                    if len(left.subterms) != len(right.subterms):
+                        return None
+
+                    equations.extend(zip(left.subterms, right.subterms))
+
+            elif isinstance(left, variable_class):
                 # check for recursive equations
                 if left.name in right.get_metavariables():
                     return None
