@@ -4,8 +4,10 @@ from typing import List
 from ml.metamath.parser import load_database
 from ml.metamath.composer import Composer
 
+import os.path
 import argparse
 import re
+import os
 
 
 def number_to_letter(n: int) -> str:
@@ -47,31 +49,33 @@ def compress(mandatory: List[str], proof: List[str]) -> str:
 # and will output the compressed version to "filename"_compressed
 
 parser = argparse.ArgumentParser(description="Compress Metamath proofs")
-parser.add_argument("files", metavar="F", nargs="+", help="Files to compress")
+parser.add_argument("input", nargs="+", help="Input files")
+parser.add_argument("--output", help="Output Folder")
 args = parser.parse_args()
-for file_name in args.files:
+print(args)
+for file_name in args.input:
+    if file_name.endswith(".mm"):
+        new_contents = None
+        print("Rewriting " + file_name)
+        with open(file_name, "r") as f:
+            print("loading" + file_name)
+            ast = load_database(file_name, include_proof=False)
+            print("Finished loading ast for " + file_name)
+            composer = Composer()
+            composer.load(ast)
 
-    new_contents = None
-    print("Rewriting " + file_name)
-    with open(file_name, "r") as f:
-        print("loading" + file_name)
-        ast = load_database(file_name, include_proof=False)
-        print("Finished loading ast for " + file_name)
-        composer = Composer()
-        composer.load(ast)
+            contents = f.read()
 
-        contents = f.read()
+            def transform(matchgroup: re.Match) -> str:
+                label, statement, proof = matchgroup.groups()
+                theorem = composer.get_theorem(label)
+                mandatory = [x[2] for x in theorem.floatings] + [
+                    x.label for x in theorem.essentials if x.label is not None
+                ]
+                new_proof = compress(mandatory, proof.split())
+                return label + " $p " + statement + " $= " + new_proof + " $."
 
-        def transform(matchgroup: re.Match) -> str:
-            label, statement, proof = matchgroup.groups()
-            theorem = composer.get_theorem(label)
-            mandatory = [x[2] for x in theorem.floatings] + [
-                x.label for x in theorem.essentials if x.label is not None
-            ]
-            new_proof = compress(mandatory, proof.split())
-            return label + " $p " + statement + " $= " + new_proof + "$."
+            new_contents = re.sub(r"(\S*)\s*\$p(.*)\$=(.*)\$\.", transform, contents)
 
-        new_contents = re.sub(r"(\S*)\s*\$p(.*)\$=(.*)\$\.", transform, contents)
-
-    with open(file_name + "_compressed", "w") as f2:
-        f2.writelines("\n".join(new_contents))
+        with open(os.path.join(args.output, os.path.split(file_name)[1]), "w") as f2:
+            f2.writelines(new_contents)
