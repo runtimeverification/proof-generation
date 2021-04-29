@@ -66,12 +66,12 @@ for file_name in all_inputs:
         print("loading" + file_name)
         ast = load_database(file_name, include_proof=False)
         print("Finished loading ast for " + file_name)
-        composer = Composer()
+        composer: Composer = Composer()
         composer.load(ast)
 
         contents = f.read()
 
-        def transform(matchgroup: re.Match) -> str:
+        def transform(matchgroup: re.Match[str]) -> str:
             label, statement, proof = matchgroup.groups()
             theorem = composer.get_theorem(label)
             mandatory = [x[2] for x in theorem.floatings] + [
