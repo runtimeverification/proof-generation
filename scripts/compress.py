@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-import sys
+from typing import List
 from ml.metamath.parser import load_database
 from ml.metamath.composer import Composer
 
+import argparse
+import re
 
-def number_to_letter(n: int):
+
+def number_to_letter(n: int) -> str:
     number = n - 1
     final_letter = chr(ord("A") + (number % 20))
     if number < 20:
@@ -26,7 +29,7 @@ def number_to_letter(n: int):
     return "".join(letters)
 
 
-def compress(mandatory: list[str], proof: list[str]):
+def compress(mandatory: List[str], proof: List[str]) -> str:
     label_to_num = {}
     unique_proof_labels = list(dict.fromkeys(proof))
     no_mand = [h for h in unique_proof_labels if h not in mandatory]
@@ -42,45 +45,33 @@ def compress(mandatory: list[str], proof: list[str]):
 # assumse that each proof is on a single line
 # Usage: takes in the files from the command line arguments
 # and will output the compressed version to "filename"_compressed
-for file_name in sys.argv[1:]:
 
+parser = argparse.ArgumentParser(description="Compress Metamath proofs")
+parser.add_argument("files", metavar="F", nargs="+", help="Files to compress")
+args = parser.parse_args()
+for file_name in args.files:
+
+    new_contents = None
     print("Rewriting " + file_name)
     with open(file_name, "r") as f:
-        with open(file_name + "_compressed", "w") as f2:
-            print("loading" + file_name)
-            ast = load_database(file_name)
-            print("Finished loading ast for " + file_name)
-            composer = Composer()
-            composer.load(ast)
+        print("loading" + file_name)
+        ast = load_database(file_name, include_proof=False)
+        print("Finished loading ast for " + file_name)
+        composer = Composer()
+        composer.load(ast)
 
-            new_contents = []
-            contents = f.read()
+        contents = f.read()
 
-            for line in contents.splitlines():
+        def transform(matchgroup: re.Match) -> str:
+            label, statement, proof = matchgroup.groups()
+            theorem = composer.get_theorem(label)
+            mandatory = [x[2] for x in theorem.floatings] + [
+                x.label for x in theorem.essentials if x.label is not None
+            ]
+            new_proof = compress(mandatory, proof.split())
+            return label + " $p " + statement + " $= " + new_proof + "$."
 
-                new_line = line
-                p_location = line.find("$p")
-                if p_location >= 0:
+        new_contents = re.sub(r"(\S*)\s*\$p(.*)\$=(.*)\$\.", transform, contents)
 
-                    label = line[:p_location].strip()
-                    theorem = composer.get_theorem(label)
-                    mandatory = [x[2] for x in theorem.floatings] + [
-                        x.label for x in theorem.essentials if x.label is not None
-                    ]
-
-                    left = line.find("$=")
-                    right = line.find("$.")
-
-                    proof_labels = line[left + 2 : right].split()
-
-                    if line[0] != "(":
-                        new_line = (
-                            line[:left]
-                            + " $= "
-                            + compress(mandatory, proof_labels)
-                            + " $."
-                        )
-
-                new_contents.append(new_line)
-
-            f2.writelines("\n".join(new_contents))
+    with open(file_name + "_compressed", "w") as f2:
+        f2.writelines("\n".join(new_contents))
