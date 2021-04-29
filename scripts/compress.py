@@ -5,7 +5,7 @@ from ml.metamath.parser import load_database
 from ml.metamath.composer import Composer
 
 
-def number_to_letter(n):
+def number_to_letter(n: int):
     number = n - 1
     final_letter = chr(ord("A") + (number % 20))
     if number < 20:
@@ -26,7 +26,7 @@ def number_to_letter(n):
     return "".join(letters)
 
 
-def compress(mandatory, proof):
+def compress(mandatory: list[str], proof: list[str]):
     label_to_num = {}
     unique_proof_labels = list(dict.fromkeys(proof))
     no_mand = [h for h in unique_proof_labels if h not in mandatory]
