@@ -48,7 +48,7 @@ class TestIntegrationBase(unittest.TestCase):
         assert os.path.isfile(definition_path), \
                f"cannot find definition {definition_path} inferred from program name {pgm}"
 
-        module_name = definition_name.upper().replace("-", "_")
+        module_name = definition_name.upper()
 
         rewrite_main(
             [
@@ -65,9 +65,24 @@ class TestIntegrationBase(unittest.TestCase):
 
 
 class TestRewriteProofGeneratorIntegeration(TestIntegrationBase):
-    def test_rewrite_proof_gen(self):
+    # TODO: verify using metamath
+    def test_foo(self):
         self.run_rewrite_proof_gen("pgm-1.foo")
+
+    def test_lambda(self):
         self.run_rewrite_proof_gen("pgm-1.lambda")
+
+    def test_imp(self):
         self.run_rewrite_proof_gen("pgm-1.imp")
 
-        # TODO: verify using metamath
+    def test_map_test_comm(self):
+        self.run_rewrite_proof_gen("pgm-comm.map-test")
+
+    def test_map_test_ac(self):
+        self.run_rewrite_proof_gen("pgm-ac-hard.map-test")
+
+    def test_map_test_unit(self):
+        self.run_rewrite_proof_gen("pgm-unit.map-test")
+
+    def test_map_test_acu(self):
+        self.run_rewrite_proof_gen("pgm-acu-hard.map-test")

@@ -301,6 +301,7 @@ def gen_proof(
     benchmark: bool = False,
     pypy: bool = False,
     no_backend_hints: bool = False,
+    proof_cache_threshold: Optional[int] = None,
 ):
     kdef = os.path.realpath(kdef)
     pgm = os.path.realpath(pgm)
@@ -378,7 +379,8 @@ def gen_proof(
                 task_path,
                 "--output",
                 output,
-            ] + (["--benchmark"] if benchmark else [])
+            ] + (["--benchmark"] if benchmark else []) +
+            (["--proof-cache-threshold", str(proof_cache_threshold)] if proof_cache_threshold is not None else [])
         )
         exit_code = proc.wait()
         assert exit_code == 0, f"ml.rewrite failed with exit code {exit_code}"
@@ -411,6 +413,11 @@ def main():
         default=False,
         help="output the time spent for translating module and proving rewriting",
     )
+    parser.add_argument(
+        "--proof-cache-threshold",
+        type=int,
+        help="maximum uncached proof size",
+    )
     args = parser.parse_args()
 
     gen_proof(
@@ -421,6 +428,7 @@ def main():
         benchmark=args.benchmark,
         pypy=args.pypy,
         no_backend_hints=args.no_backend_hints,
+        proof_cache_threshold=args.proof_cache_threshold,
     )
 
 

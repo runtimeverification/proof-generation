@@ -5,12 +5,12 @@ from ..composer import Composer, Proof, Theorem, MethodAutoProof, TypecodeProver
 
 from .notation import NotationProver
 from .unification import Unification
-"""
-TODO: subsitution of patterns with \\exists and \\mu is not supported yet
-"""
 
 
 class SubstitutionProver:
+    """
+    TODO: subsitution of patterns with \\exists and \\mu is not supported yet
+    """
     @staticmethod
     def get_target(
         after_pattern: Term,
@@ -29,12 +29,6 @@ class SubstitutionProver:
             ],
         )
 
-    """
-    This method only deals with patterns consisting of
-    the most basic constructs (\\bot, \\imp, \\app, \\exists, \\mu)
-    and metavariables
-    """
-
     @staticmethod
     def prove_desugared_substitution(
         composer: Composer,
@@ -44,6 +38,11 @@ class SubstitutionProver:
         subst_var: Metavariable,
         hypotheses: List[Theorem] = [],
     ) -> Proof:
+        """
+        This method only deals with patterns consisting of
+        the most basic constructs (\\bot, \\imp, \\app, \\exists, \\mu)
+        and metavariables
+        """
         target = SubstitutionProver.get_target(after_pattern, before_pattern, subst_pattern, subst_var)
 
         is_variable_metavar = (TypecodeProver.prove_typecode(composer, "#Variable", before_pattern) is not None)
@@ -98,14 +97,6 @@ class SubstitutionProver:
 
         assert (False), f"unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}"
 
-    """
-    Prove statement of the form
-    #Substitution ph0 ph1 ph2 xX
-    where ph0 is the result of substituting ph2 for xX in ph1
-
-    Notations are also considered
-    """
-
     @staticmethod
     def prove_substitution(
         composer: Composer,
@@ -115,6 +106,13 @@ class SubstitutionProver:
         subst_var: Metavariable,
         hypotheses: List[Theorem] = [],
     ) -> Proof:
+        """
+        Prove statement of the form
+        #Substitution ph0 ph1 ph2 xX
+        where ph0 is the result of substituting ph2 for xX in ph1
+
+        Notations are also considered
+        """
         # if the heads are the same and there exists a substitution for the head symbol
         if (isinstance(after_pattern, Application) and isinstance(before_pattern, Application)
                 and after_pattern.symbol == before_pattern.symbol
@@ -225,12 +223,12 @@ class SubstitutionProver:
             expansion_subproof3,
         )
 
-    """
-    A wrapper for an auto proof method
-    """
-
     @staticmethod
     def prove_substitution_statement(composer: Composer, statement: Statement, hypotheses: List[Theorem] = []):
+        """
+        A wrapper for an auto proof method
+        """
+
         assert isinstance(statement, StructuredStatement)
         assert len(
             statement.terms

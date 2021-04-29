@@ -9,8 +9,8 @@ from ml.metamath.ast import StructuredStatement, Statement, Application, Metavar
 from ml.metamath.parser import load_database
 from ml.metamath.composer import Composer
 
-from ml.itp.ast import Command
-from ml.itp.parser import parse_command
+from ml.itp.ast import Tactical
+from ml.itp.parser import parse_tactical
 from ml.itp.state import ProofState, NoStateChangeException
 
 from ml.utils.ansi import ANSI
@@ -92,7 +92,7 @@ class InteractiveState:
         theorem_names = sorted(self.proof_state.composer.theorems.keys())
 
         current_buffer = readline.get_line_buffer().lstrip()
-        split = current_buffer.split(" ")
+        split = current_buffer.split("&")[-1].split("|")[-1].lstrip().split(" ")
 
         if len(split) > 1:
             filtered_names = [name for name in theorem_names if name.startswith(text)]
@@ -110,22 +110,22 @@ class InteractiveState:
         self.print_state()
         while True:
             try:
-                command_src = input("> ").strip()
-                if not command_src:
+                tactical_src = input("> ").strip()
+                if not tactical_src:
                     continue
 
-                lowered = command_src.lower()
+                lowered = tactical_src.lower()
                 split = lowered.split()
                 for command in BuiltinCommand.builtin_commands:
                     if split[0] in command.names:
                         command.handler(self, *split[1:])
                         break
                 else:
-                    # apply a tactic command then
-                    command = parse_command(command_src)
-                    if command is None:
+                    # apply a tactical then
+                    tactical = parse_tactical(tactical_src)
+                    if tactical is None:
                         continue
-                    self.apply_tactic_command(command)
+                    self.apply_tactical(tactical)
 
             except EOFError:
                 if self.debug:
@@ -146,12 +146,12 @@ class InteractiveState:
                 else:
                     print(f"{ANSI.in_bold_red('error:')} {ANSI.in_bold(exc)}")
 
-    def apply_tactic_command(self, command: Command):
+    def apply_tactical(self, tactical: Tactical):
         old_state = self.proof_state
-        self.proof_state = command.apply_tactic(self.proof_state)
+        self.proof_state = tactical.apply(self.proof_state)
 
         # store the history once the tactic goes through
-        self.undo_states.append((old_state, command))
+        self.undo_states.append((old_state, tactical))
         self.redo_states = []
         self.print_state()
 
@@ -208,15 +208,15 @@ class InteractiveState:
             self.command_script()
             print("==================")
 
-        old_commands = [command for _, command in self.undo_states]
+        old_tacticals = [tactical for _, tactical in self.undo_states]
         self.init_from_theory_and_goal(self.init_theory_path, self.init_goal.statement.label)
         self.undo_states = []
         self.redo_states = []
 
         # re-apply all tactics
-        for command in old_commands:
-            print(f"applying the command: {command}")
-            self.apply_tactic_command(command)
+        for tactical in old_tacticals:
+            print(f"applying the tactical: {tactical}")
+            self.apply_tactical(tactical)
 
         if len(self.undo_states) == 0:
             self.print_state()
@@ -224,9 +224,9 @@ class InteractiveState:
     @BuiltinCommand.add("undo", help_message="undo a tactic")
     def command_undo(self):
         if len(self.undo_states):
-            old_state, command = self.undo_states.pop()
-            self.redo_states.append((self.proof_state, command))
-            print(f"undoing command {command}")
+            old_state, tactical = self.undo_states.pop()
+            self.redo_states.append((self.proof_state, tactical))
+            print(f"undoing tactical {tactical}")
             self.proof_state = old_state
             self.print_state()
         else:
@@ -235,9 +235,9 @@ class InteractiveState:
     @BuiltinCommand.add("redo", help_message="redo a tactic")
     def command_redo(self):
         if len(self.redo_states):
-            new_state, command = self.redo_states.pop()
-            self.undo_states.append((self.proof_state, command))
-            print(f"redoing command `{command}`")
+            new_state, tactical = self.redo_states.pop()
+            self.undo_states.append((self.proof_state, tactical))
+            print(f"redoing tactical `{tactical}`")
             self.proof_state = new_state
             self.print_state()
         else:
@@ -271,6 +271,11 @@ class InteractiveState:
     def command_quit(self):
         try:
             ans = input("\nquit? (y/n) <n> ")
+
+        except EOFError:
+            print("okay...")
+            exit(1)
+
         except KeyboardInterrupt:
             print("okay...")
             exit(1)

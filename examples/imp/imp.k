@@ -1,104 +1,58 @@
-requires "domains.k"
-
-module SIMPLE-MAP
-
-imports K-EQUAL
-
-syntax SimpleMap ::= consMap(KItem, KItem, SimpleMap) | nilMap()
-syntax Maybe ::= Just(KItem) | Nothing()
-
-syntax Maybe ::= lookupMap(SimpleMap, KItem) [function, functional]
-syntax SimpleMap ::= removeMap(SimpleMap, KItem) [function, functional]
-syntax SimpleMap ::= setMap(SimpleMap, KItem, KItem) [function, functional]
-
-rule lookupMap(consMap(K, V, _), K) => Just(V)
-rule lookupMap(consMap(K, _, R), K') => lookupMap(R, K') requires K =/=K K'
-rule lookupMap(nilMap(), _) => Nothing()
-
-rule removeMap(consMap(K, _, R), K) => R
-rule removeMap(consMap(K, V, R), K') => consMap(K, V, removeMap(R, K')) requires K =/=K K'
-rule removeMap(nilMap(), _) => nilMap()
-
-rule setMap(M, K, V) => consMap(K, V, removeMap(M, K))
-
-endmodule
-
 module IMP-SYNTAX
-
-imports DOMAINS-SYNTAX
-
-syntax AExp  ::= Int
-               | Id
-               | "-" AExp                   [strict]
-               | AExp "/" AExp              [seqstrict]
-               | "(" AExp ")"               [bracket]
-               > AExp "+" AExp              [seqstrict]
-
-syntax BExp  ::= Bool
-               | AExp "<=" AExp             [seqstrict]
-               | "not" BExp                 [strict]
-               | "(" BExp ")"               [bracket]
-               > BExp "and" BExp
-
-syntax Block ::= "{" "}"
-               | "{" Stmt "}"
-
-syntax Stmt  ::= Block
-               | Id "=" AExp                [strict(2)]
-               | "if" "(" BExp ")"
-                 Block "else" Block         [strict(1)]
-               | "while" "(" BExp ")" Block
-               > Stmt Stmt                  [left]
-
-syntax Pgm ::= Stmt
-
+  imports DOMAINS-SYNTAX
+  syntax AExp  ::= Int | Id
+                 | "-" Int                    [format(%1%2)]
+                 | AExp "/" AExp              [left, strict, color(pink)]
+                 | "(" AExp ")"               [bracket]
+                 > AExp "+" AExp              [left, strict, color(pink)]
+  syntax BExp  ::= Bool
+                 | AExp "<=" AExp             [seqstrict, latex({#1}\leq{#2}), color(pink)]
+                 | "!" BExp                   [strict, color(pink)]
+                 | "(" BExp ")"               [bracket]
+                 > BExp "&&" BExp             [left, strict(1), color(pink)]
+  syntax Block ::= "{" "}"
+                 | "{" Stmt "}"               [format(%1%i%n%2%d%n%3)]
+  syntax Stmt  ::= Block
+                 | Id "=" AExp ";"            [strict(2), color(pink), format(%1 %2 %3%4)]
+                 | "if" "(" BExp ")"
+                   Block "else" Block         [strict(1), colors(yellow, white, white, yellow), format(%1 %2%3%4 %5 %6 %7)]
+                 | "while" "(" BExp ")" Block [colors(yellow,white,white), format(%1 %2%3%4 %5)]
+                 > Stmt Stmt                  [left, format(%1%n%2)]
+  syntax Pgm ::= "int" Ids ";" Stmt           [format(%1 %2%3%n%4), colors(yellow,pink)]
+  syntax Ids ::= List{Id,","}                 [format(%1%2 %3)]
 endmodule
 
 module IMP
+  imports IMP-SYNTAX
+  imports DOMAINS
+  syntax KResult ::= Int | Bool
 
-imports IMP-SYNTAX
-imports K-EQUAL
-imports SIMPLE-MAP
-imports DOMAINS
+  configuration <T color="yellow">
+                  <k color="green"> $PGM:Pgm </k>
+                  <state color="red"> .Map </state>
+                </T>
 
-syntax KResult ::= Int | Bool
+  rule <k> X:Id => I ...</k> <state>... X |-> I ...</state>
+  rule I1 / I2 => I1 /Int I2  requires I2 =/=Int 0
+  rule I1 + I2 => I1 +Int I2
+  rule - I1 => 0 -Int I1
 
-configuration
-    <imp>
-        <k> $PGM:Pgm </k>
-        <env> nilMap() </env>
-    </imp>
+  rule I1 <= I2 => I1 <=Int I2
+  rule ! T => notBool T
+  rule true && B => B
+  rule false && _ => false
 
-// variable lookup
-rule <k> X:Id => lookupMap(M, X) ~> X:Id ... </k>
-     <env> M </env>
+  rule {} => .   [structural]
+  rule {S} => S  [structural]
 
-rule Just(A:Int) ~> _:Id => A
+  rule <k> X = I:Int; => . ...</k> <state>... X |-> (_ => I) ...</state>
+  rule S1:Stmt S2:Stmt => S1 ~> S2  [structural]
+  rule if (true)  S else _ => S
+  rule if (false) _ else S => S
 
-// arithmetic
-rule - A:Int => 0 -Int A
-rule A:Int + B:Int => A +Int B
-rule A:Int / B:Int => A /Int B
+  rule while (B) S => if (B) {S while (B) S} else {}  [structural]
 
-rule not A:Bool => notBool A
-rule A:Int <= B:Int => A <=Int B
-rule A:Bool and B:Bool => A andBool B
-
-// block
-rule { } => .
-rule { S } => S
-
-// control flow
-rule if ( C:Bool ) B1:Block else _ => B1 requires C
-rule if ( C:Bool ) _ else B2:Block => B2 requires notBool C
-
-rule while ( C ) B => if ( C ) { B while (C) B } else {}
-
-// assignment
-rule <k> X = A:Int => . ... </k>
-     <env> M => setMap(M, X, A) </env>
-
-// sequential composition
-rule S1:Stmt S2:Stmt => S1 ~> S2
-
+  rule <k> int (X,Xs => Xs);_ </k> <state> Rho:Map (.Map => X|->0) </state>
+    // requires notBool (X in keys(Rho))
+  rule int .Ids; S => S  [structural]
 endmodule

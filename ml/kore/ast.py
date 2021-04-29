@@ -1,14 +1,15 @@
 from __future__ import annotations
 from typing import List, Union, Optional, Any, Dict, Set, TypeVar, Generic, NoReturn
 
+from collections import OrderedDict
+
 from ml.utils.visitor import Visitor
-"""
-Visits a Kore AST in post-order traversal
-"""
 
 
 class KoreVisitor(Visitor):
-    pass
+    """
+    Visits a Kore AST in post-order traversal
+    """
 
 
 P = TypeVar("P")
@@ -72,7 +73,7 @@ class Definition(BaseAST[None]):
     def __init__(self, modules: List[Module], attributes: List[Application]):
         super().__init__(attributes)
 
-        self.module_map = {}
+        self.module_map: Dict[str, Module] = OrderedDict()
 
         for module in modules:
             self.module_map[module.name] = module

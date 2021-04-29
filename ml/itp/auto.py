@@ -1,5 +1,5 @@
 """
-Some auto tactics
+Some automated tactics
 """
 
 from typing import Optional, Tuple, List, Union, Dict
@@ -21,22 +21,22 @@ from ml.metamath.auto.context import ApplicationContextProver
 
 from .state import ProofState, Goal, NoStateChangeException
 from .tactics import Tactic, ApplyTactic
-from .extension import SubstitutionVisitor, SchematicVariable
-"""
-Search for claim most "similar" to the current goal,
-where the similarity is measured by the inverse of the sum of
-the sizes of terms in every non-trivial substitution pair.
-
-By non-trivial substitution pair I mean a pair
-x |-> t in the substitution where x is a schematic variable
-and t is NOT a schematic variable.
-
-And by size I mean the number of applications in the term
-"""
+from .extension import SubstitutionVisitor, SchematicVariable, CopyVisitor
 
 
 @ProofState.register_tactic("search")
 class SearchTactic(Tactic):
+    """
+    Search for claim most "similar" to the current goal,
+    where the similarity is measured by the inverse of the sum of
+    the sizes of terms in every non-trivial substitution pair.
+
+    By non-trivial substitution pair I mean a pair
+    x |-> t in the substitution where x is a schematic variable
+    and t is NOT a schematic variable.
+
+    And by size I mean the number of applications in the term
+    """
     @staticmethod
     def get_size_of_term(term: Term) -> int:
         if isinstance(term, Metavariable):
@@ -107,14 +107,12 @@ class SearchTactic(Tactic):
         pass
 
 
-"""
-Automatically prove notational equivalence of terms
-modulo the definition relation #Notation
-"""
-
-
 @ProofState.register_tactic("notation")
 class NotationTactic(Tactic):
+    """
+    Automatically prove notational equivalence of terms
+    modulo the definition relation #Notation
+    """
     def apply(self, state: ProofState):
         goal = state.resolve_current_goal(self)
         statement = goal.statement
@@ -133,16 +131,14 @@ class NotationTactic(Tactic):
         return self.proof
 
 
-"""
-Expand all syntax sugar defined using #Notation
-in the current goal
-"""
-
-
 @ProofState.register_tactic("desugar")
 @ProofState.register_tactic("desugar-all")
 @ProofState.register_tactic("desugar-kore")
 class DesugarTactic(Tactic):
+    """
+    Expand all syntax sugar defined using #Notation
+    in the current goal
+    """
     def find_kore_symbol(self, state: ProofState, term: Term) -> Optional[str]:
         if isinstance(term, Application):
             if (term.symbol.startswith("\\kore-")
@@ -158,11 +154,10 @@ class DesugarTactic(Tactic):
         else:
             return None
 
-    """
-    Desugar all non constant symbols beginning with \\kore-
-    """
-
     def desugar_kore(self, state: ProofState, term: Term) -> Term:
+        """
+        Desugar all non constant symbols beginning with \\kore-
+        """
         while True:
             symbol = self.find_kore_symbol(state, term)
             if symbol is None:
@@ -189,122 +184,33 @@ class DesugarTactic(Tactic):
 
         typecode = statement.terms[0]
 
-        if typecode == Application("|-"):
-            # definition preseves provability
-            assert (len(statement.terms) == 2), f"ill-formed provability claim {statement}"
-            _, term = statement.terms
+        assert isinstance(typecode, Application) and len(typecode.subterms) == 0, \
+               f"missing typecode: {statement}"
 
-            assert state.is_concrete(term), f"term {term} is not concrete"
+        assert typecode.symbol in NotationProver.METALEVEL_CONGRUENCE_AXIOMS, \
+               f"unsupported metalevel relation: {statement}"
 
-            expanded = self.desugar(state, term, target_symbol)
-            self.notation_proofs = [NotationProver.prove_notation(state.composer, term, expanded)]
-            self.theorem = state.composer.theorems["notation-proof"]
+        theorem_label, positions = NotationProver.METALEVEL_CONGRUENCE_AXIOMS[typecode.symbol]
 
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        expanded,
-                    ],
-                ),
-            )
-        elif typecode == Application("#Fresh"):
-            # definition preserves freshness
-            assert len(statement.terms) == 3, f"ill-formed #Fresh claim {statement}"
-            _, var, term = statement.terms
+        self.theorem = state.composer.get_theorem(theorem_label)
+        self.notation_proofs = []
 
-            assert state.is_concrete(term), f"term {term} is not concrete"
+        new_goal_statement = CopyVisitor().visit(statement)
+        new_goal_statement.statement_type = Statement.PROVABLE
 
-            expanded = self.desugar(state, term, target_symbol)
-            self.notation_proofs = [NotationProver.prove_notation(state.composer, term, expanded)]
-            self.theorem = self.theorem = state.composer.theorems["notation-fresh"]
+        # desugar subterms that are expected to hold patterns
+        for position in positions:
+            assert position < len(statement.terms), f"ill-formed goal: {statement}"
+            term = statement.terms[position]
 
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        var,
-                        expanded,
-                    ],
-                ),
-            )
-        elif typecode == Application("#Positive"):
-            # definition preserves freshness
-            assert len(statement.terms) == 3, f"ill-formed #Positive claim {statement}"
-            _, var, term = statement.terms
+            expanded_term = self.desugar(state, term, target_symbol)
+            notation_proof = NotationProver.prove_notation(state.composer, term, expanded_term)
 
-            assert state.is_concrete(term), f"term {term} is not concrete"
+            self.notation_proofs.append(notation_proof)
 
-            expanded = self.desugar(state, term, target_symbol)
-            self.notation_proofs = [NotationProver.prove_notation(state.composer, term, expanded)]
-            self.theorem = self.theorem = state.composer.theorems["notation-positive"]
+            new_goal_statement.terms[position] = expanded_term
 
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        var,
-                        expanded,
-                    ],
-                ),
-            )
-        elif typecode == Application("#ApplicationContext"):
-            # definition preserves freshness
-            assert (len(statement.terms) == 3), f"ill-formed #ApplicationContext claim {statement}"
-            _, var, term = statement.terms
-
-            assert state.is_concrete(term), f"term {term} is not concrete"
-
-            expanded = self.desugar(state, term, target_symbol)
-            self.notation_proofs = [NotationProver.prove_notation(state.composer, term, expanded)]
-            self.theorem = self.theorem = state.composer.theorems["notation-application-context"]
-
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        var,
-                        expanded,
-                    ],
-                ),
-            )
-        elif typecode == Application("#Substitution"):
-            assert (len(statement.terms) == 5), f"ill-formed #Substitution claim {statement}"
-            _, t1, t2, t3, var = statement.terms
-
-            assert state.is_concrete(t1), f"term {t1} is not concrete"
-            assert state.is_concrete(t2), f"term {t2} is not concrete"
-            assert state.is_concrete(t3), f"term {t3} is not concrete"
-
-            expanded_terms = [self.desugar(state, term, target_symbol) for term in (t1, t2, t3)]
-
-            self.notation_proofs = [
-                NotationProver.prove_notation(state.composer, term, expanded)
-                for term, expanded in zip((t1, t2, t3), expanded_terms)
-            ]
-            self.theorem = state.composer.theorems["notation-substitution"]
-
-            state.push_derived_goal(
-                goal,
-                StructuredStatement(
-                    "p",
-                    [
-                        typecode,
-                        *expanded_terms,
-                        var,
-                    ],
-                ),
-            )
-        else:
-            assert False, f"unsupported goal {statement} for desugaring"
+        state.push_derived_goal(goal, new_goal_statement)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         assert len(subproofs) == 1
@@ -314,13 +220,11 @@ class DesugarTactic(Tactic):
         )
 
 
-"""
-Prove a statement about substitution
-"""
-
-
 @ProofState.register_tactic("substitution")
 class SubstitutionTactic(Tactic):
+    """
+    Prove a statement about substitution
+    """
     def apply(self, state: ProofState):
         goal = state.resolve_current_goal(self)
         self.proof = SubstitutionProver.prove_substitution_statement(
@@ -357,15 +261,14 @@ class ApplicationContextTactic(Tactic):
         return self.proof
 
 
-"""
-Try to resolve the current goal if it's
-a propositional claim, i.e., a propositional pattern
-with pattern metavariables as atomic propositions
-"""
-
-
 @ProofState.register_tactic("tautology")
 class TautologyTactic(Tactic):
+    """
+    Try to resolve the current goal if it's
+    a propositional claim, i.e., a propositional pattern
+    with pattern metavariables as atomic propositions
+    """
+
     # connective -> arity
     PROPOSITION_CONNECTIVES = {
         "\\imp": 2,
@@ -376,23 +279,24 @@ class TautologyTactic(Tactic):
         "\\top": 0,
         "\\iff": 2,
     }
-    r"""
-    A propositional formula/pattern is defined as a pattern built
-    from the following constructs:
-      - atomic propositions: pattern metavariables
-      - \imp
-      - \bot
-      - \and
-      - \or
-      - \not
-      - \top
-      - \iff
 
-    In the comments below,
-    the fragment with only \imp and \bot will be called implicative
-    the fragment with only \and, \or, and \not will be called conjunctive
-    """
     def is_propositional(self, state: ProofState, term: Term) -> bool:
+        r"""
+        A propositional formula/pattern is defined as a pattern built
+        from the following constructs:
+        - atomic propositions: pattern metavariables
+        - \imp
+        - \bot
+        - \and
+        - \or
+        - \not
+        - \top
+        - \iff
+
+        In the comments below,
+        the fragment with only \imp and \bot will be called implicative
+        the fragment with only \and, \or, and \not will be called conjunctive
+        """
         if isinstance(term, Application):
             if term.symbol not in TautologyTactic.PROPOSITION_CONNECTIVES:
                 return False
@@ -468,14 +372,13 @@ class TautologyTactic(Tactic):
         ]
         return theorem.apply(*proofs)
 
-    r"""
-    Assuming term is of the form
-    ( ph0 /\ ( ph1 /\ ... ( phn-1 /\ phn ) ) )
-    return a proof of
-    ( ( ph0 /\ ( ph1 /\ ... ( phn-1 /\ phn ) ) ) <-> ( ( ( ph0 /\ ph1 ) ... ) /\ phn ) )
-    """
-
     def reverse_junction(self, state: ProofState, term: Term, connective="and") -> Proof:
+        r"""
+        Assuming term is of the form
+        ( ph0 /\ ( ph1 /\ ... ( phn-1 /\ phn ) ) )
+        return a proof of
+        ( ( ph0 /\ ( ph1 /\ ... ( phn-1 /\ phn ) ) ) <-> ( ( ( ph0 /\ ph1 ) ... ) /\ phn ) )
+        """
         if isinstance(term, Application) and term.symbol == f"\\{connective}":
             first = term.subterms[0]
             rest = term.subterms[1]
@@ -491,16 +394,15 @@ class TautologyTactic(Tactic):
         else:
             return self.apply_iff_reflexivity(state, term)
 
-    r"""
-    Merge con/dis-junctions. Suppose left and right are of the form
-    ( ph0 /\ ( ph1 /\ ... ) ) and ( ph0' /\ ( ph1' /\ ... ) )
-
-    Return a proof of
-    ( \iff ( ph0 /\ ( ph1 /\ ... ) ) /\ ( ph0' /\ ( ph1' /\ ... ) )
-           ( phn /\ ( ... ( ph1 ( ph0 /\ ( ph0' /\ ( ph1' /\ ... ) ) ) ... )
-    """
-
     def merge_junctions(self, state: ProofState, left: Term, right: Term, connective="and") -> Proof:
+        r"""
+        Merge con/dis-junctions. Suppose left and right are of the form
+        ( ph0 /\ ( ph1 /\ ... ) ) and ( ph0' /\ ( ph1' /\ ... ) )
+
+        Return a proof of
+        ( \iff ( ph0 /\ ( ph1 /\ ... ) ) /\ ( ph0' /\ ( ph1' /\ ... ) )
+            ( phn /\ ( ... ( ph1 ( ph0 /\ ( ph0' /\ ( ph1' /\ ... ) ) ) ... )
+        """
         left_conjuncts = self.junction_to_list(left, connective)
         right_conjuncts = self.junction_to_list(right, connective)
 
@@ -525,13 +427,12 @@ class TautologyTactic(Tactic):
         else:
             return self.apply_iff_reflexivity(state, Application(f"\\{connective}", [left, right]))
 
-    r"""
-    Let CNF(ph) be one CNF formula of ph
-    This function returns a proof of |- ( \imp ph CNF(ph) )
-    NOTE: ph is assumed to have only conjunctions, disjunctions, negations, and atoms
-    """
-
     def reduce_to_cnf(self, state: ProofState, term: Term) -> Proof:
+        r"""
+        Let CNF(ph) be one CNF formula of ph
+        This function returns a proof of |- ( \imp ph CNF(ph) )
+        NOTE: ph is assumed to have only conjunctions, disjunctions, negations, and atoms
+        """
         if isinstance(term, Metavariable):
             return self.apply_iff_reflexivity(state, term)
 
@@ -648,12 +549,12 @@ class TautologyTactic(Tactic):
 
         assert False, f"unable to reduce {term} to cnf"
 
-    r"""
-    Reduce a propositional term to the conjunctive fragment (i.e.
-    reduce to only using \and, \or, and \not)
-    """
-
     def reduce_to_conjunctive(self, state: ProofState, term: Term) -> Proof:
+        r"""
+        Reduce a propositional term to the conjunctive fragment (i.e.
+        reduce to only using \and, \or, and \not)
+        """
+
         if isinstance(term, Metavariable):
             return self.apply_iff_reflexivity(state, term)
 
@@ -719,11 +620,10 @@ class TautologyTactic(Tactic):
 
         assert False, f"unable to reduce pattern {term}"
 
-    """
-    Move the nth clause/literal to the first, and return a proof of equivalence
-    """
-
     def permute_junction(self, state: ProofState, cnf: Term, position: int, connective="and") -> Proof:
+        """
+        Move the nth clause/literal to the first, and return a proof of equivalence
+        """
         if position == 0:
             return self.apply_iff_reflexivity(state, cnf)
 
@@ -796,11 +696,10 @@ class TautologyTactic(Tactic):
 
         return proof
 
-    r"""
-    Simplify a clause to either a smaller clause or \top
-    """
-
     def simplify_clause(self, state: ProofState, clause: Term) -> Proof:
+        r"""
+        Simplify a clause to either a smaller clause or \top
+        """
         literals = self.junction_to_list(clause, "or")
         positive_vars = {}  # var name -> position
         negative_vars = {}
@@ -924,13 +823,12 @@ class TautologyTactic(Tactic):
 
         return self.apply_iff_reflexivity(state, clause)
 
-    """
-    Given a CNF formula:
-    1. remove all duplicated literals
-    2. remove all clauses with complementing literals,
-    """
-
     def simplify_cnf(self, state: ProofState, cnf: Term, i=0) -> Proof:
+        """
+        Given a CNF formula:
+        1. remove all duplicated literals
+        2. remove all clauses with complementing literals,
+        """
         conjuncts = self.junction_to_list(cnf)
         # clauses = [ self.junction_to_list(conjunct, "or") for conjunct in conjuncts ]
 
@@ -987,11 +885,10 @@ class TautologyTactic(Tactic):
             self.simplify_cnf(state, simplified_cnf, i + 1),
         )
 
-    """
-    A clause is a tautology iff it contains a pair of complementing literals
-    """
-
     def is_clause_tautology(self, clause: List[Term]) -> bool:
+        """
+        A clause is a tautology iff it contains a pair of complementing literals
+        """
         literal_map: Dict[Metavariable, bool] = {}
 
         for literal in clause:
@@ -1013,12 +910,11 @@ class TautologyTactic(Tactic):
 
         return False
 
-    """
-    Test if any of the existing clauses is equivalent to the given clause
-    or if the current clause is a tautology
-    """
-
     def is_clause_new(self, clauses: List[List[Term]], clause: List[Term]) -> bool:
+        """
+        Test if any of the existing clauses is equivalent to the given clause
+        or if the current clause is a tautology
+        """
         if self.is_clause_tautology(clause):
             return False
 
@@ -1028,15 +924,14 @@ class TautologyTactic(Tactic):
 
         return True
 
-    """
-    Given a list of clauses, find a path of resolutions that
-    will lead to falsum (using a naive BFS algorithm)
-
-    A path is a list of triples (c1, c2, var), c1 != c2
-    where var occurs in c1 and (not var) occurs in c2
-    """
-
     def find_path_to_falsum(self, clauses: List[List[Term]]) -> Optional[List[Tuple[int, int, Metavariable]]]:
+        """
+        Given a list of clauses, find a path of resolutions that
+        will lead to falsum (using a naive BFS algorithm)
+
+        A path is a list of triples (c1, c2, var), c1 != c2
+        where var occurs in c1 and (not var) occurs in c2
+        """
         # [ ( clauses (conjunction of disjunctions of literals), path (negative var position, positive var position, variable) ) ]
         queue_type = List[Tuple[List[List[Term]], List[Tuple[int, int, Metavariable]]]]
         queue: queue_type = [(clauses, [])]
@@ -1117,13 +1012,6 @@ class TautologyTactic(Tactic):
 
         return None
 
-    """
-    Given a CNF term ph, try to apply the resolution rule
-    and return a proof of ph -> ph' where ph' is the result
-    of applying resolution on the literals indicated by
-    the quadruplet (pos_clause, pos_literal, neg_clause, neg_literal)
-    """
-
     def apply_resolution(
         self,
         state: ProofState,
@@ -1132,6 +1020,12 @@ class TautologyTactic(Tactic):
         neg_clause: int,
         var: Metavariable,
     ) -> Proof:
+        """
+        Given a CNF term ph, try to apply the resolution rule
+        and return a proof of ph -> ph' where ph' is the result
+        of applying resolution on the literals indicated by
+        the quadruplet (pos_clause, pos_literal, neg_clause, neg_literal)
+        """
         # result = self.find_next_pair_to_resolve(state, cnf)
         # if result is None: return None
         # pos_clause, pos_literal, neg_clause, neg_literal = result

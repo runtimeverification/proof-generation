@@ -14,24 +14,11 @@ from .encoder import KorePatternEncoder
 
 from .env import ProofGenerator, ProvableClaim
 from .substitution import SingleSubstitutionProofGenerator
-"""
-Generate proofs for equality related statements
-"""
 
 
 class EqualityProofGenerator(ProofGenerator):
     """
-    Prove that validity of a pattern of axiom is preserved
-    after substituting a subpattern using equality
-
-    Given the following data:
-    - a provable claim (a kore claim and a proof of its encoding)
-    - a path pointing to a subpattern psi of phi
-    - an unconditional equation in the form
-        forall sort R. equals { S, R } ( psi, psi' )
-
-    Returns phi with psi replaced by psi',
-    and a proof for it using (primarily) `kore-equality`
+    Generate proofs for equality related statements
     """
     def replace_equal_subpattern(
         self,
@@ -40,6 +27,19 @@ class EqualityProofGenerator(ProofGenerator):
         replacement: kore.Pattern,
         equation_proof: Proof,
     ) -> ProvableClaim:
+        """
+        Prove that validity of a pattern of axiom is preserved
+        after substituting a subpattern using equality
+
+        Given the following data:
+        - a provable claim (a kore claim and a proof of its encoding)
+        - a path pointing to a subpattern psi of phi
+        - an unconditional equation in the form
+            forall sort R. equals { S, R } ( psi, psi' )
+
+        Returns phi with psi replaced by psi',
+        and a proof for it using (primarily) `kore-equality`
+        """
         final_claim = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, replacement)
 
         # check for proof cache
@@ -119,20 +119,32 @@ class EqualityProofGenerator(ProofGenerator):
 
         return ProvableClaim(final_claim, final_proof)
 
-    """
-    Same as above but using a provable claim,
-    so that we can extract the replacement automatically
-    """
-
     def replace_equal_subpattern_with_equation(
         self,
         provable: ProvableClaim,
         path: PatternPath,
         equation: ProvableClaim,
     ) -> ProvableClaim:
+        """
+        Same as above but using a provable claim,
+        so that we can extract the replacement automatically
+        """
         assert (
             isinstance(equation.claim.pattern, kore.MLPattern)
             and equation.claim.pattern.construct == kore.MLPattern.EQUALS
         )
         rhs = equation.claim.pattern.arguments[1]
         return self.replace_equal_subpattern(provable, path, rhs, equation.proof)
+
+    def apply_symmetry(self, equation: ProvableClaim) -> ProvableClaim:
+        """
+        Apply symmetry to a given equation
+        """
+        proof = self.env.get_theorem("kore-equal-symmetry-v1").apply(equation.proof)
+
+        copied_claim = KoreUtils.copy_ast(self.env.module, equation.claim)
+        assert isinstance(copied_claim.pattern, kore.MLPattern)
+        copied_claim.pattern.arguments[0], copied_claim.pattern.arguments[1] = \
+            copied_claim.pattern.arguments[1], copied_claim.pattern.arguments[0]
+
+        return ProvableClaim(copied_claim, proof)

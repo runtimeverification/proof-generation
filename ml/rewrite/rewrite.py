@@ -23,7 +23,7 @@ from .tasks import RewritingStep, RewritingTask
 
 class RewriteProofGenerator(ProofGenerator):
     """
-    Generate proofs for one or multiple rewrite steps
+    Generate proofs for rewriting related claims
     """
     def __init__(self, env: ProofEnvironment):
         super().__init__(env)
@@ -34,6 +34,7 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'UndsPlus'Int'Unds'": IntegerAdditionEvaluator(env),
             "Lbl'Unds'-Int'Unds'": IntegerSubtractionEvaluator(env),
             "Lbl'UndsStar'Int'Unds'": IntegerMultiplicationEvaluator(env),
+            "Lbl'UndsSlsh'Int'Unds'": IntegerDivisionEvaluator(env),
             "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(env),
             "Lbl'Unds-LT-Eqls'Int'Unds'": IntegerLessThanOrEqualToEvaluator(env),
             "Lbl'UndsEqlsEqls'Int'Unds'": IntegerEqualityEvaluator(env),
@@ -130,9 +131,11 @@ class RewriteProofGenerator(ProofGenerator):
 
             assert requires is not None
 
-            assert (
-                isinstance(ensures, kore.MLPattern) and ensures.construct == kore.MLPattern.TOP
-            ), f"non-top ensures clause is not supported: {ensures}"
+            # assert (
+            #     isinstance(ensures, kore.MLPattern) and ensures.construct == kore.MLPattern.TOP
+            # ), f"non-top ensures clause is not supported: {ensures}"
+            if not (isinstance(ensures, kore.MLPattern) and ensures.construct == kore.MLPattern.TOP):
+                print(f"> warning: non-top ensures clause ignored: {ensures}")
 
             # trying to prove the requires clause
             # if failed, continue searching for an axiom
@@ -193,6 +196,38 @@ class RewriteProofGenerator(ProofGenerator):
 
         return self.rewrite_from_pattern(rewriting_step.initial, rewriting_step.rule_id, rewriting_step.substitution)
 
+    def check_equal_or_unify(self, given: kore.Pattern, expected: kore.Pattern) -> Optional[ProvableClaim]:
+        """
+        Check if <given> === <expected> syntactically
+        if not try to unify and return a proof that
+        given =>* expected
+        if they don't unify, raise an exception
+
+        NOTE: no rewriting is involved here, it's stated as a rewriting
+        claim so that we can apply transitivity more easily
+        """
+
+        if given == expected:
+            return None
+
+        unification_result = UnificationProofGenerator(self.env).unify_patterns(expected, given)
+        assert unification_result is not None, \
+               f"expecting the following patterns to be equal or unifiable: {given} and {expected}"
+
+        assert len(unification_result.substitution) == 0, \
+               "patterns should be concrete"
+
+        simplification_claim = self.apply_reflexivity(expected)
+
+        for equation, path in unification_result.applied_equations:
+            print("> applying unification equation", equation)
+            simplification_claim = equation.replace_equal_subpattern(simplification_claim, [0, 0] + path)
+
+        _, rhs = self.decompose_concrete_rewrite_claim(simplification_claim)
+        assert rhs == expected, "unexpected unification"
+
+        return simplification_claim
+
     def prove_rewriting_task(
         self,
         task: RewritingTask,
@@ -222,15 +257,21 @@ class RewriteProofGenerator(ProofGenerator):
 
             # check that the current pattern
             # is the same as expected
+            # otherwise try to unify
             assert step.initial is not None, "insufficient hints"
-            assert current_pattern == step.initial, \
-                   f"unexpected pattern at step {i}: {current_pattern}, expecting {step.initial}"
+
+            unification_claim = self.check_equal_or_unify(current_pattern, step.initial)
+            if unification_claim is not None:
+                step_claims.append(unification_claim)
+                _, current_pattern = self.decompose_concrete_rewrite_claim(unification_claim)
 
             step_claim = self.prove_rewriting_step(step)
+            lhs, rhs = self.decompose_concrete_rewrite_claim(step_claim)
 
-            _, rhs = self.decompose_concrete_rewrite_claim(step_claim)
+            assert step.initial == lhs, \
+                   f"unexpected rewriting claim, expected to rewrite from {step.initial}, but got {lhs}"
 
-            self.env.load_comment(f"\nrewriting step:\n{current_pattern}\n=>\n{rhs}\n")
+            self.env.load_comment(f"\nrewriting step:\n{lhs}\n=>\n{rhs}\n")
             step_claim = self.env.load_provable_claim_as_theorem(
                 f"rewrite-step-{self.rewrite_claim_counter}", step_claim
             )
@@ -239,8 +280,10 @@ class RewriteProofGenerator(ProofGenerator):
             step_claims.append(step_claim)
             current_pattern = rhs
 
-        assert current_pattern == task.final, \
-               f"unexpected pattern at final step: {current_pattern}, expecting {task.final}"
+        # unify with the final expected pattern
+        unification_claim = self.check_equal_or_unify(current_pattern, task.final)
+        if unification_claim is not None:
+            step_claims.append(unification_claim)
 
         final_claim = step_claims[0]
 
@@ -674,8 +717,9 @@ class InnermostFunctionPathVisitor(KoreVisitor):
     be constructors
     """
     EXCEPTIONS = {
-        r"Lbl'UndsPipe'-'-GT-Unds'",
-        r"Lbl'Unds'Map'Unds'",
+        "Lbl'UndsPipe'-'-GT-Unds'",
+        "Lbl'Unds'Map'Unds'",
+        "Lbl'Stop'Map",
     }
 
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
@@ -731,31 +775,19 @@ class BuiltinFunctionEvaluator(ProofGenerator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         raise NotImplementedError()
 
-    def build_arithmetic_equation(self, application: kore.Application, result: Union[int, bool]) -> ProvableClaim:
-        """
-        Build an axiom that says the given pattern
-        is equal to the result, which is either an integer
-        or a boolean
-
-        Then we will potentially discharge a proof obligation to some domain value reasoning tool
-        """
-        assert isinstance(application.symbol.definition, kore.SymbolDefinition)
-        output_sort = application.symbol.definition.output_sort
+    def build_equation(self, application: kore.Application, result: kore.Pattern) -> ProvableClaim:
         sort_var = kore.SortVariable("R")
+        output_sort = KoreUtils.infer_sort(application)
 
-        if type(result) is bool:
-            result_literal = "true" if result else "false"
-        else:
-            result_literal = str(result)
-
-        domain_value = kore.MLPattern(kore.MLPattern.DV, [output_sort], [kore.StringLiteral(result_literal)])
+        assert output_sort == KoreUtils.infer_sort(result), \
+               f"result {result} has a different sort than {application}"
 
         claim = kore.Claim(
             [sort_var],
             kore.MLPattern(
                 kore.MLPattern.EQUALS,
                 [output_sort, sort_var],
-                [application, domain_value],
+                [application, result],
             ),
             [],
         )
@@ -768,9 +800,9 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         self.env.load_comment("NOTE: domain value reasoning checked by external tool")
         thm = self.env.load_axiom(
             claim,
-            f"{self.env.sanitize_label_name(application.symbol.definition.symbol)}-domain-fact-{self.axiom_counter}",
+            f"{self.env.sanitize_label_name(application.symbol.get_symbol_name())}-domain-fact-{self.axiom_counter}",
             comment=False,
-            provable=True,
+            provable=self.env.dv_as_provable,
         )
         self.env.composer.end_segment()
 
@@ -779,6 +811,26 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         self.axiom_counter += 1
 
         return ProvableClaim(claim, thm.as_proof())
+
+    def build_arithmetic_equation(self, application: kore.Application, result: Union[int, bool]) -> ProvableClaim:
+        """
+        Build an axiom that says the given pattern
+        is equal to the result, which is either an integer
+        or a boolean
+
+        Then we will potentially discharge a proof obligation to some domain value reasoning tool
+        """
+        output_sort = KoreUtils.infer_sort(application)
+
+        if type(result) is bool:
+            result_literal = "true" if result else "false"
+        else:
+            result_literal = str(result)
+
+        domain_value = kore.MLPattern(kore.MLPattern.DV, [output_sort], [kore.StringLiteral(result_literal)])
+        domain_value.resolve(self.env.module)
+
+        return self.build_equation(application, domain_value)
 
 
 class IntegerAdditionEvaluator(BuiltinFunctionEvaluator):
@@ -797,6 +849,12 @@ class IntegerMultiplicationEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) * self.parse_int(b))
+
+
+class IntegerDivisionEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, self.parse_int(a) // self.parse_int(b))
 
 
 class IntegerGreaterThanOrEqualToEvaluator(BuiltinFunctionEvaluator):

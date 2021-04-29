@@ -1,0 +1,1 @@
+select(merge(.Map, .Map) merge(1 |-> 2, merge(merge(2 |-> 3, merge(merge(7 |-> 8, merge(3 |-> 4, merge(9 |-> 10, 11 |-> 12))), 4 |-> 5)), 5 |-> 6)) merge(.Map, .Map), 3)
