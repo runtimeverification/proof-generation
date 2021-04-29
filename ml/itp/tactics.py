@@ -4,8 +4,8 @@ from ml.metamath.parser import (
     parse_term_with_metavariables,
     parse_terms_with_metavariables,
 )
-from ml.metamath.ast import Term, StructuredStatement, Statement, Application
-from ml.metamath.composer import Theorem, Proof
+from ml.metamath.ast import Term, StructuredStatement, Statement, Application, Metavariable
+from ml.metamath.composer import Theorem, Proof, TypecodeProver
 from ml.metamath.visitors import CopyVisitor
 from ml.metamath.auto.notation import NotationProver
 
@@ -90,6 +90,12 @@ class ApplyTactic(Tactic):
 
         return None
 
+    def typcode_extension(self, state: ProofState, typecode: str, term: Term) -> bool:
+        if isinstance(term, SchematicVariable):
+            var, *_ = state.composer.find_metavariables_of_typecode(term.typecode)
+            return TypecodeProver.check_typecode(state.composer, typecode, Metavariable(var))
+        return False
+
     def apply(self, state: ProofState, theorem_name: str, **options):
         substitution = self.parse_substitution(state, options)
         self.metavars_substitution = dict(substitution)
@@ -110,26 +116,31 @@ class ApplyTactic(Tactic):
         if self.theorem is not None:
             copied_statement = Goal.sanitize_goal_statement(self.theorem.statement)
 
-            metavars = copied_statement.get_metavariables()
-            for essential in self.theorem.essentials:
-                metavars.update(essential.get_metavariables())
+            if self.theorem.statement.statement_type != Statement.FLOATING:
+                metavars = copied_statement.get_metavariables()
+                for essential in self.theorem.essentials:
+                    metavars.update(essential.get_metavariables())
 
-            metavars_sorted = list(metavars)
-            metavars_sorted.sort()  # making things a bit more deterministic
+                metavars_sorted = list(metavars)
+                metavars_sorted.sort()  # making things a bit more deterministic
 
-            for metavar in metavars_sorted:
-                if metavar not in self.metavars_substitution:
-                    typecode = state.composer.find_metavariable(metavar)
-                    assert typecode is not None, f"metavariable {metavar} not found"
-                    self.metavars_substitution[metavar] = state.get_next_schematic_variable(typecode)
+                for metavar in metavars_sorted:
+                    if metavar not in self.metavars_substitution:
+                        typecode = state.composer.find_metavariable(metavar)
+                        assert typecode is not None, f"metavariable {metavar} not found"
+                        self.metavars_substitution[metavar] = state.get_next_schematic_variable(typecode)
 
-            # replace all metavariables in the applied theorem
-            # with distinct schematic variables
-            metavars_subst_visitor = SubstitutionVisitor(self.metavars_substitution)
-            copied_statement = metavars_subst_visitor.visit(copied_statement)
+                # replace all metavariables in the applied theorem
+                # with distinct schematic variables
+                metavars_subst_visitor = SubstitutionVisitor(self.metavars_substitution)
+                copied_statement = metavars_subst_visitor.visit(copied_statement)
 
-            essentials = [Goal.sanitize_goal_statement(essential) for essential in self.theorem.essentials]
-            essentials = [metavars_subst_visitor.visit(essential) for essential in essentials]
+                essentials = [Goal.sanitize_goal_statement(essential) for essential in self.theorem.essentials]
+                essentials = [metavars_subst_visitor.visit(essential) for essential in essentials]
+            else:
+                # if it's a floating statement,
+                # we cannot generalize the metavariables
+                essentials = []
 
         else:
             # try to find a hypotheses
@@ -156,6 +167,15 @@ class ApplyTactic(Tactic):
         for var, term in schematic_substitution.items():
             svar = state.get_schematic_variable_from_name(var)
             assert svar is not None, f"missing schematic variable {svar}"
+
+            assert TypecodeProver.check_typecode(
+                        state.composer,
+                        svar.typecode,
+                        term,
+                        extension=lambda typecode, term: self.typcode_extension(state, typecode, term),
+                    ), \
+                   f"unable to assign {term} to a metavariable of typecode {svar.typecode}"
+
             state.assign_schematic_variable(svar, term)
 
         schematic_subst_visitor = SubstitutionVisitor(schematic_substitution)

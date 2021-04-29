@@ -622,13 +622,58 @@ class Composer:
 
 
 class TypecodeProver:
-    """
-    Try to prove a statement of the form
-    <typecode> <term>
-    by recursively unify the target with a theorem of this form
-    """
+    @staticmethod
+    def check_typecode(
+        composer: Composer,
+        typecode: str,
+        term: Term,
+        # allow extra typecode check
+        extension: Optional[Callable[[str, Term], bool]] = None,
+    ) -> bool:
+        """
+        Check if the term can be proven to have the given typecode,
+        without producing any proof
+        """
+        # try to find a matching floating statement first if the term is a metavariable
+        if isinstance(term, Metavariable):
+            for theorem in composer.get_theorems_of_typecode(typecode):
+                if theorem.statement.statement_type == Statement.FLOATING:
+                    _, metavar = theorem.statement.terms
+                    assert isinstance(metavar, Metavariable)
+
+                    if metavar.name == term.name:
+                        return True
+            # otherwise treat the metavariable as a term
+
+        # try to find a non-floating statement without hypotheses and unify
+        for theorem in composer.get_theorems_of_typecode(typecode):
+            if (len(theorem.essentials) <= 1 and theorem.statement.statement_type != Statement.FLOATING
+                    and len(theorem.statement.terms) == 2):
+                # check that expected_statement is an instance of theorem.statement
+                solution = Unification.match_terms_as_instance(theorem.statement.terms[1], term)
+                if solution is None:
+                    continue
+
+                for expected_typecode, var, _ in theorem.floatings:
+                    if not TypecodeProver.check_typecode(composer, expected_typecode, solution[var],
+                                                         extension=extension):
+                        break
+                else:
+                    return True
+
+        if extension is not None:
+            return extension(typecode, term)
+
+        return False
+
     @staticmethod
     def prove_typecode(composer: Composer, typecode: str, term: Term) -> Optional[Proof]:
+        """
+        Try to prove a statement of the form
+        <typecode> <term>
+        by recursively unify the target with a theorem of this form
+        """
+
         # TODO: these checks are a bit too specialized
         if (typecode == "#Variable" or typecode == "#ElementVariable"
                 or typecode == "#SetVariable") and not isinstance(term, Metavariable):
