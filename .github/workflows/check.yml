@@ -22,16 +22,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-    - name: Style check with yapf
-      run: |
-        yapf --recursive --diff ml scripts tests
-    - name: Type check
-      run: |
-        mypy --strict ml/aml
-        mypy ml scripts tests
     - name: Test
       run: |
-        pytest
-    # - name: Lint with flake8
-    #   run: |
-    #     flake8 ml scripts tests
+        scripts/test
+

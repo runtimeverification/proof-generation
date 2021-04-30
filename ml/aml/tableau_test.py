@@ -1,48 +1,57 @@
 from aml import *
 from tableau import *
+from typing import Optional
 
-
-def test_closure() -> None:
-    assert closure(And(SVar("X"), EVar("Y"))) \
-        == [ [SVar("X"), EVar("Y")] ]
-    assert closure(And(SVar("X"), Or(EVar("Y"), SVar("Z")))) \
-        == [ [SVar("X"), EVar("Y")]
-           , [SVar("X"), SVar("Z")]
-           ]
-    assert closure(Or(SVar("X"), Or(EVar("Y"), SVar("Z")))) \
-        == [ [SVar("X")]
-           , [EVar("Y")]
-           , [SVar("Z")]
-           ]
-    assert closurePs([Or(SVar("X"), Or(EVar("Y"), SVar("Z"))), Symbol("Q")]) \
-        == [ [SVar("X"), Symbol("Q")]
-           , [EVar("Y"), Symbol("Q")]
-           , [SVar("Z"), Symbol("Q")]
-           ]
-    assert closure(Mu(SVar("X"), Or(Symbol("z"), App(Symbol("s"), SVar("X"))))) \
-        == [ [ Symbol("z") ]
-           , [ App(Symbol("s"), Mu(SVar("X"), Or(Symbol("z"), App(Symbol("s"), SVar("X"))))) ]
+def test_definition_list() -> None:
+    assert definition_list(SVar("X"), []) == []
+    assert definition_list(Mu(SVar("X"), App(Symbol("S"), SVar("X"))), []) == [Mu(SVar("X"), App(Symbol("S"), SVar("X")))]
+    assert definition_list(Mu(SVar("X"), Nu(SVar("Y"), App(Symbol("S"), SVar("X")))), []) \
+        == [ Mu(SVar("X"), Nu(SVar("Y"), App(Symbol("S"), SVar("X"))))
+           , Nu(SVar("Y"), App(Symbol("S"), SVar(0)))
            ]
 
+def test_is_satisfiable() -> None:
+    assert     is_sat(Symbol("S"))
+    assert     is_sat(Not(Symbol("S")))
 
-def test_is_consitant() -> None:
-    assert SimpleNode([SVar("X")]).is_consitant()
-    assert SimpleNode([SVar("X"), Not(SVar("Y"))]).is_consitant()
-    assert SimpleNode([SVar("X"), Not(EVar("X"))]).is_consitant()
-    assert not SimpleNode([SVar("X"), Not(SVar("X"))]).is_consitant()
+    assert     is_sat(App(Symbol("S"), Symbol("Y")))
+    assert     is_sat(DApp(Not(Symbol("S")), Not(Symbol("Y"))))
 
+    assert     is_sat(And(Symbol("S"), Not(Symbol("Y"))))
+    assert not is_sat(And(Symbol("S"), Not(Symbol("S"))))
+    assert not is_sat(And(  App(Symbol("S"), Symbol("Y"))
+                         , DApp(Not(Symbol("S")), Not(Symbol("Y")))
+                         )
+                      )
 
-def test_children() -> None:
-    assert SimpleNode([SVar("X"), Not(SVar("X"))]).children() == OrNode([])
-    assert SimpleNode([SVar("X"), SVar("X")]).children() == AndNode([])
+    assert     is_sat(And(Symbol("S"), Not(Symbol("Y"))))
+    assert not is_sat(And(Symbol("S"), Not(Symbol("S"))))
+    assert not is_sat(And(  App(Symbol("S"), Symbol("Y"))
+                         , DApp(Not(Symbol("S")), Not(Symbol("Y")))
+                         )
+                      )
 
-    assert SimpleNode([App(SVar("X"), SVar("Y")), DApp(SVar("P"), SVar("Q"))]).children() \
-        == AndNode([ OrNode([ AndNode([ SimpleNode([SVar("X")])
-                                      , SimpleNode([SVar("Y"), SVar("Q")])
-                                      ])
-                            , AndNode([ SimpleNode([SVar("X"), SVar("P")])
-                                      , SimpleNode([SVar("Y")])
-                                      ])
-                            ])
+    assert     is_sat(Or(Symbol("S"), Not(Symbol("S"))))
+    assert     is_sat(Or(  App(Symbol("S"), Symbol("Y"))
+                        , DApp(Not(Symbol("S")), Not(Symbol("Y")))
+                        )
+                      )
+    assert not is_sat(Or( And(Symbol("S"), Not(Symbol("S")))
+                        , And(Symbol("S"), Not(Symbol("S")))
+                        )
+                     )
 
-                   ])
+    assert     is_sat( Nu(SVar("X"), App(Symbol("S"), SVar("X"))))
+    assert not is_sat( And( Nu(SVar("X"), And(Symbol("Y"), App(Symbol("S"), SVar("X"))))
+                          , DApp(Not(Symbol("S")), Not(Symbol("Y")))
+                          )
+                     )
+
+    assert not is_sat(Mu(SVar("X"), App(Symbol("S"), SVar("X"))))
+
+    assert     is_sat(Nu(SVar("X"), And( Mu(SVar("Y"), Or(Symbol("p"), App(Symbol("next") , SVar("Y"))) )
+                                       , App(Symbol("next") , SVar("X"))
+                                       )))
+    assert not is_sat(Mu(SVar("X"), And( Nu(SVar("Y"), Or(Symbol("p"), App(Symbol("next") , SVar("Y"))) )
+                                       , App(Symbol("next") , SVar("X"))
+                                       )))
