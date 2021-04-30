@@ -54,11 +54,7 @@ all_inputs = []
 if args.input:
     all_inputs += args.input
 if args.inputdir:
-    all_inputs += [
-        f.path
-        for f in os.scandir(args.inputdir)
-        if f.is_file() and f.name.endswith(".mm")
-    ]
+    all_inputs += [f.path for f in os.scandir(args.inputdir) if f.is_file() and f.name.endswith(".mm")]
 for file_name in all_inputs:
     new_contents = None
     print("Rewriting " + file_name)
@@ -74,9 +70,7 @@ for file_name in all_inputs:
         def transform(matchgroup: re.Match[str]) -> str:
             label, statement, proof = matchgroup.groups()
             theorem = composer.get_theorem(label)
-            mandatory = [x[2] for x in theorem.floatings] + [
-                x.label for x in theorem.essentials if x.label is not None
-            ]
+            mandatory = [x[2] for x in theorem.floatings] + [x.label for x in theorem.essentials if x.label is not None]
             new_proof = compress(mandatory, proof.split())
             return label + " $p " + statement + " $= " + new_proof + " $."
 

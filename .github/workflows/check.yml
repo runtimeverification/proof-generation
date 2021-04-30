@@ -25,4 +25,6 @@ jobs:
     - name: Test
       run: |
         scripts/test
-
+    - name: Formatting
+      run: |
+        yapf --recursive --diff ml scripts tests --exclude ml/aml
