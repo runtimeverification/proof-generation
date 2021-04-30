@@ -1,5 +1,7 @@
 $( Desugaring lemmas $)
 
+$[ theory/matching-logic-prelude-lemmas.mm $]
+
 ${
     desugar-not-to-imp.0 $e |- ( \not ph0 ) $.
     desugar-not-to-imp $p |- ( \imp ph0 \bot ) $=
