@@ -10,7 +10,7 @@ ${
             apply "desugar-not-to-imp.0"
             notation
         $)
-        ph0-is-pattern not-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern desugar-not-to-imp.0 ph0-is-pattern not-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern not-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern not-is-sugar ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-symmetry notation-proof $.
+        ( bot-is-pattern imp-is-pattern not-is-pattern notation-symmetry not-is-sugar notation-reflexivity notation-transitivity notation-proof ) AEACDBAEACDAEACDACDAGACDACDACDHFIFJ $.
 $}
 
 ${
@@ -20,5 +20,5 @@ ${
             desugar "\not"
             apply "sugar-imp-to-not.0"
         $)
-        ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern not-is-pattern sugar-imp-to-not.0 ph0-is-pattern not-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern not-is-sugar ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern ph0-is-pattern bot-is-pattern imp-is-pattern notation-reflexivity notation-symmetry notation-transitivity notation-proof $.
+        ( bot-is-pattern imp-is-pattern not-is-pattern not-is-sugar notation-reflexivity notation-symmetry notation-transitivity notation-proof ) ACDAEBAEACDACDAFACDACDACDGHIJ $.
 $}
