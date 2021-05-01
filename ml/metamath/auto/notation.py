@@ -1,7 +1,7 @@
 from typing import Optional, List, Tuple, Mapping
 
 from ..ast import Metavariable, Term, Statement, Application, StructuredStatement
-from ..composer import Composer, Theorem, Proof
+from ..composer import Composer, Theorem, Proof, MethodAutoProof
 from ..visitors import SubstitutionVisitor
 
 from .unification import Unification
@@ -35,6 +35,21 @@ class NotationProver:
                 right,
             ],
         )
+
+    @staticmethod
+    def apply_sugar_axiom(axiom: Theorem, term: Term) -> Term:
+        """
+        Rewrite a term using a sugar axiom, from left to right
+        """
+
+        assert len(axiom.statement.terms) == 3, \
+               f"invalid sugar axiom {axiom}"
+
+        substitution = Unification.match_terms_as_instance(axiom.statement.terms[1], term)
+        assert substitution is not None, \
+               f"invalid sugar axiom {axiom}"
+
+        return SubstitutionVisitor(substitution).visit(axiom.statement.terms[2])
 
     @staticmethod
     def find_sugar_axiom(composer: Composer, symbol: str) -> Optional[Theorem]:
@@ -309,3 +324,52 @@ class NotationProver:
         else:
             # otherwise resort to the dumb way
             return final_term, NotationProver.prove_notation(composer, term, final_term)
+
+    @staticmethod
+    def prove_notation_statement(composer: Composer, target: StructuredStatement, source: Proof) -> Proof:
+        """
+        Given a statement <target> and a proof of another statement <source>
+        attempt to show <target> by arguing that they are the same modulo notation
+        """
+        if target.terms == source.statement.terms:
+            return source
+
+        assert len(target.terms) == len(source.statement.terms) != 0
+        assert target.terms[0] == source.statement.terms[0]
+        assert isinstance(target.terms[0], Application)
+
+        meta_relation = target.terms[0].symbol
+        assert meta_relation in NotationProver.METALEVEL_CONGRUENCE_AXIOMS, \
+               f"metalevel relation not supported: {target}"
+
+        theorem_label, positions = NotationProver.METALEVEL_CONGRUENCE_AXIOMS[meta_relation]
+        notation_proofs = []
+
+        # prove notation at each subpattern
+        for position in positions:
+            assert position < len(target.terms), f"ill-formed goal: {target}"
+
+            original_term = target.terms[position]
+            expanded_term = source.statement.terms[position]
+
+            notation_proof = NotationProver.prove_notation(composer, original_term, expanded_term)
+            notation_proofs.append(notation_proof)
+
+        # apply suitable congruence axiom
+        proof = composer.get_theorem(theorem_label).apply(
+            source,
+            *notation_proofs,
+        )
+
+        assert proof.statement.terms == target.terms, \
+               f"unable to show {target} from {proof.statement.terms} using only notations"
+
+        return proof
+
+    """
+    Usage: auto(<proof>) is an AutoProof that
+    will attempt to resolve any proof obligation
+    by applying notations on <proof>
+    """
+    auto = lambda proof: \
+        MethodAutoProof(lambda composer, stmt: NotationProver.prove_notation_statement(composer, stmt, proof))

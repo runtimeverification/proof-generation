@@ -40,7 +40,7 @@ class SearchTactic(Tactic):
     @staticmethod
     def get_size_of_term(term: Term) -> int:
         if isinstance(term, Metavariable):
-            return 0
+            return 1
         assert isinstance(term, Application)
 
         size = 1
@@ -55,6 +55,53 @@ class SearchTactic(Tactic):
             return var.typecode
         return state.composer.find_metavariable(var.name)
 
+    @staticmethod
+    def find_closest_matches_for_top_goal(state: ProofState) -> List[Tuple[int, Theorem]]:
+        """
+        Find the closest matches for the top goal
+        """
+        statement = state.get_top_goal().statement
+        found = []
+
+        theorems = list(state.composer.theorems.values()) + \
+                   state.get_all_essentials_for_top_goal() + \
+                   [ claim.theorem for claim in state.get_all_global_claims() ] + \
+                   [ claim.theorem for claim in state.get_all_local_claims() ]
+
+        for theorem in theorems:
+            if theorem.statement.label is None:
+                continue
+
+            # TODO: this is a bit hacky
+            old_schematic_vars = state.schematic_vars
+
+            conclusion, _, _ = ApplyTactic.preprocess_theorem(state, theorem, {})
+            result = Tactic.unify_statements(state, statement, conclusion)
+
+            state.schematic_vars = old_schematic_vars
+
+            if result is None:
+                continue
+
+            substitution, _ = result
+
+            distance = 0
+            for var, term in substitution.items():
+                if isinstance(term, Metavariable):
+                    # if the typecode are the same then distance is 0, otherwise 1
+                    t1 = SearchTactic.get_typecode_of_metavariable(state, Metavariable(var))
+                    t2 = SearchTactic.get_typecode_of_metavariable(state, term)
+                    if t1 != t2:
+                        distance += 1
+                else:
+                    distance += SearchTactic.get_size_of_term(term)
+
+            found.append((distance, theorem))
+
+        found.sort(key=lambda t: t[0])
+
+        return found
+
     def apply(self, state: ProofState, limit: Optional[Union[str, int]] = 7):
         if isinstance(limit, str):
             if limit == "all":
@@ -62,44 +109,11 @@ class SearchTactic(Tactic):
             else:
                 limit = int(limit)
 
-        goal = state.get_current_top_goal()
-        statement = goal.statement
-        found = []
-
-        for name, theorem in state.composer.theorems.items():
-            equations = Unification.match_statements(statement, theorem.statement)
-            if equations is None:
-                continue
-
-            failed = False
-            for left, right in equations:
-                # we don't allow substituting for a preexistent metavariable
-                if (isinstance(left, Metavariable) and not isinstance(left, SchematicVariable)
-                        and not isinstance(right, Metavariable)):
-                    failed = True
-                    break
-            if failed:
-                continue
-
-            distance = 0
-
-            for left, right in equations:
-                if isinstance(left, Metavariable) and isinstance(right, Metavariable):
-                    # if the typecode are the same then distance is 0, otherwise 1
-                    t1 = SearchTactic.get_typecode_of_metavariable(state, left)
-                    t2 = SearchTactic.get_typecode_of_metavariable(state, right)
-                    if t1 != t2:
-                        distance += 1
-                else:
-                    distance += SearchTactic.get_size_of_term(left) + SearchTactic.get_size_of_term(right)
-
-            found.append((distance, name, theorem))
-
-        found.sort(key=lambda t: t[0])
+        matches = SearchTactic.find_closest_matches_for_top_goal(state)
 
         print("theorem(s) found (from the least relevant to the most relevant):")
-        for distance, name, theorem in found[:limit][::-1]:
-            print(f"{name} ({distance}): {Goal.sanitize_goal_statement(theorem.statement)}")
+        for distance, theorem in matches[:limit][::-1]:
+            print(f"{theorem.statement.label} ({distance}): {Goal.sanitize_goal_statement(theorem.statement)}")
 
         raise NoStateChangeException()
 
@@ -114,7 +128,7 @@ class NotationTactic(Tactic):
     modulo the definition relation #Notation
     """
     def apply(self, state: ProofState):
-        goal = state.resolve_current_goal(self)
+        goal = state.resolve_top_goal(self)
         statement = goal.statement
         assert len(statement.terms) == 3 and statement.terms[0] == Application(
             NotationProver.SYMBOL
@@ -178,7 +192,7 @@ class DesugarTactic(Tactic):
             )
 
     def apply(self, state: ProofState, target_symbol: Optional[str] = None):
-        goal = state.resolve_current_goal(self)
+        goal = state.resolve_top_goal(self)
         statement = goal.statement
         assert len(statement.terms) >= 1, f"ill-formed goal {statement}"
 
@@ -226,7 +240,7 @@ class SubstitutionTactic(Tactic):
     Prove a statement about substitution
     """
     def apply(self, state: ProofState):
-        goal = state.resolve_current_goal(self)
+        goal = state.resolve_top_goal(self)
         self.proof = SubstitutionProver.prove_substitution_statement(
             state.composer,
             goal.statement,
@@ -240,7 +254,7 @@ class SubstitutionTactic(Tactic):
 @ProofState.register_tactic("sorting")
 class SortingTactic(Tactic):
     def apply(self, state: ProofState):
-        goal = state.resolve_current_goal(self)
+        goal = state.resolve_top_goal(self)
         statement = goal.statement
         assert len(statement.terms
                    ) == 2 and statement.terms[0] == Application("|-"), f"not a provability goal {statement}"
@@ -253,7 +267,7 @@ class SortingTactic(Tactic):
 @ProofState.register_tactic("context")
 class ApplicationContextTactic(Tactic):
     def apply(self, state: ProofState):
-        goal = state.resolve_current_goal(self)
+        goal = state.resolve_top_goal(self)
         statement = goal.statement
         self.proof = ApplicationContextProver.prove_application_context_statement(state.composer, statement)
 
@@ -1240,7 +1254,7 @@ class TautologyTactic(Tactic):
         return resolution_proof
 
     def apply(self, state: ProofState):
-        goal = state.resolve_current_goal(self)
+        goal = state.resolve_top_goal(self)
         statement = goal.statement
         assert len(statement.terms
                    ) == 2 and statement.terms[0] == Application("|-"), f"{statement} is not a provability claim"

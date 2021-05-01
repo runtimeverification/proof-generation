@@ -89,7 +89,12 @@ class InteractiveState:
 
     def command_completer(self, text: str, state: int) -> Optional[str]:
         command_names = (sorted(ProofState.all_tactics.keys()) + BuiltinCommand.get_all_command_names())
-        theorem_names = sorted(self.proof_state.composer.theorems.keys())
+
+        theorem_names = list(self.proof_state.composer.theorems.keys()) + \
+            [ theorem.statement.label for theorem in self.proof_state.get_all_essentials_for_top_goal() if theorem.statement.label is not None ] + \
+            [ claim.theorem.statement.label for claim in self.proof_state.get_all_global_claims() ] + \
+            [ claim.theorem.statement.label for claim in self.proof_state.get_all_local_claims() ]
+        theorem_names.sort()
 
         current_buffer = readline.get_line_buffer().lstrip()
         split = current_buffer.split("&")[-1].split("|")[-1].lstrip().split(" ")
@@ -159,24 +164,41 @@ class InteractiveState:
         segments = []
 
         # print all current inline claims
-        claims = self.proof_state.get_all_claims()
-        if len(claims):
-            segments.append("\n".join([
-                "inline claim(s):",
-                *[TAB + str(claim.statement) for claim in claims],
-            ]))
+        global_claims = self.proof_state.get_all_global_claims()
+        if len(global_claims):
+            lines = ["claim(s):"]
+
+            for claim in global_claims:
+                if len(claim.theorem.essentials) == 0:
+                    lines.append(TAB + str(claim.theorem.statement))
+                else:
+                    for i, essential in enumerate(claim.theorem.essentials):
+                        line = TAB
+                        if i == 0: line += "${ "
+                        else: line += "   "
+                        line += str(essential)
+                        lines.append(line)
+
+                    lines.append(TAB + "   " + str(claim.theorem.statement) + " $}")
+
+            segments.append("\n".join(lines))
 
         # print all current goals
         current_goals = self.proof_state.get_current_goal_statements()
         if len(current_goals):
             # print all essential hypotheses usable for the current goal
-            essentials = self.proof_state.get_all_essentials_for_current_top_goal()
-            if len(essentials):
+            essentials = self.proof_state.get_all_essentials_for_top_goal()
+            local_claims = self.proof_state.get_all_local_claims()
+
+            if len(essentials) or len(local_claims):
                 segments.append(
-                    "\n".join([
-                        "essential(s):",
-                        *[TAB + str(essential.statement) for essential in essentials],
-                    ])
+                    "\n".join(
+                        [
+                            "hypotheses:",
+                            *[TAB + str(essential.statement) for essential in essentials],
+                            *[TAB + str(claim.theorem.statement) for claim in local_claims],
+                        ]
+                    )
                 )
 
             segments.append(

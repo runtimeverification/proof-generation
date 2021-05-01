@@ -59,6 +59,16 @@ class Theorem:
         self.floatings = floatings
         self.essentials = essentials
 
+    def get_metavariables(self) -> Set[str]:
+        """
+        Get all metavariables that are active
+        """
+        return {var for _, var, _ in self.floatings}
+        # metavars = self.statement.get_metavariables()
+        # for essential in self.essentials:
+        #     metavars.update(essential.get_metavariables())
+        # return metavars
+
     def is_meta_substitution_consistent(self, substituted: Union[Proof, Term], term: Term) -> bool:
         if isinstance(substituted, Proof):
             assert len(substituted.statement.terms) == 2

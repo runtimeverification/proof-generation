@@ -58,6 +58,29 @@ class Goal:
         return copied
 
 
+class Claim:
+    """
+    Claim is a theorem built during a proof
+    It can be of two types:
+     - a global claim acts like a new theorem that is put on the topmost level
+       and does not share any metavariable with the current goal.
+
+     - a local claim shares all mandatory hypotheses of the current goal
+       and cannot have hypotheses itself.
+    """
+    def __init__(self, goal_id: int, theorem: Theorem, is_local: bool = False, scope: Optional[str] = None):
+        self.goal_id = goal_id
+        self.theorem = theorem
+        self.is_local = is_local
+        self.scope = scope
+
+        if not self.is_local:
+            assert scope is None
+
+    def copy(self) -> Claim:
+        return Claim(self.goal_id, self.theorem, self.is_local, self.scope)
+
+
 class ProofState:
     all_tactics: Dict[str, Tuple[Any, Optional[str]]] = {}  # name -> ( tactic class name, [help message] )
 
@@ -80,7 +103,8 @@ class ProofState:
         self.schematic_vars: List[SchematicVariable] = []
         self.schematic_var_assignment: Dict[int, Term] = {}  # num -> term
 
-        self.claims: Dict[str, Tuple[Theorem, int]] = {}  # claim label -> (theorem, associated goal id)
+        # scope restricts what hypotheses to show
+        self.claims: Dict[str, Claim] = {}  # claim label -> claim object
 
         # the graph of dependencies of goals
         # it should ideally be a DAG
@@ -114,25 +138,26 @@ class ProofState:
         """
 
         if goal.claim_label is not None:
-            theorem, _ = self.get_claim(goal.claim_label)
-            for essential in theorem.essentials:
+            claim = self.claims[goal.claim_label]
+            for essential in claim.theorem.essentials:
                 if essential.label == name:
                     return Theorem(self.composer, essential, [], [])
             return None
         else:
             return self.composer.find_essential(name)
 
-    def get_all_essentials_for_current_top_goal(self) -> List[Theorem]:
-        top_goal = self.get_current_top_goal()
+    def get_all_essentials_for_top_goal(self) -> List[Theorem]:
+        top_goal = self.get_top_goal()
         if top_goal.claim_label is not None:
-            theorem, _ = self.get_claim(top_goal.claim_label)
-            return [Theorem(self.composer, essential, [], []) for essential in theorem.essentials]
+            claim = self.claims[top_goal.claim_label]
+            return [Theorem(self.composer, essential, [], []) for essential in claim.theorem.essentials]
         else:
             return self.composer.get_all_essentials()
 
     def add_goal_dependency(self, parent: Goal, child: Goal):
         if parent.goal_id not in self.goal_dependencies:
             self.goal_dependencies[parent.goal_id] = []
+
         self.goal_dependencies[parent.goal_id].append(child.goal_id)
         assert not self.has_dependency_cycle_from(parent), f"depdendency cycle detected from goal {parent.statement}"
 
@@ -165,7 +190,7 @@ class ProofState:
     def get_goal_by_id(self, goal_id: int) -> Goal:
         return self.all_goals[goal_id]
 
-    def get_current_top_goal(self) -> Goal:
+    def get_top_goal(self) -> Goal:
         assert len(self.current_goals), "no goals left"
         return self.get_goal_by_id(self.current_goals[-1])
 
@@ -175,31 +200,46 @@ class ProofState:
         """
         return [self.get_goal_by_id(goal_id).statement for goal_id in self.current_goals][::-1]
 
-    def resolve_current_goal(self, tactic) -> Goal:
+    def get_current_scope(self) -> Optional[str]:
+        """
+        If the top goal is a claim, return its label
+        otherwise return None
+        """
+        if len(self.current_goals) == 0: return None
+        return self.get_top_goal().claim_label
+
+    def resolve_top_goal(self, tactic) -> Goal:
         assert len(self.current_goals), "no goals left"
         resolved_goal_id = self.current_goals.pop()
         self.goal_resolver[resolved_goal_id] = tactic
         return self.get_goal_by_id(resolved_goal_id)
 
-    def add_claim(self, theorem: Theorem) -> Goal:
-        goal = self.push_isolated_goal(theorem.statement, theorem.statement.label)
+    def add_claim(self, theorem: Theorem, is_local: bool = False) -> Goal:
         assert theorem.statement.label is not None
-        self.claims[theorem.statement.label] = theorem, goal.goal_id
+        top_claim_label = self.get_current_scope()
+        goal = self.push_isolated_goal(theorem.statement, theorem.statement.label)
+        self.claims[theorem.statement.label] = Claim(goal.goal_id, theorem, is_local, top_claim_label)
         return goal
 
-    def find_claim(self, name: str) -> Optional[Tuple[Theorem, Goal]]:
-        if name not in self.claims:
-            return None
-        theorem, goal_id = self.claims[name]
-        return theorem, self.get_goal_by_id(goal_id)
+    def find_claim(self, name: str) -> Optional[Claim]:
+        """
+        Find a claim with the given name in the current scope
+        """
 
-    def get_claim(self, name: str) -> Tuple[Theorem, Goal]:
-        claim = self.find_claim(name)
-        assert claim is not None, f"cannot find claim {claim}"
+        claim = self.claims.get(name)
+
+        # if the claim is local, filter it out if we
+        # are not in the correct claim environment
+        if claim is not None and claim.is_local and claim.scope != self.get_current_scope():
+            return None
+
         return claim
 
-    def get_all_claims(self) -> List[Theorem]:
-        return [theorem for theorem, _ in self.claims.values()]
+    def get_all_global_claims(self) -> List[Claim]:
+        return [claim for claim in self.claims.values() if not claim.is_local]
+
+    def get_all_local_claims(self) -> List[Claim]:
+        return [claim for claim in self.claims.values() if claim.is_local and claim.scope == self.get_current_scope()]
 
     def push_isolated_goals(self,
                             statements: List[StructuredStatement],
@@ -227,14 +267,6 @@ class ProofState:
     def push_derived_goal(self, parent: Goal, statement: StructuredStatement):
         self.push_derived_goals(parent, [statement])
 
-    def transform_all_current_goals(self, transformation: Callable[[StructuredStatement], StructuredStatement]):
-        """
-        Apply some transformation on all current goals
-        """
-        for goal_id in self.current_goals:
-            goal = self.all_goals[goal_id] = self.all_goals[goal_id].copy()
-            goal.statement = transformation(goal.statement)
-
     def get_next_schematic_variable(self, typecode: str) -> SchematicVariable:
         var = SchematicVariable(typecode, len(self.schematic_vars))
         self.schematic_vars.append(var)
@@ -249,14 +281,31 @@ class ProofState:
         else:
             return None
 
-    def assign_schematic_variable(self, svar: SchematicVariable, term: Term):
-        assert svar.num < len(self.schematic_vars)
-        if svar.num in self.schematic_var_assignment:
-            assert (
-                self.schematic_var_assignment[svar.num] == term
-            ), f"both {self.schematic_var_assignment[svar.num]} and {term} are assigned to the schematic variable {svar}"
-        else:
-            self.schematic_var_assignment[svar.num] = term
+    def assign_schematic_variables(self, subst: Mapping[str, Term]):
+        # check validity of the substitution
+        for var, term in subst.items():
+            svar = self.get_schematic_variable_from_name(var)
+            assert svar is not None, f"{var} is not a schematic variable"
+            assert svar.num < len(self.schematic_vars)
+
+            if svar.num in self.schematic_var_assignment:
+                assert (
+                    self.schematic_var_assignment[svar.num] == term
+                ), f"both {self.schematic_var_assignment[svar.num]} and {term} are assigned to the schematic variable {svar}"
+            else:
+                self.schematic_var_assignment[svar.num] = term
+
+        subst_visitor = SubstitutionVisitor(subst)
+
+        # substitute the variables in all goals
+        for goal_id in self.current_goals:
+            goal = self.all_goals[goal_id] = self.all_goals[goal_id].copy()
+            goal.statement = subst_visitor.visit(goal.statement)
+
+        # substitute the variables in all claims
+        for name in self.claims:
+            claim = self.claims[name] = self.claims[name].copy()
+            claim.theorem.statement = subst_visitor.visit(claim.theorem.statement)
 
     def get_live_schematic_variables(self) -> Set[str]:
         """
