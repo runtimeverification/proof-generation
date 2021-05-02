@@ -69,15 +69,15 @@ class InteractiveState:
     def init_from_theory_and_goal(self, theory_path: str, goal_name: str):
         composer = Composer()
         database = load_database(theory_path, include_proof=False)
-        composer.load(database)
-        assert (goal_name in composer.theorems), f"cannot find label {goal_name} in the theory file {theory_path}"
+        composer.load(database, stop_at=goal_name)
 
+        assert (goal_name in composer.theorems), f"cannot find label {goal_name} in the theory file {theory_path}"
         goal = composer.theorems[goal_name]
         composer.remove_theorem(goal_name)
 
         # TODO: this assumes no essential statements in the top-level block
-        for essential in goal.essentials:
-            composer.load(essential)
+        # for essential in goal.essentials:
+        #     composer.load(essential)
 
         self.init_theory_path = theory_path
         self.init_goal = goal
@@ -189,12 +189,14 @@ class InteractiveState:
             # print all essential hypotheses usable for the current goal
             essentials = self.proof_state.get_all_essentials_for_top_goal()
             local_claims = self.proof_state.get_all_local_claims()
+            disjoints = self.proof_state.composer.get_all_disjoints()
 
-            if len(essentials) or len(local_claims):
+            if len(essentials) or len(local_claims) or len(disjoints):
                 segments.append(
                     "\n".join(
                         [
                             "hypotheses:",
+                            *[TAB + "$d " + " ".join(disjoint) + " $." for disjoint in disjoints],
                             *[TAB + str(essential.statement) for essential in essentials],
                             *[TAB + str(claim.theorem.statement) for claim in local_claims],
                         ]

@@ -77,6 +77,11 @@ class SubstitutionProver:
                 "\\app": (2, "substitution-app"),
             }
 
+            binder_map = {
+                "\\exists": ("substitution-exists-shadowed", "substitution-exists"),
+                "\\mu": ("substitution-mu-shadowed", "substitution-mu"),
+            }
+
             if before_pattern.symbol in arity_map:
                 arity, theorem_label = arity_map[before_pattern.symbol]
 
@@ -94,6 +99,38 @@ class SubstitutionProver:
                 ]
 
                 return composer.get_theorem(theorem_label).match_and_apply(target, *subproofs)
+
+            elif before_pattern.symbol == after_pattern.symbol and before_pattern.symbol in binder_map:
+                assert len(before_pattern.subterms) == 2 and \
+                       len(after_pattern.subterms) == 2, \
+                       f"ill-formed \\exists or \\mu pattern: {before_pattern}"
+
+                shadowed_axiom, body_subst_axiom = binder_map[before_pattern.symbol]
+
+                binding_var = before_pattern.subterms[0]
+
+                if binding_var == subst_var and after_pattern == before_pattern:
+                    return composer.get_theorem(shadowed_axiom).match_and_apply(target)
+
+                elif binding_var != subst_var and composer.are_terms_disjoint(binding_var, subst_var):
+                    body_subst = SubstitutionProver.prove_desugared_substitution(
+                        composer,
+                        after_pattern.subterms[1],
+                        before_pattern.subterms[1],
+                        subst_pattern,
+                        subst_var,
+                        hypotheses,
+                    )
+
+                    return composer.get_theorem(body_subst_axiom).match_and_apply(
+                        target,
+                        composer.get_theorem("substitution-identity"
+                                             ).apply(ph0=before_pattern.subterms[1], xX=binding_var),
+                        body_subst,
+                    )
+
+        if composer.are_terms_disjoint(before_pattern, subst_var) and before_pattern == after_pattern:
+            return composer.get_theorem("substitution-disjoint").match_and_apply(target)
 
         assert (False), f"unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}"
 
@@ -113,6 +150,7 @@ class SubstitutionProver:
 
         Notations are also considered
         """
+
         # if the heads are the same and there exists a substitution for the head symbol
         if (isinstance(after_pattern, Application) and isinstance(before_pattern, Application)
                 and after_pattern.symbol == before_pattern.symbol
@@ -163,19 +201,20 @@ class SubstitutionProver:
                     failed = False
                     break
 
-                if not failed:
+                if failed:
                     continue
 
                 subproofs = []
                 for subgoal in subgoals:
-                    subproof = SubstitutionProver.prove_substitution(composer, *subgoal, hypotheses)
-                    if subproof is None:
+                    try:
+                        subproof = SubstitutionProver.prove_substitution(composer, *subgoal, hypotheses)
+                    except:
                         failed = True
                         break
 
                     subproofs.append(subproof)
 
-                if not failed:
+                if failed:
                     continue
 
                 return theorem.match_and_apply(target, *subproofs)

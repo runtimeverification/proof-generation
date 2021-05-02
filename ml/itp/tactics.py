@@ -45,6 +45,34 @@ class Tactic:
         return substitution
 
     @staticmethod
+    def typcode_extension(state: ProofState, typecode: str, term: Term) -> bool:
+        if isinstance(term, SchematicVariable):
+            var, *_ = state.composer.find_metavariables_of_typecode(term.typecode)
+            return TypecodeProver.check_typecode(state.composer, typecode, Metavariable(var))
+        return False
+
+    @staticmethod
+    def check_schematic_substitution(state: ProofState, substitution: Mapping[str, Term]) -> bool:
+        for var, term in substitution.items():
+            svar = state.get_schematic_variable_from_name(var)
+            assert svar is not None, f"missing schematic variable {svar}"
+            # assert TypecodeProver.check_typecode(
+            #             state.composer,
+            #             svar.typecode,
+            #             term,
+            #             extension=lambda typecode, term: ApplyTactic.typcode_extension(state, typecode, term),
+            #         ), \
+            #        f"unable to assign {term} to a metavariable of typecode {svar.typecode}"
+            if not TypecodeProver.check_typecode(
+                    state.composer,
+                    svar.typecode,
+                    term,
+                    extension=lambda typecode, term: ApplyTactic.typcode_extension(state, typecode, term),
+            ):
+                return False
+        return True
+
+    @staticmethod
     def unify(state: ProofState,
               equations: List[Tuple[Term, Term]],
               only_schematic_vars: bool = True) -> Optional[Tuple[Mapping[str, Term], bool]]:
@@ -99,6 +127,8 @@ class Tactic:
         )
 
         if subst is not None:
+            if not Tactic.check_schematic_substitution(state, subst):
+                return None
             return subst, applied_notation
 
         return None
@@ -188,26 +218,6 @@ class ApplyTactic(Tactic):
 
         assert False, f"cannot find theorem {name}"
 
-    @staticmethod
-    def typcode_extension(state: ProofState, typecode: str, term: Term) -> bool:
-        if isinstance(term, SchematicVariable):
-            var, *_ = state.composer.find_metavariables_of_typecode(term.typecode)
-            return TypecodeProver.check_typecode(state.composer, typecode, Metavariable(var))
-        return False
-
-    @staticmethod
-    def check_schematic_substitution(state: ProofState, substitution: Mapping[str, Term]):
-        for var, term in substitution.items():
-            svar = state.get_schematic_variable_from_name(var)
-            assert svar is not None, f"missing schematic variable {svar}"
-            assert TypecodeProver.check_typecode(
-                        state.composer,
-                        svar.typecode,
-                        term,
-                        extension=lambda typecode, term: ApplyTactic.typcode_extension(state, typecode, term),
-                    ), \
-                   f"unable to assign {term} to a metavariable of typecode {svar.typecode}"
-
     def apply(self, state: ProofState, theorem_name: str, **options):
         subst = self.parse_substitution(state, options)
 
@@ -227,8 +237,7 @@ class ApplyTactic(Tactic):
         assert result is not None, f"unable to unify the goal {top_goal_statement} with {theorem_conclusion}"
         schematic_substitution, self.applied_notation = result
 
-        # check for substitution validity (if the typecodes match)
-        ApplyTactic.check_schematic_substitution(state, schematic_substitution)
+        # assign schematic variables
         state.assign_schematic_variables(schematic_substitution)
 
         # get the final top goal statement
@@ -461,8 +470,7 @@ class FromTactic(Tactic):
                f"unable to unify the hypotheses {', '.join(hypothesis_names)} with essentials of theorem {theorem_name}"
         schematic_substitution, self.applied_notation = result
 
-        # check and assign schematic variables
-        ApplyTactic.check_schematic_substitution(state, schematic_substitution)
+        # assign schematic variables
         state.assign_schematic_variables(schematic_substitution)
 
     def resolve(self, state: ProofState, claim_subproofs: List[Proof]) -> Proof:

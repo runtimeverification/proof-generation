@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from traceback import print_exc
 
-from typing import List, Tuple, Mapping, Callable, Dict, Sequence
+from typing import List, Tuple, Mapping, Callable, Dict, Sequence, Collection
 
 import re
 
@@ -400,7 +400,7 @@ class Context:
         """
         current = [var for typecode, var, _ in self.active_floatings if typecode == expected_typcode]
         if self.prev is not None:
-            return self.find_floatings_of_typecode(expected_typcode) + current
+            return self.prev.find_floatings_of_typecode(expected_typcode) + current
         else:
             return current
 
@@ -431,6 +431,26 @@ class Context:
             return self.prev.get_all_disjoints() + self.active_disjoints
         else:
             return self.active_disjoints
+
+    def are_metavariables_disjoint(self, metavars: Collection[str]) -> bool:
+        """
+        Check if a given list of metavariables are disjoint
+        """
+
+        distinct_metavars = set(metavars)
+
+        # same metavariable appears more than once
+        if len(distinct_metavars) < len(metavars):
+            return False
+
+        for disjoints in self.active_disjoints:
+            if distinct_metavars.issubset(set(disjoints)):
+                return True
+
+        if self.prev is None:
+            return False
+
+        return self.prev.are_metavariables_disjoint(distinct_metavars)
 
 
 class Composer:
@@ -498,6 +518,30 @@ class Composer:
     def get_all_essentials(self) -> List[Theorem]:
         return [Theorem(self, essential, [], []) for essential in self.context.get_all_essentials()]
 
+    def get_all_disjoints(self) -> List[Tuple[str, ...]]:
+        return self.context.get_all_disjoints()
+
+    def are_terms_disjoint(self, term1: Term, term2: Term) -> bool:
+        """
+        Check if the given two terms have disjoint metavariables
+        in the current context
+        """
+        if isinstance(term1, Application):
+            for subterm in term1.subterms:
+                if not self.are_terms_disjoint(subterm, term2):
+                    return False
+            return True
+
+        if isinstance(term2, Application):
+            for subterm in term2.subterms:
+                if not self.are_terms_disjoint(term1, subterm):
+                    return False
+            return True
+
+        assert isinstance(term1, Metavariable) and isinstance(term2, Metavariable)
+
+        return self.context.are_metavariables_disjoint({term1.name, term2.name})
+
     def encode(self, stream: TextIO, segment=None):
         for stmt in self.statements if segment is None else self.get_segment(segment):
             stmt.encode(stream)
@@ -509,11 +553,12 @@ class Composer:
     def lookup_proof_cache(self, domain: str, key) -> Optional[Proof]:
         return self.proof_cache.lookup(domain, key)
 
-    # """
-    # This implements simple segmentation mechanism. To start a segment,
-    # call start_segment(name). To end a segment, call end_segment.
-    # To get all statements in a segment, call get_segment
-    # """
+    """
+    This implements simple segmentation mechanism. To start a segment,
+    call start_segment(name). To end a segment, call end_segment.
+    To get all statements in a segment, call get_segment
+    """
+
     def start_segment(self, name: str):
         self.segment_stack.append(name)
 
@@ -567,15 +612,26 @@ class Composer:
         assert theorem is not None, f"expecting statement {statement} to be a theorem"
         return theorem
 
-    def load(self, database_or_statement: Union[Database, Statement], index: bool = True) -> Optional[Theorem]:
+    def load(
+        self,
+        database_or_statement: Union[Database, Statement],
+        index: bool = True,
+        stop_at: Optional[str] = None
+    ) -> Optional[Theorem]:
         """
         Add a structured statement/block/database to the composer
         Optionally return a theorem corresponding to the given statement
+
+        When stop_at is specified, the loading procedure will stop
+        after a statement with label stop_at is loaded.
+        In particular, the Context will also stay at the given point
         """
         if isinstance(database_or_statement, Database):
             assert self.context.prev is None, "loading a database at non-top level"
             for statement in database_or_statement.statements:
-                self.load(statement, index)
+                theorem = self.load(statement, index, stop_at)
+                if theorem is not None and stop_at is not None and theorem.statement.label == stop_at:
+                    return theorem
 
             return None
         elif isinstance(database_or_statement, Statement):
@@ -587,7 +643,10 @@ class Composer:
             if isinstance(database_or_statement, Block):
                 self.context = Context(self.context)
                 for statement in database_or_statement.statements:
-                    self.load(statement, index)
+                    theorem = self.load(statement, index, stop_at)
+                    if theorem is not None and stop_at is not None and theorem.statement.label == stop_at:
+                        return theorem
+
                 self.context = self.context.prev
                 return None
             else:
@@ -618,6 +677,14 @@ class Composer:
         elif stmt.statement_type == Statement.ESSENTITAL:
             self.context.add_essential(stmt)
             theorem = Theorem(self, stmt, [], [])
+
+        elif stmt.statement_type == Statement.DISJOINT:
+            metavars: List[str] = []
+            for term in stmt.terms:
+                assert isinstance(term, Metavariable), f"ill-formed disjoint statement {stmt}"
+                metavars.append(term.name)
+
+            self.context.add_disjoint(metavars)
 
         elif stmt.statement_type in {Statement.PROVABLE, Statement.AXIOM}:
             # find all mandatory hypotheses of a statement
@@ -722,6 +789,7 @@ class TypecodeProver:
                     if metavar.name == term.name:
                         # found a direct proof
                         assert theorem.statement.label is not None
+                        expected_statement.proof = [theorem.statement.label]
                         proof = Proof(expected_statement, [theorem.statement.label])
                         proof = composer.cache_proof("typecode-cache-" + typecode, proof)
                         return proof
@@ -773,6 +841,7 @@ class TypecodeProver:
                     # directly construct the proof here for performance
                     assert theorem.statement.label is not None
                     proof_script.append(theorem.statement.label)
+                    expected_statement.proof = proof_script
                     proof = Proof(expected_statement, proof_script)
                     proof = composer.cache_proof("typecode-cache-" + typecode, proof)
                     return proof

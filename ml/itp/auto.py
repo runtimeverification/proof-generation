@@ -11,7 +11,7 @@ from ml.metamath.ast import (
     StructuredStatement,
     Statement,
 )
-from ml.metamath.composer import Proof, Theorem
+from ml.metamath.composer import Proof, Theorem, TypecodeProver
 
 from ml.metamath.auto.unification import Unification
 from ml.metamath.auto.notation import NotationProver
@@ -119,6 +119,31 @@ class SearchTactic(Tactic):
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         pass
+
+
+@ProofState.register_tactic("wf")
+class WellFormednessTactic(Tactic):
+    """
+    Prove the well-formedness of a term
+    """
+    def apply(self, state: ProofState):
+        goal = state.resolve_top_goal(self)
+        statement = goal.statement
+        assert len(statement.terms) == 2 and \
+               isinstance(statement.terms[0], Application) and \
+               len(statement.terms[0].subterms) == 0, \
+               f"goal {statement} is not an well-formedness claim"
+
+        _, right = statement.terms
+        assert state.is_concrete(right), f"RHS {right} is not concrete"
+
+        proof = TypecodeProver.prove_typecode(state.composer, statement.terms[0].symbol, right)
+        assert proof is not None, \
+               f"unable to prove {statement} as a well-formedness claim"
+        self.proof = proof
+
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        return self.proof
 
 
 @ProofState.register_tactic("notation")
