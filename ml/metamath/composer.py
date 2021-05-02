@@ -53,11 +53,13 @@ class Theorem:
         # in the order that should be instantiated
         # (order of the floating statements)
         essentials: List[StructuredStatement],  # a list of essential statements (hypotheses)
+        disjoints: List[Tuple[str, ...]] = [],  # disjoint statements
     ):
         self.composer = composer
         self.statement = statement
         self.floatings = floatings
         self.essentials = essentials
+        self.disjoints = disjoints
 
     def get_metavariables(self) -> Set[str]:
         """
@@ -371,12 +373,16 @@ class Context:
 
         self.active_floatings: List[Tuple[str, str, str]] = []  # list of (typecode, metavariable, label)
         self.active_essentials: List[StructuredStatement] = []  # list of essential statements
+        self.active_disjoints: List[Tuple[str, ...]] = []  # list of tuples of variables that should be disjoint
 
     def add_floating(self, typecode: str, variable: str, label: str):
         self.active_floatings.append((typecode, variable, label))
 
     def add_essential(self, stmt: StructuredStatement):
         self.active_essentials.append(stmt)
+
+    def add_disjoint(self, metavars: Iterable[str]):
+        self.active_disjoints.append(tuple(metavars))
 
     def find_floatings(self, metavariables: Set[str]) -> List[Tuple[str, str, str]]:
         """
@@ -419,6 +425,12 @@ class Context:
             return self.prev.get_all_essentials() + self.active_essentials
         else:
             return self.active_essentials.copy()
+
+    def get_all_disjoints(self) -> List[Tuple[str, ...]]:
+        if self.prev is not None:
+            return self.prev.get_all_disjoints() + self.active_disjoints
+        else:
+            return self.active_disjoints
 
 
 class Composer:
@@ -623,7 +635,9 @@ class Composer:
                 metavariables, floatings
             )
 
-            self.theorems[stmt.label] = theorem = Theorem(self, stmt, floatings, essentials)
+            disjoints = self.context.get_all_disjoints()
+
+            self.theorems[stmt.label] = theorem = Theorem(self, stmt, floatings, essentials, disjoints)
 
             if index:
                 self.index_statement(stmt)
