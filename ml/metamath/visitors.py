@@ -15,6 +15,12 @@ class CopyVisitor(MetamathVisitor):
     def postvisit_application(self, application: Application, subterms: List[Term]) -> Application:
         return Application(application.symbol, subterms)
 
+    def postvisit_comment(self, comment: Comment) -> Comment:
+        return Comment(comment.text)
+
+    def postvisit_include_statement(self, include: IncludeStatement) -> IncludeStatement:
+        return IncludeStatement(include.path)
+
     def postvisit_raw_statement(self, stmt: RawStatement) -> RawStatement:
         return RawStatement(stmt.statement_type, list(stmt.tokens), stmt.label)
 

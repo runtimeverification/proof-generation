@@ -12,16 +12,20 @@ from .ast import *
 from .visitors import SubstitutionVisitor, CopyVisitor
 
 
-class Proof:
+class Proof(BaseProof):
     """
     A proof is a list of (theorem) labels and a final statement that it proves
     """
     def __init__(self, statement: StructuredStatement, script: List[str]):
         self.statement = statement
         self.script = script
+        self.statement.proof = self
 
     def __str__(self):
         return str(self.statement)
+
+    def encode(self) -> str:
+        return " ".join(self.script)
 
 
 class AutoProof:
@@ -219,17 +223,16 @@ class Theorem:
             will try to prove the typecode automatically)
         """
         subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
+        instance = self.get_conclusion_instance(substitution)
 
         assert (self.statement.label is not None), f"applying a theorem without label: {self.statement}"
-        proof_script = []
+
+        script = []
         for subproof in subproofs:
-            proof_script.extend(subproof.script)
-        proof_script.append(self.statement.label)
+            script.extend(subproof.script)
+        script.append(self.statement.label)
 
-        instance = self.get_conclusion_instance(substitution)
-        instance.proof = proof_script
-
-        return Proof(instance, proof_script)
+        return Proof(instance, script)
 
     def inline_apply(self, proof_of_theorem: Proof, *essential_proofs: Proof, **metavar_substitution) -> Proof:
         """
@@ -260,7 +263,6 @@ class Theorem:
                 proof_script.append(label)
 
         instance = self.get_conclusion_instance(substitution)
-        instance.proof = proof_script
 
         return Proof(instance, proof_script)
 
@@ -350,7 +352,7 @@ class ProofCache:
                 Statement.PROVABLE,
                 proof.statement.terms,
                 label=self.get_next_label(domain),
-                proof=proof.script,
+                proof=proof,
             )
 
             # do not index the cached statements
@@ -543,9 +545,11 @@ class Composer:
         return self.context.are_metavariables_disjoint({term1.name, term2.name})
 
     def encode(self, stream: TextIO, segment=None):
+        encoder = Encoder(stream, omit_proof=False)
         for stmt in self.statements if segment is None else self.get_segment(segment):
-            stmt.encode(stream)
-            stream.write("\n")
+            encoder.visit(stmt)
+            encoder.write("\n")
+        encoder.flush()
 
     def cache_proof(self, *args, **kwargs) -> Proof:
         return self.proof_cache.cache(*args, **kwargs)
@@ -789,10 +793,8 @@ class TypecodeProver:
                     if metavar.name == term.name:
                         # found a direct proof
                         assert theorem.statement.label is not None
-                        expected_statement.proof = [theorem.statement.label]
                         proof = Proof(expected_statement, [theorem.statement.label])
-                        proof = composer.cache_proof("typecode-cache-" + typecode, proof)
-                        return proof
+                        return composer.cache_proof("typecode-cache-" + typecode, proof)
             # otherwise treat the metavariable as a term
 
         # TODO: check if this may loop infinitely
@@ -841,9 +843,7 @@ class TypecodeProver:
                     # directly construct the proof here for performance
                     assert theorem.statement.label is not None
                     proof_script.append(theorem.statement.label)
-                    expected_statement.proof = proof_script
                     proof = Proof(expected_statement, proof_script)
-                    proof = composer.cache_proof("typecode-cache-" + typecode, proof)
-                    return proof
+                    return composer.cache_proof("typecode-cache-" + typecode, proof)
 
         return None

@@ -5,6 +5,7 @@ from typing import List, Union, TextIO
 from io import StringIO
 
 from ml.utils.ansi import ANSI
+from ml.utils.printer import Printer
 
 from .ast import (
     Pattern,
@@ -22,14 +23,13 @@ from .ast import (
     Application,
     MLPattern,
     SortVariable,
-    KoreVisitor,
     ImportStatement,
     SymbolInstance,
     StringLiteral,
 )
 
 
-class PrettyPrinter(KoreVisitor):
+class PrettyPrinter(Printer):
     COLOR_KEYWORD = ANSI.in_blue
     COLOR_SYMBOL_INSTANCE = ANSI.in_green
     COLOR_STRING_LITERAL = ANSI.in_magenta
@@ -40,22 +40,17 @@ class PrettyPrinter(KoreVisitor):
     def __init__(
         self,
         output: TextIO,
-        indentation: str = ANSI.in_gray("|") + "  " if ANSI.supports_color() else "   ",
+        tab: str = ANSI.in_gray("|") + "  " if ANSI.supports_color() else "   ",
         limit: int = 80,  # if the encoded version exceeds this limit length, try to print arguments on a new line
         demangle: bool = True,  # demangle kore labels
         compact: bool = False,  # force compact format
         skip_empty_sorts: bool = True,  # skip empty sort arguments
     ):
-        super().__init__()
-        self.depth = 0
-        self.output = output
-        self.indentation = indentation
+        super().__init__(output, tab)
         self.limit = limit
         self.demangle = demangle
         self.compact = compact
         self.skip_empty_sorts = skip_empty_sorts
-
-        self.line_buffer = ""
 
     @staticmethod
     def encode(output: TextIO, ast: BaseAST, *args, **kwargs):
@@ -135,26 +130,6 @@ class PrettyPrinter(KoreVisitor):
 
         return result[3:] if result.startswith("Lbl") else result
 
-    def flush(self):
-        self.output.write(self.line_buffer.rstrip())
-        self.line_buffer = ""
-
-    def write(self, msg: str):
-        indentation = self.depth * self.indentation
-        lines = msg.split("\n")
-
-        for i, line in enumerate(lines):
-            if i != 0:
-                self.flush()
-                self.output.write("\n")
-
-            if self.line_buffer.strip() == "" and \
-               not self.line_buffer.startswith(indentation) and \
-               line.strip() != "":
-                self.line_buffer = indentation
-
-            self.line_buffer += line
-
     def write_sort_arguments(self, sorts: Union[List[Sort], List[SortVariable]]):
         if self.skip_empty_sorts and len(sorts) == 0:
             return
@@ -177,13 +152,12 @@ class PrettyPrinter(KoreVisitor):
 
     def postvisit_module(self, module: Module, *args):
         self.write(PrettyPrinter.COLOR_KEYWORD("module") + f" {module.name}\n")
-        self.depth += 1
 
-        for axiom in module.all_sentences:
-            self.visit(axiom)
-            self.write("\n")
+        with self.indentation():
+            for axiom in module.all_sentences:
+                self.visit(axiom)
+                self.write("\n")
 
-        self.depth -= 1
         self.write(PrettyPrinter.COLOR_KEYWORD("endmodule"))
 
     def postvisit_import_statement(self, import_stmt: ImportStatement, *args):
@@ -252,17 +226,14 @@ class PrettyPrinter(KoreVisitor):
         self.visit(alias.definition.output_sort)
         self.write(" " + PrettyPrinter.COLOR_KEYWORD("where") + "\n")
 
-        self.depth += 1
+        with self.indentation():
+            old_compact = self.compact
+            self.compact = True
+            self.visit(alias.lhs)
+            self.compact = old_compact
 
-        old_compact = self.compact
-        self.compact = True
-        self.visit(alias.lhs)
-        self.compact = old_compact
-
-        self.write(" := ")
-        self.visit(alias.rhs)
-
-        self.depth -= 1
+            self.write(" := ")
+            self.visit(alias.rhs)
 
     def postvisit_axiom(self, axiom: Axiom, *args):
         self.write(PrettyPrinter.COLOR_KEYWORD("axiom"))
@@ -299,16 +270,14 @@ class PrettyPrinter(KoreVisitor):
         if not use_compact:
             self.write("\n")
 
-        self.depth += 1
+        with self.indentation():
+            for i, argument in enumerate(application.arguments):
+                if i != 0:
+                    self.write(", ")
+                    if not use_compact:
+                        self.write("\n")
+                self.visit(argument)
 
-        for i, argument in enumerate(application.arguments):
-            if i != 0:
-                self.write(", ")
-                if not use_compact:
-                    self.write("\n")
-            self.visit(argument)
-
-        self.depth -= 1
         self.write(")")
 
     def postvisit_ml_pattern(self, ml_pattern: MLPattern, *args):
@@ -321,14 +290,12 @@ class PrettyPrinter(KoreVisitor):
         if not use_compact:
             self.write("\n")
 
-        self.depth += 1
+        with self.indentation():
+            for i, argument in enumerate(ml_pattern.arguments):
+                if i != 0:
+                    self.write(", ")
+                    if not use_compact:
+                        self.write("\n")
+                self.visit(argument)
 
-        for i, argument in enumerate(ml_pattern.arguments):
-            if i != 0:
-                self.write(", ")
-                if not use_compact:
-                    self.write("\n")
-            self.visit(argument)
-
-        self.depth -= 1
         self.write(")")

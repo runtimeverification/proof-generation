@@ -155,7 +155,6 @@ def find_all_comment_segments(src: str) -> List[Tuple[int, int]]:
 def update_comment_segments(comment_segments: List[Tuple[int, int]], pos: int, offset: int) -> List[Tuple[int, int]]:
     """
     Update comment segments with an offset
-    after one substitution
     """
     new_comment_segments = []
 

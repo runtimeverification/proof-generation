@@ -104,8 +104,7 @@ def output_theory(
                 else:
                     previous_path = os.path.join(abs_output_path, output_list[i - 1][1])
 
-                IncludeStatement(previous_path).encode(f)
-                f.write("\n")
+                f.write(f"{IncludeStatement(previous_path)}\n")
                 composer.encode(f, segment)
 
 

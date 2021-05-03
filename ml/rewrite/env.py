@@ -687,7 +687,7 @@ class ProofEnvironment:
                 conclusion,
                 [Theorem(self.composer, assumption, [], [])],
             )
-            conclusion.proof = proof.script
+            conclusion.proof = proof
 
             block = mm.Block(disjoint_statements + [assumption, conclusion])  # type: ignore
             self.load_metamath_statement(block)

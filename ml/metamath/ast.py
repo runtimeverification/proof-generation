@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TextIO, Optional, List, Set, Union, Iterable
+from typing import TextIO, Optional, List, Set, Union, Iterable, Any
 from io import StringIO
 
 from ml.utils.visitor import Visitor
+from ml.utils.printer import Printer
 
 
 class MetamathVisitor(Visitor):
@@ -45,22 +46,14 @@ class MetamathVisitor(Visitor):
 
 
 class BaseAST:
-    def encode(self, stream: TextIO):
-        raise NotImplementedError()
+    def __str__(self) -> str:
+        return Encoder.encode_string(self)
 
-    def __str__(self):
-        stream = StringIO()
-        self.encode(stream)
-        return stream.getvalue()
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 
 class Term(BaseAST):
-    def encode(self, stream: TextIO):
-        raise NotImplementedError()
-
     def get_metavariables(self) -> Set[str]:
         raise NotImplementedError()
 
@@ -72,9 +65,6 @@ class Metavariable(Term):
     def __init__(self, name: str):
         super().__init__()
         self.name = name
-
-    def encode(self, stream: TextIO):
-        stream.write(self.name)
 
     def get_metavariables(self) -> Set[str]:
         return {self.name}
@@ -99,18 +89,6 @@ class Application(Term):
         self.symbol = symbol
         self.subterms = list(subterms)
         self.hash_cache: Optional[int] = None
-
-    def encode(self, stream: TextIO):
-        if len(self.subterms):
-            stream.write("( ")
-            stream.write(self.symbol)
-            for subterm in self.subterms:
-                stream.write(" ")
-                assert isinstance(subterm, Term), "not a term: {}".format(subterm)
-                subterm.encode(stream)
-            stream.write(" )")
-        else:
-            stream.write(self.symbol)
 
     def get_metavariables(self) -> Set[str]:
         metavars = set()
@@ -171,9 +149,6 @@ class Statement(BaseAST):
     ESSENTITAL = "e"
     PROVABLE = "p"
 
-    def encode(self, stream: TextIO):
-        raise NotImplementedError()
-
     def visit(self, visitor: MetamathVisitor):
         raise NotImplementedError()
 
@@ -183,17 +158,6 @@ class Comment(Statement):
         super().__init__()
         self.text = text
         assert "$(" not in text and "$)" not in text
-
-    def encode(self, stream: TextIO):
-        stream.write("\n$(")
-        if not self.text[:-1].isspace():
-            stream.write(" ")
-
-        stream.write(self.text)
-
-        if not self.text[-1:].isspace():
-            stream.write(" ")
-        stream.write("$)")
 
     def visit(self, visitor: MetamathVisitor):
         visitor.previsit_comment(self)
@@ -205,11 +169,6 @@ class IncludeStatement(Statement):
     def __init__(self, path: str):
         super().__init__()
         self.path = path
-
-    def encode(self, stream: TextIO):
-        stream.write("$[ ")
-        stream.write(self.path)
-        stream.write(" $]")
 
     def visit(self, visitor: MetamathVisitor):
         visitor.previsit_include_statement(self)
@@ -228,24 +187,15 @@ class RawStatement(Statement):
         self.tokens = tokens
         self.label = label
 
-    def encode(self, stream: TextIO):
-        if self.label is not None:
-            stream.write(self.label)
-            stream.write(" ")
-
-        stream.write("$")
-        stream.write(self.statement_type)
-
-        for token in self.tokens:
-            stream.write(" ")
-            stream.write(token)
-
-        stream.write(" $.")
-
     def visit(self, visitor: MetamathVisitor):
         visitor.previsit_raw_statement(self)
         children = visitor.visit_children_of_raw_statement(self)
         return visitor.postvisit_raw_statement(self, *children)
+
+
+class BaseProof:
+    def encode(self) -> str:
+        raise NotImplementedError()
 
 
 class StructuredStatement(Statement):
@@ -257,36 +207,13 @@ class StructuredStatement(Statement):
         statement_type: str,
         terms: List[Term],
         label: Optional[str] = None,
-        proof: Optional[List[str]] = None,
+        proof: Optional[BaseProof] = None,
     ):
         super().__init__()
         self.statement_type = statement_type
         self.terms = terms
         self.label = label
         self.proof = proof
-
-    def encode(self, stream: TextIO):
-        if self.label is not None:
-            stream.write(self.label)
-            stream.write(" ")
-
-        stream.write("$")
-        stream.write(self.statement_type)
-
-        for term in self.terms:
-            stream.write(" ")
-            term.encode(stream)
-
-        if self.proof is not None:
-            stream.write(" $=")
-            for label in self.proof:
-                stream.write(" ")
-                stream.write(label)
-        elif self.statement_type == Statement.PROVABLE:
-            # the statement is marked provable but no proof is given
-            stream.write(" $= ?")
-
-        stream.write(" $.")
 
     def get_metavariables(self) -> Set[str]:
         metavars = set()
@@ -316,13 +243,6 @@ class Block(Statement):
     def __init__(self, statements: Iterable[Statement]):
         self.statements = list(statements)
 
-    def encode(self, stream: TextIO):
-        stream.write("${\n")
-        for stmt in self.statements:
-            stmt.encode(stream)
-            stream.write("\n")
-        stream.write("$}")
-
     def visit(self, visitor: MetamathVisitor):
         visitor.previsit_block(self)
         children = visitor.visit_children_of_block(self)
@@ -338,12 +258,117 @@ class Database(BaseAST):
     def __init__(self, statements: List[Statement]):
         self.statements = statements
 
-    def encode(self, stream: TextIO):
-        for stmt in self.statements:
-            stmt.encode(stream)
-            stream.write("\n")
-
     def visit(self, visitor: MetamathVisitor):
         visitor.previsit_database(self)
         children = visitor.visit_children_of_database(self)
         return visitor.postvisit_database(self, *children)
+
+
+class Encoder(Printer):
+    """
+    Encoder for Metamath AST
+    """
+    def __init__(self, output: TextIO, tab: str = "   ", omit_proof: bool = True):
+        super().__init__(output, tab)
+        self.omit_proof = omit_proof
+
+    @staticmethod
+    def encode(output: TextIO, ast: BaseAST, *args, **kwargs):
+        printer = Encoder(output, *args, **kwargs)
+        printer.visit(ast)
+        printer.flush()
+
+    @staticmethod
+    def encode_string(ast: BaseAST, *args, **kwargs) -> str:
+        stream = StringIO()
+        Encoder.encode(stream, ast, *args, **kwargs)
+        return stream.getvalue()
+
+    def postvisit_metavariable(self, metavar: Metavariable):
+        self.write(metavar.name)
+
+    def postvisit_application(self, application: Application):
+        if len(application.subterms) == 0:
+            self.write(application.symbol)
+        else:
+            self.write("( ")
+            self.write(application.symbol)
+
+            for subterm in application.subterms:
+                self.write(" ")
+                assert isinstance(subterm, Term), "not a term: {}".format(subterm)
+                self.visit(subterm)
+
+            self.write(" )")
+
+    def postvisit_comment(self, comment: Comment):
+        self.write("\n$(")
+        if not comment.text[:-1].isspace():
+            self.write(" ")
+
+        with self.indentation():
+            self.write(comment.text)
+
+        if not comment.text[-1:].isspace():
+            self.write(" ")
+        self.write("$)")
+
+    def postvisit_include_statement(self, include: IncludeStatement):
+        self.write("$[ ")
+        self.write(include.path)
+        self.write(" $]")
+
+    def postvisit_raw_statement(self, stmt: RawStatement):
+        if stmt.label is not None:
+            self.write(stmt.label)
+            self.write(" ")
+
+        self.write("$")
+        self.write(stmt.statement_type)
+
+        for token in stmt.tokens:
+            self.write(" ")
+            self.write(token)
+
+        self.write(" $.")
+
+    def postvisit_structured_statement(self, stmt: StructuredStatement):
+        if stmt.label is not None:
+            self.write(stmt.label)
+            self.write(" ")
+
+        self.write("$")
+        self.write(stmt.statement_type)
+
+        for term in stmt.terms:
+            self.write(" ")
+            self.visit(term)
+
+        if stmt.statement_type == Statement.PROVABLE:
+            if stmt.proof is not None:
+                if self.omit_proof:
+                    self.write(" $= <omitted>")
+                else:
+                    self.write(" $= ")
+                    self.write(stmt.proof.encode())
+            else:
+                self.write(" $= ?")
+
+        self.write(" $.")
+
+    def postvisit_block(self, block: Block):
+        self.write("${ ")
+
+        with self.indentation():
+            for i, stmt in enumerate(block.statements):
+                self.visit(stmt)
+                if i + 1 != len(block.statements):
+                    self.write("\n")
+                else:
+                    self.write(" ")
+
+        self.write("$}")
+
+    def postvisit_database(self, database: Database):
+        for stmt in database.statements:
+            self.visit(stmt)
