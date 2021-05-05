@@ -271,13 +271,13 @@ class Proof:
     def __init__(self, conclusion: Iterable[Term]):
         self.conclusion = tuple(conclusion)
 
-        self.nodes: Dict[int, Union[str, Tuple[str, ...]]] = {}
+        self.nodes: List[Union[str, Tuple[str, ...]]] = []
         # a node is either:
         # - a label, which can be used for any node in the tree
         # - a Proof, which can only be used for non-leaf nodes
         # - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
 
-        self.node_to_conclusion: Dict[int, Tuple[Term, ...]] = {}
+        self.node_to_conclusion: List[Tuple[Term, ...]] = []
         # conclusions for each dag
         # note that node_to_conclusion[0] == self.internal_conclusions
 
@@ -293,8 +293,8 @@ class Proof:
         Make a proof from the normal proof format as a list of labels
         """
         proof = Proof(statement.terms)
-        proof.nodes[0] = script if isinstance(script, str) else tuple(script)
-        proof.node_to_conclusion[0] = proof.conclusion
+        proof.nodes = [ script if isinstance(script, str) else tuple(script) ]
+        proof.node_to_conclusion = [ proof.conclusion ]
         return proof
 
     def add_subproof(self, subproof: Proof, conclusion_to_node: Dict[Tuple[Term, ...], int] = {}) -> int:
@@ -312,7 +312,7 @@ class Proof:
 
         live_nodes = set()
 
-        for i, item in subproof.nodes.items():
+        for i, item in enumerate(subproof.nodes):
             item_conclusion = subproof.node_to_conclusion[i]
             shared_node = conclusion_to_node.get(item_conclusion)
 
@@ -321,6 +321,8 @@ class Proof:
             else:
                 live_nodes.add(i)
                 node_map[i] = next_node
+                self.nodes.append("") # placeholder
+                self.node_to_conclusion.append(())
                 next_node += 1
 
         for live_node in live_nodes:
@@ -345,22 +347,22 @@ class Proof:
         """
 
         proof = Proof(statement.terms)
-        proof.node_to_conclusion[0] = proof.conclusion
+        proof.node_to_conclusion = [ proof.conclusion ]
 
-        script: List[str] = []
-        for child in children:
-            child.flatten(script)
-        script.append(root)
-        proof.nodes[0] = tuple(script)
+        # script: List[str] = []
+        # for child in children:
+        #     child.flatten(script)
+        # script.append(root)
+        # proof.nodes = [ tuple(script) ]
 
         # TODO: this enables sharing of subtrees
-        # proof.nodes[0] = root
-        # conclusion_to_node = {}
-        # if len(children) != 0:
-        #     proof.dag[0] = []
-        #     for child in children:
-        #         child_root = proof.add_subproof(child, conclusion_to_node)
-        #         proof.dag[0].append(child_root)
+        proof.nodes = [ root ]
+        conclusion_to_node: Dict[Tuple[Term, ...], int] = {}
+        if len(children) != 0:
+            proof.dag[0] = []
+            for child in children:
+                child_root = proof.add_subproof(child, conclusion_to_node)
+                proof.dag[0].append(child_root)
 
         return proof
 
@@ -401,7 +403,7 @@ class Proof:
 
     def __len__(self) -> int:
         size = 0
-        for subproof in self.nodes.values():
+        for subproof in self.nodes:
             if isinstance(subproof, str):
                 size += 1
             else:
