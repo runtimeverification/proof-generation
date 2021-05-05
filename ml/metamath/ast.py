@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapping, Tuple
+from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapping, Tuple, Collection
 from io import StringIO
 
 from ml.utils.visitor import Visitor
@@ -271,15 +271,15 @@ class Proof:
     def __init__(self, conclusion: Iterable[Term]):
         self.conclusion = tuple(conclusion)
 
-        self.nodes: Dict[int, Union[str, List[str]]] = {}
+        self.nodes: Dict[int, Union[str, Tuple[str]]] = {}
         # a node is either:
         # - a label, which can be used for any node in the tree
         # - a Proof, which can only be used for non-leaf nodes
         # - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
 
-        self.internal_conclusions: Dict[int, Tuple[Term, ...]] = {}
+        self.node_to_conclusion: Dict[int, Tuple[Term, ...]] = {}
         # conclusions for each dag
-        # note that 0 not in self.internal_conclusions
+        # note that node_to_conclusion[0] == self.internal_conclusions
 
         self.dag: Dict[int, List[int]] = {}
         # a proof DAG should have a unique source at 0
@@ -288,59 +288,77 @@ class Proof:
         # have an entry in self.dag
 
     @staticmethod
-    def from_script(statement: StructuredStatement, script: Union[str, List[str]]) -> Proof:
+    def from_script(statement: StructuredStatement, script: Union[str, Iterable[str]]) -> Proof:
         """
         Make a proof from the normal proof format as a list of labels
         """
         proof = Proof(statement.terms)
-        proof.nodes[0] = script
+        proof.nodes[0] = script if isinstance(script, str) else tuple(script)
+        proof.node_to_conclusion[0] = proof.conclusion
         return proof
 
-    def has_cycle_at(self, node: int) -> bool:
-        """
-        Check if there is a cycle containing node
-        """
-
-        reachable = set()
-        stack = [node]
-
-        while stack:
-            next_node = stack.pop()
-            if next_node in reachable:
-                continue
-            reachable.add(next_node)
-            stack.extend(self.get_children_of(next_node))
-
-        return node in reachable
-
-    def add_subproof(self, subproof: Proof) -> int:
+    def add_subproof(self, subproof: Proof, conclusion_to_node: Dict[Tuple[Term, ...], int] = {}) -> int:
         """
         Add a disconnected subproof
+
+        conclusion_to_node is a dictionary to keep track of nodes
+        with duplicated conclusions, provided by the caller to
+        reduce proof size
         """
-        offset = len(self.nodes)
+        next_node = len(self.nodes)
+
+        node_map: Dict[int, int] = {}
+        # from the old node from the new node
+
+        live_nodes = set()
 
         for i, item in subproof.nodes.items():
-            self.nodes[i + offset] = item
+            item_conclusion = subproof.node_to_conclusion[i]
+            shared_node = conclusion_to_node.get(item_conclusion)
 
-        for i, edges in subproof.dag.items():
-            self.dag[i + offset] = [e + offset for e in edges]
+            if shared_node is not None:
+                node_map[i] = shared_node
+            else:
+                live_nodes.add(i)
+                node_map[i] = next_node
+                next_node += 1
 
-        return offset
+        for live_node in live_nodes:
+            new_node = node_map[live_node]
+            item = subproof.nodes[live_node]
+            item_conclusion = subproof.node_to_conclusion[live_node]
+
+            self.nodes[new_node] = item
+            self.node_to_conclusion[new_node] = item_conclusion
+            conclusion_to_node[item_conclusion] = new_node
+
+        for i, neighbors in subproof.dag.items():
+            if i in live_nodes:
+                self.dag[node_map[i]] = [node_map[n] for n in neighbors]
+
+        return node_map[0]
 
     @staticmethod
-    def from_application(statement: StructuredStatement, root: str, children: List[Proof]) -> Proof:
+    def from_application(statement: StructuredStatement, root: str, children: Collection[Proof]) -> Proof:
         """
         Combine the proof DAGs
         """
 
         proof = Proof(statement.terms)
-        proof.nodes[0] = root
+        proof.nodes[0] = []
+        proof.node_to_conclusion[0] = proof.conclusion
 
-        if len(children) != 0:
-            proof.dag[0] = []
-            for child in children:
-                child_root = proof.add_subproof(child)
-                proof.dag[0].append(child_root)
+        for child in children:
+            child.flatten(proof.nodes[0])
+        proof.nodes[0].append(root)
+
+        # TODO: this enables sharing of subtrees
+        # conclusion_to_node = {}
+        # if len(children) != 0:
+        #     proof.dag[0] = []
+        #     for child in children:
+        #         child_root = proof.add_subproof(child, conclusion_to_node)
+        #         proof.dag[0].append(child_root)
 
         return proof
 

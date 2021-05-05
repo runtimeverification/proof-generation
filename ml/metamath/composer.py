@@ -263,7 +263,7 @@ class ProofCache:
     # if the proof script size exceeds this
     # number of labels, the proof will be cached
     # as a theorem in the database
-    THEOREM_CACHE_THRESHOLD = 4
+    THEOREM_CACHE_THRESHOLD = 10
 
     # certain tools (e.g. itp) would need all cache disabled
     DISABLED = False
