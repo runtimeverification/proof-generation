@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapping
+from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapping, Tuple
 from io import StringIO
 
 from ml.utils.visitor import Visitor
@@ -271,11 +271,15 @@ class Proof:
     def __init__(self, conclusion: Iterable[Term]):
         self.conclusion = tuple(conclusion)
 
-        self.nodes: Dict[int, Union[str, Proof, List[str]]] = {}
+        self.nodes: Dict[int, Union[str, List[str]]] = {}
         # a node is either:
         # - a label, which can be used for any node in the tree
         # - a Proof, which can only be used for non-leaf nodes
         # - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
+
+        self.internal_conclusions: Dict[int, Tuple[Term, ...]] = {}
+        # conclusions for each dag
+        # note that 0 not in self.internal_conclusions
 
         self.dag: Dict[int, List[int]] = {}
         # a proof DAG should have a unique source at 0
@@ -292,6 +296,37 @@ class Proof:
         proof.nodes[0] = script
         return proof
 
+    def has_cycle_at(self, node: int) -> bool:
+        """
+        Check if there is a cycle containing node
+        """
+
+        reachable = set()
+        stack = [node]
+
+        while stack:
+            next_node = stack.pop()
+            if next_node in reachable:
+                continue
+            reachable.add(next_node)
+            stack.extend(self.get_children_of(next_node))
+
+        return node in reachable
+
+    def add_subproof(self, subproof: Proof) -> int:
+        """
+        Add a disconnected subproof
+        """
+        offset = len(self.nodes)
+
+        for i, item in subproof.nodes.items():
+            self.nodes[i + offset] = item
+
+        for i, edges in subproof.dag.items():
+            self.dag[i + offset] = [e + offset for e in edges]
+
+        return offset
+
     @staticmethod
     def from_application(statement: StructuredStatement, root: str, children: List[Proof]) -> Proof:
         """
@@ -303,9 +338,9 @@ class Proof:
 
         if len(children) != 0:
             proof.dag[0] = []
-            for i, child in enumerate(children):
-                proof.nodes[i + 1] = child
-                proof.dag[0].append(i + 1)
+            for child in children:
+                child_root = proof.add_subproof(child)
+                proof.dag[0].append(child_root)
 
         return proof
 
@@ -338,8 +373,6 @@ class Proof:
 
         if isinstance(subproof, str):
             output_script.append(subproof)
-        elif isinstance(subproof, Proof):
-            subproof.flatten(output_script)
         else:
             output_script.extend(subproof)
 
