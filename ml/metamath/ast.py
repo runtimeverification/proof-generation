@@ -271,7 +271,7 @@ class Proof:
     def __init__(self, conclusion: Iterable[Term]):
         self.conclusion = tuple(conclusion)
 
-        self.nodes: Dict[int, Union[str, Tuple[str]]] = {}
+        self.nodes: Dict[int, Union[str, Tuple[str, ...]]] = {}
         # a node is either:
         # - a label, which can be used for any node in the tree
         # - a Proof, which can only be used for non-leaf nodes
@@ -345,14 +345,16 @@ class Proof:
         """
 
         proof = Proof(statement.terms)
-        proof.nodes[0] = []
         proof.node_to_conclusion[0] = proof.conclusion
 
+        script: List[str] = []
         for child in children:
-            child.flatten(proof.nodes[0])
-        proof.nodes[0].append(root)
+            child.flatten(script)
+        script.append(root)
+        proof.nodes[0] = tuple(script)
 
         # TODO: this enables sharing of subtrees
+        # proof.nodes[0] = root
         # conclusion_to_node = {}
         # if len(children) != 0:
         #     proof.dag[0] = []
