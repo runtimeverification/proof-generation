@@ -293,8 +293,8 @@ class Proof:
         Make a proof from the normal proof format as a list of labels
         """
         proof = Proof(statement.terms)
-        proof.nodes = [ script if isinstance(script, str) else tuple(script) ]
-        proof.node_to_conclusion = [ proof.conclusion ]
+        proof.nodes = [script if isinstance(script, str) else tuple(script)]
+        proof.node_to_conclusion = [proof.conclusion]
         return proof
 
     def add_subproof(self, subproof: Proof, conclusion_to_node: Dict[Tuple[Term, ...], int] = {}) -> int:
@@ -305,12 +305,12 @@ class Proof:
         with duplicated conclusions, provided by the caller to
         reduce proof size
         """
-        next_node = len(self.nodes)
+        prev_num_nodes = next_node = len(self.nodes)
 
         node_map: Dict[int, int] = {}
         # from the old node from the new node
 
-        live_nodes = set()
+        new_conclusion_to_node = {}
 
         for i, item in enumerate(subproof.nodes):
             item_conclusion = subproof.node_to_conclusion[i]
@@ -319,24 +319,18 @@ class Proof:
             if shared_node is not None:
                 node_map[i] = shared_node
             else:
-                live_nodes.add(i)
                 node_map[i] = next_node
-                self.nodes.append("") # placeholder
-                self.node_to_conclusion.append(())
+                self.nodes.append(item)
+                self.node_to_conclusion.append(item_conclusion)
+                new_conclusion_to_node[item_conclusion] = next_node
                 next_node += 1
 
-        for live_node in live_nodes:
-            new_node = node_map[live_node]
-            item = subproof.nodes[live_node]
-            item_conclusion = subproof.node_to_conclusion[live_node]
-
-            self.nodes[new_node] = item
-            self.node_to_conclusion[new_node] = item_conclusion
-            conclusion_to_node[item_conclusion] = new_node
-
         for i, neighbors in subproof.dag.items():
-            if i in live_nodes:
+            new_node = node_map[i]
+            if new_node >= prev_num_nodes:
                 self.dag[node_map[i]] = [node_map[n] for n in neighbors]
+
+        conclusion_to_node.update(new_conclusion_to_node)
 
         return node_map[0]
 
@@ -347,7 +341,7 @@ class Proof:
         """
 
         proof = Proof(statement.terms)
-        proof.node_to_conclusion = [ proof.conclusion ]
+        proof.node_to_conclusion = [proof.conclusion]
 
         # script: List[str] = []
         # for child in children:
@@ -356,7 +350,7 @@ class Proof:
         # proof.nodes = [ tuple(script) ]
 
         # TODO: this enables sharing of subtrees
-        proof.nodes = [ root ]
+        proof.nodes = [root]
         conclusion_to_node: Dict[Tuple[Term, ...], int] = {}
         if len(children) != 0:
             proof.dag[0] = []
@@ -412,6 +406,31 @@ class Proof:
 
     def __str__(self):
         return f"<proof of {' '.join(map(str, self.conclusion))}>"
+
+    @staticmethod
+    def encode_index(n: int) -> str:
+        """
+        Encode an index in the Metamath compressed proof format
+        """
+
+        number = n - 1
+        final_letter = chr(ord("A") + number % 20)
+        if number < 20:
+            return final_letter
+
+        number //= 20
+
+        letters = []
+        while True:
+            number -= 1
+            letters.append(chr(ord("U") + ((number % 5))))
+            number //= 5
+            if not number:
+                break
+
+        letters.reverse()
+        letters.append(final_letter)
+        return "".join(letters)
 
     def encode(self) -> str:
         script: List[str] = []

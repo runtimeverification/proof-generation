@@ -1,32 +1,11 @@
 from typing import List, Optional, Tuple
 
 from ml.metamath.parser import load_database
-from ml.metamath.composer import Composer
+from ml.metamath.composer import Composer, Proof
 
 import os
 import re
 import argparse
-
-
-def number_to_letter(n: int) -> str:
-    number = n - 1
-    final_letter = chr(ord("A") + (number % 20))
-    if number < 20:
-        return final_letter
-
-    number //= 20
-
-    letters = []
-    while True:
-        number -= 1
-        letters.append(chr(ord("U") + ((number % 5))))
-        number //= 5
-        if not number:
-            break
-
-    letters.reverse()
-    letters.append(final_letter)
-    return "".join(letters)
 
 
 def compress(mandatory: List[str], proof: List[str]) -> str:
@@ -48,7 +27,7 @@ def compress(mandatory: List[str], proof: List[str]) -> str:
     unique_labels = [label for label, _ in sorted_frequency]
 
     for i, hyp in enumerate(mandatory + unique_labels):
-        label_to_letter[hyp] = number_to_letter(i + 1)
+        label_to_letter[hyp] = Proof.encode_index(i + 1)
 
     labels_str = " ".join(["("] + unique_labels + [")"])
     letters = [label_to_letter[label] for label in proof]
