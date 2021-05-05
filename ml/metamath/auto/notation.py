@@ -218,7 +218,7 @@ class NotationProver:
                     subproofs.append(subproof)
 
                 proof = congruence.match_and_apply(target, *subproofs)
-                assert (proof.conclusion == target.terms), f"congruence axiom gave unexpected result"
+                assert proof.is_proof_of(target), f"congruence axiom gave unexpected result"
 
                 return proof
 
@@ -331,7 +331,7 @@ class NotationProver:
         Given a statement <target> and a proof of another statement <source>
         attempt to show <target> by arguing that they are the same modulo notation
         """
-        if target.terms == source.conclusion:
+        if source.is_proof_of(target):
             return source
 
         assert len(target.terms) == len(source.conclusion) != 0
@@ -361,8 +361,8 @@ class NotationProver:
             *notation_proofs,
         )
 
-        assert proof.conclusion == target.terms, \
-               f"unable to show {target} from {proof.conclusion} using only notations"
+        assert proof.is_proof_of(target), \
+               f"unable to show {target} from {proof} using only notations"
 
         return proof
 

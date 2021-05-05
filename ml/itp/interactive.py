@@ -5,7 +5,7 @@ from typing import Optional, List
 import readline
 import traceback
 
-from ml.metamath.ast import StructuredStatement, Statement, Application, Metavariable
+from ml.metamath.ast import StructuredStatement, Statement, Application, Metavariable, Encoder
 from ml.metamath.parser import load_database
 from ml.metamath.composer import Composer
 
@@ -273,7 +273,7 @@ class InteractiveState:
 
     @BuiltinCommand.add("proof", help_message="once all goals are resolved, print the final proof")
     def command_proof(self, output_file=None):
-        proof_text = str(self.proof_state.gen_proof())
+        proof_text = Encoder.encode_string(self.proof_state.gen_proof().as_statement(), omit_proof=False)
         if output_file is not None:
             with open(output_file, "w") as output:
                 output.write(proof_text)

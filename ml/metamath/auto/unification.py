@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Mapping, Dict, Callable
+from typing import Optional, List, Tuple, Mapping, Dict, Callable, Collection
 
 from ..ast import Metavariable, Term, Statement, Application, StructuredStatement
 from ..visitors import SubstitutionVisitor
@@ -110,7 +110,7 @@ class Unification:
             return None
 
     @staticmethod
-    def match_lists_of_terms(terms1: List[Term], terms2: List[Term]) -> Optional[List[Tuple[Term, Term]]]:
+    def match_lists_of_terms(terms1: Collection[Term], terms2: Collection[Term]) -> Optional[List[Tuple[Term, Term]]]:
         matching = []
 
         if len(terms1) != len(terms2):
@@ -149,7 +149,8 @@ class Unification:
         return Unification.get_instance_substitution(solution)
 
     @staticmethod
-    def match_lists_of_terms_as_instance(terms1: List[Term], terms2: List[Term]) -> Optional[Mapping[str, Term]]:
+    def match_lists_of_terms_as_instance(terms1: Collection[Term],
+                                         terms2: Collection[Term]) -> Optional[Mapping[str, Term]]:
         solution = Unification.match_lists_of_terms(terms1, terms2)
         if solution is None:
             return None

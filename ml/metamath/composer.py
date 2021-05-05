@@ -223,10 +223,24 @@ class Theorem:
         assert len(subproofs) == len(hyp_labels)
         hyp_proof_map = dict(zip(hyp_labels, subproofs))
 
+        # create an inlined proof
+        proof_script: List[str] = []
+        proof_of_theorem.flatten(proof_script)
+
+        new_proof_script = []
+
+        for label in proof_script:
+            if label in hyp_proof_map:
+                script: List[str] = []
+                hyp_proof_map[label].flatten(script)
+                new_proof_script.extend(script)
+            else:
+                new_proof_script.append(label)
+
         instance = self.get_conclusion_instance(substitution)
 
         # instantiate the hypotheses with actual proofs
-        return proof_of_theorem.substitute_leaves(instance, hyp_proof_map)
+        return Proof.from_script(instance, new_proof_script)
 
 
 class ProofCache:
@@ -301,7 +315,7 @@ class ProofCache:
 
         if cached_proof is not None:
             self.stat_cache_hit += 1
-            assert cached_proof.conclusion == list(terms)
+            assert cached_proof.conclusion == terms
             return cached_proof
 
         self.stat_cache_miss += 1
@@ -310,12 +324,7 @@ class ProofCache:
         if (not no_theorem_cache and len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD):
             self.stat_theorem_cache += 1
 
-            theorem_statement = StructuredStatement(
-                Statement.PROVABLE,
-                proof.conclusion,
-                label=self.get_next_label(domain),
-                proof=proof,
-            )
+            theorem_statement = proof.as_statement(self.get_next_label(domain))
 
             # do not index the cached statements
             theorem = self.composer.load_theorem(theorem_statement, index=False)

@@ -268,8 +268,8 @@ class Proof:
     This datastructure allows both reference to other proofs
     and raw, unparsed proofs to save space
     """
-    def __init__(self, conclusion: List[Term]):
-        self.conclusion = conclusion
+    def __init__(self, conclusion: Iterable[Term]):
+        self.conclusion = tuple(conclusion)
 
         self.nodes: Dict[int, Union[str, Proof, List[str]]] = {}
         # a node is either:
@@ -294,6 +294,10 @@ class Proof:
 
     @staticmethod
     def from_application(statement: StructuredStatement, root: str, children: List[Proof]) -> Proof:
+        """
+        Combine the proof DAGs
+        """
+
         proof = Proof(statement.terms)
         proof.nodes[0] = root
 
@@ -311,7 +315,7 @@ class Proof:
         """
         return StructuredStatement(
             Statement.PROVABLE,
-            self.conclusion,
+            list(self.conclusion),
             label=label,
             proof=self,
         )
@@ -339,48 +343,8 @@ class Proof:
         else:
             output_script.extend(subproof)
 
-    def substitute_leaves(self, new_conclusion: StructuredStatement, substitution: Mapping[str, Proof]) -> Proof:
-        """
-        Substitute some leaf nodes with the given proofs
-        """
-        new_proof = Proof(new_conclusion.terms)
-        new_proof.dag = self.dag
-
-        for node, subproof in self.nodes.items():
-            if self.is_leaf(node):
-                if isinstance(subproof, str):
-                    if subproof in substitution:
-                        new_proof.nodes[node] = substitution[subproof]
-                    else:
-                        new_proof.nodes[node] = subproof
-                    continue
-
-                if isinstance(subproof, Proof):
-                    # if the subproof is a Proof object
-                    # it has to be flattened because
-                    # we cannot infer its new conclusion
-                    # without context
-
-                    subproof_script: List[str] = []
-                    subproof.flatten(subproof_script)
-                else:
-                    subproof_script = subproof
-
-                # substitute labels in a proof script
-                new_script = []
-                for label in subproof_script:
-                    if label in substitution:
-                        flattened: List[str] = []
-                        substitution[label].flatten(flattened)
-                        new_script.extend(flattened)
-                    else:
-                        new_script.append(label)
-
-                new_proof.nodes[node] = new_script
-            else:
-                new_proof.nodes[node] = subproof
-
-        return new_proof
+    def is_proof_of(self, statement: StructuredStatement) -> bool:
+        return self.conclusion == tuple(statement.terms)
 
     def __len__(self) -> int:
         size = 0
@@ -392,7 +356,7 @@ class Proof:
         return size
 
     def __str__(self):
-        return f"<proof of {' '.join(self.conclusion)}>"
+        return f"<proof of {' '.join(map(str, self.conclusion))}>"
 
     def encode(self) -> str:
         script: List[str] = []

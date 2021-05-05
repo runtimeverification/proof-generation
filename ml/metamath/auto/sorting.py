@@ -181,10 +181,10 @@ class SortingProver:
 
             proof = theorem.match_and_apply(statement)
 
-            if proof.conclusion == statement.terms:
+            if proof.is_proof_of(statement):
                 break
         else:
-            assert (proof.conclusion == statement.terms), f"unable to prove {statement}"
+            assert proof.is_proof_of(statement), f"unable to prove {statement}"
 
         return proof
 
