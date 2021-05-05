@@ -253,7 +253,7 @@ class SubstitutionProver:
             subst_var,
         )
 
-        assert subst_proof.statement.terms == target.terms
+        assert subst_proof.conclusion == target.terms
 
         return composer.get_theorem("notation-substitution").apply(
             subst_proof,

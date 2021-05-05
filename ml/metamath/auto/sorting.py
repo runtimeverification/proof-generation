@@ -181,10 +181,10 @@ class SortingProver:
 
             proof = theorem.match_and_apply(statement)
 
-            if proof.statement.terms == statement.terms:
+            if proof.conclusion == statement.terms:
                 break
         else:
-            assert (proof.statement.terms == statement.terms), f"unable to prove {statement}"
+            assert (proof.conclusion == statement.terms), f"unable to prove {statement}"
 
         return proof
 
@@ -283,7 +283,7 @@ class SortingProver:
         # we can prove the conclusion directly without using hypotheses
         if SortingProver.get_in_sort_pair(sorting_lemma_term) is not None:
             assert (
-                subproof.statement.terms[1] == conclusion
+                subproof.conclusion[1] == conclusion
             ), f"unable to prove sorting judgement ( \\imp {hypothesis} {conclusion} )"
 
             return composer.get_theorem("proof-rule-mp").apply(
@@ -294,8 +294,8 @@ class SortingProver:
         # this statement should also be a implication
         # we prove the left hand side of our target
         # implies the left hand side of this statement
-        assert isinstance(subproof.statement.terms[1], Application)
-        subgoal = subproof.statement.terms[1].subterms[0]
+        assert isinstance(subproof.conclusion[1], Application)
+        subgoal = subproof.conclusion[1].subterms[0]
 
         return composer.get_theorem("rule-imp-transitivity").apply(
             SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, subgoal),

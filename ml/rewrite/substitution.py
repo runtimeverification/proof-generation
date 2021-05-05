@@ -113,7 +113,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
                     break
 
             if shadowed_index < len(axiom.sort_variables):
-                body = proof.statement.terms[1]
+                body = proof.conclusion[1]
                 for sort_var in axiom.sort_variables[shadowed_index + 1:][::-1]:
                     encoded_sort_var = KorePatternEncoder.encode_sort_variable(sort_var)
                     body = mm.Application(

@@ -218,7 +218,7 @@ class NotationProver:
                     subproofs.append(subproof)
 
                 proof = congruence.match_and_apply(target, *subproofs)
-                assert (proof.statement.terms == target.terms), f"congruence axiom gave unexpected result"
+                assert (proof.conclusion == target.terms), f"congruence axiom gave unexpected result"
 
                 return proof
 
@@ -229,7 +229,7 @@ class NotationProver:
             assert (substitution is not None), f"ill-formed sugar axiom {sugar_axiom.statement}"
 
             reduction_proof = sugar_axiom.apply(**substitution)
-            new_left = reduction_proof.statement.terms[2]
+            new_left = reduction_proof.conclusion[2]
 
             # switching the order here in the hope
             # that we don't produce a proof that's too long
@@ -282,7 +282,7 @@ class NotationProver:
                 assert (substitution is not None), f"ill-formed sugar axiom {sugar_axiom.statement}"
 
                 reduction_proof = sugar_axiom.apply(**substitution)
-                expanded = reduction_proof.statement.terms[2]
+                expanded = reduction_proof.conclusion[2]
 
                 # switching the order here in the hope
                 # that we don't produce a proof that's too long
@@ -331,11 +331,11 @@ class NotationProver:
         Given a statement <target> and a proof of another statement <source>
         attempt to show <target> by arguing that they are the same modulo notation
         """
-        if target.terms == source.statement.terms:
+        if target.terms == source.conclusion:
             return source
 
-        assert len(target.terms) == len(source.statement.terms) != 0
-        assert target.terms[0] == source.statement.terms[0]
+        assert len(target.terms) == len(source.conclusion) != 0
+        assert target.terms[0] == source.conclusion[0]
         assert isinstance(target.terms[0], Application)
 
         meta_relation = target.terms[0].symbol
@@ -350,7 +350,7 @@ class NotationProver:
             assert position < len(target.terms), f"ill-formed goal: {target}"
 
             original_term = target.terms[position]
-            expanded_term = source.statement.terms[position]
+            expanded_term = source.conclusion[position]
 
             notation_proof = NotationProver.prove_notation(composer, original_term, expanded_term)
             notation_proofs.append(notation_proof)
@@ -361,8 +361,8 @@ class NotationProver:
             *notation_proofs,
         )
 
-        assert proof.statement.terms == target.terms, \
-               f"unable to show {target} from {proof.statement.terms} using only notations"
+        assert proof.conclusion == target.terms, \
+               f"unable to show {target} from {proof.conclusion} using only notations"
 
         return proof
 

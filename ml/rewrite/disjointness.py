@@ -175,8 +175,8 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
         # build the desired statement for the previous step
-        assert isinstance(subproof.statement.terms[1], mm.Application)
-        prev_step_lhs_body, prev_step_rhs_body = subproof.statement.terms[1].subterms
+        assert isinstance(subproof.conclusion[1], mm.Application)
+        prev_step_lhs_body, prev_step_rhs_body = subproof.conclusion[1].subterms
         prev_step_lhs = CopyVisitor().visit(ith_arg)
         prev_step_lhs.subterms[2] = prev_step_lhs_body
         prev_step_rhs = CopyVisitor().visit(ith_arg)
@@ -208,10 +208,10 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         # |- ph0 -> ph1
         assert (
-            len(imp.statement.terms) == 2 and isinstance(imp.statement.terms[1], mm.Application)
-            and imp.statement.terms[1].symbol == "\\imp"
+            len(imp.conclusion) == 2 and isinstance(imp.conclusion[1], mm.Application)
+            and imp.conclusion[1].symbol == "\\imp"
         )
-        lhs, rhs = imp.statement.terms[1].subterms
+        lhs, rhs = imp.conclusion[1].subterms
 
         assert lhs == app.subterms[i]
 
@@ -284,8 +284,8 @@ class DisjointnessProofGenerator(ProofGenerator):
         arg_imp_bot = self.env.get_theorem("desugar-not-to-imp").apply(argument_disjointness)
 
         replace_arg_with_bot = self.apply_framing_on_application(conj_app, i, arg_imp_bot)
-        assert isinstance(replace_arg_with_bot.statement.terms[1], mm.Application)
-        _, rhs = replace_arg_with_bot.statement.terms[1].subterms
+        assert isinstance(replace_arg_with_bot.conclusion[1], mm.Application)
+        _, rhs = replace_arg_with_bot.conclusion[1].subterms
         assert isinstance(rhs, mm.Application)
 
         # show that the entire application of conjunctions implies falsum
@@ -325,9 +325,9 @@ class DisjointnessProofGenerator(ProofGenerator):
             )
         )
 
-        assert isinstance(not_conj.statement.terms[1],
-                          mm.Application) and isinstance(not_conj.statement.terms[1].subterms[0], mm.Application)
-        _, rhs = not_conj.statement.terms[1].subterms[0].subterms
+        assert isinstance(not_conj.conclusion[1],
+                          mm.Application) and isinstance(not_conj.conclusion[1].subterms[0], mm.Application)
+        _, rhs = not_conj.conclusion[1].subterms[0].subterms
         assert isinstance(rhs, mm.Application)
         exists_propagation = self.propagate_exists_out(rhs, i)
 
@@ -446,9 +446,9 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
         # propagate out the existential quantifiers at the body of the injection
-        assert isinstance(disjointness_proof.statement.terms[1], mm.Application
-                          ) and isinstance(disjointness_proof.statement.terms[1].subterms[0], mm.Application)
-        rhs = disjointness_proof.statement.terms[1].subterms[0].subterms[1]
+        assert isinstance(disjointness_proof.conclusion[1],
+                          mm.Application) and isinstance(disjointness_proof.conclusion[1].subterms[0], mm.Application)
+        rhs = disjointness_proof.conclusion[1].subterms[0].subterms[1]
         assert isinstance(rhs, mm.Application)
         exists_propagation = self.propagate_exists_out(rhs, 2)
 

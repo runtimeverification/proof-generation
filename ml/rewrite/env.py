@@ -33,8 +33,8 @@ class ProvableClaim:
         encoded_claim = KorePatternEncoder().visit(claim)
         assert isinstance(proof, Proof)
         assert (
-            encoded_claim == proof.statement.terms[1]
-        ), f"provable claim invariant failed: {encoded_claim} != {proof.statement.terms[1]}"
+            encoded_claim == proof.conclusion[1]
+        ), f"provable claim invariant failed: {encoded_claim} != {proof.conclusion[1]}"
         self.claim = claim
         self.proof = proof
 
@@ -277,8 +277,7 @@ class ProofEnvironment:
         """
         Given a proof of some statement, turns it into a theorem
         """
-        proof.statement.label = label
-        return self.load_metamath_theorem(proof.statement)
+        return self.load_metamath_theorem(proof.as_statement(label))
 
     def load_provable_claim_as_theorem(self, label: str, provable: ProvableClaim) -> ProvableClaim:
         """
@@ -636,9 +635,8 @@ class ProofEnvironment:
             mm.Metavariable(subst_var),
             essential_theorems,
         )
-        subst_proof.statement.label = substitution_rule_name
 
-        self.load_metamath_statement(mm.Block(essentials + [subst_proof.statement]))
+        self.load_metamath_statement(mm.Block(essentials + [subst_proof.as_statement(substitution_rule_name)]))
 
         self.composer.end_segment()
 

@@ -12,22 +12,6 @@ from .ast import *
 from .visitors import SubstitutionVisitor, CopyVisitor
 
 
-class Proof(BaseProof):
-    """
-    A proof is a list of (theorem) labels and a final statement that it proves
-    """
-    def __init__(self, statement: StructuredStatement, script: List[str]):
-        self.statement = statement
-        self.script = script
-        self.statement.proof = self
-
-    def __str__(self):
-        return str(self.statement)
-
-    def encode(self) -> str:
-        return " ".join(self.script)
-
-
 class AutoProof:
     """
     A proof generator that's supposed to prove the statement given to it,
@@ -70,15 +54,11 @@ class Theorem:
         Get all metavariables that are active
         """
         return {var for _, var, _ in self.floatings}
-        # metavars = self.statement.get_metavariables()
-        # for essential in self.essentials:
-        #     metavars.update(essential.get_metavariables())
-        # return metavars
 
     def is_meta_substitution_consistent(self, substituted: Union[Proof, Term], term: Term) -> bool:
         if isinstance(substituted, Proof):
-            assert len(substituted.statement.terms) == 2
-            return substituted.statement.terms[1] == term
+            assert len(substituted.conclusion) == 2
+            return substituted.conclusion[1] == term
         else:
             return substituted == term
 
@@ -96,10 +76,7 @@ class Theorem:
         assert len(self.essentials) == 0
         script = [label for _, _, label in self.floatings]
         script.append(self.statement.label)
-        copied_statement = CopyVisitor().visit(self.statement)
-        copied_statement.label = None
-        copied_statement.statement_type = Statement.PROVABLE
-        return Proof(copied_statement, script)
+        return Proof.from_script(self.statement, script)
 
     def match_and_apply(self, target: StructuredStatement, *args, **kwargs):
         """
@@ -148,8 +125,8 @@ class Theorem:
 
             assert isinstance(essential_proof, Proof), f"wrong proof {essential_proof} of {essential}"
 
-            solution = Unification.match_statements_as_instance(essential, essential_proof.statement)
-            assert solution is not None, "`{}` is not an instance of `{}`".format(essential_proof.statement, essential)
+            solution = Unification.match_lists_of_terms_as_instance(essential.terms, essential_proof.conclusion)
+            assert solution is not None, "`{}` is not an instance of `{}`".format(essential_proof, essential)
 
             # check that the unification solution is consistent with
             # the metavariable assignment
@@ -186,13 +163,13 @@ class Theorem:
                 typecode_proof = metavar_substituted
 
             # check that the proof is in the right form (for floating statements)
-            assert (len(typecode_proof.statement.terms
-                        ) == 2), "wrong proof for `{} {}`, got {}".format(typecode, var, typecode_proof.statement)
+            assert (len(typecode_proof.conclusion
+                        ) == 2), "wrong proof for `{} {}`, got {}".format(typecode, var, typecode_proof)
 
-            proved_typecode, proved_term = typecode_proof.statement.terms
+            proved_typecode, proved_term = typecode_proof.conclusion
 
             assert (isinstance(proved_typecode, Application) and proved_typecode.symbol
-                    == typecode), "wrong proof for `{} {}`, got {}".format(typecode, var, typecode_proof.statement)
+                    == typecode), "wrong proof for `{} {}`, got {}".format(typecode, var, typecode_proof)
 
             substitution[var] = proved_term
             floating_proofs.append(typecode_proof)
@@ -226,13 +203,7 @@ class Theorem:
         instance = self.get_conclusion_instance(substitution)
 
         assert (self.statement.label is not None), f"applying a theorem without label: {self.statement}"
-
-        script = []
-        for subproof in subproofs:
-            script.extend(subproof.script)
-        script.append(self.statement.label)
-
-        return Proof(instance, script)
+        return Proof.from_application(instance, self.statement.label, subproofs)
 
     def inline_apply(self, proof_of_theorem: Proof, *essential_proofs: Proof, **metavar_substitution) -> Proof:
         """
@@ -250,21 +221,12 @@ class Theorem:
 
         hyp_labels = [label for _, _, label in self.floatings] + essential_labels
         assert len(subproofs) == len(hyp_labels)
-
         hyp_proof_map = dict(zip(hyp_labels, subproofs))
-
-        # create an inlined proof
-        proof_script = []
-
-        for label in proof_of_theorem.script:
-            if label in hyp_proof_map:
-                proof_script += hyp_proof_map[label].script
-            else:
-                proof_script.append(label)
 
         instance = self.get_conclusion_instance(substitution)
 
-        return Proof(instance, proof_script)
+        # instantiate the hypotheses with actual proofs
+        return proof_of_theorem.substitute_leaves(instance, hyp_proof_map)
 
 
 class ProofCache:
@@ -332,25 +294,25 @@ class ProofCache:
         if ProofCache.DISABLED:
             return proof
 
-        terms = tuple(proof.statement.terms)
+        terms = tuple(proof.conclusion)
         cached_proof = self.cache_map.get(domain, {}).get(terms, None)
 
         # print(self.stat_cache_hit, self.stat_cache_miss, self.stat_theorem_cache)
 
         if cached_proof is not None:
             self.stat_cache_hit += 1
-            assert cached_proof.statement.terms == list(terms)
+            assert cached_proof.conclusion == list(terms)
             return cached_proof
 
         self.stat_cache_miss += 1
 
         # cache the proof as a theorem
-        if (not no_theorem_cache and len(proof.script) > ProofCache.THEOREM_CACHE_THRESHOLD):
+        if (not no_theorem_cache and len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD):
             self.stat_theorem_cache += 1
 
             theorem_statement = StructuredStatement(
                 Statement.PROVABLE,
-                proof.statement.terms,
+                proof.conclusion,
                 label=self.get_next_label(domain),
                 proof=proof,
             )
@@ -793,7 +755,7 @@ class TypecodeProver:
                     if metavar.name == term.name:
                         # found a direct proof
                         assert theorem.statement.label is not None
-                        proof = Proof(expected_statement, [theorem.statement.label])
+                        proof = Proof.from_script(expected_statement, theorem.statement.label)
                         return composer.cache_proof("typecode-cache-" + typecode, proof)
             # otherwise treat the metavariable as a term
 
@@ -822,7 +784,7 @@ class TypecodeProver:
 
                 # try to recursively prove that each of the subterms in the solution
                 # also have the suitable typecode
-                proof_script = []
+                subproofs = []
                 failed = False
 
                 for expected_typecode, var, _ in theorem.floatings:
@@ -833,17 +795,16 @@ class TypecodeProver:
                         failed = True
                         break
 
-                    proof_script.extend(metavar_proof.script)
+                    subproofs.append(metavar_proof)
 
                 if essential_proof is not None:
-                    proof_script.extend(essential_proof.script)
+                    subproofs.append(essential_proof)
 
                 # found a proof
                 if not failed:
                     # directly construct the proof here for performance
                     assert theorem.statement.label is not None
-                    proof_script.append(theorem.statement.label)
-                    proof = Proof(expected_statement, proof_script)
+                    proof = Proof.from_application(expected_statement, theorem.statement.label, subproofs)
                     return composer.cache_proof("typecode-cache-" + typecode, proof)
 
         return None

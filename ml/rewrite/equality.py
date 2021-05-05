@@ -81,9 +81,9 @@ class EqualityProofGenerator(ProofGenerator):
         }
         # equation_proof is expected to be of the form
         # |- ( \kore-forall-sort z ... )
-        assert isinstance(equation_proof.statement.terms[1], mm.Application
-                          ) and isinstance(equation_proof.statement.terms[1].subterms[0], mm.Metavariable)
-        current_sort_var = equation_proof.statement.terms[1].subterms[0].name
+        assert isinstance(equation_proof.conclusion[1],
+                          mm.Application) and isinstance(equation_proof.conclusion[1].subterms[0], mm.Metavariable)
+        current_sort_var = equation_proof.conclusion[1].subterms[0].name
 
         if current_sort_var in all_sort_metavars:
             (fresh_sort_var, ) = self.env.gen_fresh_metavariables(
@@ -92,7 +92,7 @@ class EqualityProofGenerator(ProofGenerator):
                 all_sort_metavars.union(all_metavars).union({fresh_var}),
             )
 
-            equation_body = equation_proof.statement.terms[1].subterms[1]
+            equation_body = equation_proof.conclusion[1].subterms[1]
             equation_body_subst = SubstitutionVisitor({
                 current_sort_var: mm.Metavariable(fresh_sort_var)
             }).visit(equation_body)

@@ -359,18 +359,18 @@ class TautologyTactic(Tactic):
 
     def decompose_iff(self, proof: Proof) -> Tuple[Term, Term]:
         assert (
-            len(proof.statement.terms) == 2 and isinstance(proof.statement.terms[1], Application)
-            and proof.statement.terms[1].symbol == "\\iff" and len(proof.statement.terms[1].subterms) == 2
+            len(proof.conclusion) == 2 and isinstance(proof.conclusion[1], Application)
+            and proof.conclusion[1].symbol == "\\iff" and len(proof.conclusion[1].subterms) == 2
         )
-        lhs, rhs = proof.statement.terms[1].subterms
+        lhs, rhs = proof.conclusion[1].subterms
         return lhs, rhs
 
     def decompose_imp(self, proof: Proof) -> Tuple[Term, Term]:
         assert (
-            len(proof.statement.terms) == 2 and isinstance(proof.statement.terms[1], Application)
-            and proof.statement.terms[1].symbol == "\\imp" and len(proof.statement.terms[1].subterms) == 2
+            len(proof.conclusion) == 2 and isinstance(proof.conclusion[1], Application)
+            and proof.conclusion[1].symbol == "\\imp" and len(proof.conclusion[1].subterms) == 2
         )
-        lhs, rhs = proof.statement.terms[1].subterms
+        lhs, rhs = proof.conclusion[1].subterms
         return lhs, rhs
 
     def junction_to_list(self, term: Term, connective="and") -> List[Term]:

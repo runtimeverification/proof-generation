@@ -110,16 +110,13 @@ class Unification:
             return None
 
     @staticmethod
-    def match_statements(stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[List[Tuple[Term, Term]]]:
-        """
-        Attempt to match two statements
-        NOTE: this does not check the consistency of the resulting substitution
-        but only returns a list of equations that should hold if the two statements
-        are unifiable
-        """
+    def match_lists_of_terms(terms1: List[Term], terms2: List[Term]) -> Optional[List[Tuple[Term, Term]]]:
         matching = []
 
-        for term1, term2 in zip(stmt1.terms, stmt2.terms):
+        if len(terms1) != len(terms2):
+            return None
+
+        for term1, term2 in zip(terms1, terms2):
             submatching = Unification.match_terms(term1, term2)
             if submatching is None:
                 return None
@@ -127,6 +124,16 @@ class Unification:
             matching.extend(submatching)
 
         return matching
+
+    @staticmethod
+    def match_statements(stmt1: StructuredStatement, stmt2: StructuredStatement) -> Optional[List[Tuple[Term, Term]]]:
+        """
+        Attempt to match two statements
+        NOTE: this does not check the consistency of the resulting substitution
+        but only returns a list of equations that should hold if the two statements
+        are unifiable
+        """
+        return Unification.match_lists_of_terms(stmt1.terms, stmt2.terms)
 
     @staticmethod
     def match_terms_as_instance(term1: Term, term2: Term) -> Optional[Mapping[str, Term]]:
@@ -137,6 +144,13 @@ class Unification:
         but term2 could still be an instance of term1
         """
         solution = Unification.match_terms(term1, term2)
+        if solution is None:
+            return None
+        return Unification.get_instance_substitution(solution)
+
+    @staticmethod
+    def match_lists_of_terms_as_instance(terms1: List[Term], terms2: List[Term]) -> Optional[Mapping[str, Term]]:
+        solution = Unification.match_lists_of_terms(terms1, terms2)
         if solution is None:
             return None
         return Unification.get_instance_substitution(solution)

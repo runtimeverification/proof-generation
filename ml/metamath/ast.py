@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TextIO, Optional, List, Set, Union, Iterable, Any
+from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapping
 from io import StringIO
 
 from ml.utils.visitor import Visitor
@@ -193,11 +193,6 @@ class RawStatement(Statement):
         return visitor.postvisit_raw_statement(self, *children)
 
 
-class BaseProof:
-    def encode(self) -> str:
-        raise NotImplementedError()
-
-
 class StructuredStatement(Statement):
     """
     Structured statement will be parsed as a list of S-expressions
@@ -207,7 +202,7 @@ class StructuredStatement(Statement):
         statement_type: str,
         terms: List[Term],
         label: Optional[str] = None,
-        proof: Optional[BaseProof] = None,
+        proof: Optional[Proof] = None,
     ):
         super().__init__()
         self.statement_type = statement_type
@@ -264,9 +259,150 @@ class Database(BaseAST):
         return visitor.postvisit_database(self, *children)
 
 
+class Proof:
+    """
+    A Metamath proof is a tree with each node being a
+    statement label and the number of children
+    should be equal to the nmuber of mandatory hypotheses
+
+    This datastructure allows both reference to other proofs
+    and raw, unparsed proofs to save space
+    """
+    def __init__(self, conclusion: List[Term]):
+        self.conclusion = conclusion
+
+        self.nodes: Dict[int, Union[str, Proof, List[str]]] = {}
+        # a node is either:
+        # - a label, which can be used for any node in the tree
+        # - a Proof, which can only be used for non-leaf nodes
+        # - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
+
+        self.dag: Dict[int, List[int]] = {}
+        # a proof DAG should have a unique source at 0
+        # for now it's always a tree
+        # if a node has no out-edges, it SHOULD NOT
+        # have an entry in self.dag
+
+    @staticmethod
+    def from_script(statement: StructuredStatement, script: Union[str, List[str]]) -> Proof:
+        """
+        Make a proof from the normal proof format as a list of labels
+        """
+        proof = Proof(statement.terms)
+        proof.nodes[0] = script
+        return proof
+
+    @staticmethod
+    def from_application(statement: StructuredStatement, root: str, children: List[Proof]) -> Proof:
+        proof = Proof(statement.terms)
+        proof.nodes[0] = root
+
+        if len(children) != 0:
+            proof.dag[0] = []
+            for i, child in enumerate(children):
+                proof.nodes[i + 1] = child
+                proof.dag[0].append(i + 1)
+
+        return proof
+
+    def as_statement(self, label: Optional[str] = None) -> StructuredStatement:
+        """
+        Encode as a provable statement
+        """
+        return StructuredStatement(
+            Statement.PROVABLE,
+            self.conclusion,
+            label=label,
+            proof=self,
+        )
+
+    def is_leaf(self, node: int) -> bool:
+        return node not in self.dag
+
+    def get_children_of(self, node: int) -> List[int]:
+        return self.dag.get(node, [])
+
+    def flatten(self, output_script: List[str], root: int = 0):
+        """
+        Flatten encodes a recursive hierarchy of proofs
+        as the normal Metamath proof format
+        """
+        for child in self.get_children_of(root):
+            self.flatten(output_script, child)
+
+        subproof = self.nodes[root]
+
+        if isinstance(subproof, str):
+            output_script.append(subproof)
+        elif isinstance(subproof, Proof):
+            subproof.flatten(output_script)
+        else:
+            output_script.extend(subproof)
+
+    def substitute_leaves(self, new_conclusion: StructuredStatement, substitution: Mapping[str, Proof]) -> Proof:
+        """
+        Substitute some leaf nodes with the given proofs
+        """
+        new_proof = Proof(new_conclusion.terms)
+        new_proof.dag = self.dag
+
+        for node, subproof in self.nodes.items():
+            if self.is_leaf(node):
+                if isinstance(subproof, str):
+                    if subproof in substitution:
+                        new_proof.nodes[node] = substitution[subproof]
+                    else:
+                        new_proof.nodes[node] = subproof
+                    continue
+
+                if isinstance(subproof, Proof):
+                    # if the subproof is a Proof object
+                    # it has to be flattened because
+                    # we cannot infer its new conclusion
+                    # without context
+
+                    subproof_script: List[str] = []
+                    subproof.flatten(subproof_script)
+                else:
+                    subproof_script = subproof
+
+                # substitute labels in a proof script
+                new_script = []
+                for label in subproof_script:
+                    if label in substitution:
+                        flattened: List[str] = []
+                        substitution[label].flatten(flattened)
+                        new_script.extend(flattened)
+                    else:
+                        new_script.append(label)
+
+                new_proof.nodes[node] = new_script
+            else:
+                new_proof.nodes[node] = subproof
+
+        return new_proof
+
+    def __len__(self) -> int:
+        size = 0
+        for subproof in self.nodes.values():
+            if isinstance(subproof, str):
+                size += 1
+            else:
+                size += len(subproof)
+        return size
+
+    def __str__(self):
+        return f"<proof of {' '.join(self.conclusion)}>"
+
+    def encode(self) -> str:
+        script: List[str] = []
+        self.flatten(script)
+        return " ".join(script)
+
+
 class Encoder(Printer):
     """
-    Encoder for Metamath AST
+    Encoder for Metamath AST with options
     """
     def __init__(self, output: TextIO, tab: str = "   ", omit_proof: bool = True):
         super().__init__(output, tab)
