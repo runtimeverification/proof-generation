@@ -94,10 +94,14 @@ class ASTTransformer(Transformer):
 
     def provable_stmt(self, args):
         label, *args = args
-        proof = args[-1]
+        script = list(args[-1])
         tokens = args[:-1]
         terms = self.parse_terms(tokens)
-        return StructuredStatement(Statement.PROVABLE, terms, label=label, proof=proof)
+
+        statement = StructuredStatement(Statement.PROVABLE, terms, label=label)
+        statement.proof = Proof.from_script(statement, script)
+
+        return statement
 
     def block(self, args):
         return Block(args)

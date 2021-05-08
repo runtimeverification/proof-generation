@@ -47,7 +47,11 @@ class MetamathVisitor(Visitor):
 
 class BaseAST:
     def __str__(self) -> str:
-        return Encoder.encode_string(self)
+        stream = StringIO()
+        encoder = BaseEncoder(stream)
+        encoder.visit(self)
+        encoder.flush()
+        return stream.getvalue()
 
     def __repr__(self) -> str:
         return str(self)
@@ -432,31 +436,60 @@ class Proof:
         letters.append(final_letter)
         return "".join(letters)
 
-    def encode(self) -> str:
+    @staticmethod
+    def compress_script(mandatory: List[str], proof: List[str]) -> str:
+        label_to_letter = {"?": "?"}
+
+        # rank the labels by frequency
+        frequency = {}
+        for label in proof:
+            # ? and mandatory labels are handled differently
+            if label == "?" or label in mandatory:
+                continue
+
+            if label not in frequency:
+                frequency[label] = 0
+
+            frequency[label] += 1
+
+        sorted_frequency = sorted(list(frequency.items()), reverse=True, key=lambda t: t[1])
+        unique_labels = [label for label, _ in sorted_frequency]
+
+        for i, hyp in enumerate(mandatory + unique_labels):
+            label_to_letter[hyp] = Proof.encode_index(i + 1)
+
+        labels_str = " ".join(["("] + unique_labels + [")"])
+        letters = [label_to_letter[label] for label in proof]
+        letters_str = "".join(letters)
+
+        return labels_str + " " + letters_str
+
+    def encode_normal(self) -> str:
+        """
+        Encode a proof in the normal format (i.e. a list of space-separated labels)
+        """
         script: List[str] = []
         self.flatten(script)
         return " ".join(script)
 
+    def encode_compressed(self, mandatory_hypotheses: List[str]) -> str:
+        """
+        Encode a proof in the compressed format
+        This requires some context information, namely the mandatory hypotheses
+        of the statement in the order they are defined
+        """
+        script: List[str] = []
+        self.flatten(script)
+        return Proof.compress_script(mandatory_hypotheses, script)
 
-class Encoder(Printer):
+
+class BaseEncoder(Printer):
     """
     Encoder for Metamath AST with options
     """
-    def __init__(self, output: TextIO, tab: str = "   ", omit_proof: bool = True):
+    def __init__(self, output: TextIO, tab: str = "   ", omit_proof: bool = False):
         super().__init__(output, tab)
         self.omit_proof = omit_proof
-
-    @staticmethod
-    def encode(output: TextIO, ast: BaseAST, *args, **kwargs):
-        printer = Encoder(output, *args, **kwargs)
-        printer.visit(ast)
-        printer.flush()
-
-    @staticmethod
-    def encode_string(ast: BaseAST, *args, **kwargs) -> str:
-        stream = StringIO()
-        Encoder.encode(stream, ast, *args, **kwargs)
-        return stream.getvalue()
 
     def postvisit_metavariable(self, metavar: Metavariable):
         self.write(metavar.name)
@@ -506,6 +539,10 @@ class Encoder(Printer):
 
         self.write(" $.")
 
+    def encode_proof(self, stmt: StructuredStatement):
+        assert stmt.proof is not None
+        self.write(stmt.proof.encode_normal())
+
     def postvisit_structured_statement(self, stmt: StructuredStatement):
         if stmt.label is not None:
             self.write(stmt.label)
@@ -524,7 +561,7 @@ class Encoder(Printer):
                     self.write(" $= <omitted>")
                 else:
                     self.write(" $= ")
-                    self.write(stmt.proof.encode())
+                    self.encode_proof(stmt)
             else:
                 self.write(" $= ?")
 
@@ -546,3 +583,4 @@ class Encoder(Printer):
     def postvisit_database(self, database: Database):
         for stmt in database.statements:
             self.visit(stmt)
+            self.write("\n")

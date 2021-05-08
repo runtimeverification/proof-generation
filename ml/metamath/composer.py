@@ -55,6 +55,15 @@ class Theorem:
         """
         return {var for _, var, _ in self.floatings}
 
+    def get_mandatory_hypothesis_labels(self) -> List[str]:
+        labels = [label for _, _, label in self.floatings]
+
+        for essential in self.essentials:
+            assert essential.label is not None
+            labels.append(essential.label)
+
+        return labels
+
     def is_meta_substitution_consistent(self, substituted: Union[Proof, Term], term: Term) -> bool:
         if isinstance(substituted, Proof):
             assert len(substituted.conclusion) == 2
@@ -515,12 +524,9 @@ class Composer:
 
         return self.context.are_metavariables_disjoint({term1.name, term2.name})
 
-    def encode(self, stream: TextIO, segment=None):
-        encoder = Encoder(stream, omit_proof=False)
-        for stmt in self.statements if segment is None else self.get_segment(segment):
-            encoder.visit(stmt)
-            encoder.write("\n")
-        encoder.flush()
+    def encode(self, stream: TextIO, segment=None, **args):
+        statements = self.statements if segment is None else self.get_segment(segment)
+        Encoder.encode(self, stream, Database(statements), **args)
 
     def cache_proof(self, *args, **kwargs) -> Proof:
         return self.proof_cache.cache(*args, **kwargs)
@@ -817,3 +823,33 @@ class TypecodeProver:
                     return composer.cache_proof("typecode-cache-" + typecode, proof)
 
         return None
+
+
+class Encoder(BaseEncoder):
+    def __init__(self, composer: Composer, *args, compressed: bool = True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.composer = composer
+        self.compressed = compressed
+
+    @staticmethod
+    def encode(composer: Composer, output: TextIO, ast: BaseAST, *args, **kwargs):
+        encoder = Encoder(composer, output, *args, **kwargs)
+        encoder.visit(ast)
+        encoder.flush()
+
+    @staticmethod
+    def encode_string(composer: Composer, ast: BaseAST, *args, **kwargs) -> str:
+        stream = StringIO()
+        Encoder.encode(composer, stream, ast, *args, **kwargs)
+        return stream.getvalue()
+
+    def encode_proof(self, stmt: StructuredStatement):
+        assert stmt.proof is not None and stmt.label is not None
+
+        if self.compressed:
+            theorem = self.composer.get_theorem(stmt.label)
+            mandatory = theorem.get_mandatory_hypothesis_labels()
+
+            self.write(stmt.proof.encode_compressed(mandatory))
+        else:
+            self.write(stmt.proof.encode_normal())
