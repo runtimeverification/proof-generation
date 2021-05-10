@@ -11,12 +11,26 @@ from typing import (
     Any,
     Dict,
     Union,
+    NamedTuple,
+    Type,
+    TypeVar,
+    Iterable,
 )
+from abc import abstractmethod
 
-from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
-from ml.metamath.composer import Composer, Proof, Theorem
+from ml.metamath.ast import StructuredStatement, Metavariable, Term, Terms, ProvableStatement, Proof, Application
+from ml.metamath.composer import Composer, Theorem, Context, TypecodeProver
+from ml.metamath.parser import (
+    parse_term_with_metavariables,
+    parse_terms_with_metavariables,
+)
+from ml.metamath.auto.notation import NotationProver
+from ml.metamath.auto.unification import Unification
 
-from .extension import SchematicVariable, SubstitutionVisitor, CopyVisitor
+from .extension import SchematicVariable
+
+
+StmtT = TypeVar("StmtT", bound=StructuredStatement)
 
 
 class NoStateChangeException(Exception):
@@ -50,12 +64,9 @@ class Goal:
     @staticmethod
     def sanitize_goal_statement(
         statement: StructuredStatement, claim_label: Optional[str] = None
-    ) -> StructuredStatement:
-        copied = CopyVisitor().visit(statement)
-        copied.statement_type = "?"
-        copied.label = None if claim_label is None else f"[{claim_label}]"
-        copied.proof = None
-        return copied
+    ) -> ProvableStatement:
+        label = "" if claim_label is None else f"[{claim_label}]"
+        return ProvableStatement(label, statement.terms)
 
 
 class Claim:
@@ -81,20 +92,25 @@ class Claim:
         return Claim(self.goal_id, self.theorem, self.is_local, self.scope)
 
 
+class TacticRecord(NamedTuple):
+    tactic_cls: Type[Tactic]
+    help_message: Optional[str] = None
+
+
 class ProofState:
-    all_tactics: Dict[str, Tuple[Any, Optional[str]]] = {}  # name -> ( tactic class name, [help message] )
+    all_tactics: Dict[str, TacticRecord] = {}  # name -> ( tactic class name, [help message] )
 
     @staticmethod
-    def register_tactic(name: str, help_msg: Optional[str] = None):
-        def decorator(class_object):
-            ProofState.all_tactics[name] = class_object, help_msg
+    def register_tactic(name: str, help_msg: Optional[str] = None) -> Callable[[Type[Tactic]], Type[Tactic]]:
+        def decorator(class_object: Type[Tactic]) -> Type[Tactic]:
+            ProofState.all_tactics[name] = TacticRecord(class_object, help_msg)
             return class_object
 
         return decorator
 
-    def get_tactic(self, name: str):
+    def get_tactic(self, name: str) -> Type[Tactic]:
         assert name in ProofState.all_tactics, f"tactic {name} not found"
-        return ProofState.all_tactics[name][0]
+        return ProofState.all_tactics[name].tactic_cls
 
     def __init__(self, composer: Composer, init_goal: StructuredStatement):
         self.composer = composer
@@ -114,7 +130,7 @@ class ProofState:
         self.current_goals = [0]
         # goal id -> List[goal id]
         self.goal_dependencies: Dict[int, List[int]] = {}
-        self.goal_resolver: Dict[int, Any] = {}  # goal id -> Tactic that resolved the goal
+        self.goal_resolver: Dict[int, Tactic] = {}  # goal id -> Tactic that resolved the goal
 
     def copy(self) -> ProofState:
         copied_state = ProofState(self.composer, self.get_goal_by_id(0).statement)
@@ -139,9 +155,9 @@ class ProofState:
 
         if goal.claim_label is not None:
             claim = self.claims[goal.claim_label]
-            for essential in claim.theorem.essentials:
+            for essential in claim.theorem.context.essentials:
                 if essential.label == name:
-                    return Theorem(self.composer, essential, [], [])
+                    return Theorem(self.composer, Context(), essential)
             return None
         else:
             return self.composer.find_essential(name)
@@ -150,11 +166,11 @@ class ProofState:
         top_goal = self.get_top_goal()
         if top_goal.claim_label is not None:
             claim = self.claims[top_goal.claim_label]
-            return [Theorem(self.composer, essential, [], []) for essential in claim.theorem.essentials]
+            return [Theorem(self.composer, Context(), essential) for essential in claim.theorem.context.essentials]
         else:
             return self.composer.get_all_essentials()
 
-    def add_goal_dependency(self, parent: Goal, child: Goal):
+    def add_goal_dependency(self, parent: Goal, child: Goal) -> None:
         if parent.goal_id not in self.goal_dependencies:
             self.goal_dependencies[parent.goal_id] = []
 
@@ -194,7 +210,7 @@ class ProofState:
         assert len(self.current_goals), "no goals left"
         return self.get_goal_by_id(self.current_goals[-1])
 
-    def get_current_goal_statements(self) -> List[StructuredStatement]:
+    def get_current_goal_statements(self) -> List[ProvableStatement]:
         """
         Get the current list of goals from top to bottom
         """
@@ -208,7 +224,7 @@ class ProofState:
         if len(self.current_goals) == 0: return None
         return self.get_top_goal().claim_label
 
-    def resolve_top_goal(self, tactic) -> Goal:
+    def resolve_top_goal(self, tactic: Tactic) -> Goal:
         assert len(self.current_goals), "no goals left"
         resolved_goal_id = self.current_goals.pop()
         self.goal_resolver[resolved_goal_id] = tactic
@@ -242,7 +258,7 @@ class ProofState:
         return [claim for claim in self.claims.values() if claim.is_local and claim.scope == self.get_current_scope()]
 
     def push_isolated_goals(self,
-                            statements: List[StructuredStatement],
+                            statements: Iterable[StructuredStatement],
                             claim_label: Optional[str] = None) -> List[Goal]:
         """
         Push a goal with no initial dependency (similar to the initial goal)
@@ -259,12 +275,12 @@ class ProofState:
     def push_isolated_goal(self, statement: StructuredStatement, claim_label: Optional[str] = None) -> Goal:
         return self.push_isolated_goals([statement], claim_label)[0]
 
-    def push_derived_goals(self, parent: Goal, statements: List[StructuredStatement]):
+    def push_derived_goals(self, parent: Goal, statements: Iterable[StructuredStatement]) -> None:
         new_goals = self.push_isolated_goals(statements, parent.claim_label)
         for goal in new_goals:
             self.add_goal_dependency(parent, goal)
 
-    def push_derived_goal(self, parent: Goal, statement: StructuredStatement):
+    def push_derived_goal(self, parent: Goal, statement: StructuredStatement) -> None:
         self.push_derived_goals(parent, [statement])
 
     def get_next_schematic_variable(self, typecode: str) -> SchematicVariable:
@@ -281,7 +297,7 @@ class ProofState:
         else:
             return None
 
-    def assign_schematic_variables(self, subst: Mapping[str, Term]):
+    def assign_schematic_variables(self, subst: Mapping[str, Term]) -> None:
         # check validity of the substitution
         for var, term in subst.items():
             svar = self.get_schematic_variable_from_name(var)
@@ -295,17 +311,15 @@ class ProofState:
             else:
                 self.schematic_var_assignment[svar.num] = term
 
-        subst_visitor = SubstitutionVisitor(subst)
-
         # substitute the variables in all goals
         for goal_id in self.current_goals:
             goal = self.all_goals[goal_id] = self.all_goals[goal_id].copy()
-            goal.statement = subst_visitor.visit(goal.statement)
+            goal.statement = goal.statement.substitute(subst)
 
         # substitute the variables in all claims
         for name in self.claims:
             claim = self.claims[name] = self.claims[name].copy()
-            claim.theorem.statement = subst_visitor.visit(claim.theorem.statement)
+            claim.theorem.statement = claim.theorem.statement.substitute(subst)
 
     def get_live_schematic_variables(self) -> Set[str]:
         """
@@ -338,12 +352,10 @@ class ProofState:
                 subterm = self.resolve_schematic_variables(svar)
                 schematic_substitution[svar.name] = subterm
 
-        return SubstitutionVisitor(schematic_substitution).visit(term)
+        return term.substitute(schematic_substitution)
 
-    def resolve_schematic_variables_in_statement(self, stmt: StructuredStatement) -> StructuredStatement:
-        copied_stmt = CopyVisitor().visit(stmt)
-        copied_stmt.terms = [self.resolve_schematic_variables(term) for term in copied_stmt.terms]
-        return copied_stmt
+    def resolve_schematic_variables_in_statement(self, stmt: StmtT) -> StmtT:
+        return type(stmt)(stmt.label, tuple(self.resolve_schematic_variables(term) for term in stmt.terms))
 
     def is_concrete(self, term: Union[Term, StructuredStatement]) -> bool:
         """
@@ -355,7 +367,7 @@ class ProofState:
                 return False
         return True
 
-    def apply_tactic(self, tactic, *args, **kwargs) -> ProofState:
+    def apply_tactic(self, tactic: Tactic, *args: Any, **kwargs: Any) -> ProofState:
         """
         Apply the given tactic on a copied state
         """
@@ -383,3 +395,122 @@ class ProofState:
         assert not self.current_goals, "non empty goal stack"
         init_goal = self.get_goal_by_id(0)
         return self.gen_proof_for_goal(init_goal)
+
+
+class Tactic:
+    def __init__(self, tactic_name: str):
+        self.tactic_name = tactic_name
+
+    @abstractmethod
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
+        """
+        Transforms the proof state
+        """
+        raise NotImplementedError()
+
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        """
+        Transforms the proof stack
+        """
+        raise NotImplementedError()
+
+    def parse_terms(self, state: ProofState, src: str) -> Terms:
+        return parse_terms_with_metavariables(src, set(state.composer.get_all_metavariables()))
+
+    def parse_substitution(self, state: ProofState, options: Mapping[str, str]) -> Dict[str, Term]:
+        substitution = {}
+        all_metavars = set(state.composer.get_all_metavariables())
+
+        for key, value in options.items():
+            assert type(value) is str
+            substitution[key] = parse_term_with_metavariables(value, all_metavars)
+
+        return substitution
+
+    @staticmethod
+    def typcode_extension(state: ProofState, typecode: str, term: Term) -> bool:
+        if isinstance(term, SchematicVariable):
+            var, *_ = state.composer.find_metavariables_of_typecode(term.typecode)
+            return TypecodeProver.check_typecode(state.composer, typecode, Metavariable(var))
+        return False
+
+    @staticmethod
+    def check_schematic_substitution(state: ProofState, substitution: Mapping[str, Term]) -> bool:
+        for var, term in substitution.items():
+            svar = state.get_schematic_variable_from_name(var)
+            assert svar is not None, f"missing schematic variable {svar}"
+            if not TypecodeProver.check_typecode(
+                    state.composer,
+                    svar.typecode,
+                    term,
+                    extension=lambda typecode, term: Tactic.typcode_extension(state, typecode, term),
+            ):
+                return False
+        return True
+
+    @staticmethod
+    def unify(state: ProofState,
+              equations: List[Tuple[Term, Term]],
+              only_schematic_vars: bool = True) -> Optional[Tuple[Mapping[str, Term], bool]]:
+        """
+        Unify two statements modulo notations
+        return Optional[( substitution, if notation is applied )]
+
+        only_schematic_vars = True means that we only consider
+        schematic variables as variables
+
+        otherwise the unification will use all metavariables (including schematic variables)
+        """
+
+        applied_notation = False
+
+        def unify_modulo_notation(state: ProofState, left: Term, right: Term) -> Optional[List[Tuple[Term, Term]]]:
+            """
+            Additional unification rules
+            if the heads of left and right are different,
+            try to apply notation axiom to one of them
+            """
+
+            nonlocal applied_notation
+
+            if not isinstance(left, Application) or \
+               not isinstance(right, Application):
+                return None
+
+            left_sugar_axiom = NotationProver.find_sugar_axiom(state.composer, left.symbol)
+            if left_sugar_axiom is not None:
+                applied_notation = True
+                left_expanded = NotationProver.apply_sugar_axiom(left_sugar_axiom, left)
+                return [(left_expanded, right)]
+
+            right_sugar_axiom = NotationProver.find_sugar_axiom(state.composer, right.symbol)
+            if right_sugar_axiom is not None:
+                applied_notation = True
+                right_expanded = NotationProver.apply_sugar_axiom(right_sugar_axiom, right)
+                return [(left, right_expanded)]
+
+            return None
+
+        subst = Unification.unify(
+            equations,
+            variable_class=SchematicVariable if only_schematic_vars else Metavariable,
+            # newer schematic variable are used as substitution variables
+            # with higher priority than older schematic variables
+            variable_order=(lambda v1, v2: v1 > v2) if only_schematic_vars else (lambda v1, v2: True),
+            # add extra unification algorithm for notations
+            additional_unifier=lambda t1, t2: unify_modulo_notation(state, t1, t2),
+        )
+
+        if subst is not None:
+            if not Tactic.check_schematic_substitution(state, subst):
+                return None
+            return subst, applied_notation
+
+        return None
+
+    @staticmethod
+    def unify_statements(state: ProofState, left: StructuredStatement, right: StructuredStatement, *args: Any,
+                         **kwargs: Any) -> Optional[Tuple[Mapping[str, Term], bool]]:
+        if len(left.terms) != len(right.terms):
+            return None
+        return Tactic.unify(state, list(zip(left.terms, right.terms)), *args, **kwargs)

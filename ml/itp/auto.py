@@ -10,8 +10,10 @@ from ml.metamath.ast import (
     Metavariable,
     StructuredStatement,
     Statement,
+    ProvableStatement,
+    Proof
 )
-from ml.metamath.composer import Proof, Theorem, TypecodeProver
+from ml.metamath.composer import Theorem, TypecodeProver
 
 from ml.metamath.auto.unification import Unification
 from ml.metamath.auto.notation import NotationProver
@@ -19,9 +21,9 @@ from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.sorting import SortingProver
 from ml.metamath.auto.context import ApplicationContextProver
 
-from .state import ProofState, Goal, NoStateChangeException
-from .tactics import Tactic, ApplyTactic
-from .extension import SubstitutionVisitor, SchematicVariable, CopyVisitor
+from .state import ProofState, Goal, NoStateChangeException, Tactic
+from .tactics import ApplyTactic
+from .extension import SchematicVariable
 
 
 @ProofState.register_tactic("search")
@@ -75,8 +77,8 @@ class SearchTactic(Tactic):
             # TODO: this is a bit hacky
             old_schematic_vars = state.schematic_vars
 
-            conclusion, _, _ = ApplyTactic.preprocess_theorem(state, theorem, {})
-            result = Tactic.unify_statements(state, statement, conclusion)
+            preprocessed = ApplyTactic.preprocess_theorem(state, theorem, {})
+            result = Tactic.unify_statements(state, statement, preprocessed.conclusion)
 
             state.schematic_vars = old_schematic_vars
 
@@ -102,12 +104,14 @@ class SearchTactic(Tactic):
 
         return found
 
-    def apply(self, state: ProofState, limit: Optional[Union[str, int]] = 7):
-        if isinstance(limit, str):
-            if limit == "all":
+    def apply(self, state: ProofState, *args: str, **_: str) -> None:
+        if len(args) == 0:
+            limit: Optional[int] = 7
+        else:
+            if args[0] == "all":
                 limit = None
             else:
-                limit = int(limit)
+                limit = int(args[0])
 
         matches = SearchTactic.find_closest_matches_for_top_goal(state)
 
@@ -126,7 +130,7 @@ class WellFormednessTactic(Tactic):
     """
     Prove the well-formedness of a term
     """
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
         assert len(statement.terms) == 2 and \
@@ -152,7 +156,7 @@ class NotationTactic(Tactic):
     Automatically prove notational equivalence of terms
     modulo the definition relation #Notation
     """
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
         assert len(statement.terms) == 3 and statement.terms[0] == Application(
@@ -216,7 +220,12 @@ class DesugarTactic(Tactic):
                 target_symbol=target_symbol,
             )
 
-    def apply(self, state: ProofState, target_symbol: Optional[str] = None):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
+        if len(args) == 0:
+            target_symbol: Optional[str] = None
+        else:
+            target_symbol = args[0]
+
         goal = state.resolve_top_goal(self)
         statement = goal.statement
         assert len(statement.terms) >= 1, f"ill-formed goal {statement}"
@@ -234,10 +243,8 @@ class DesugarTactic(Tactic):
         self.theorem = state.composer.get_theorem(theorem_label)
         self.notation_proofs = []
 
-        new_goal_statement = CopyVisitor().visit(statement)
-        new_goal_statement.statement_type = Statement.PROVABLE
-
         # desugar subterms that are expected to hold patterns
+        desugared_terms = list(statement.terms)
         for position in positions:
             assert position < len(statement.terms), f"ill-formed goal: {statement}"
             term = statement.terms[position]
@@ -247,9 +254,9 @@ class DesugarTactic(Tactic):
 
             self.notation_proofs.append(notation_proof)
 
-            new_goal_statement.terms[position] = expanded_term
+            desugared_terms[position] = expanded_term
 
-        state.push_derived_goal(goal, new_goal_statement)
+        state.push_derived_goal(goal, ProvableStatement(statement.label, tuple(desugared_terms)))
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         assert len(subproofs) == 1
@@ -264,7 +271,7 @@ class SubstitutionTactic(Tactic):
     """
     Prove a statement about substitution
     """
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         self.proof = SubstitutionProver.prove_substitution_statement(
             state.composer,
@@ -278,7 +285,7 @@ class SubstitutionTactic(Tactic):
 
 @ProofState.register_tactic("sorting")
 class SortingTactic(Tactic):
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
         assert len(statement.terms
@@ -291,7 +298,7 @@ class SortingTactic(Tactic):
 
 @ProofState.register_tactic("context")
 class ApplicationContextTactic(Tactic):
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
         self.proof = ApplicationContextProver.prove_application_context_statement(state.composer, statement)
@@ -373,13 +380,13 @@ class TautologyTactic(Tactic):
         lhs, rhs = proof.conclusion[1].subterms
         return lhs, rhs
 
-    def junction_to_list(self, term: Term, connective="and") -> List[Term]:
+    def junction_to_list(self, term: Term, connective: str = "and") -> List[Term]:
         if isinstance(term, Application) and term.symbol == f"\\{connective}":
             return [term.subterms[0]] + self.junction_to_list(term.subterms[1], connective)
         else:
             return [term]
 
-    def list_to_junction(self, terms: List[Term], connective="and", reverse=False) -> Term:
+    def list_to_junction(self, terms: List[Term], connective: str = "and", reverse: bool = False) -> Term:
         assert len(terms)
 
         if len(terms) > 1:
@@ -389,7 +396,7 @@ class TautologyTactic(Tactic):
             ]
             if reverse:
                 subterms.reverse()
-            return Application(f"\\{connective}", subterms)
+            return Application(f"\\{connective}", tuple(subterms))
         else:
             return terms[0]
 
@@ -403,7 +410,7 @@ class TautologyTactic(Tactic):
     def apply_iff_reflexivity(self, state: ProofState, term: Term) -> Proof:
         return state.composer.get_theorem("iff-reflexivity").apply(ph0=term)
 
-    def apply_iff_congruence(self, state: ProofState, *terms_or_proofs: Union[Proof, Term], connective="and") -> Proof:
+    def apply_iff_congruence(self, state: ProofState, *terms_or_proofs: Union[Proof, Term], connective: str = "and") -> Proof:
         theorem = state.composer.get_theorem(f"rule-iff-compat-in-{connective}")
         proofs = [
             self.apply_iff_reflexivity(state, term_or_proof) if isinstance(term_or_proof, Term) else term_or_proof
@@ -411,7 +418,7 @@ class TautologyTactic(Tactic):
         ]
         return theorem.apply(*proofs)
 
-    def reverse_junction(self, state: ProofState, term: Term, connective="and") -> Proof:
+    def reverse_junction(self, state: ProofState, term: Term, connective: str = "and") -> Proof:
         r"""
         Assuming term is of the form
         ( ph0 /\ ( ph1 /\ ... ( phn-1 /\ phn ) ) )
@@ -433,7 +440,7 @@ class TautologyTactic(Tactic):
         else:
             return self.apply_iff_reflexivity(state, term)
 
-    def merge_junctions(self, state: ProofState, left: Term, right: Term, connective="and") -> Proof:
+    def merge_junctions(self, state: ProofState, left: Term, right: Term, connective: str = "and") -> Proof:
         r"""
         Merge con/dis-junctions. Suppose left and right are of the form
         ( ph0 /\ ( ph1 /\ ... ) ) and ( ph0' /\ ( ph1' /\ ... ) )
@@ -464,7 +471,7 @@ class TautologyTactic(Tactic):
 
             return proof
         else:
-            return self.apply_iff_reflexivity(state, Application(f"\\{connective}", [left, right]))
+            return self.apply_iff_reflexivity(state, Application(f"\\{connective}", (left, right)))
 
     def reduce_to_cnf(self, state: ProofState, term: Term) -> Proof:
         r"""
@@ -659,7 +666,7 @@ class TautologyTactic(Tactic):
 
         assert False, f"unable to reduce pattern {term}"
 
-    def permute_junction(self, state: ProofState, cnf: Term, position: int, connective="and") -> Proof:
+    def permute_junction(self, state: ProofState, cnf: Term, position: int, connective: str = "and") -> Proof:
         """
         Move the nth clause/literal to the first, and return a proof of equivalence
         """
@@ -862,7 +869,7 @@ class TautologyTactic(Tactic):
 
         return self.apply_iff_reflexivity(state, clause)
 
-    def simplify_cnf(self, state: ProofState, cnf: Term, i=0) -> Proof:
+    def simplify_cnf(self, state: ProofState, cnf: Term, i: int = 0) -> Proof:
         """
         Given a CNF formula:
         1. remove all duplicated literals
@@ -1071,7 +1078,7 @@ class TautologyTactic(Tactic):
 
         clauses = [self.junction_to_list(conjunct, "or") for conjunct in self.junction_to_list(cnf)]
         pos_literal = clauses[pos_clause].index(var)
-        neg_literal = clauses[neg_clause].index(Application("\\not", [var]))
+        neg_literal = clauses[neg_clause].index(Application("\\not", (var,)))
 
         # print(var, pos_clause, neg_clause)
 
@@ -1147,7 +1154,7 @@ class TautologyTactic(Tactic):
         first_clause = permuted_clauses[0]
         second_clause = permuted_clauses[1]
 
-        first_and_second_clause = Application("\\and", [first_conjunct, second_conjunct])
+        first_and_second_clause = Application("\\and", (first_conjunct, second_conjunct))
 
         falsum_found = False
 
@@ -1155,18 +1162,18 @@ class TautologyTactic(Tactic):
             resolvent_left = self.list_to_junction(first_clause[1:], "or")
             resolvent_right = self.list_to_junction(second_clause[1:], "or")
 
-            target_statement = StructuredStatement(
-                "p",
-                [
+            target_statement = ProvableStatement(
+                "",
+                (
                     Application("|-"),
                     Application(
                         "\\imp",
-                        [
+                        (
                             first_and_second_clause,
-                            Application("\\or", [resolvent_left, resolvent_right]),
-                        ],
+                            Application("\\or", (resolvent_left, resolvent_right)),
+                        ),
                     ),
-                ],
+                ),
             )
 
             resolution_proof = state.composer.get_theorem("resolution-4").match_and_apply(target_statement)
@@ -1182,18 +1189,18 @@ class TautologyTactic(Tactic):
         elif len(first_clause) > 1:
             resolvent_left = self.list_to_junction(first_clause[1:], "or")
 
-            target_statement = StructuredStatement(
-                "p",
-                [
+            target_statement = ProvableStatement(
+                "",
+                (
                     Application("|-"),
                     Application(
                         "\\imp",
-                        [
+                        (
                             first_and_second_clause,
                             resolvent_left,
-                        ],
+                        ),
                     ),
-                ],
+                ),
             )
 
             resolution_proof = state.composer.get_theorem("resolution-2").match_and_apply(target_statement)
@@ -1201,18 +1208,18 @@ class TautologyTactic(Tactic):
         elif len(second_clause) > 1:
             resolvent_right = self.list_to_junction(second_clause[1:], "or")
 
-            target_statement = StructuredStatement(
-                "p",
-                [
+            target_statement = ProvableStatement(
+                "",
+                (
                     Application("|-"),
                     Application(
                         "\\imp",
-                        [
+                        (
                             first_and_second_clause,
                             resolvent_right,
-                        ],
+                        ),
                     ),
-                ],
+                ),
             )
 
             resolution_proof = state.composer.get_theorem("resolution-3").match_and_apply(target_statement)
@@ -1278,7 +1285,7 @@ class TautologyTactic(Tactic):
 
         return resolution_proof
 
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
         assert len(statement.terms
@@ -1290,7 +1297,7 @@ class TautologyTactic(Tactic):
         print("expanding the goal")
         assert self.is_propositional(state, goal_term), f"goal {statement} is not propositional"
 
-        negated_goal_term = Application("\\not", [goal_term])
+        negated_goal_term = Application("\\not", (goal_term,))
 
         print("reducing the negation of the goal to CNF")
 

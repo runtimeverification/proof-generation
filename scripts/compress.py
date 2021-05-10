@@ -83,7 +83,7 @@ def transform_provable_statement(
     # print(proof_start_pos, proof_end_pos, stmt_src[proof_start_pos:proof_end_pos])
 
     theorem = composer.get_theorem(label)
-    mandatory = [x[2] for x in theorem.floatings] + [x.label for x in theorem.essentials if x.label is not None]
+    mandatory = [x[2] for x in theorem.context.floatings] + [x.label for x in theorem.context.essentials if x.label is not None]
     new_proof = compress(mandatory, stmt_src[proof_start_pos:proof_end_pos].split())
 
     return stmt_src[:proof_start_pos] + new_proof + stmt_src[proof_end_pos:]

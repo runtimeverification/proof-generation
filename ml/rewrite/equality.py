@@ -6,7 +6,6 @@ from ml.kore.utils import KoreUtils, PatternPath
 
 from ml.metamath import ast as mm
 from ml.metamath.composer import Proof
-from ml.metamath.visitors import SubstitutionVisitor
 from ml.metamath.auto.sorting import SortingProver
 from ml.metamath.auto.substitution import SubstitutionProver
 
@@ -93,9 +92,9 @@ class EqualityProofGenerator(ProofGenerator):
             )
 
             equation_body = equation_proof.conclusion[1].subterms[1]
-            equation_body_subst = SubstitutionVisitor({
+            equation_body_subst = equation_body.substitute({
                 current_sort_var: mm.Metavariable(fresh_sort_var)
-            }).visit(equation_body)
+            })
 
             # apply alpha renaming
             equation_proof = self.env.get_theorem("alpha-kore-forall-sort-alt").apply(

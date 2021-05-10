@@ -9,8 +9,7 @@ from ml.kore.utils import KoreUtils
 from ml.kore.visitors import FreePatternVariableVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.visitors import SubstitutionVisitor
-from ml.metamath.composer import Composer, Theorem, Proof
+from ml.metamath.composer import Composer, Theorem, Proof, Context
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.context import ApplicationContextProver
 
@@ -210,17 +209,16 @@ class ProofEnvironment:
 
         self.load_comment(f"adding {len(new_metavars)} new metavariable(s)")
 
-        var_stmt = mm.RawStatement(mm.Statement.VARIABLE, list(new_metavars.keys()))
+        var_stmt = mm.VariableStatement(tuple(map(mm.Metavariable, new_metavars.keys())))
         self.load_metamath_statement(var_stmt)
 
         for var, typecode in new_metavars.items():
-            floating_stmt = mm.StructuredStatement(
-                mm.Statement.FLOATING,
-                [
+            floating_stmt = mm.FloatingStatement(
+                f"{self.sanitize_label_name(var)}-{typecode.replace('#', '').lower()}",
+                (
                     mm.Application(typecode),
                     mm.Metavariable(var),
-                ],
-                label=f"{self.sanitize_label_name(var)}-{typecode.replace('#', '').lower()}",
+                ),
             )
 
             self.load_metamath_statement(floating_stmt)
@@ -231,7 +229,7 @@ class ProofEnvironment:
         if "#ElementVariable" in set(new_metavars.values()):
             element_vars = self.composer.find_metavariables_of_typecode("#ElementVariable")
             if len(element_vars) > 1:
-                disjoint_stmt = mm.StructuredStatement(mm.Statement.DISJOINT, list(map(mm.Metavariable, element_vars)))
+                disjoint_stmt = mm.DisjointStatement(tuple(map(mm.Metavariable, element_vars)))
                 self.load_metamath_statement(disjoint_stmt)
 
         self.composer.end_segment()
@@ -320,10 +318,9 @@ class ProofEnvironment:
             KorePatternEncoder.encode_sort_variable(element_var): pattern_var
             for element_var, pattern_var in zip(symbol_definition.sort_variables, sort_pattern_vars)
         }
-        sort_var_subst_visitor = SubstitutionVisitor(sort_var_subst)
 
         encoded_output_sort = self.encode_pattern(symbol_definition.output_sort)
-        encoded_output_sort = sort_var_subst_visitor.visit(encoded_output_sort)
+        encoded_output_sort = encoded_output_sort.substitute(sort_var_subst)
 
         sorting_axiom_rhs = mm.Application(
             "\\in-sort",
@@ -342,7 +339,7 @@ class ProofEnvironment:
         # add hypotheses for pattern arguments
         for v, sort in zip(argument_pattern_vars, symbol_definition.input_sorts):
             encoded_sort = self.encode_pattern(sort)
-            encoded_sort = sort_var_subst_visitor.visit(encoded_sort)
+            encoded_sort = encoded_sort.substitute(sort_var_subst)
             sorting_axiom_hypotheses.append(mm.Application("\\in-sort", [v, encoded_sort]))
 
         # construct the hypothesis and the entire statement
@@ -624,7 +621,7 @@ class ProofEnvironment:
             )
 
             essentials.append(essential)
-            essential_theorems.append(Theorem(self.composer, essential, [], []))
+            essential_theorems.append(Theorem(self.composer, Context(), essential))
 
         # prove the substitution rule
         subst_proof = SubstitutionProver.prove_substitution(
@@ -683,7 +680,7 @@ class ProofEnvironment:
             proof = ApplicationContextProver.prove_application_context_statement(
                 self.composer,
                 conclusion,
-                [Theorem(self.composer, assumption, [], [])],
+                [Theorem(self.composer, Context(), assumption)],
             )
             conclusion.proof = proof
 

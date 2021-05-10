@@ -1,8 +1,7 @@
 from typing import Optional, List, Tuple, Mapping
 
-from ..ast import Metavariable, Term, Statement, Application, StructuredStatement
-from ..composer import Composer, Theorem, Proof, MethodAutoProof
-from ..visitors import SubstitutionVisitor
+from ..ast import Metavariable, Term, Statement, Application, StructuredStatement, ProvableStatement, Proof
+from ..composer import Composer, Theorem, MethodAutoProof
 
 from .unification import Unification
 
@@ -27,13 +26,13 @@ class NotationProver:
 
     @staticmethod
     def format_target(left: Term, right: Term) -> StructuredStatement:
-        return StructuredStatement(
-            Statement.PROVABLE,
-            [
+        return ProvableStatement(
+            "",
+            (
                 Application(NotationProver.SYMBOL),
                 left,
                 right,
-            ],
+            ),
         )
 
     @staticmethod
@@ -49,7 +48,7 @@ class NotationProver:
         assert substitution is not None, \
                f"invalid sugar axiom {axiom}"
 
-        return SubstitutionVisitor(substitution).visit(axiom.statement.terms[2])
+        return axiom.statement.terms[2].substitute(substitution)
 
     @staticmethod
     def find_sugar_axiom(composer: Composer, symbol: str) -> Optional[Theorem]:
@@ -60,7 +59,7 @@ class NotationProver:
         are not supported right now)
         """
         for theorem in composer.get_theorems_of_typecode(NotationProver.SYMBOL):
-            if not (len(theorem.statement.terms) == 3 and len(theorem.essentials) == 0):
+            if not (len(theorem.statement.terms) == 3 and len(theorem.context.essentials) == 0):
                 continue
 
             lhs = theorem.statement.terms[1]
@@ -131,7 +130,7 @@ class NotationProver:
             essentials_order = []
 
             # check that essentials only assumes things about metavariables
-            for essential in theorem.essentials:
+            for essential in theorem.context.essentials:
                 if not (len(essential.terms) == 3 and essential.terms[0] == Application(NotationProver.SYMBOL)):
                     continue
 
@@ -306,7 +305,7 @@ class NotationProver:
             expanded_subterms.append(expanded_subterm)
             subproofs.append(subproof)
 
-        final_term = Application(term.symbol, expanded_subterms)
+        final_term = Application(term.symbol, tuple(expanded_subterms))
 
         congruence_lemma_pair = NotationProver.find_congruence_lemma(composer, term.symbol)
         if congruence_lemma_pair is not None:

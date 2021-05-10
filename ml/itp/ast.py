@@ -15,7 +15,7 @@ class BaseAST:
 
 
 class Options(BaseAST):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: str):
         super().__init__()
         self.args = args
         self.kwargs = kwargs
@@ -60,7 +60,7 @@ class AtomicTactical(Tactical):
         return state.apply_tactic(tactic_class(self.tactic), *self.options.args, **self.options.kwargs)
 
 
-class OrTactical(BaseAST):
+class OrTactical(Tactical):
     """
     Apply the tacticals in sequence, until one of them succeeds
     """
@@ -96,7 +96,7 @@ class OrTactical(BaseAST):
         raise Exception("all tacticals failed:\n" + "\n".join(msg))
 
 
-class AndTactical(BaseAST):
+class AndTactical(Tactical):
     """
     Apply the tacticals in sequence, fail if any of them fail
     """
@@ -126,7 +126,7 @@ class AndTactical(BaseAST):
         return state
 
 
-class PlusTactical(BaseAST):
+class PlusTactical(Tactical):
     """
     Apply the tactical one or more times until it fails
     """
@@ -159,7 +159,7 @@ class PlusTactical(BaseAST):
         return state
 
 
-class StarTactical(BaseAST):
+class StarTactical(Tactical):
     """
     Apply the tactical zero or more times until it fails
     """

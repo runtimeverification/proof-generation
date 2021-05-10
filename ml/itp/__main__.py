@@ -6,7 +6,7 @@ from ml.metamath.composer import ProofCache
 ProofCache.DISABLED = True
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("theory", help=".mm theory file")
     parser.add_argument("goal", help="the initial goal statement")
@@ -19,8 +19,7 @@ def main():
     )
     args = parser.parse_args()
 
-    itp_state = InteractiveState(debug=args.debug)
-    itp_state.init_from_theory_and_goal(args.theory, args.goal)
+    itp_state = InteractiveState(args.theory, args.goal, debug=args.debug)
     itp_state.loop()
 
 

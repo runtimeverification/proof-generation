@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapping, Tuple, Collection
+from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapping, Tuple, Collection, NamedTuple, TypeVar
+from dataclasses import dataclass, field
 from io import StringIO
 
 from ml.utils.visitor import Visitor
@@ -24,22 +25,22 @@ class MetamathVisitor(Visitor):
     All terms basically consists only of constant symbols
     with the only exception being metavariables.
     """
-    def visit_children_of_application(self, application: Application):
+    def visit_children_of_application(self, application: Application) -> List[List[Any]]:
         return [
             [subterm.visit(self) for subterm in application.subterms],
         ]
 
-    def visit_children_of_structured_statement(self, stmt: StructuredStatement):
+    def visit_children_of_structured_statement(self, stmt: StructuredStatement) -> List[List[Any]]:
         return [
             [term.visit(self) for term in stmt.terms],
         ]
 
-    def visit_children_of_block(self, block: Block):
+    def visit_children_of_block(self, block: Block) -> List[List[Any]]:
         return [
             [stmt.visit(self) for stmt in block.statements],
         ]
 
-    def visit_children_of_database(self, database: Database):
+    def visit_children_of_database(self, database: Database) -> List[List[Any]]:
         return [
             [stmt.visit(self) for stmt in database.statements],
         ]
@@ -57,42 +58,47 @@ class BaseAST:
         return str(self)
 
 
+@dataclass
 class Term(BaseAST):
     def get_metavariables(self) -> Set[str]:
         raise NotImplementedError()
 
-    def visit(self, visitor: MetamathVisitor):
+    def substitute(self, substitution: Mapping[str, Term]) -> Term:
+        raise NotImplementedError()
+
+    def visit(self, visitor: MetamathVisitor) -> Any:
         raise NotImplementedError()
 
 
+@dataclass
 class Metavariable(Term):
-    def __init__(self, name: str):
-        super().__init__()
-        self.name = name
+    name: str
 
     def get_metavariables(self) -> Set[str]:
         return {self.name}
 
-    def visit(self, visitor: MetamathVisitor):
-        visitor.previsit_metavariable(self)
-        children = visitor.visit_children_of_metavariable(self)
-        return visitor.postvisit_metavariable(self, *children)
-
-    def __eq__(self, other):
-        if isinstance(other, Metavariable):
-            return self.name == other.name
-        return False
+    def substitute(self, substitution: Mapping[str, Term]) -> Term:
+        if self.name in substitution:
+            return substitution[self.name]
+        else:
+            return self
+    
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_metavariable(self)
 
     def __hash__(self) -> int:
         return hash(self.name)
 
+    def __gt__(self, other: Any) -> bool:
+        assert isinstance(other, Metavariable)
+        return self.name > other.name
 
+
+@dataclass
 class Application(Term):
-    def __init__(self, symbol: str, subterms: Iterable[Term] = []):
-        super().__init__()
-        self.symbol = symbol
-        self.subterms = list(subterms)
-        self.hash_cache: Optional[int] = None
+    symbol: str
+    subterms: Tuple[Term, ...] = ()
+    hash_cache: Optional[int] = None
 
     def get_metavariables(self) -> Set[str]:
         metavars = set()
@@ -100,12 +106,13 @@ class Application(Term):
             metavars.update(subterm.get_metavariables())
         return metavars
 
-    def visit(self, visitor: MetamathVisitor):
-        visitor.previsit_application(self)
-        children = visitor.visit_children_of_application(self)
-        return visitor.postvisit_application(self, *children)
+    def substitute(self, substitution: Mapping[str, Term]) -> Application:
+        return Application(self.symbol, tuple(subterm.substitute(substitution) for subterm in self.subterms))
 
-    def __eq__(self, other):
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_application(self)
+
+    def __eq__(self, other: Any) -> bool:
         # this function is specifically rewritten
         # to not use recursion since it's used
         # too many times and has become a performance
@@ -113,14 +120,14 @@ class Application(Term):
         if not isinstance(other, Application):
             return False
 
-        comparison_left = [self]
-        comparison_right = [other]
+        comparison_left: List[Term] = [self]
+        comparison_right: List[Term] = [other]
 
         while comparison_left:
             left = comparison_left.pop()
             right = comparison_right.pop()
 
-            if type(left) == type(right) == Application:
+            if isinstance(left, Application) and isinstance(right, Application):
                 if left.symbol == right.symbol and len(left.subterms) == len(right.subterms):
                     comparison_left.extend(left.subterms)
                     comparison_right.extend(right.subterms)
@@ -145,74 +152,48 @@ class Application(Term):
 
 
 class Statement(BaseAST):
-    CONSTANT = "c"
-    VARIABLE = "v"
-    DISJOINT = "d"
-    AXIOM = "a"
-    FLOATING = "f"
-    ESSENTITAL = "e"
-    PROVABLE = "p"
+    def get_metavariables(self) -> Set[str]:
+        return set()
 
-    def visit(self, visitor: MetamathVisitor):
+    def substitute(self, substitution: Mapping[str, Term]) -> Statement:
+        raise NotImplementedError()
+
+    def visit(self, visitor: MetamathVisitor) -> Any:
         raise NotImplementedError()
 
 
-class Comment(Statement):
-    def __init__(self, text: str):
-        super().__init__()
-        self.text = text
-        assert "$(" not in text and "$)" not in text
+@dataclass
+class ConstantStatement(Statement):
+    constants: Tuple[str, ...]
 
-    def visit(self, visitor: MetamathVisitor):
-        visitor.previsit_comment(self)
-        children = visitor.visit_children_of_comment(self)
-        return visitor.postvisit_comment(self, *children)
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_constant_statement(self)
 
 
-class IncludeStatement(Statement):
-    def __init__(self, path: str):
-        super().__init__()
-        self.path = path
+@dataclass
+class VariableStatement(Statement):
+    metavariables: Tuple[Metavariable, ...]
 
-    def visit(self, visitor: MetamathVisitor):
-        visitor.previsit_include_statement(self)
-        children = visitor.visit_children_of_include_statement(self)
-        return visitor.postvisit_include_statement(self, *children)
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_variable_statement(self)
 
 
-class RawStatement(Statement):
-    """
-    A list of tokens without any structures.
-    Constant and variable statements are of this kind
-    """
-    def __init__(self, statement_type: str, tokens: List[str], label: Optional[str] = None):
-        super().__init__()
-        self.statement_type = statement_type
-        self.tokens = tokens
-        self.label = label
+@dataclass
+class DisjointStatement(Statement):
+    metavariables: Tuple[Metavariable, ...]
 
-    def visit(self, visitor: MetamathVisitor):
-        visitor.previsit_raw_statement(self)
-        children = visitor.visit_children_of_raw_statement(self)
-        return visitor.postvisit_raw_statement(self, *children)
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_disjoint_statement(self)
 
 
+Terms = Tuple[Term, ...]
+StmtT = TypeVar("StmtT", bound="StructuredStatement")
+
+
+@dataclass
 class StructuredStatement(Statement):
-    """
-    Structured statement will be parsed as a list of S-expressions
-    """
-    def __init__(
-        self,
-        statement_type: str,
-        terms: List[Term],
-        label: Optional[str] = None,
-        proof: Optional[Proof] = None,
-    ):
-        super().__init__()
-        self.statement_type = statement_type
-        self.terms = terms
-        self.label = label
-        self.proof = proof
+    label: str
+    terms: Terms
 
     def get_metavariables(self) -> Set[str]:
         metavars = set()
@@ -220,47 +201,81 @@ class StructuredStatement(Statement):
             metavars.update(term.get_metavariables())
         return metavars
 
-    def visit(self, visitor: MetamathVisitor):
-        visitor.previsit_structured_statement(self)
-        children = visitor.visit_children_of_structured_statement(self)
-        return visitor.postvisit_structured_statement(self, *children)
+    def substitute(self: StmtT, substitution: Mapping[str, Term]) -> StmtT:
+        return type(self)(self.label, tuple(term.substitute(substitution) for term in self.terms))
 
-    def __eq__(self, other) -> bool:
-        if isinstance(other, StructuredStatement):
-            return (
-                self.statement_type == other.statement_type and self.terms == other.terms and self.label == other.label
-                and self.proof == other.proof
-            )
-        return False
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_structured_statement(self)
 
 
+@dataclass
+class FloatingStatement(StructuredStatement):
+    typecode: str = field(default="", init=False)
+    metavariable: str = field(default="", init=False)
+
+    def __post_init__(self) -> None:
+        assert len(self.terms) == 2 and \
+               isinstance(self.terms[0], Application) and \
+               isinstance(self.terms[1], Metavariable)
+        self.typecode = self.terms[0].symbol
+        self.metavariable = self.terms[1].name
+
+
+class EssentialStatement(StructuredStatement): ...
+
+
+class ConclusionStatement(StructuredStatement): ...
+
+
+class AxiomaticStatement(ConclusionStatement): ...
+
+
+@dataclass
+class ProvableStatement(ConclusionStatement):
+    proof: Optional[Proof] = None
+
+
+@dataclass
+class Comment(Statement):
+    text: str
+
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_comment(self)
+
+
+@dataclass
+class IncludeStatement(Statement):
+    path: str
+
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_include_statement(self)
+
+
+@dataclass
 class Block(Statement):
     """
     A block is a list of statements,
     while itself is also a statement
     """
-    def __init__(self, statements: Iterable[Statement]):
-        self.statements = list(statements)
 
-    def visit(self, visitor: MetamathVisitor):
-        visitor.previsit_block(self)
-        children = visitor.visit_children_of_block(self)
-        return visitor.postvisit_block(self, *children)
+    statements: Tuple[Statement, ...]
+
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_block(self)
 
 
+@dataclass
 class Database(BaseAST):
     """
     A database consists of a single outermost block
     and some auxiliary information
     e.g. set of variables and mapping from labels to statements
     """
-    def __init__(self, statements: List[Statement]):
-        self.statements = statements
+    
+    statements: Tuple[Statement, ...]
 
-    def visit(self, visitor: MetamathVisitor):
-        visitor.previsit_database(self)
-        children = visitor.visit_children_of_database(self)
-        return visitor.postvisit_database(self, *children)
+    def visit(self, visitor: MetamathVisitor) -> Any:
+        return visitor.proxy_visit_database(self)
 
 
 class Proof:
@@ -273,7 +288,7 @@ class Proof:
     and raw, unparsed proofs to save space
     """
     def __init__(self, conclusion: Iterable[Term]):
-        self.conclusion = tuple(conclusion)
+        self.conclusion: Terms = tuple(conclusion)
 
         self.nodes: List[Union[str, Tuple[str, ...]]] = []
         # a node is either:
@@ -281,7 +296,7 @@ class Proof:
         # - a Proof, which can only be used for non-leaf nodes
         # - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
 
-        self.node_to_conclusion: List[Tuple[Term, ...]] = []
+        self.node_to_conclusion: List[Terms] = []
         # conclusions for each dag
         # note that node_to_conclusion[0] == self.internal_conclusions
 
@@ -345,16 +360,9 @@ class Proof:
         """
 
         proof = Proof(statement.terms)
+        proof.nodes = [root]
         proof.node_to_conclusion = [proof.conclusion]
 
-        # script: List[str] = []
-        # for child in children:
-        #     child.flatten(script)
-        # script.append(root)
-        # proof.nodes = [ tuple(script) ]
-
-        # TODO: this enables sharing of subtrees
-        proof.nodes = [root]
         conclusion_to_node: Dict[Tuple[Term, ...], int] = {}
         if len(children) != 0:
             proof.dag[0] = []
@@ -364,16 +372,11 @@ class Proof:
 
         return proof
 
-    def as_statement(self, label: Optional[str] = None) -> StructuredStatement:
+    def as_statement(self, label: str) -> StructuredStatement:
         """
         Encode as a provable statement
         """
-        return StructuredStatement(
-            Statement.PROVABLE,
-            list(self.conclusion),
-            label=label,
-            proof=self,
-        )
+        return ProvableStatement(label, self.conclusion, self)
 
     def is_leaf(self, node: int) -> bool:
         return node not in self.dag
@@ -381,7 +384,7 @@ class Proof:
     def get_children_of(self, node: int) -> List[int]:
         return self.dag.get(node, [])
 
-    def flatten(self, output_script: List[str], root: int = 0):
+    def flatten(self, output_script: List[str], root: int = 0) -> None:
         """
         Flatten encodes a recursive hierarchy of proofs
         as the normal Metamath proof format
@@ -408,7 +411,7 @@ class Proof:
                 size += len(subproof)
         return size
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<proof of {' '.join(map(str, self.conclusion))}>"
 
     @staticmethod
@@ -478,12 +481,13 @@ class Proof:
         This requires some context information, namely the mandatory hypotheses
         of the statement in the order they are defined
         """
+        # TODO: share subtrees
         script: List[str] = []
         self.flatten(script)
         return Proof.compress_script(mandatory_hypotheses, script)
 
 
-class BaseEncoder(Printer):
+class BaseEncoder(Printer, Visitor):
     """
     Encoder for Metamath AST with options
     """
@@ -491,10 +495,10 @@ class BaseEncoder(Printer):
         super().__init__(output, tab)
         self.omit_proof = omit_proof
 
-    def postvisit_metavariable(self, metavar: Metavariable):
+    def postvisit_metavariable(self, metavar: Metavariable) -> None:
         self.write(metavar.name)
 
-    def postvisit_application(self, application: Application):
+    def postvisit_application(self, application: Application) -> None:
         if len(application.subterms) == 0:
             self.write(application.symbol)
         else:
@@ -508,7 +512,28 @@ class BaseEncoder(Printer):
 
             self.write(" )")
 
-    def postvisit_comment(self, comment: Comment):
+    def postvisit_constant_statement(self, constant_statement: ConstantStatement) -> None:
+        self.write("$c")
+        for constant in constant_statement.constants:
+            self.write(" ")
+            self.write(constant)
+        self.write(" $.")
+
+    def postvisit_variable_statement(self, variable_statement: VariableStatement) -> None:
+        self.write("$v")
+        for metavar in variable_statement.metavariables:
+            self.write(" ")
+            self.visit(metavar)
+        self.write(" $.")
+
+    def postvisit_disjoint_statement(self, disjoint_statement: DisjointStatement) -> None:
+        self.write("$d")
+        for metavar in disjoint_statement.metavariables:
+            self.write(" ")
+            self.visit(metavar)
+        self.write(" $.")
+
+    def postvisit_comment(self, comment: Comment) -> None:
         self.write("\n$(")
         if not comment.text[:-1].isspace():
             self.write(" ")
@@ -520,42 +545,40 @@ class BaseEncoder(Printer):
             self.write(" ")
         self.write("$)")
 
-    def postvisit_include_statement(self, include: IncludeStatement):
+    def postvisit_include_statement(self, include: IncludeStatement) -> None:
         self.write("$[ ")
         self.write(include.path)
         self.write(" $]")
 
-    def postvisit_raw_statement(self, stmt: RawStatement):
-        if stmt.label is not None:
-            self.write(stmt.label)
-            self.write(" ")
-
-        self.write("$")
-        self.write(stmt.statement_type)
-
-        for token in stmt.tokens:
-            self.write(" ")
-            self.write(token)
-
-        self.write(" $.")
-
-    def encode_proof(self, stmt: StructuredStatement):
+    def encode_proof(self, stmt: ProvableStatement) -> None:
         assert stmt.proof is not None
         self.write(stmt.proof.encode_normal())
 
-    def postvisit_structured_statement(self, stmt: StructuredStatement):
-        if stmt.label is not None:
+    def get_statement_type(self, stmt: StructuredStatement) -> str:
+        if isinstance(stmt, FloatingStatement):
+            return "f"
+        elif isinstance(stmt, EssentialStatement):
+            return "e"
+        elif isinstance(stmt, AxiomaticStatement):
+            return "a"
+        elif isinstance(stmt, ProvableStatement):
+            return "p"
+        
+        assert False, f"not a valid structured statement {stmt}"
+
+    def postvisit_structured_statement(self, stmt: StructuredStatement) -> None:
+        if stmt.label:
             self.write(stmt.label)
             self.write(" ")
 
         self.write("$")
-        self.write(stmt.statement_type)
+        self.write(self.get_statement_type(stmt))
 
         for term in stmt.terms:
             self.write(" ")
             self.visit(term)
 
-        if stmt.statement_type == Statement.PROVABLE:
+        if isinstance(stmt, ProvableStatement):
             if stmt.proof is not None:
                 if self.omit_proof:
                     self.write(" $= <omitted>")
@@ -567,7 +590,7 @@ class BaseEncoder(Printer):
 
         self.write(" $.")
 
-    def postvisit_block(self, block: Block):
+    def postvisit_block(self, block: Block) -> None:
         self.write("${ ")
 
         with self.indentation():
@@ -580,7 +603,7 @@ class BaseEncoder(Printer):
 
         self.write("$}")
 
-    def postvisit_database(self, database: Database):
+    def postvisit_database(self, database: Database) -> None:
         for stmt in database.statements:
             self.visit(stmt)
             self.write("\n")

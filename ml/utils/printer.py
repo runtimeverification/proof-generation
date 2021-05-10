@@ -1,11 +1,9 @@
-from typing import TextIO
+from typing import TextIO, Generator
 
 from contextlib import contextmanager
 
-from .visitor import Visitor
 
-
-class Printer(Visitor):
+class Printer:
     """
     Base class for an printer
     """
@@ -16,24 +14,24 @@ class Printer(Visitor):
         self.tab = tab
         self.line_buffer = ""
 
-    def indent(self):
+    def indent(self) -> None:
         self.depth += 1
 
-    def deindent(self):
+    def deindent(self) -> None:
         assert self.depth != 0, "cannot de-indent further"
         self.depth -= 1
 
     @contextmanager
-    def indentation(self):
+    def indentation(self) -> Generator[None, None, None]:
         self.indent()
         yield
         self.deindent()
 
-    def flush(self):
+    def flush(self) -> None:
         self.output.write(self.line_buffer.rstrip())
         self.line_buffer = ""
 
-    def write(self, msg: str):
+    def write(self, msg: str) -> None:
         tab = self.depth * self.tab
         lines = msg.split("\n")
 

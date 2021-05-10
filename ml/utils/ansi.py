@@ -92,7 +92,7 @@ class ANSIStyler(type):
 
         return "".join(codes)
 
-    def __getattr__(class_obj, key: str):
+    def __getattr__(class_obj, key: str) -> Any:
         if key.startswith("in_"):
             styles = key[len("in_"):].split("_")
 

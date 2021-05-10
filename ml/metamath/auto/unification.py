@@ -1,16 +1,14 @@
-from typing import Optional, List, Tuple, Mapping, Dict, Callable, Collection
+from typing import Optional, List, Tuple, Mapping, Dict, Callable, Collection, Type, Any
 
-from ..ast import Metavariable, Term, Statement, Application, StructuredStatement
-from ..visitors import SubstitutionVisitor
+from ..ast import Metavariable, Term, Application, StructuredStatement
 
 
 class Unification:
     @staticmethod
     def unify(
         equations: List[Tuple[Term, Term]],
-        variable_class=Metavariable,
-        substitution_visitor_class=SubstitutionVisitor,
-        variable_order=lambda v1, v2: True,  # returns True iff v1 <= v2, False otherwise
+        variable_class: Type[Metavariable]=Metavariable,
+        variable_order: Callable[[Metavariable, Metavariable], bool]=lambda v1, v2: True,  # returns True iff v1 <= v2, False otherwise
         # allow user to supply extra unifiction rules
         additional_unifier: Optional[Callable[[Term, Term], Optional[List[Tuple[Term, Term]]]]] = None,
     ) -> Optional[Mapping[str, Term]]:
@@ -62,12 +60,12 @@ class Unification:
 
                 substitution[left.name] = right
 
-                subst_visitor = substitution_visitor_class({left.name: right})
+                replace = {left.name: right}
 
                 for i, (left, right) in enumerate(equations):
-                    equations[i] = subst_visitor.visit(left), subst_visitor.visit(right)
+                    equations[i] = left.substitute(replace), right.substitute(replace)
 
-                substitution = {var: subst_visitor.visit(term) for var, term in substitution.items()}
+                substitution = {var: term.substitute(replace) for var, term in substitution.items()}
 
             else:
                 assert isinstance(right, variable_class)
@@ -76,12 +74,12 @@ class Unification:
         return substitution
 
     @staticmethod
-    def unify_terms(term1: Term, term2: Term, **kwargs) -> Optional[Mapping[str, Term]]:
+    def unify_terms(term1: Term, term2: Term, **kwargs: Any) -> Optional[Mapping[str, Term]]:
         return Unification.unify([(term1, term2)], **kwargs)
 
     @staticmethod
     def unify_statements(stmt1: StructuredStatement, stmt2: StructuredStatement,
-                         **kwargs) -> Optional[Mapping[str, Term]]:
+                         **kwargs: Any) -> Optional[Mapping[str, Term]]:
         if len(stmt1.terms) != len(stmt2.terms):
             return None
         return Unification.unify(list(zip(stmt1.terms, stmt2.terms)), **kwargs)

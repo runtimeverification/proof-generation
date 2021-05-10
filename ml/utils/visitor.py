@@ -1,20 +1,23 @@
+from typing import Any, List
+
+
 class Visitor:
     """
     A general visitor base class
     """
-    def previsit_default(self, x):
+    def previsit_default(self, x: Any) -> Any:
         return x
 
-    def visit_children_of_default(self, x):
+    def visit_children_of_default(self, x: Any) -> List[Any]:
         return []
 
-    def postvisit_default(self, x, *args):
+    def postvisit_default(self, x: Any, *args: Any) -> Any:
         return x
 
-    def visit(self, x):
+    def visit(self, x: Any) -> Any:
         return x.visit(self)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """
         When a node.visit is called, proxy_visit_* will be called first, which will:
         1. call previsit_*
@@ -30,7 +33,7 @@ class Visitor:
         elif name.startswith("proxy_visit_"):
             name = name[12:]
 
-            def f(node):
+            def f(node: Any) -> Any:
                 getattr(self, "previsit_" + name)(node)
                 children = getattr(self, "visit_children_of_" + name)(node)
                 return getattr(self, "postvisit_" + name)(node, *children)

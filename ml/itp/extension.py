@@ -2,12 +2,10 @@
 Extensions to the metamath AST as in proof.metamath.ast
 """
 
-from typing import Optional
+from typing import Optional, Any
 
-from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
-from ml.metamath.composer import Composer, Proof
-from ml.metamath.visitors import SubstitutionVisitor as OldSubstitutionVisitor
-from ml.metamath.visitors import CopyVisitor as OldCopyVisitor
+from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor, Proof
+from ml.metamath.composer import Composer
 
 
 class SchematicVariable(Metavariable):
@@ -17,17 +15,9 @@ class SchematicVariable(Metavariable):
         self.num = num
         self.typecode = typecode
 
-    def visit(self, visitor: MetamathVisitor):
+    def visit(self, visitor: MetamathVisitor) -> Any:
         return visitor.proxy_visit_schematic_variable(self)
 
-
-class SubstitutionVisitor(OldSubstitutionVisitor):
-    def postvisit_schematic_variable(self, var: SchematicVariable) -> Term:
-        if var.name in self.substitution:
-            return self.substitution[var.name]
-        return SchematicVariable(var.typecode, var.num)
-
-
-class CopyVisitor(OldCopyVisitor):
-    def postvisit_schematic_variable(self, var: SchematicVariable) -> SchematicVariable:
-        return SchematicVariable(var.typecode, var.num)
+    def __gt__(self, other: Any) -> bool:
+        assert isinstance(other, SchematicVariable)
+        return self.num > other.num

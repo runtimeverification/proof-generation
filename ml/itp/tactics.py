@@ -1,144 +1,19 @@
-from typing import Mapping, Optional, List, Tuple, Dict
+from typing import Mapping, Optional, List, Tuple, Dict, Any, Callable
+from dataclasses import dataclass
 
-from ml.metamath.parser import (
-    parse_term_with_metavariables,
-    parse_terms_with_metavariables,
-)
-from ml.metamath.ast import Term, StructuredStatement, Statement, Application, Metavariable
-from ml.metamath.composer import Theorem, Proof, TypecodeProver
-from ml.metamath.visitors import CopyVisitor
+from ml.metamath.ast import Term, StructuredStatement, Statement, Application, Metavariable, Proof, EssentialStatement, ProvableStatement
+from ml.metamath.composer import Theorem, TypecodeProver, Context
 from ml.metamath.auto.notation import NotationProver
 
-from ml.metamath.auto.unification import Unification
-
-from .state import ProofState, Goal
-from .extension import SchematicVariable, SubstitutionVisitor
+from .state import ProofState, Goal, Tactic
+from .extension import SchematicVariable
 
 
-class Tactic:
-    def __init__(self, tactic_name: str):
-        self.tactic_name = tactic_name
-
-    # def apply(self, state: ProofState, *args, **kwargs):
-    #     """
-    #     Transforms the proof state
-    #     """
-    #     raise NotImplementedError()
-
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
-        """
-        Transforms the proof stack
-        """
-        raise NotImplementedError()
-
-    def parse_terms(self, state: ProofState, src: str) -> List[Term]:
-        return parse_terms_with_metavariables(src, set(state.composer.get_all_metavariables()))
-
-    def parse_substitution(self, state: ProofState, options: Mapping[str, str]) -> Dict[str, Term]:
-        substitution = {}
-        all_metavars = set(state.composer.get_all_metavariables())
-
-        for key, value in options.items():
-            assert type(value) is str
-            substitution[key] = parse_term_with_metavariables(value, all_metavars)
-
-        return substitution
-
-    @staticmethod
-    def typcode_extension(state: ProofState, typecode: str, term: Term) -> bool:
-        if isinstance(term, SchematicVariable):
-            var, *_ = state.composer.find_metavariables_of_typecode(term.typecode)
-            return TypecodeProver.check_typecode(state.composer, typecode, Metavariable(var))
-        return False
-
-    @staticmethod
-    def check_schematic_substitution(state: ProofState, substitution: Mapping[str, Term]) -> bool:
-        for var, term in substitution.items():
-            svar = state.get_schematic_variable_from_name(var)
-            assert svar is not None, f"missing schematic variable {svar}"
-            # assert TypecodeProver.check_typecode(
-            #             state.composer,
-            #             svar.typecode,
-            #             term,
-            #             extension=lambda typecode, term: ApplyTactic.typcode_extension(state, typecode, term),
-            #         ), \
-            #        f"unable to assign {term} to a metavariable of typecode {svar.typecode}"
-            if not TypecodeProver.check_typecode(
-                    state.composer,
-                    svar.typecode,
-                    term,
-                    extension=lambda typecode, term: ApplyTactic.typcode_extension(state, typecode, term),
-            ):
-                return False
-        return True
-
-    @staticmethod
-    def unify(state: ProofState,
-              equations: List[Tuple[Term, Term]],
-              only_schematic_vars: bool = True) -> Optional[Tuple[Mapping[str, Term], bool]]:
-        """
-        Unify two statements modulo notations
-        return Optional[( substitution, if notation is applied )]
-
-        only_schematic_vars = True means that we only consider
-        schematic variables as variables
-
-        otherwise the unification will use all metavariables (including schematic variables)
-        """
-
-        applied_notation = False
-
-        def unify_modulo_notation(state: ProofState, left: Term, right: Term) -> Optional[List[Tuple[Term, Term]]]:
-            """
-            Additional unification rules
-            if the heads of left and right are different,
-            try to apply notation axiom to one of them
-            """
-
-            nonlocal applied_notation
-
-            if not isinstance(left, Application) or \
-               not isinstance(right, Application):
-                return None
-
-            left_sugar_axiom = NotationProver.find_sugar_axiom(state.composer, left.symbol)
-            if left_sugar_axiom is not None:
-                applied_notation = True
-                left_expanded = NotationProver.apply_sugar_axiom(left_sugar_axiom, left)
-                return [(left_expanded, right)]
-
-            right_sugar_axiom = NotationProver.find_sugar_axiom(state.composer, right.symbol)
-            if right_sugar_axiom is not None:
-                applied_notation = True
-                right_expanded = NotationProver.apply_sugar_axiom(right_sugar_axiom, right)
-                return [(left, right_expanded)]
-
-            return None
-
-        subst = Unification.unify(
-            equations,
-            variable_class=SchematicVariable if only_schematic_vars else Metavariable,
-            substitution_visitor_class=SubstitutionVisitor,
-            # newer schematic variable are used as substitution variables
-            # with higher priority than older schematic variables
-            variable_order=(lambda v1, v2: v1.num > v2.num) if only_schematic_vars else (lambda v1, v2: True),
-            # add extra unification algorithm for notations
-            additional_unifier=lambda t1, t2: unify_modulo_notation(state, t1, t2),
-        )
-
-        if subst is not None:
-            if not Tactic.check_schematic_substitution(state, subst):
-                return None
-            return subst, applied_notation
-
-        return None
-
-    @staticmethod
-    def unify_statements(state: ProofState, left: StructuredStatement, right: StructuredStatement, *args,
-                         **kwargs) -> Optional[Tuple[Mapping[str, Term], bool]]:
-        if len(left.terms) != len(right.terms):
-            return None
-        return Tactic.unify(state, list(zip(left.terms, right.terms)), *args, **kwargs)
+@dataclass
+class PreprocessedTheorem:
+    essentials: List[ProvableStatement]
+    conclusion: StructuredStatement
+    schematic_substitution: Dict[str, Term]
 
 
 @ProofState.register_tactic("apply")
@@ -146,7 +21,7 @@ class ApplyTactic(Tactic):
     """
     Apply a theorem on the top of the goal stack
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.use_claim = False
         self.applied_notation = False
@@ -154,7 +29,7 @@ class ApplyTactic(Tactic):
     @staticmethod
     def preprocess_theorem(
         state: ProofState, theorem: Theorem, subst: Dict[str, Term]
-    ) -> Tuple[StructuredStatement, List[StructuredStatement], Dict[str, Term]]:
+    ) -> PreprocessedTheorem:
         """
         Replace all metavariables in the given theorem by fresh
         schematic variables, and return the substituted statement,
@@ -178,18 +53,14 @@ class ApplyTactic(Tactic):
                 assert typecode is not None, f"metavariable {metavar} not found"
                 new_subst[metavar] = state.get_next_schematic_variable(typecode)
 
-        # replace all metavariables in the applied theorem
-        # with distinct schematic variables
-        subst_visitor = SubstitutionVisitor(new_subst)
-
         # substitute in schematic variables
         # and then sanitize format
-        transformer = lambda stmt: Goal.sanitize_goal_statement(subst_visitor.visit(stmt))
+        transformer: Callable[[StructuredStatement], ProvableStatement] = lambda stmt: Goal.sanitize_goal_statement(stmt.substitute(new_subst))
 
-        statement = transformer(theorem.statement)
-        essentials = [transformer(essential) for essential in theorem.essentials]
+        conclusion = transformer(theorem.statement)
+        essentials = [transformer(essential) for essential in theorem.context.essentials]
 
-        return statement, essentials, new_subst
+        return PreprocessedTheorem(essentials, conclusion, new_subst)
 
     def init_theorem(self, state: ProofState, top_goal: Goal, name: str) -> Theorem:
         """
@@ -218,15 +89,20 @@ class ApplyTactic(Tactic):
 
         assert False, f"cannot find theorem {name}"
 
-    def apply(self, state: ProofState, theorem_name: str, **options):
+    def apply(self, state: ProofState, *args: str, **options: str) -> None:
+        theorem_name, = args
+
         subst = self.parse_substitution(state, options)
 
         top_goal = state.get_top_goal()
         top_goal_statement = top_goal.statement
 
         theorem = self.init_theorem(state, top_goal, theorem_name)
-        theorem_conclusion, essentials, self.metavars_substitution = \
-            ApplyTactic.preprocess_theorem(state, theorem, subst)
+
+        preprocessed = ApplyTactic.preprocess_theorem(state, theorem, subst)
+        theorem_conclusion = preprocessed.conclusion
+        essentials = preprocessed.essentials
+        self.metavars_substitution = preprocessed.schematic_substitution
 
         # add all essentials to the goal stack
         state.resolve_top_goal(self)
@@ -241,7 +117,7 @@ class ApplyTactic(Tactic):
         state.assign_schematic_variables(schematic_substitution)
 
         # get the final top goal statement
-        top_goal_statement = SubstitutionVisitor(schematic_substitution).visit(top_goal_statement)
+        top_goal_statement = top_goal_statement.substitute(schematic_substitution)
         self.original_goal = top_goal_statement
 
         # check if any schematic variables are killed before being assigned
@@ -256,7 +132,7 @@ class ApplyTactic(Tactic):
         """
         assert self.theorem is not None
 
-        num_essentials = len(self.theorem.essentials)
+        num_essentials = len(self.theorem.context.essentials)
         assert (
             len(subproofs) >= num_essentials
         ), f"theorem {self.theorem.statement.label} requires {num_essentials}, but only {len(subproofs)} are provided"
@@ -300,7 +176,7 @@ class SetSchematicVariableTactic(Tactic):
     """
     Set some schematic variables to concrete terms (without schematic variables)
     """
-    def apply(self, state: ProofState, **options):
+    def apply(self, state: ProofState, *_: str, **options: str) -> None:
         substitution = self.parse_substitution(state, options)
 
         # check that we are not substituting dead schematic variables
@@ -321,7 +197,7 @@ class ShuffleTactic(Tactic):
     """
     Move the current goal to the last
     """
-    def apply(self, state: ProofState):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         state.current_goals = [state.current_goals[-1]] + state.current_goals[:-1]
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
@@ -343,29 +219,29 @@ class ClaimTactic(Tactic):
                 return name
             i += 1
 
-    def apply(self, state: ProofState, *args, **kwargs):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         # the last argument or the single kwarg is the conclusion
         # other positional arguments are hypotheses
         assert len(kwargs) <= 1, "wrong claim format"
         if len(kwargs) == 1:
-            label, conclusion = list(kwargs.items())[0]
-            hypotheses = args
+            label, conclusion_str = list(kwargs.items())[0]
+            hypotheses_str = args
         else:
             assert len(args) >= 1, "wrong claim format"
             label = ClaimTactic.find_free_theorem_name(state, "claim-")
-            conclusion = args[-1]
-            hypotheses = args[:-1]
+            conclusion_str = args[-1]
+            hypotheses_str = args[:-1]
 
         # parse hyotheses and conclusion
         essentials = []
-        for i, hypothesis in enumerate(hypotheses):
+        for i, hypothesis in enumerate(hypotheses_str):
             terms = self.parse_terms(state, hypothesis)
             essential_label = f"{label}.{i}"
-            essential = StructuredStatement(Statement.ESSENTITAL, terms, label=essential_label)
+            essential = EssentialStatement(essential_label, terms)
             essentials.append(essential)
 
-        terms = self.parse_terms(state, conclusion)
-        conclusion = StructuredStatement(Statement.PROVABLE, terms, label=label)
+        terms = self.parse_terms(state, conclusion_str)
+        conclusion = ProvableStatement(label, terms)
 
         # TODO: this should probably stay in metamath.composer?
         # find all related floating statements
@@ -375,7 +251,7 @@ class ClaimTactic(Tactic):
 
         floatings = state.composer.context.find_floatings(metavariables)
 
-        self.claim_theorm = Theorem(state.composer, conclusion, floatings, essentials)
+        self.claim_theorm = Theorem(state.composer, Context(floatings, essentials), conclusion)
         self.claim_goal = state.add_claim(self.claim_theorm)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
@@ -388,9 +264,9 @@ class FromTactic(Tactic):
     """
     Apply theorem to hypotheses
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.claim_goal = None
+        self.claim_goal: Optional[Goal] = None
         self.applied_notation = False
         self.applied_theorems: List[Optional[Theorem]
                                     ] = []  # None if the hypotheses uses another claim, which will be resolved later
@@ -433,7 +309,7 @@ class FromTactic(Tactic):
 
         assert False, f"unable to find theorem {name}"
 
-    def apply(self, state: ProofState, *args: str, **kwargs):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         assert len(args) >= 1, f"expecting at least one argument"
 
         hypothesis_names = list(args[:-1])
@@ -442,21 +318,22 @@ class FromTactic(Tactic):
 
         # find the specified theorem
         theorem = self.init_theorem(state, theorem_name)
-        theorem_conclusion, theorem_essentials, self.metavars_substitution = \
-            ApplyTactic.preprocess_theorem(state, theorem, self.metavars_substitution)
-        self.conclusion = theorem_conclusion
+        
+        preprocessed = ApplyTactic.preprocess_theorem(state, theorem, self.metavars_substitution)
+        theorem_conclusion = self.conclusion = preprocessed.conclusion
+        theorem_essentials = preprocessed.essentials
+        self.metavars_substitution = preprocessed.schematic_substitution
 
         # add a local claim
-        theorem_conclusion.statement_type = "h"
         theorem_conclusion.label = ClaimTactic.find_free_theorem_name(state, "hyp-")
-        local_theorem = Theorem(state.composer, theorem_conclusion, [], [])
+        local_theorem = Theorem(state.composer, Context(), theorem_conclusion)
         phantom_goal = state.add_claim(local_theorem, is_local=True)
         state.resolve_top_goal(self)  # directly resolve it
 
         # initialize all hypotheses
         hypotheses = self.init_hypotheses(state, phantom_goal, hypothesis_names)
-        assert len(theorem.essentials) == len(hypotheses), \
-               f"not enough hypotheses is given for theorem {theorem_name}, expecting {len(theorem.essentials)}, given {len(hypotheses)}"
+        assert len(theorem.context.essentials) == len(hypotheses), \
+               f"not enough hypotheses is given for theorem {theorem_name}, expecting {len(theorem.context.essentials)}, given {len(hypotheses)}"
 
         # unify the essentials
         equations = []

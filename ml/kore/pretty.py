@@ -26,10 +26,11 @@ from .ast import (
     ImportStatement,
     SymbolInstance,
     StringLiteral,
+    KoreVisitor,
 )
 
 
-class PrettyPrinter(Printer):
+class PrettyPrinter(Printer, KoreVisitor):
     COLOR_KEYWORD = ANSI.in_blue
     COLOR_SYMBOL_INSTANCE = ANSI.in_green
     COLOR_STRING_LITERAL = ANSI.in_magenta

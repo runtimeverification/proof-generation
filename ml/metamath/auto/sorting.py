@@ -1,7 +1,7 @@
 from typing import Mapping, Optional, Tuple, List, Dict
 
-from ..ast import Metavariable, Term, Application, Statement, StructuredStatement
-from ..composer import Composer, Theorem, Proof, MethodAutoProof, ProofCache
+from ..ast import Metavariable, Term, Application, Statement, StructuredStatement, ProvableStatement, Proof
+from ..composer import Composer, Theorem, MethodAutoProof, ProofCache
 
 from .unification import Unification
 
@@ -36,16 +36,16 @@ class SortingProver:
     """
     @staticmethod
     def in_sort(term: Term, sort: Term) -> Application:
-        return Application("\\in-sort", [term, sort])
+        return Application("\\in-sort", (term, sort))
 
     @staticmethod
     def construct_imp_goal(lhs: Term, rhs: Term) -> StructuredStatement:
-        return StructuredStatement(
-            Statement.PROVABLE,
-            [
+        return ProvableStatement(
+            "",
+            (
                 Application("|-"),
-                Application("\\imp", [lhs, rhs]),
-            ],
+                Application("\\imp", (lhs, rhs)),
+            ),
         )
 
     @staticmethod
@@ -103,7 +103,7 @@ class SortingProver:
     @staticmethod
     def find_sorting_lemma_for_symbol(composer: Composer, symbol: str) -> Optional[Theorem]:
         for theorem in composer.get_theorems_of_typecode("|-"):
-            if len(theorem.essentials) != 0:
+            if len(theorem.context.essentials) != 0:
                 continue
 
             term = SortingProver.get_provability_body(theorem.statement)
@@ -164,7 +164,7 @@ class SortingProver:
         ), f"unexpected kore-is-sort claim {statement}"
 
         for theorem in composer.get_theorems_of_typecode("|-"):
-            if len(theorem.essentials) != 0:
+            if len(theorem.context.essentials) != 0:
                 continue
 
             theorem_term = SortingProver.get_provability_body(theorem.statement)
@@ -204,12 +204,12 @@ class SortingProver:
                 composer.get_theorem("proof-rule-prop-1").apply(ph0=conclusion, ph1=hypothesis),
                 SortingProver.prove_kore_is_sort(
                     composer,
-                    StructuredStatement(
-                        Statement.PROVABLE,
-                        [
+                    ProvableStatement(
+                        "",
+                        (
                             Application("|-"),
                             conclusion,
-                        ],
+                        ),
                     ),
                 ),
             )
@@ -218,7 +218,7 @@ class SortingProver:
 
         # if the conclusion in one of the essentials
         for essential in composer.get_all_essentials():
-            if essential.statement.terms == [Application("|-"), conclusion]:
+            if essential.statement.terms == (Application("|-"), conclusion):
                 return composer.get_theorem("proof-rule-mp").apply(
                     composer.get_theorem("proof-rule-prop-1").apply(ph0=conclusion, ph1=hypothesis),
                     essential.apply(),
@@ -359,7 +359,7 @@ class SortingProver:
         else:
             hypothesis = hypotheses[-1]
             for hyp in hypotheses[:-1][::-1]:
-                hypothesis = Application("\\and", [hyp, hypothesis])
+                hypothesis = Application("\\and", (hyp, hypothesis))
 
         return SortingProver.prove_sorting_statement(
             composer,

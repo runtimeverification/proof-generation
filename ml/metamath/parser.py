@@ -1,42 +1,38 @@
-from typing import Tuple, Mapping
+from typing import Tuple, Mapping, List, Set, Iterable
 
 import os
 import re
 
-from lark import Lark, Transformer
+from lark import Lark, Transformer, Token
 from lark.visitors import v_args
 
 from .ast import *
 
 
-class ASTTransformer(Transformer):
-    def __init__(self, metavariables=[]):
+class ASTTransformer(Transformer[BaseAST]):
+    def __init__(self, metavariables: Iterable[str] = []) -> None:
         super().__init__()
-        self.metavariables = metavariables
+        self.metavariables = list(metavariables)
 
-    def token(self, args):
+    def token(self, args: List[Token]) -> str:
         return args[0].value
 
-    def variable_stmt(self, args):
+    def constant_stmt(self, args: List[str]) -> ConstantStatement:
+        return ConstantStatement(tuple(args))
+
+    def variable_stmt(self, args: List[str]) -> VariableStatement:
         self.metavariables += args
-        return RawStatement(Statement.VARIABLE, args)
+        return VariableStatement(tuple(map(Metavariable, args)))
 
-    def constant_stmt(self, args):
-        return RawStatement(Statement.CONSTANT, args)
-
-    def disjoint_stmt(self, args):
+    def disjoint_stmt(self, args: List[str]) -> DisjointStatement:
         for var in args:
             assert (var in self.metavariables), "variable {} used before declaration".format(var)
-        return StructuredStatement(Statement.DISJOINT, list(map(Metavariable, args)))
+        return DisjointStatement(tuple(map(Metavariable, args)))
 
-    def floating_stmt(self, args):
+    def floating_stmt(self, args: List[str]) -> FloatingStatement:
         label, typecode, variable = args
         assert (variable in self.metavariables), "variable {} used before declaration".format(variable)
-        return StructuredStatement(
-            Statement.FLOATING,
-            [Application(typecode), Metavariable(variable)],
-            label=label,
-        )
+        return FloatingStatement(label, (Application(typecode), Metavariable(variable)))
 
     """
     Parse a term from a list of tokens, returns the term and the rest of the unused tokens
@@ -72,42 +68,42 @@ class ASTTransformer(Transformer):
         else:
             return Application(first), tokens[1:]
 
-    def parse_terms(self, tokens: List[str]) -> List[Term]:
+    def parse_terms(self, tokens: List[str]) -> Terms:
         terms = []
         while len(tokens):
             term, tokens = self.parse_term(tokens)
             terms.append(term)
-        return terms
+        return tuple(terms)
 
-    def axiom_stmt(self, args):
+    def axiom_stmt(self, args: List[str]) -> AxiomaticStatement:
         label, *tokens = args
         terms = self.parse_terms(tokens)
-        return StructuredStatement(Statement.AXIOM, terms, label=label)
+        return AxiomaticStatement(label, terms)
 
-    def essential_stmt(self, args):
+    def essential_stmt(self, args: List[str]) -> EssentialStatement:
         label, *tokens = args
         terms = self.parse_terms(tokens)
-        return StructuredStatement(Statement.ESSENTITAL, terms, label=label)
+        return EssentialStatement(label, terms)
 
-    def proof(self, args):
+    def proof(self, args: List[str]) -> List[str]:
         return args
 
-    def provable_stmt(self, args):
+    def provable_stmt(self, args: List[str]) -> ProvableStatement:
         label, *args = args
         script = list(args[-1])
         tokens = args[:-1]
         terms = self.parse_terms(tokens)
 
-        statement = StructuredStatement(Statement.PROVABLE, terms, label=label)
+        statement = ProvableStatement(label, terms)
         statement.proof = Proof.from_script(statement, script)
 
         return statement
 
-    def block(self, args):
-        return Block(args)
+    def block(self, args: List[Statement]) -> Block:
+        return Block(tuple(args))
 
-    def database(self, args):
-        return Database(args)
+    def database(self, args: List[Statement]) -> Database:
+        return Database(tuple(args))
 
 
 syntax = r"""
@@ -156,12 +152,15 @@ statement_parser = Lark(
 
 def parse_database(src: str) -> Database:
     tree = database_parser.parse(src)
-    return ASTTransformer().transform(tree)
+    ast = ASTTransformer().transform(tree)
+    assert isinstance(ast, Database)
+    return ast
 
 
-def parse_terms_with_metavariables(src: str, metavariables: Set[str] = set()) -> List[Term]:
+def parse_terms_with_metavariables(src: str, metavariables: Set[str] = set()) -> Terms:
     tree = statement_parser.parse(f"l $a {src} $.")
     stmt = ASTTransformer(metavariables).transform(tree)
+    assert isinstance(stmt, AxiomaticStatement)
     return stmt.terms
 
 
@@ -171,12 +170,10 @@ def parse_term_with_metavariables(src: str, metavariables: Set[str] = set()) -> 
     return terms[0]
 
 
-"""
-Load a file and resolve all includes
-"""
-
-
-def flatten_includes(path: str, loaded: Set[str] = set(), trace: List[str] = [], include_proof=True) -> str:
+def flatten_includes(path: str, loaded: Set[str] = set(), trace: List[str] = [], include_proof: bool = True) -> str:
+    """
+    Load a file and resolve all includes
+    """
     path = os.path.realpath(path)
 
     if path in loaded:
@@ -215,6 +212,6 @@ def remove_proof(src: str) -> str:
     return re.sub(r"\$=\s*[^\$]*\s*\$\.", "$= ? $.", src)
 
 
-def load_database(path: str, include_proof=True) -> Database:
+def load_database(path: str, include_proof: bool = True) -> Database:
     src = flatten_includes(path, set(), include_proof=include_proof)
     return parse_database(src)

@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple
 
-from ..ast import Metavariable, Term, Application, StructuredStatement, Statement
-from ..composer import Composer, Proof, Theorem, MethodAutoProof, TypecodeProver
+from ..ast import Metavariable, Term, Application, StructuredStatement, ProvableStatement, Proof
+from ..composer import Composer, Theorem, MethodAutoProof, TypecodeProver
 
 from .notation import NotationProver
 from .unification import Unification
@@ -18,15 +18,15 @@ class SubstitutionProver:
         subst_pattern: Term,
         subst_var: Metavariable,
     ) -> StructuredStatement:
-        return StructuredStatement(
-            Statement.PROVABLE,
-            [
+        return ProvableStatement(
+            "",
+            (
                 Application("#Substitution"),
                 after_pattern,
                 before_pattern,
                 subst_pattern,
                 subst_var,
-            ],
+            ),
         )
 
     @staticmethod
@@ -171,7 +171,7 @@ class SubstitutionProver:
                                ] = ([])  # list of tuples (after_pattern, before_pattern, subst_pattern, subst_var)
 
                 # determine the subgoals
-                for essential in theorem.essentials:
+                for essential in theorem.context.essentials:
                     if len(essential.terms) == 5 and essential.terms[0] == Application("#Substitution"):
                         (
                             _,
@@ -263,12 +263,11 @@ class SubstitutionProver:
         )
 
     @staticmethod
-    def prove_substitution_statement(composer: Composer, statement: Statement, hypotheses: List[Theorem] = []):
+    def prove_substitution_statement(composer: Composer, statement: StructuredStatement, hypotheses: List[Theorem] = []) -> Proof:
         """
         A wrapper for an auto proof method
         """
 
-        assert isinstance(statement, StructuredStatement)
         assert len(
             statement.terms
         ) == 5 and statement.terms[0] == Application("#Substitution"), f"not a substitution goal {statement}"

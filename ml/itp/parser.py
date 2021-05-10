@@ -1,35 +1,35 @@
-from typing import Optional
+from typing import Optional, List, Tuple, Any, Union
 
-from lark import Lark, Transformer
+from lark import Lark, Transformer, Token
 
 from .ast import *
 
 
-class ASTTransformer(Transformer):
-    def token(self, args):
+class ASTTransformer(Transformer[Tactical]):
+    def token(self, args: List[Token]) -> str:
         return args[0].value
 
-    def string(self, args):
+    def string(self, args: List[Token]) -> str:
         literal = args[0].value
         assert literal.startswith('"') and literal.endswith('"')
         return literal[1:-1]
 
-    def value(self, args):
+    def value(self, args: List[str]) -> str:
         return args[0]
 
-    def positional_option(self, args):
+    def positional_option(self, args: List[str]) -> str:
         return args[0]
 
-    def keyword_option(self, args):
+    def keyword_option(self, args: List[str]) -> Tuple[str, str]:
         key, value = args
         return key, value
 
-    def options(self, args):
+    def options(self, args: List[Union[str, Tuple[str, str]]]) -> Options:
         positional_args = []
         keyword_args = {}
 
         for arg in args:
-            if type(arg) is tuple:
+            if isinstance(arg, tuple):
                 key, value = arg
                 assert key not in keyword_args, f"duplicate keyword {key}"
                 keyword_args[key] = value
@@ -38,34 +38,34 @@ class ASTTransformer(Transformer):
 
         return Options(*positional_args, **keyword_args)
 
-    def tactical_or_empty(self, args):
+    def tactical_or_empty(self, args: List[Tactical]) -> Optional[Tactical]:
         if len(args):
             return args[0]
         return None
 
-    def atomic_tactical(self, args):
+    def atomic_tactical(self, args: Any) -> AtomicTactical:
         return AtomicTactical(*args)
 
-    def tactical(self, args):
+    def tactical(self, args: List[Tactical]) -> Tactical:
         return args[0]
 
-    def paren_tactical(self, args):
+    def paren_tactical(self, args: List[Tactical]) -> Tactical:
         return args[0]
 
-    def closure_tactical(self, args):
+    def closure_tactical(self, args: List[Tactical]) -> Tactical:
         return args[0]
 
-    def plus_tactical(self, args):
+    def plus_tactical(self, args: List[Tactical]) -> Tactical:
         return PlusTactical(args[0])
 
-    def star_tactical(self, args):
+    def star_tactical(self, args: List[Tactical]) -> Tactical:
         return StarTactical(args[0])
 
-    def and_tactical(self, args):
+    def and_tactical(self, args: List[Tactical]) -> Tactical:
         if len(args) == 1: return args[0]
         return AndTactical(*args)
 
-    def or_tactical(self, args):
+    def or_tactical(self, args: List[Tactical]) -> Tactical:
         if len(args) == 1: return args[0]
         return OrTactical(*args)
 

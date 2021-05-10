@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from ..ast import Metavariable, Term, Application, Statement, StructuredStatement
-from ..composer import Composer, Proof, Theorem, MethodAutoProof
+from ..ast import Metavariable, Term, Application, ProvableStatement, StructuredStatement, Proof
+from ..composer import Composer, Theorem, MethodAutoProof
 
 from .notation import NotationProver
 
@@ -13,7 +13,7 @@ class ApplicationContextProver:
     """
     @staticmethod
     def get_target(var: Metavariable, pattern: Term) -> StructuredStatement:
-        return StructuredStatement(Statement.PROVABLE, [Application("#ApplicationContext"), var, pattern])
+        return ProvableStatement("", (Application("#ApplicationContext"), var, pattern))
 
     @staticmethod
     def flatten_application(pattern: Term) -> List[Term]:
