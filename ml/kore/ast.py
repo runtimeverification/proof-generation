@@ -25,7 +25,7 @@ class BaseAST(Generic[P]):
         self.meta_module: Optional[Module] = None
         self.attributes = attributes
 
-    def set_position(self, line: int, column: int, end_line: int, end_column: int):
+    def set_position(self, line: int, column: int, end_line: int, end_column: int) -> None:
         self.meta_line = line
         self.meta_column = column
         self.meta_end_line = end_line
@@ -41,7 +41,7 @@ class BaseAST(Generic[P]):
         else:
             return self.meta_parent
 
-    def set_parent(self, parent: P):
+    def set_parent(self, parent: P) -> None:
         self.meta_parent = parent
 
     def get_attribute_by_symbol(self, symbol: str) -> Optional[Application]:
@@ -57,11 +57,11 @@ class BaseAST(Generic[P]):
         else:
             return False
 
-    def error_with_position(self, msg: str, *args, **kwargs) -> NoReturn:
+    def error_with_position(self, msg: str, *args: Any, **kwargs: Any) -> NoReturn:
         err_msg = "at line {}, column {}: {}".format(self.meta_line, self.meta_column, msg.format(*args, **kwargs))
         raise Exception(err_msg)
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         self.meta_module = module
 
     def get_module(self) -> Module:
@@ -78,16 +78,16 @@ class Definition(BaseAST[None]):
         for module in modules:
             self.module_map[module.name] = module
 
-    """
-    Resolves sort, symbol, alias, and module references,
-    and add circular reference for users and uses, parents and chlidren
-    """
+    def resolve_all(self) -> None:
+        """
+        Resolves sort, symbol, alias, and module references,
+        and add circular reference for users and uses, parents and chlidren
+        """
 
-    def resolve(self):
         # TODO: check cyclic module imports
         for module in self.module_map.values():
             module.set_parent(self)
-            module.resolve()
+            module.resolve_all()
 
     def get_module_by_name(self, name: str) -> Optional[Module]:
         return self.module_map.get(name)
@@ -96,9 +96,6 @@ class Definition(BaseAST[None]):
         visitor.previsit_definition(self)
         children = visitor.visit_children_of_definition(self)
         return visitor.postvisit_definition(self, *children)
-
-    def __lt__(self, other):
-        return self.module_map < other.module_map
 
     def __str__(self) -> str:
         return "definition {{\n{}\n}}".format("\n".join(map(str, self.module_map.values())))
@@ -149,7 +146,7 @@ class Module(BaseAST[Definition]):
 
         return None
 
-    def add_sentence(self, sentence: Sentence):
+    def add_sentence(self, sentence: Sentence) -> None:
         self.all_sentences.append(sentence)
 
         if isinstance(sentence, ImportStatement):
@@ -165,7 +162,7 @@ class Module(BaseAST[Definition]):
         else:
             raise Exception("unknown sentence type {}".format(type(sentence)))
 
-    def remove_sentence(self, sentence: Sentence):
+    def remove_sentence(self, sentence: Sentence) -> None:
         assert sentence in self.all_sentences
         self.all_sentences.remove(sentence)
 
@@ -180,7 +177,7 @@ class Module(BaseAST[Definition]):
         elif isinstance(sentence, Axiom):
             self.axioms.remove(sentence)
 
-    def resolve(self):
+    def resolve_all(self) -> None:
         for sentence in self.all_sentences:
             sentence.set_parent(self)
 
@@ -202,18 +199,18 @@ class Module(BaseAST[Definition]):
 
 
 class Sentence(BaseAST[Any]):
-    def __init__(self, attributes=[]):
+    def __init__(self, attributes: List[Application] = []):
         super().__init__(attributes)
 
 
 class Pattern(BaseAST[Union[Sentence, "Pattern"]]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
         raise NotImplementedError("__lt__ for ml.kore.ast.Pattern is not implemented.")
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         raise NotImplementedError()
 
 
@@ -222,7 +219,7 @@ class ImportStatement(Sentence):
         super().__init__(attributes)
         self.module = module
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         super().resolve(module)
 
         if isinstance(self.module, str):
@@ -254,7 +251,7 @@ class SortDefinition(Sentence):
         sort_id: str,
         sort_variables: List[SortVariable],
         attributes: List[Application],
-        hooked=False,
+        hooked: bool = False,
     ):
         super().__init__(attributes)
         self.sort_id = sort_id
@@ -266,12 +263,13 @@ class SortDefinition(Sentence):
         children = visitor.visit_children_of_sort_definition(self)
         return visitor.postvisit_sort_definition(self, *children)
 
-    def __lt__(self, other):
-        return [self.sort_id, self.sort_variables, self.hooked] < [
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, SortDefinition)
+        return (self.sort_id, self.sort_variables, self.hooked) < (
             other.sort_id,
             other.sort_variables,
             other.hooked,
-        ]
+        )
 
     def __str__(self) -> str:
         return "sort {}({})".format(self.sort_id, ", ".join(map(str, self.sort_variables)))
@@ -283,7 +281,7 @@ class SortInstance(BaseAST[Pattern]):
         self.definition = definition
         self.arguments = arguments
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         super().resolve(module)
 
         if isinstance(self.definition, str):
@@ -301,7 +299,7 @@ class SortInstance(BaseAST[Pattern]):
         children = visitor.visit_children_of_sort_instance(self)
         return visitor.postvisit_sort_instance(self, *children)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, SortInstance):
             # if self.definition is str, then this comparison is correct
             # if self.definition has been resolved to the actual definition
@@ -309,11 +307,12 @@ class SortInstance(BaseAST[Pattern]):
             return self.definition == other.definition
         return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.definition) ^ hash(tuple(self.arguments))
 
-    def __lt__(self, other):
-        return [self.definition, self.arguments] < [other.definition, other.arguments]
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, SortInstance)
+        return (self.definition, self.arguments) < (other.definition, other.arguments)
 
     def __str__(self) -> str:
         sort_id = (self.definition.sort_id if isinstance(self.definition, SortDefinition) else self.definition)
@@ -335,15 +334,16 @@ class SortVariable(BaseAST[Pattern]):
         children = visitor.visit_children_of_sort_variable(self)
         return visitor.postvisit_sort_variable(self, *children)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, SortVariable):
             return self.name == other.name
         return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
-    def __lt__(self, other):
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, SortVariable)
         return self.name < other.name
 
     def __str__(self) -> str:
@@ -361,7 +361,7 @@ class SymbolDefinition(Sentence):
         input_sorts: List[Sort],
         output_sort: Sort,
         attributes: List[Application],
-        hooked=False,
+        hooked: bool = False,
     ):
         super().__init__(attributes)
         self.symbol = symbol
@@ -373,10 +373,10 @@ class SymbolDefinition(Sentence):
         # a set of patterns that uses this symbol
         self.users: List[Pattern] = []
 
-    def add_user(self, user: Pattern):
+    def add_user(self, user: Pattern) -> None:
         self.users.append(user)
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         super().resolve(module)
         # resolve input and output sorts
         for sort in self.input_sorts:
@@ -388,15 +388,16 @@ class SymbolDefinition(Sentence):
         children = visitor.visit_children_of_symbol_definition(self)
         return visitor.postvisit_symbol_definition(self, *children)
 
-    def __lt__(self, other):
-        return [
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, SymbolDefinition)
+        return (
             self.symbol,
             self.sort_variables,
             self.input_sorts,
             self.output_sort,
-        ] < [other.symbol, other.sort_variables, other.input_sorts, other.output_sort]
+        ) < (other.symbol, other.sort_variables, other.input_sorts, other.output_sort)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "symbol {}({}): {}".format(self.symbol, ", ".join(map(str, self.input_sorts)), self.output_sort)
 
 
@@ -406,7 +407,7 @@ class SymbolInstance(BaseAST[Pattern]):
         self.definition = definition
         self.sort_arguments = sort_arguments
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         super().resolve(module)
 
         if isinstance(self.definition, str):
@@ -428,22 +429,23 @@ class SymbolInstance(BaseAST[Pattern]):
         children = visitor.visit_children_of_symbol_instance(self)
         return visitor.postvisit_symbol_instance(self, *children)
 
-    def __lt__(self, other):
-        return [self.definition, self.sort_arguments] < [
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, SymbolInstance)
+        return (self.definition, self.sort_arguments) < (
             other.definition,
             other.sort_arguments,
-        ]
+        )
 
     def __str__(self) -> str:
         symbol = (self.definition.symbol if isinstance(self.definition, SymbolDefinition) else self.definition)
         return "{}{{{}}}".format(symbol, ", ".join(map(str, self.sort_arguments)))
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, SymbolInstance):
             return (self.definition == other.definition and self.sort_arguments == other.sort_arguments)
         return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.definition) ^ hash(tuple(self.sort_arguments))
 
     def get_symbol_name(self) -> str:
@@ -459,14 +461,14 @@ class Axiom(Sentence):
         sort_variables: List[SortVariable],
         pattern: Pattern,
         attributes: List[Application],
-        is_claim=False,
+        is_claim: bool = False,
     ):
         super().__init__(attributes)
         self.sort_variables = sort_variables
         self.pattern = pattern
         self.is_claim = is_claim
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         super().resolve(module)
 
         for var in self.sort_variables:
@@ -480,12 +482,13 @@ class Axiom(Sentence):
         children = visitor.visit_children_of_axiom(self)
         return visitor.postvisit_axiom(self, *children)
 
-    def __lt__(self, other):
-        return [self.sort_variables, self.pattern, self.is_claim] < [
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, Axiom)
+        return (self.sort_variables, self.pattern, self.is_claim) < (
             other.sort_variables,
             other.pattern,
             other.is_claim,
-        ]
+        )
 
     def __str__(self) -> str:
         return "axiom {{{}}} {}".format(", ".join(map(str, self.sort_variables)), self.pattern)
@@ -507,7 +510,7 @@ class AliasDefinition(Sentence):
         self.lhs = lhs
         self.rhs = rhs
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         super().resolve(module)
 
         self.definition.set_parent(self)
@@ -531,25 +534,26 @@ class AliasDefinition(Sentence):
         children = visitor.visit_children_of_alias_definition(self)
         return visitor.postvisit_alias_definition(self, *children)
 
-    def __lt__(self, other):
-        return [self.definition, self.lhs, self.rhs] < [
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, AliasDefinition)
+        return (self.definition, self.lhs, self.rhs) < (
             other.definition,
             other.lhs,
             other.rhs,
-        ]
+        )
 
     def __str__(self) -> str:
         return "alias {} where {} := {}".format(self.definition, self.lhs, self.rhs)
 
 
 class Variable(Pattern):
-    def __init__(self, name: str, sort: Sort, is_set_variable=False):
+    def __init__(self, name: str, sort: Sort, is_set_variable: bool = False):
         super().__init__()
         self.name = name
         self.sort = sort
         self.is_set_variable = is_set_variable
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         super().resolve(module)
         self.sort.resolve(module)
 
@@ -558,21 +562,22 @@ class Variable(Pattern):
         children = visitor.visit_children_of_variable(self)
         return visitor.postvisit_variable(self, *children)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, Variable):
             return (
                 self.name == other.name and self.is_set_variable == other.is_set_variable and self.sort == other.sort
             )
         return False
 
-    def __lt__(self, other) -> bool:
-        return [self.name, self.sort, self.is_set_variable] < [
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, Variable)
+        return (self.name, self.sort, self.is_set_variable) < (
             other.name,
             other.sort,
             other.is_set_variable,
-        ]
+        )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
     def __str__(self) -> str:
@@ -589,15 +594,16 @@ class StringLiteral(Pattern):
         children = visitor.visit_children_of_string_literal(self)
         return visitor.postvisit_string_literal(self, *children)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, StringLiteral):
             return self.content == other.content
         return False
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, StringLiteral)
         return self.content < other.content
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.content)
 
     def __str__(self) -> str:
@@ -610,7 +616,7 @@ class Application(Pattern):
         self.symbol = symbol
         self.arguments = arguments
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         super().resolve(module)
 
         self.symbol.set_parent(self)
@@ -628,13 +634,14 @@ class Application(Pattern):
         children = visitor.visit_children_of_application(self)
         return visitor.postvisit_application(self, *children)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, Application):
             return self.symbol == other.symbol and self.arguments == other.arguments
         return False
 
-    def __lt__(self, other) -> bool:
-        return [self.symbol, self.arguments] < [other.symbol, other.arguments]
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, Application)
+        return (self.symbol, self.arguments) < (other.symbol, other.arguments)
 
     def __str__(self) -> str:
         return "{}({})".format(self.symbol, ", ".join(map(str, self.arguments)))
@@ -673,7 +680,7 @@ class MLPattern(Pattern):
         self.sorts = sorts
         self.arguments = arguments
 
-    def resolve(self, module: Module):
+    def resolve(self, module: Module) -> None:
         super().resolve(module)
 
         for sort in self.sorts:
@@ -684,12 +691,10 @@ class MLPattern(Pattern):
             arg.resolve(module)
 
     def is_binder(self) -> bool:
-        return self.construct in [
-            MLPattern.FORALL,
-            MLPattern.EXISTS,
-            MLPattern.MU,
-            MLPattern.NU,
-        ]
+        return self.construct == MLPattern.FORALL or \
+               self.construct == MLPattern.EXISTS or \
+               self.construct == MLPattern.MU or \
+               self.construct == MLPattern.NU
 
     def get_binding_variable(self) -> Optional[Variable]:
         if self.is_binder():
@@ -703,19 +708,20 @@ class MLPattern(Pattern):
         children = visitor.visit_children_of_ml_pattern(self)
         return visitor.postvisit_ml_pattern(self, *children)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, MLPattern):
             return (
                 self.construct == other.construct and self.sorts == other.sorts and self.arguments == other.arguments
             )
         return False
 
-    def __lt__(self, other):
-        return [self.construct, self.sorts, self.arguments] < [
+    def __lt__(self, other: Any) -> bool:
+        assert isinstance(other, MLPattern)
+        return (self.construct, self.sorts, self.arguments) < (
             other.construct,
             other.sorts,
             other.arguments,
-        ]
+        )
 
     def __str__(self) -> str:
         return "{}{{{}}}({})".format(

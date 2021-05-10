@@ -80,7 +80,9 @@ class Theorem:
         script.append(self.statement.label)
         return Proof.from_script(self.statement, script)
 
-    def match_and_apply(self, target: StructuredStatement, *args: Union[Proof, AutoProof], **kwargs: Union[Proof, Term]) -> Proof:
+    def match_and_apply(
+        self, target: StructuredStatement, *args: Union[Proof, AutoProof], **kwargs: Union[Proof, Term]
+    ) -> Proof:
         """
         Unify the theorem statement with a target,
         infer as many metavariables as possible, and
@@ -208,7 +210,10 @@ class Theorem:
 
         return Proof.from_application(instance, self.statement.label, subproofs)
 
-    def inline_apply(self, proof_of_theorem: Proof, *essential_proofs: Union[Proof, AutoProof], **metavar_substitution: Union[Proof, Term]) -> Proof:
+    def inline_apply(
+        self, proof_of_theorem: Proof, *essential_proofs: Union[Proof, AutoProof], **metavar_substitution: Union[Proof,
+                                                                                                                 Term]
+    ) -> Proof:
         """
         Instead of explicitly referencing the labeled statement,
         we can inline the proof in some other proof to remove
@@ -342,7 +347,7 @@ class Context:
     A context at a particular in a database,
     which includes active floating, essential, and disjoint statements
     """
-    
+
     floatings: List[FloatingStatement] = field(default_factory=lambda: [])
     essentials: List[EssentialStatement] = field(default_factory=lambda: [])
     disjoints: List[DisjointStatement] = field(default_factory=lambda: [])
@@ -400,14 +405,14 @@ class Context:
             return self.floatings.copy()
 
     def get_all_floating_labels(self) -> List[str]:
-        labels = [ floating.label for floating in self.floatings ]
+        labels = [floating.label for floating in self.floatings]
         if self.prev is not None:
             return self.prev.get_all_floating_labels() + labels
         else:
             return labels
 
     def get_all_floating_metavariables(self) -> List[str]:
-        metavars = [ floating.metavariable for floating in self.floatings ]
+        metavars = [floating.metavariable for floating in self.floatings]
         if self.prev is not None:
             return self.prev.get_all_floating_metavariables() + metavars
         else:
@@ -430,13 +435,13 @@ class Context:
             return self.essentials.copy()
 
     def get_all_essential_labels(self) -> List[str]:
-        labels = [ essential.label for essential in self.essentials ]
+        labels = [essential.label for essential in self.essentials]
         if self.prev is not None:
             return self.prev.get_all_essential_labels() + labels
         else:
             return labels
 
-    def get_all_mandatory_hypotheses_labels(self) -> List[str]:
+    def get_all_mandatory_labels(self) -> List[str]:
         return self.get_all_floating_labels() + self.get_all_essential_labels()
 
     def get_all_disjoints(self) -> List[DisjointStatement]:
@@ -693,7 +698,7 @@ class Composer:
         elif isinstance(stmt, ConclusionStatement):
             self.theorems[stmt.label] = theorem = Theorem(self, self.context.flatten(stmt), stmt)
             if index:
-                self.index_statement(stmt)        
+                self.index_statement(stmt)
 
         return theorem
 
@@ -793,7 +798,7 @@ class TypecodeProver:
 
                 # try to find an exact essential that matches the hypotheses
                 if len(theorem.context.essentials):
-                    hypothesis= theorem.context.essentials[0].substitute(solution)
+                    hypothesis = theorem.context.essentials[0].substitute(solution)
                     for essential in composer.get_all_essentials():
                         if hypothesis.terms == essential.statement.terms:
                             essential_proof = essential.apply()
@@ -807,9 +812,13 @@ class TypecodeProver:
                 failed = False
 
                 for floating in theorem.context.floatings:
-                    assert (floating.metavariable in solution), f"unable to determine metavarible {floating.metavariable} in theorem {theorem}"
+                    assert (
+                        floating.metavariable in solution
+                    ), f"unable to determine metavarible {floating.metavariable} in theorem {theorem}"
 
-                    metavar_proof = TypecodeProver.prove_typecode(composer, floating.typecode, solution[floating.metavariable])
+                    metavar_proof = TypecodeProver.prove_typecode(
+                        composer, floating.typecode, solution[floating.metavariable]
+                    )
                     if metavar_proof is None:
                         failed = True
                         break

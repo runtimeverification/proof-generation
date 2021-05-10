@@ -263,7 +263,9 @@ class SubstitutionProver:
         )
 
     @staticmethod
-    def prove_substitution_statement(composer: Composer, statement: StructuredStatement, hypotheses: List[Theorem] = []) -> Proof:
+    def prove_substitution_statement(
+        composer: Composer, statement: StructuredStatement, hypotheses: List[Theorem] = []
+    ) -> Proof:
         """
         A wrapper for an auto proof method
         """

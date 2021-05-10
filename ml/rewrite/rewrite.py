@@ -4,10 +4,11 @@ from traceback import print_exc
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils, PatternPath
-from ml.kore.visitors import KoreVisitor
+from ml.kore.ast import KoreVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Proof, Theorem
+from ml.metamath.ast import Proof
+from ml.metamath.composer import Theorem
 from ml.metamath.auto.sorting import SortingProver
 
 from .encoder import KorePatternEncoder
@@ -470,7 +471,7 @@ class RewriteProofGenerator(ProofGenerator):
             disjoint_proof = self.disjoint_gen.prove_disjointness(left, right)
 
             proof = self.env.get_theorem("owise-1-rule-1-var").match_and_apply(
-                self.env.encode_axiom(mm.Statement.PROVABLE, claim),
+                self.env.encode_metamath_statement(claim),
                 disjoint_proof,
             )
 
@@ -687,7 +688,7 @@ class InnermostNestedInjectionPathVisitor(KoreVisitor):
         for i, arg in enumerate(application.arguments):
             path = self.visit(arg)
             if path is not None:
-                return [i] + path
+                return [i] + path  # type: ignore
 
         # if the current pattern is a nested injection
         if (application.symbol.definition == self.env.sort_injection_symbol
@@ -701,7 +702,7 @@ class InnermostNestedInjectionPathVisitor(KoreVisitor):
         for i, arg in enumerate(ml_pattern.arguments):
             path = self.visit(arg)
             if path is not None:
-                return [i] + path
+                return [i] + path  # type: ignore
 
         return None
 
@@ -732,7 +733,7 @@ class InnermostFunctionPathVisitor(KoreVisitor):
         for i, arg in enumerate(application.arguments):
             path = self.visit(arg)
             if path is not None:
-                return [i] + path
+                return [i] + path  # type: ignore
 
         # if the application itself is a function, return the empty path (pointing to itself)
         if (isinstance(application.symbol.definition, kore.SymbolDefinition)
@@ -746,7 +747,7 @@ class InnermostFunctionPathVisitor(KoreVisitor):
         for i, arg in enumerate(ml_pattern.arguments):
             path = self.visit(arg)
             if path is not None:
-                return [i] + path
+                return [i] + path  # type: ignore
 
         return None
 

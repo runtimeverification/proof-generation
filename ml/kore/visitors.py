@@ -1,4 +1,4 @@
-from typing import Set, List, Dict, Tuple, Mapping, TextIO
+from typing import Set, List, Dict, Tuple, Mapping, TextIO, Any
 
 import re
 
@@ -13,7 +13,7 @@ class VisitorStructure:
     relation of parents and children in a visitor, in particular,
     which children of a node will be visited and in what order
     """
-    def visit(self, ast):
+    def visit(self, ast: Any) -> Any:
         raise NotImplementedError()
 
 
@@ -208,8 +208,8 @@ class UnionVisitor(KoreVisitor):
     Union visitor is used for collecting
     information that is unioned at each node
     """
-    def postvisit_default(self, x, *args):
-        union = set()
+    def postvisit_default(self, x: Any, *args: Any) -> Any:
+        union: Set[Any] = set()
 
         for arg in args:
             if type(arg) is set:
@@ -263,7 +263,7 @@ class OrderedPatternVariableVisitor(UnionVisitor, PatternOnlyVisitorStructure):
     """
     Collect all variables used in a pattern (in order of visit)
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.index = 0
 
     def postvisit_variable(self, var) -> Set[Tuple[int, Variable]]:
@@ -306,10 +306,10 @@ class PatternSubstitutionVisitor(KoreVisitor, PatternOnlyVisitorStructure):
     """
     def __init__(self, substitution: Mapping[Variable, Pattern]):
         super().__init__()
-        self.substitution = dict(substitution)
+        self.substitution: Dict[Variable, Pattern] = dict(substitution)
         self.shadowing_stack: List[Dict[Variable, Pattern]] = []
 
-    def postvisit_variable(self, var) -> Pattern:
+    def postvisit_variable(self, var: Variable) -> Pattern:
         if var in self.substitution:
             return self.substitution[var]
         return var
@@ -317,7 +317,7 @@ class PatternSubstitutionVisitor(KoreVisitor, PatternOnlyVisitorStructure):
     # need to update everything that are potentially
     # parents of variables: all (compound) patterns, axioms, and alias definition
 
-    def postvisit_axiom(self, axiom: Axiom, pattern) -> Axiom:
+    def postvisit_axiom(self, axiom: Axiom, pattern: Pattern) -> Axiom:
         axiom.pattern = pattern
         return axiom
 

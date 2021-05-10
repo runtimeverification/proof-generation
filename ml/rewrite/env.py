@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO, Dict
+from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO, Dict, Type
 
 import re
 
@@ -9,7 +9,8 @@ from ml.kore.utils import KoreUtils
 from ml.kore.visitors import FreePatternVariableVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Composer, Theorem, Proof, Context
+from ml.metamath.ast import Proof
+from ml.metamath.composer import Composer, Theorem, Context
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.context import ApplicationContextProver
 
@@ -43,7 +44,7 @@ class SubsortRelation:
     A data structure that stores the subsort
     relation (a strict partial order)
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.adj_list: Dict[kore.SortInstance, List[Tuple[kore.SortInstance, Theorem]]] = {}
         # SortInstance -> [ ( supersort, subsorting lemma ) ... ]
 
@@ -150,7 +151,7 @@ class ProofEnvironment:
         # (sort symbol, sort symbol) -> theorem, different hooked sorts are disjoint
         self.hooked_sort_disjoint_axioms: Dict[Tuple[str, str], Theorem] = {}
         self.no_junk_axioms: Dict[kore.SortInstance, Theorem] = {}  # sort instance -> theorem
-        self.sort_components: Dict[kore.SortInstance, List[kore.Application]] = {
+        self.sort_components: Dict[kore.SortInstance, List[Union[kore.Variable, kore.Application]]] = {
         }  # sort instance -> [ patterns (without existential quantifier) ]
 
         self.sort_injection_symbol: Optional[kore.SymbolDefinition] = None
@@ -164,7 +165,7 @@ class ProofEnvironment:
         self.load_axioms_for_injection()
         self.load_sort_constructor_axioms()
 
-    def load_axioms_for_injection(self):
+    def load_axioms_for_injection(self) -> None:
         if "INJ" not in self.loaded_modules:
             return
 
@@ -178,7 +179,7 @@ class ProofEnvironment:
             self.load_axiom(inj_module.axioms[0], "kore-inj-axiom").as_proof(),
         )
 
-    def sanitize_label_name(self, label):
+    def sanitize_label_name(self, label: str) -> str:
         # metamath does not allow some characters in the label
         return re.sub(r"[^a-zA-Z0-9_\-.]", "", label)
 
@@ -239,14 +240,14 @@ class ProofEnvironment:
         term = encoder.visit(pattern)
         self.load_metavariables(encoder.metavariables)
         self.load_domain_values(encoder.domain_values)
-        return term
+        return term  # type: ignore
 
-    def encode_axiom(self, stmt_type: str, axiom: kore.Axiom, **kwargs) -> mm.StructuredStatement:
-        term = self.encode_pattern(axiom)
-        return mm.StructuredStatement(
-            stmt_type,
-            [mm.Application("|-"), term],
-            **kwargs,
+    def encode_metamath_statement(
+        self, axiom: kore.Axiom, cons: Type[mm.StructuredStatement] = mm.StructuredStatement
+    ) -> mm.StructuredStatement:
+        return cons(
+            "",
+            (mm.Application("|-"), self.encode_pattern(axiom)),
         )
 
     def get_theorem(self, label: str) -> Theorem:
@@ -295,11 +296,10 @@ class ProofEnvironment:
             self.load_comment(str(axiom))
 
         # <label> $a |- <axiom> $.
-        stmt = mm.StructuredStatement(
-            mm.Statement.AXIOM if not provable else mm.Statement.PROVABLE,
-            [mm.Application("|-"), term],
-            label=label,
-        )
+        if provable:
+            stmt: mm.StructuredStatement = mm.ProvableStatement(label, (mm.Application("|-"), term))
+        else:
+            stmt = mm.AxiomaticStatement(label, (mm.Application("|-"), term))
 
         return self.load_metamath_theorem(stmt)
 
@@ -324,44 +324,43 @@ class ProofEnvironment:
 
         sorting_axiom_rhs = mm.Application(
             "\\in-sort",
-            [
-                mm.Application(encoded_symbol, [v for v in pattern_vars]),
+            (
+                mm.Application(encoded_symbol, tuple(pattern_vars)),
                 encoded_output_sort,
-            ],
+            ),
         )
 
         sorting_axiom_hypotheses = []
 
         # add hypotheses for sort arguments
         for v in sort_pattern_vars:
-            sorting_axiom_hypotheses.append(mm.Application("\\kore-is-sort", [v]))
+            sorting_axiom_hypotheses.append(mm.Application("\\kore-is-sort", (v, )))
 
         # add hypotheses for pattern arguments
         for v, sort in zip(argument_pattern_vars, symbol_definition.input_sorts):
             encoded_sort = self.encode_pattern(sort)
             encoded_sort = encoded_sort.substitute(sort_var_subst)
-            sorting_axiom_hypotheses.append(mm.Application("\\in-sort", [v, encoded_sort]))
+            sorting_axiom_hypotheses.append(mm.Application("\\in-sort", (v, encoded_sort)))
 
         # construct the hypothesis and the entire statement
         # hypothesis: \and ( \in-sort ph0 <sort0> ) ( \in-sort ph1 <sort1> ) ...
         if len(sorting_axiom_hypotheses) == 0:
             sorting_axiom_term = sorting_axiom_rhs
         elif len(sorting_axiom_hypotheses) == 1:
-            sorting_axiom_term = mm.Application("\\imp", [sorting_axiom_hypotheses[0], sorting_axiom_rhs])
+            sorting_axiom_term = mm.Application("\\imp", (sorting_axiom_hypotheses[0], sorting_axiom_rhs))
         else:
-            lhs = mm.Application("\\and", sorting_axiom_hypotheses[:2])
+            lhs = mm.Application("\\and", tuple(sorting_axiom_hypotheses[:2]))
             for hyp in sorting_axiom_hypotheses[2:]:
-                lhs = mm.Application("\\and", [lhs, hyp])
-            sorting_axiom_term = mm.Application("\\imp", [lhs, sorting_axiom_rhs])
+                lhs = mm.Application("\\and", (lhs, hyp))
+            sorting_axiom_term = mm.Application("\\imp", (lhs, sorting_axiom_rhs))
 
         self.sorting_lemmas[encoded_symbol] = self.load_metamath_theorem(
-            mm.StructuredStatement(
-                mm.Statement.AXIOM,
-                [
+            mm.AxiomaticStatement(
+                f"{label}-sorting",
+                (
                     mm.Application("|-"),
                     sorting_axiom_term,
-                ],
-                label=f"{label}-sorting",
+                ),
             )
         )
 
@@ -381,7 +380,7 @@ class ProofEnvironment:
         # generate no confusion axiom for the same symbol
         if num_arguments != 0:
             pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments * 2)
-            pattern_vars = [mm.Metavariable(v) for v in pattern_var_names]
+            pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
             sort_pattern_vars = pattern_vars[:num_sort_vars]
             arg_pattern_vars_left = pattern_vars[num_sort_vars:num_sort_vars + num_arguments]
@@ -390,43 +389,43 @@ class ProofEnvironment:
             left_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_left)
             right_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_right)
 
-            left_conj_pattern = mm.Application("\\and", [left_pattern, right_pattern])
+            left_conj_pattern = mm.Application("\\and", (left_pattern, right_pattern))
 
-            conjunctions: List[mm.Term] = [
-                mm.Application("\\and", [left_arg, right_arg])
+            conjunctions = tuple(
+                mm.Application("\\and", (left_arg, right_arg))
                 for left_arg, right_arg in zip(arg_pattern_vars_left, arg_pattern_vars_right)
-            ]
+            )
+
             right_conj_pattern = mm.Application(
                 encoded_symbol,
                 sort_pattern_vars + conjunctions  # type: ignore
             )
 
-            statement = mm.StructuredStatement(
-                mm.Statement.AXIOM,
-                [
+            statement = mm.AxiomaticStatement(
+                f"{label}-no-confusion",
+                (
                     mm.Application("|-"),
-                    mm.Application("\\imp", [left_conj_pattern, right_conj_pattern]),
-                ],
-                label=f"{label}-no-confusion",
+                    mm.Application("\\imp", (left_conj_pattern, right_conj_pattern)),
+                ),
             )
 
             self.no_confusion_same_constructor[encoded_symbol] = self.load_metamath_theorem(statement)
 
         # generate no confusion axiom for \kore-dv
         pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments + 2)
-        dv_sort_var, dv_body_var, *pattern_vars = [mm.Metavariable(v) for v in pattern_var_names]
+        pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
+        dv_sort_var, dv_body_var = pattern_vars[:2]
 
-        left_pattern = mm.Application("\\kore-dv", [dv_sort_var, dv_body_var])
-        right_pattern = mm.Application(encoded_symbol, pattern_vars)
-        conj_pattern = mm.Application("\\and", [left_pattern, right_pattern])
-        not_conj_pattern = mm.Application("\\not", [conj_pattern])
-        statement = mm.StructuredStatement(
-            mm.Statement.AXIOM,
-            [
+        left_pattern = mm.Application("\\kore-dv", (dv_sort_var, dv_body_var))
+        right_pattern = mm.Application(encoded_symbol, pattern_vars[2:])
+        conj_pattern = mm.Application("\\and", (left_pattern, right_pattern))
+        not_conj_pattern = mm.Application("\\not", (conj_pattern, ))
+        statement = mm.AxiomaticStatement(
+            f"{label}-no-confusion-with-dv",
+            (
                 mm.Application("|-"),
                 not_conj_pattern,
-            ],
-            label=f"{label}-no-confusion-with-dv",
+            ),
         )
         self.no_confusion_with_dv[encoded_symbol] = self.load_metamath_theorem(statement)
 
@@ -440,21 +439,20 @@ class ProofEnvironment:
                 "#Pattern",
                 num_sort_vars + num_arguments + other_num_sort_vars + other_num_arguments,
             )
-            pattern_vars = [mm.Metavariable(v) for v in pattern_var_names]
+            pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
             left_pattern = mm.Application(encoded_symbol, pattern_vars[:num_sort_vars + num_arguments])
             right_pattern = mm.Application(other_encoded_symbol, pattern_vars[num_sort_vars + num_arguments:])
 
-            statement = mm.StructuredStatement(
-                mm.Statement.AXIOM,
-                [
+            statement = mm.AxiomaticStatement(
+                f"{label}-no-confusion-with-{self.sanitize_label_name(other_encoded_symbol)}",
+                (
                     mm.Application("|-"),
                     mm.Application(
                         "\\not",
-                        [mm.Application("\\and", [left_pattern, right_pattern])],
+                        (mm.Application("\\and", (left_pattern, right_pattern)), ),
                     ),
-                ],
-                label=f"{label}-no-confusion-with-{self.sanitize_label_name(other_encoded_symbol)}",
+                ),
             )
 
             theorem = self.load_metamath_theorem(statement)
@@ -491,13 +489,12 @@ class ProofEnvironment:
         self.load_constant(encoded_sort, arity, label)
 
         self.sort_axioms[encoded_sort] = self.load_metamath_theorem(
-            mm.StructuredStatement(
-                mm.Statement.AXIOM,
-                [
+            mm.AxiomaticStatement(
+                f"{label}-sort",
+                (
                     mm.Application("|-"),
-                    mm.Application(KorePatternEncoder.IS_SORT, [mm.Application(encoded_sort)]),
-                ],
-                label=f"{label}-sort",
+                    mm.Application(KorePatternEncoder.IS_SORT, (mm.Application(encoded_sort), )),
+                ),
             )
         )
 
@@ -511,24 +508,23 @@ class ProofEnvironment:
                 encoded_other_sort = KorePatternEncoder.encode_sort(other_hooked_sort.sort_id)
                 self.hooked_sort_disjoint_axioms[encoded_sort, encoded_other_sort] = \
                     self.load_metamath_theorem(
-                        mm.StructuredStatement(
-                            mm.Statement.AXIOM,
-                            [
+                        mm.AxiomaticStatement(
+                            f"{label}-hooked-sort-disjoint-with-{self.sanitize_label_name(other_hooked_sort.sort_id)}",
+                            (
                                 mm.Application("|-"),
-                                mm.Application("\\not", [
-                                    mm.Application("\\and", [
-                                        mm.Application("\\inh", [mm.Application(encoded_sort)]),
-                                        mm.Application("\\inh", [mm.Application(encoded_other_sort)]),
-                                    ]),
-                                ]),
-                            ],
-                            label=f"{label}-hooked-sort-disjoint-with-{self.sanitize_label_name(other_hooked_sort.sort_id)}",
+                                mm.Application("\\not", (
+                                    mm.Application("\\and", (
+                                        mm.Application("\\inh", (mm.Application(encoded_sort),)),
+                                        mm.Application("\\inh", (mm.Application(encoded_other_sort),)),
+                                    )),
+                                )),
+                            ),
                         ),
                     )
 
             self.hooked_sorts.append(sort_definition)
 
-    def load_domain_values(self, domain_values: Set[Tuple[kore.Sort, kore.StringLiteral]]):
+    def load_domain_values(self, domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]]):
         """
         Load a domain value and generate the corresponding functional axiom
         """
@@ -608,16 +604,15 @@ class ProofEnvironment:
             after = subpattern_vars[i]
             before = subpattern_vars[i + arity]
 
-            essential = mm.StructuredStatement(
-                mm.Statement.ESSENTITAL,
-                [
+            essential = mm.EssentialStatement(
+                f"{substitution_rule_name}.{i}",
+                (
                     mm.Application("#Substitution"),
                     mm.Metavariable(after),
                     mm.Metavariable(before),
                     mm.Metavariable(pattern_var),
                     mm.Metavariable(subst_var),
-                ],
-                label=f"{substitution_rule_name}.{i}",
+                ),
             )
 
             essentials.append(essential)
@@ -626,14 +621,14 @@ class ProofEnvironment:
         # prove the substitution rule
         subst_proof = SubstitutionProver.prove_substitution(
             self.composer,
-            mm.Application(symbol, list(map(mm.Metavariable, subpattern_vars[:arity]))),
-            mm.Application(symbol, list(map(mm.Metavariable, subpattern_vars[arity:]))),
+            mm.Application(symbol, tuple(map(mm.Metavariable, subpattern_vars[:arity]))),
+            mm.Application(symbol, tuple(map(mm.Metavariable, subpattern_vars[arity:]))),
             mm.Metavariable(pattern_var),
             mm.Metavariable(subst_var),
             essential_theorems,
         )
 
-        self.load_metamath_statement(mm.Block(essentials + [subst_proof.as_statement(substitution_rule_name)]))
+        self.load_metamath_statement(mm.Block(tuple(essentials) + (subst_proof.as_statement(substitution_rule_name), )))
 
         self.composer.end_segment()
 
@@ -645,7 +640,7 @@ class ProofEnvironment:
 
         (hole_var, ) = self.gen_metavariables("#Variable", 1)
         pattern_var_names = self.gen_metavariables("#Pattern", arity)
-        pattern_vars = [mm.Metavariable(v) for v in pattern_var_names]
+        pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
         # generate one lemma for each argument
         lemmas = []
@@ -653,28 +648,27 @@ class ProofEnvironment:
         for i in range(arity):
             app_ctx_rule_name = f"{label}-application-context-{i}"
 
-            disjoint_statements = [
-                mm.RawStatement(mm.Statement.DISJOINT, [hole_var, pattern_vars[j].name]) for j in range(arity) if i != j
-            ]
+            disjoint_statements = tuple(
+                mm.DisjointStatement((mm.Metavariable(hole_var), mm.Metavariable(pattern_vars[j].name)))
+                for j in range(arity) if i != j
+            )
 
-            assumption = mm.StructuredStatement(
-                mm.Statement.ESSENTITAL,
-                [
+            assumption = mm.EssentialStatement(
+                f"{app_ctx_rule_name}.0",
+                (
                     mm.Application("#ApplicationContext"),
                     mm.Metavariable(hole_var),
                     pattern_vars[i],
-                ],
-                label=f"{app_ctx_rule_name}.0",
+                ),
             )
 
-            conclusion = mm.StructuredStatement(
-                mm.Statement.PROVABLE,
-                [
+            conclusion = mm.ProvableStatement(
+                app_ctx_rule_name,
+                (
                     mm.Application("#ApplicationContext"),
                     mm.Metavariable(hole_var),
                     mm.Application(symbol, pattern_vars),
-                ],
-                label=app_ctx_rule_name,
+                ),
             )
 
             proof = ApplicationContextProver.prove_application_context_statement(
@@ -684,7 +678,7 @@ class ProofEnvironment:
             )
             conclusion.proof = proof
 
-            block = mm.Block(disjoint_statements + [assumption, conclusion])  # type: ignore
+            block = mm.Block(disjoint_statements + (assumption, conclusion))
             self.load_metamath_statement(block)
 
             lemmas.append(self.get_theorem(app_ctx_rule_name))
@@ -711,48 +705,45 @@ class ProofEnvironment:
         # declare metamath constant
         # this is the actual symbol at the matching logic level used for application
         applicative_symbol = symbol + "-symbol"
-        self.load_metamath_statement(mm.RawStatement(mm.Statement.CONSTANT, [symbol, applicative_symbol]))
+        self.load_metamath_statement(mm.ConstantStatement((symbol, applicative_symbol)))
 
-        sugared_pattern = mm.Application(symbol, [mm.Metavariable(v) for v in pattern_vars])
+        sugared_pattern = mm.Application(symbol, tuple(mm.Metavariable(v) for v in pattern_vars))
 
         # declare #Symbol
         self.load_metamath_statement(
-            mm.StructuredStatement(
-                mm.Statement.AXIOM,
-                [
+            mm.AxiomaticStatement(
+                f"{label}-is-symbol",
+                (
                     mm.Application("#Symbol"),
                     mm.Application(applicative_symbol),
-                ],
-                label=label + "-is-symbol",
+                ),
             )
         )
 
         # declare #Pattern
         self.load_metamath_statement(
-            mm.StructuredStatement(
-                mm.Statement.AXIOM,
-                [
+            mm.AxiomaticStatement(
+                f"{label}-is-pattern",
+                (
                     mm.Application("#Pattern"),
                     sugared_pattern,
-                ],
-                label=label + "-is-pattern",
+                ),
             )
         )
 
         # declare syntax sugar
         desugared = mm.Application(applicative_symbol)
         for var in pattern_vars:
-            desugared = mm.Application("\\app", [desugared, mm.Metavariable(var)])
+            desugared = mm.Application("\\app", (desugared, mm.Metavariable(var)))
 
         self.load_metamath_statement(
-            mm.StructuredStatement(
-                mm.Statement.AXIOM,
-                [
+            mm.AxiomaticStatement(
+                f"{label}-is-sugar",
+                (
                     mm.Application("#Notation"),
                     sugared_pattern,
                     desugared,
-                ],
-                label=label + "-is-sugar",
+                ),
             )
         )
 
@@ -808,16 +799,16 @@ class ProofEnvironment:
         for var in free_vars:
             encoded_pattern = mm.Application(
                 "\\sorted-exists",
-                [
+                (
                     self.encode_pattern(var),
                     self.encode_pattern(var.sort),
                     encoded_pattern,
-                ],
+                ),
             )
 
         return encoded_pattern
 
-    def load_sort_constructor_axioms(self):
+    def load_sort_constructor_axioms(self) -> None:
         """
         Add no-junk axioms for sorts
         """
@@ -843,7 +834,7 @@ class ProofEnvironment:
 
             if len(subsorts) + len(constructors) != 0:
                 # collect all components of the sort and make a no junk axiom
-                components = []
+                components: List[Union[kore.Variable, kore.Application]] = []
 
                 for subsort in subsorts:
                     (var, ) = self.gen_metavariables("#ElementVariable", 1)
@@ -869,17 +860,16 @@ class ProofEnvironment:
                     for component in components[:-1][::-1]:
                         rhs = mm.Application(
                             "\\or",
-                            [
+                            (
                                 self.existentially_quantify_free_variables(component),
                                 rhs,
-                            ],
+                            ),
                         )
 
-                lhs = mm.Application("\\inh", [self.encode_pattern(sort_instance)])
-                axiom = mm.StructuredStatement(
-                    mm.Statement.AXIOM,
-                    [mm.Application("|-"), mm.Application("\\eq", [lhs, rhs])],
-                    label=f"no-junk-axiom-{i}",
+                lhs = mm.Application("\\inh", (self.encode_pattern(sort_instance), ))
+                axiom = mm.AxiomaticStatement(
+                    f"no-junk-axiom-{i}",
+                    (mm.Application("|-"), mm.Application("\\eq", (lhs, rhs))),
                 )
 
                 self.no_junk_axioms[sort_instance] = self.load_metamath_theorem(axiom)
@@ -895,22 +885,21 @@ class ProofEnvironment:
 
                     encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
 
-                    pattern_vars = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments)
-                    pattern_vars = [mm.Metavariable(v) for v in pattern_vars]
+                    pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments)
+                    pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
                     left_pattern = mm.Application(encoded_symbol, pattern_vars[:num_sort_vars + num_arguments])
-                    right_pattern = mm.Application("\\inh", [self.encode_pattern(sort_instance)])
+                    right_pattern = mm.Application("\\inh", (self.encode_pattern(sort_instance), ))
 
-                    axiom = mm.StructuredStatement(
-                        mm.Statement.AXIOM,
-                        [
+                    axiom = mm.AxiomaticStatement(
+                        f"hooked-sort-no-confusion-{i}-{j}",
+                        (
                             mm.Application("|-"),
                             mm.Application(
                                 "\\not",
-                                [mm.Application("\\and", [left_pattern, right_pattern])],
+                                (mm.Application("\\and", (left_pattern, right_pattern)), ),
                             ),
-                        ],
-                        label=f"hooked-sort-no-confusion-{i}-{j}",
+                        ),
                     )
 
                     theorem = self.load_metamath_theorem(axiom)

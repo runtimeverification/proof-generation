@@ -29,7 +29,6 @@ from ml.metamath.auto.unification import Unification
 
 from .extension import SchematicVariable
 
-
 StmtT = TypeVar("StmtT", bound=StructuredStatement)
 
 
@@ -62,9 +61,7 @@ class Goal:
         return Goal(self.goal_id, self.statement, self.claim_label)
 
     @staticmethod
-    def sanitize_goal_statement(
-        statement: StructuredStatement, claim_label: Optional[str] = None
-    ) -> ProvableStatement:
+    def sanitize_goal_statement(statement: StructuredStatement, claim_label: Optional[str] = None) -> ProvableStatement:
         label = "" if claim_label is None else f"[{claim_label}]"
         return ProvableStatement(label, statement.terms)
 
@@ -509,8 +506,9 @@ class Tactic:
         return None
 
     @staticmethod
-    def unify_statements(state: ProofState, left: StructuredStatement, right: StructuredStatement, *args: Any,
-                         **kwargs: Any) -> Optional[Tuple[Mapping[str, Term], bool]]:
+    def unify_statements(
+        state: ProofState, left: StructuredStatement, right: StructuredStatement, *args: Any, **kwargs: Any
+    ) -> Optional[Tuple[Mapping[str, Term], bool]]:
         if len(left.terms) != len(right.terms):
             return None
         return Tactic.unify(state, list(zip(left.terms, right.terms)), *args, **kwargs)

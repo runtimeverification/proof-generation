@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Any, Optional
 from lark import Lark, Transformer
 from lark.visitors import v_args
 from .ast import *
@@ -24,7 +24,7 @@ def meta_info(f):
     return wrapper
 
 
-class ASTTransformer(Transformer):
+class ASTTransformer(Transformer[BaseAST[Any]]):
     def identifier(self, args):
         return args[0].value
 
@@ -282,22 +282,31 @@ module_parser = Lark(
 
 def parse_definition(src: str) -> Definition:
     tree = definition_parser.parse(src)
-    return ASTTransformer().transform(tree)
+    defn = ASTTransformer().transform(tree)
+    assert isinstance(defn, Definition)
+    return defn
 
 
 def parse_pattern(src: str, module: Optional[Module] = None) -> Pattern:
     tree = pattern_parser.parse(src)
     pattern = ASTTransformer().transform(tree)
+    assert isinstance(pattern, Pattern)
+
     if module is not None:
         pattern.resolve(module)
+
     return pattern
 
 
 def parse_axiom(src: str) -> Axiom:
     tree = axiom_parser.parse(src)
-    return ASTTransformer().transform(tree)
+    axiom = ASTTransformer().transform(tree)
+    assert isinstance(axiom, Axiom)
+    return axiom
 
 
-def parse_module(src: str) -> Axiom:
+def parse_module(src: str) -> Module:
     tree = module_parser.parse(src)
-    return ASTTransformer().transform(tree)
+    module = ASTTransformer().transform(tree)
+    assert isinstance(module, Module)
+    return module

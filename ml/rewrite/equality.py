@@ -5,7 +5,7 @@ from ml.kore.visitors import PatternVariableVisitor, SortVariableVisitor
 from ml.kore.utils import KoreUtils, PatternPath
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Proof
+from ml.metamath.ast import Proof
 from ml.metamath.auto.sorting import SortingProver
 from ml.metamath.auto.substitution import SubstitutionProver
 
@@ -43,7 +43,7 @@ class EqualityProofGenerator(ProofGenerator):
 
         # check for proof cache
         cached_proof = self.env.composer.lookup_proof_cache(
-            "equality-cache", self.env.encode_axiom(mm.Statement.PROVABLE, final_claim)
+            "equality-cache", self.env.encode_metamath_statement(final_claim)
         )
         if cached_proof is not None:
             return ProvableClaim(final_claim, cached_proof)
@@ -92,9 +92,7 @@ class EqualityProofGenerator(ProofGenerator):
             )
 
             equation_body = equation_proof.conclusion[1].subterms[1]
-            equation_body_subst = equation_body.substitute({
-                current_sort_var: mm.Metavariable(fresh_sort_var)
-            })
+            equation_body_subst = equation_body.substitute({current_sort_var: mm.Metavariable(fresh_sort_var)})
 
             # apply alpha renaming
             equation_proof = self.env.get_theorem("alpha-kore-forall-sort-alt").apply(

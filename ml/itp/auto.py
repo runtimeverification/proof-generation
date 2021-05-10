@@ -4,15 +4,7 @@ Some automated tactics
 
 from typing import Optional, Tuple, List, Union, Dict
 
-from ml.metamath.ast import (
-    Application,
-    Term,
-    Metavariable,
-    StructuredStatement,
-    Statement,
-    ProvableStatement,
-    Proof
-)
+from ml.metamath.ast import (Application, Term, Metavariable, StructuredStatement, Statement, ProvableStatement, Proof)
 from ml.metamath.composer import Theorem, TypecodeProver
 
 from ml.metamath.auto.unification import Unification
@@ -410,7 +402,9 @@ class TautologyTactic(Tactic):
     def apply_iff_reflexivity(self, state: ProofState, term: Term) -> Proof:
         return state.composer.get_theorem("iff-reflexivity").apply(ph0=term)
 
-    def apply_iff_congruence(self, state: ProofState, *terms_or_proofs: Union[Proof, Term], connective: str = "and") -> Proof:
+    def apply_iff_congruence(
+        self, state: ProofState, *terms_or_proofs: Union[Proof, Term], connective: str = "and"
+    ) -> Proof:
         theorem = state.composer.get_theorem(f"rule-iff-compat-in-{connective}")
         proofs = [
             self.apply_iff_reflexivity(state, term_or_proof) if isinstance(term_or_proof, Term) else term_or_proof
@@ -1078,7 +1072,7 @@ class TautologyTactic(Tactic):
 
         clauses = [self.junction_to_list(conjunct, "or") for conjunct in self.junction_to_list(cnf)]
         pos_literal = clauses[pos_clause].index(var)
-        neg_literal = clauses[neg_clause].index(Application("\\not", (var,)))
+        neg_literal = clauses[neg_clause].index(Application("\\not", (var, )))
 
         # print(var, pos_clause, neg_clause)
 
@@ -1297,7 +1291,7 @@ class TautologyTactic(Tactic):
         print("expanding the goal")
         assert self.is_propositional(state, goal_term), f"goal {statement} is not propositional"
 
-        negated_goal_term = Application("\\not", (goal_term,))
+        negated_goal_term = Application("\\not", (goal_term, ))
 
         print("reducing the negation of the goal to CNF")
 

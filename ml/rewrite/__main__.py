@@ -159,7 +159,7 @@ def main(argv: Optional[Sequence[str]] = None):
 
     with open(args.definition) as f:
         definition = parse_definition(f.read())
-        definition.resolve()
+        definition.resolve_all()
 
     if args.prelude is not None:
         load_prelude(composer, args)

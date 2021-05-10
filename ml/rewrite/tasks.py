@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Optional, Any, Dict
+from typing import Mapping, List, Optional, Any, Dict, Callable
 
 import schema  # type: ignore
 
@@ -44,7 +44,7 @@ class RewritingTask:
 
     @staticmethod
     def load_from_object(module: kore.Module, obj: Dict[str, Any]) -> RewritingTask:
-        parse = lambda src: parse_pattern(src, module)
+        parse: Callable[[str], kore.Pattern] = lambda src: parse_pattern(src, module)
         parse_and_strip_inj = lambda src: KoreTemplates.strip_inj(parse(src))
 
         validated = schema.Schema(

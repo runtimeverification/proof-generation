@@ -82,7 +82,7 @@ class Metavariable(Term):
             return substitution[self.name]
         else:
             return self
-    
+
     def visit(self, visitor: MetamathVisitor) -> Any:
         return visitor.proxy_visit_metavariable(self)
 
@@ -221,13 +221,16 @@ class FloatingStatement(StructuredStatement):
         self.metavariable = self.terms[1].name
 
 
-class EssentialStatement(StructuredStatement): ...
+class EssentialStatement(StructuredStatement):
+    ...
 
 
-class ConclusionStatement(StructuredStatement): ...
+class ConclusionStatement(StructuredStatement):
+    ...
 
 
-class AxiomaticStatement(ConclusionStatement): ...
+class AxiomaticStatement(ConclusionStatement):
+    ...
 
 
 @dataclass
@@ -271,7 +274,7 @@ class Database(BaseAST):
     and some auxiliary information
     e.g. set of variables and mapping from labels to statements
     """
-    
+
     statements: Tuple[Statement, ...]
 
     def visit(self, visitor: MetamathVisitor) -> Any:
@@ -563,7 +566,7 @@ class BaseEncoder(Printer, Visitor):
             return "a"
         elif isinstance(stmt, ProvableStatement):
             return "p"
-        
+
         assert False, f"not a valid structured statement {stmt}"
 
     def postvisit_structured_statement(self, stmt: StructuredStatement) -> None:

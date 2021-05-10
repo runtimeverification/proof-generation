@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Callable
 
 import os
 import sys
@@ -107,6 +107,8 @@ class ANSIStyler(type):
 
 
 class ANSI(metaclass=ANSIStyler):
+    Colorizer = Callable[[str], str]
+
     @staticmethod
     def supports_color() -> bool:
         """

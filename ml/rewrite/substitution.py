@@ -4,7 +4,8 @@ from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Proof, Theorem
+from ml.metamath.ast import Proof
+from ml.metamath.composer import Theorem
 
 from .encoder import KorePatternEncoder
 
@@ -46,15 +47,15 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
         # get a "template" for the target statement
         # for convenience
         tmp1, tmp2 = self.env.gen_metavariables("#Pattern", 2)
-        self.target = mm.StructuredStatement(
-            mm.Statement.PROVABLE,
-            [
+        self.target = mm.ProvableStatement(
+            "",
+            (
                 mm.Application("#Substitution"),
                 mm.Metavariable(tmp1),
                 mm.Metavariable(tmp2),
                 self.substitute_encoded,
                 self.var_encoded,
-            ],
+            ),
         )
 
     def get_substituted_ast(self, pattern_or_sort: PAS) -> PAS:
@@ -118,10 +119,10 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
                     encoded_sort_var = KorePatternEncoder.encode_sort_variable(sort_var)
                     body = mm.Application(
                         KorePatternEncoder.FORALL_SORT,
-                        [
+                        (
                             mm.Metavariable(encoded_sort_var),
                             body,
-                        ],
+                        ),
                     )
 
                 proof = self.env.get_theorem("substitution-kore-forall-sort-shadowed").apply(

@@ -1,4 +1,4 @@
-from typing import TextIO, Optional, Set, Union
+from typing import TextIO, Optional, Set, Union, Dict, Tuple
 
 from urllib.parse import quote_plus
 
@@ -93,10 +93,10 @@ class KorePatternEncoder(KoreVisitor):
     def encode_sort_variable(var: kore.SortVariable) -> str:
         return "kore-sort-var-" + var.name
 
-    def __init__(self):
-        self.metavariables = {}  # var -> typecode
-        self.constant_symbols = {}  # symbol -> arity
-        self.domain_values = set()  # set of (sort, string literal)
+    def __init__(self) -> None:
+        self.metavariables: Dict[str, str] = {}  # var -> typecode
+        self.constant_symbols: Dict[str, int] = {}  # symbol -> arity
+        self.domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]] = set()  # set of (sort, string literal)
 
     def postvisit_axiom(self, axiom: kore.Axiom) -> mm.Term:
         term = self.visit(axiom.pattern)
@@ -108,7 +108,7 @@ class KorePatternEncoder(KoreVisitor):
             var_term = self.visit(var)
             term = mm.Application(KorePatternEncoder.FORALL_SORT, (var_term, term))
 
-        return term
+        return term  # type: ignore
 
     def postvisit_sort_instance(self, sort_instance: kore.SortInstance) -> mm.Term:
         encoded = KorePatternEncoder.encode_sort(sort_instance)
@@ -136,8 +136,8 @@ class KorePatternEncoder(KoreVisitor):
         self.constant_symbols[constant_symbol] = len(application.symbol.sort_arguments) + len(application.arguments)
         return mm.Application(
             constant_symbol,
-            tuple(self.visit(sort_arg)
-             for sort_arg in application.symbol.sort_arguments) + tuple(self.visit(arg) for arg in application.arguments),
+            tuple(self.visit(sort_arg) for sort_arg in application.symbol.sort_arguments) +
+            tuple(self.visit(arg) for arg in application.arguments),
         )
 
     def postvisit_ml_pattern(self, ml_pattern: kore.MLPattern) -> mm.Term:
@@ -161,10 +161,12 @@ class KorePatternEncoder(KoreVisitor):
         else:
             if ml_pattern.construct == kore.MLPattern.DV:
                 assert len(ml_pattern.sorts) == 1
+                assert isinstance(ml_pattern.sorts[0], kore.SortInstance)
                 assert isinstance(ml_pattern.arguments[0], kore.StringLiteral)
                 self.domain_values.add((ml_pattern.sorts[0], ml_pattern.arguments[0]))
 
             return mm.Application(
                 encoded_construct,
-                tuple(self.visit(sort) for sort in ml_pattern.sorts) + tuple(self.visit(arg) for arg in ml_pattern.arguments),
+                tuple(self.visit(sort)
+                      for sort in ml_pattern.sorts) + tuple(self.visit(arg) for arg in ml_pattern.arguments),
             )

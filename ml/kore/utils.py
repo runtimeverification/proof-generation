@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Tuple, Optional, NewType, TypeVar, Union, Dict, TextIO
+from typing import Mapping, List, Tuple, Optional, NewType, TypeVar, Union, Dict, TextIO, Any
 
 import sys
 
@@ -22,6 +22,7 @@ from .ast import (
     Application,
     MLPattern,
     SortVariable,
+    StringLiteral,
 )
 from .visitors import (
     PatternSubstitutionVisitor,
@@ -31,7 +32,6 @@ from .visitors import (
     QuantifierTester,
     PatternVariableVisitor,
     SortVariableVisitor,
-    StringLiteral,
 )
 from .pretty import PrettyPrinter
 """
@@ -39,7 +39,7 @@ Path to a subpattern of a pattern or an axiom
 """
 PatternPath = List[int]
 
-AST = TypeVar("AST", bound=BaseAST)
+AST = TypeVar("AST", bound=BaseAST[Any])
 P = TypeVar("P", bound=Pattern)
 PA = TypeVar("PA", Pattern, Axiom)
 PAS = TypeVar("PAS", Pattern, Axiom, Sort)
@@ -53,7 +53,7 @@ class KoreUtils:
     def copy_ast(module: Module, ast: AST) -> AST:
         copy_ast = ast.visit(CopyVisitor())
         copy_ast.resolve(module)
-        return copy_ast
+        return copy_ast  # type: ignore
 
     @staticmethod
     def copy_pattern(pattern: P) -> P:
@@ -62,7 +62,7 @@ class KoreUtils:
     @staticmethod
     def copy_and_substitute_pattern(ast: PAS, substitution: Mapping[Variable, Pattern]) -> PAS:
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
-        return PatternSubstitutionVisitor(substitution).visit(copied)
+        return PatternSubstitutionVisitor(substitution).visit(copied)  # type: ignore
 
     @staticmethod
     def copy_and_substitute_sort(ast: PAS, substitution: Mapping[SortVariable, Sort]) -> PAS:
@@ -70,7 +70,7 @@ class KoreUtils:
         Note that the substitution should be sort variable -> sort
         """
         copied = KoreUtils.copy_ast(ast.get_module(), ast)
-        return SortSubstitutionVisitor(substitution).visit(copied)
+        return SortSubstitutionVisitor(substitution).visit(copied)  # type: ignore
 
     @staticmethod
     def get_subpattern_by_path(ast: Union[Pattern, Axiom], path: PatternPath) -> Union[Pattern, Axiom]:
@@ -299,7 +299,7 @@ class KoreUtils:
 
     @staticmethod
     def is_quantifier_free(pattern: Pattern) -> bool:
-        return QuantifierTester().visit(pattern)
+        return QuantifierTester().visit(pattern)  # type: ignore
 
     @staticmethod
     def is_existential(pattern: Pattern) -> bool:
@@ -334,6 +334,6 @@ class KoreUtils:
         return KoreUtils.is_concrete_sort(symbol_definition.output_sort)
 
     @staticmethod
-    def pretty_print(ast: BaseAST, stream=sys.stdout, *args, **kwargs):
+    def pretty_print(ast: BaseAST[Any], stream=sys.stdout, *args, **kwargs):
         PrettyPrinter.encode(stream, ast, *args, **kwargs)
         stream.write("\n")

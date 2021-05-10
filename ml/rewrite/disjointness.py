@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union
 
 from traceback import print_exc
 
@@ -7,8 +7,7 @@ from ml.kore.utils import KoreUtils
 from ml.kore.visitors import FreePatternVariableVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Proof
-from ml.metamath.visitors import CopyVisitor
+from ml.metamath.ast import Proof
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.sorting import SortingProver
 
@@ -29,14 +28,11 @@ class DisjointnessProofGenerator(ProofGenerator):
     [owise] rules, which assumes that a pattern
     does NOT unify with a pattern.
     """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def get_free_vars_in_pattern(self, pattern: kore.Pattern) -> List[kore.Variable]:
         free_vars = FreePatternVariableVisitor().visit(pattern)
         free_vars = list(free_vars)
         free_vars.sort(key=lambda v: v.name, reverse=True)
-        return free_vars
+        return free_vars  # type: ignore
 
     def existentially_quantify_free_variables(self, pattern: kore.Pattern) -> mm.Term:
         r"""
@@ -50,11 +46,11 @@ class DisjointnessProofGenerator(ProofGenerator):
         for var in free_vars:
             encoded_pattern = mm.Application(
                 "\\sorted-exists",
-                [
+                (
                     self.env.encode_pattern(var),
                     self.env.encode_pattern(var.sort),
                     encoded_pattern,
-                ],
+                ),
             )
 
         return encoded_pattern
@@ -68,23 +64,21 @@ class DisjointnessProofGenerator(ProofGenerator):
         left_term = (self.existentially_quantify_free_variables(left) if quantify else self.env.encode_pattern(left))
         right_term = (self.existentially_quantify_free_variables(right) if quantify else self.env.encode_pattern(right))
 
-        return mm.Application("\\not", [mm.Application("\\and", [left_term, right_term])])
+        return mm.Application("\\not", (mm.Application("\\and", (left_term, right_term)), ))
 
     def get_disjointness_statement(
         self,
         left: kore.Pattern,
         right: kore.Pattern,
-        label: Optional[str] = None,
         quantify: bool = True,
     ) -> mm.StructuredStatement:
         """
         Same as above but wraps it in a metamath statement
         """
         disjointness = self.get_disjointness_pattern(left, right, quantify)
-        return mm.StructuredStatement(
-            mm.Statement.PROVABLE,
-            [mm.Application("|-"), disjointness],
-            label=label,
+        return mm.ProvableStatement(
+            "",
+            (mm.Application("|-"), disjointness),
         )
 
     def make_app_context(self, app: mm.Application, i: int) -> Proof:
@@ -99,8 +93,9 @@ class DisjointnessProofGenerator(ProofGenerator):
         free_var = mm.Metavariable(free_var_name)
 
         # f(..., xX, ...)
-        app_ctx = CopyVisitor().visit(app)
-        app_ctx.subterms[i] = free_var
+        subterms = list(app.subterms)
+        subterms[i] = free_var
+        app_ctx = mm.Application(app.symbol, tuple(subterms))
 
         assert app.symbol in self.env.app_ctx_lemmas and i < len(
             self.env.app_ctx_lemmas[app.symbol]
@@ -109,9 +104,9 @@ class DisjointnessProofGenerator(ProofGenerator):
         app_ctx_lemma = self.env.app_ctx_lemmas[app.symbol][i]
 
         app_ctx_proof = app_ctx_lemma.match_and_apply(
-            mm.StructuredStatement(
-                mm.Statement.PROVABLE,
-                [mm.Application("#ApplicationContext"), free_var, app_ctx],
+            mm.ProvableStatement(
+                "",
+                (mm.Application("#ApplicationContext"), free_var, app_ctx),
             ),
             self.env.get_theorem("application-context-var").apply(xX=free_var),
         )
@@ -135,34 +130,37 @@ class DisjointnessProofGenerator(ProofGenerator):
         ith_arg_body = ith_arg.subterms[2]
 
         # create a term that looks like (sorted-exists x y. f(..., phi(x, y), ...))
-        lhs_body = CopyVisitor().visit(app)
-        lhs_body.subterms[i] = ith_arg_body
+        app_subterms = list(app.subterms)
+        app_subterms[i] = ith_arg_body
+        lhs_body = mm.Application(app.symbol, tuple(app_subterms))
 
-        lhs = CopyVisitor().visit(ith_arg)
-        lhs.subterms[2] = lhs_body
+        ith_arg_subterms = list(ith_arg.subterms)
+        ith_arg_subterms[2] = lhs_body
+        lhs = mm.Application(ith_arg.symbol, tuple(ith_arg_subterms))
 
         app_ctx_proof = self.make_app_context(app, i)
-
         subproof = self.propagate_exists_out(lhs_body, i)
 
         # some substitutions required by the theorem (due to meta-incompleteness)
         # see the statement of sorted-exists-propagation-converse for more info
-        subst1 = CopyVisitor().visit(app)
-        subst1.subterms[i] = mm.Application(
+        app_subterms = list(app.subterms)
+        app_subterms[i] = mm.Application(
             "\\and",
-            [
-                mm.Application("\\in-sort", [ith_arg.subterms[0], ith_arg.subterms[1]]),
+            (
+                mm.Application("\\in-sort", (ith_arg.subterms[0], ith_arg.subterms[1])),
                 ith_arg_body,
-            ],
+            ),
         )
+        subst1 = mm.Application(app.symbol, tuple(app_subterms))
 
-        subst2 = CopyVisitor().visit(app)
-        subst2.subterms[i] = mm.Application("\\and", [mm.Application("\\top"), ith_arg_body])
+        app_subterms = list(app.subterms)
+        app_subterms[i] = mm.Application("\\and", (mm.Application("\\top"), ith_arg_body))
+        subst2 = mm.Application(app.symbol, tuple(app_subterms))
 
         next_step = self.env.get_theorem("sorted-exists-propagation-converse").match_and_apply(
-            mm.StructuredStatement(
-                mm.Statement.PROVABLE,
-                [mm.Application("|-"), mm.Application("\\imp", [lhs, app])],
+            mm.ProvableStatement(
+                "",
+                (mm.Application("|-"), mm.Application("\\imp", (lhs, app))),
             ),
             app_ctx_proof,
             SubstitutionProver.auto,
@@ -177,19 +175,23 @@ class DisjointnessProofGenerator(ProofGenerator):
         # build the desired statement for the previous step
         assert isinstance(subproof.conclusion[1], mm.Application)
         prev_step_lhs_body, prev_step_rhs_body = subproof.conclusion[1].subterms
-        prev_step_lhs = CopyVisitor().visit(ith_arg)
-        prev_step_lhs.subterms[2] = prev_step_lhs_body
-        prev_step_rhs = CopyVisitor().visit(ith_arg)
-        prev_step_rhs.subterms[2] = prev_step_rhs_body
+
+        ith_arg_subterms = list(ith_arg.subterms)
+        ith_arg_subterms[2] = prev_step_lhs_body
+        prev_step_lhs = mm.Application(ith_arg.symbol, tuple(ith_arg_subterms))
+
+        ith_arg_subterms = list(ith_arg.subterms)
+        ith_arg_subterms[2] = prev_step_rhs_body
+        prev_step_rhs = mm.Application(ith_arg.symbol, tuple(ith_arg_subterms))
 
         return self.env.get_theorem("rule-imp-transitivity").apply(
             self.env.get_theorem("imp-compat-in-sorted-exists").match_and_apply(
-                mm.StructuredStatement(
-                    mm.Statement.PROVABLE,
-                    [
+                mm.ProvableStatement(
+                    "",
+                    (
                         mm.Application("|-"),
-                        mm.Application("\\imp", [prev_step_lhs, prev_step_rhs]),
-                    ],
+                        mm.Application("\\imp", (prev_step_lhs, prev_step_rhs)),
+                    ),
                 ),
                 subproof,
             ),
@@ -215,8 +217,9 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         assert lhs == app.subterms[i]
 
-        right_subst_app = CopyVisitor().visit(app)
-        right_subst_app.subterms[i] = rhs
+        app_subterms = list(app.subterms)
+        app_subterms[i] = rhs
+        right_subst_app = mm.Application(app.symbol, tuple(app_subterms))
 
         return self.env.get_theorem("proof-rule-frame").apply(
             app_ctx_proof,
@@ -274,11 +277,14 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         # existentially quantify the target argument
         # since the disjointness proof is quantified
-        encoded_right_app.subterms[i] = self.existentially_quantify_free_variables(right.arguments[i])
+        encoded_right_app_subterms = list(encoded_right_app.subterms)
+        encoded_right_app_subterms[i] = self.existentially_quantify_free_variables(right.arguments[i])
+        encoded_right_app.subterms = tuple(encoded_right_app_subterms)
 
-        conj_app = CopyVisitor().visit(encoded_left_app)
+        encoded_left_app_subterms = list(encoded_left_app.subterms)
         for j, (left_arg, right_arg) in enumerate(zip(encoded_left_app.subterms, encoded_right_app.subterms)):
-            conj_app.subterms[j] = mm.Application("\\and", [left_arg, right_arg])
+            encoded_left_app_subterms[j] = mm.Application("\\and", (left_arg, right_arg))
+        conj_app = mm.Application(encoded_left_app.symbol, tuple(encoded_left_app_subterms))
 
         # desugar |- ( \not (...) ) to |- ( \imp (...) \bot )
         arg_imp_bot = self.env.get_theorem("desugar-not-to-imp").apply(argument_disjointness)
@@ -303,18 +309,18 @@ class DisjointnessProofGenerator(ProofGenerator):
         no_confusion_axiom = self.env.no_confusion_same_constructor[encoded_symbol]
 
         no_confusion_instance = no_confusion_axiom.match_and_apply(
-            mm.StructuredStatement(
-                mm.Statement.PROVABLE,
-                [
+            mm.ProvableStatement(
+                "",
+                (
                     mm.Application("|-"),
                     mm.Application(
                         "\\imp",
-                        [
-                            mm.Application("\\and", [encoded_left_app, encoded_right_app]),
+                        (
+                            mm.Application("\\and", (encoded_left_app, encoded_right_app)),
                             conj_app,
-                        ],
+                        ),
                     ),
-                ],
+                ),
             )
         )
 
@@ -375,7 +381,9 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         return disjointness_proof
 
-    def prove_disjointness_with_disjunction(self, left: kore.Pattern, components: List[kore.Application]) -> Proof:
+    def prove_disjointness_with_disjunction(
+        self, left: kore.Pattern, components: List[Union[kore.Variable, kore.Application]]
+    ) -> Proof:
         """
         Prove that the left pattern is disjoint from
         any of the components given
@@ -468,23 +476,21 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         encoded_left = self.env.encode_pattern(left)
         encoded_sort = self.env.encode_pattern(var.sort)
-        instance = mm.StructuredStatement(
-            mm.Statement.PROVABLE,
-            [
+        instance = mm.ProvableStatement(
+            "",
+            (
                 mm.Application("|-"),
                 mm.Application(
                     "\\not",
-                    [
-                        mm.Application(
-                            "\\and",
-                            [
-                                encoded_left,
-                                mm.Application("\\inh", [encoded_sort]),
-                            ],
+                    (mm.Application(
+                        "\\and",
+                        (
+                            encoded_left,
+                            mm.Application("\\inh", (encoded_sort, )),
                         ),
-                    ],
+                    ), ),
                 ),
-            ],
+            ),
         )
 
         return self.env.get_theorem("disjointness-sort").match_and_apply(

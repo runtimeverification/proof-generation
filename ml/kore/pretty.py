@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Union, TextIO
+from typing import List, Union, TextIO, Any
 
 from io import StringIO
 
@@ -54,13 +54,13 @@ class PrettyPrinter(Printer, KoreVisitor):
         self.skip_empty_sorts = skip_empty_sorts
 
     @staticmethod
-    def encode(output: TextIO, ast: BaseAST, *args, **kwargs):
+    def encode(output: TextIO, ast: BaseAST[Any], *args: Any, **kwargs: Any) -> None:
         printer = PrettyPrinter(output, *args, **kwargs)
         printer.visit(ast)
         printer.flush()
 
     @staticmethod
-    def encode_string(ast: BaseAST, *args, **kwargs) -> str:
+    def encode_string(ast: BaseAST[Any], *args: Any, **kwargs: Any) -> str:
         stream = StringIO()
         PrettyPrinter.encode(stream, ast, *args, **kwargs)
         return stream.getvalue()
@@ -174,7 +174,7 @@ class PrettyPrinter(Printer, KoreVisitor):
         self.write_sort_arguments(sort_instance.arguments)
 
     def postvisit_sort_variable(self, sort_variable: SortVariable):
-        self.write(PrettyPrinter.COLOR_SORT_VARIABLE(sort_variable.name))
+        self.write(PrettyPrinter.COLOR_SORT_VARIABLE(sort_variable.name))  # type: ignore
 
     def postvisit_symbol_definition(self, definition: SymbolDefinition, *args):
         self.write(PrettyPrinter.COLOR_KEYWORD("symbol") + " ")
@@ -243,14 +243,14 @@ class PrettyPrinter(Printer, KoreVisitor):
         self.visit(axiom.pattern)
 
     def postvisit_variable(self, var: Variable, *args):
-        self.write(PrettyPrinter.COLOR_VARIABLE(var.name))
+        self.write(PrettyPrinter.COLOR_VARIABLE(var.name))  # type: ignore
         self.write(":")
         self.visit(var.sort)
 
     def postvisit_string_literal(self, literal: StringLiteral):
         self.write(PrettyPrinter.COLOR_STRING_LITERAL(f"\"{literal.content}\""))
 
-    def decide_if_compact(self, ast: BaseAST) -> bool:
+    def decide_if_compact(self, ast: BaseAST[Any]) -> bool:
         """
         Decide if the given ast should be printed using the compact format
         """

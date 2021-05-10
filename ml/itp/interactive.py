@@ -195,7 +195,10 @@ class InteractiveState:
                     "\n".join(
                         [
                             "hypotheses:",
-                            *[TAB + "$d " + " ".join(map(str, disjoint.metavariables)) + " $." for disjoint in disjoints],
+                            *[
+                                TAB + "$d " + " ".join(map(str, disjoint.metavariables)) + " $."
+                                for disjoint in disjoints
+                            ],
                             *[TAB + str(essential.statement) for essential in essentials],
                             *[TAB + str(claim.theorem.statement) for claim in local_claims],
                         ]

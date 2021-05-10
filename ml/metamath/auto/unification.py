@@ -7,8 +7,9 @@ class Unification:
     @staticmethod
     def unify(
         equations: List[Tuple[Term, Term]],
-        variable_class: Type[Metavariable]=Metavariable,
-        variable_order: Callable[[Metavariable, Metavariable], bool]=lambda v1, v2: True,  # returns True iff v1 <= v2, False otherwise
+        variable_class: Type[Metavariable] = Metavariable,
+        variable_order: Callable[[Metavariable, Metavariable],
+                                 bool] = lambda v1, v2: True,  # returns True iff v1 <= v2, False otherwise
         # allow user to supply extra unifiction rules
         additional_unifier: Optional[Callable[[Term, Term], Optional[List[Tuple[Term, Term]]]]] = None,
     ) -> Optional[Mapping[str, Term]]:

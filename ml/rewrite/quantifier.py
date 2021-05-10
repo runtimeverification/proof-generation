@@ -4,7 +4,7 @@ from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Proof
+from ml.metamath.ast import Proof
 from ml.metamath.auto.sorting import SortingProver
 
 from .env import ProofGenerator, ProvableClaim
@@ -85,7 +85,7 @@ class QuantifierProofGenerator(ProofGenerator):
         final_claim.resolve(self.env.module)
 
         # test if the final claim has already been proved
-        final_mm_statement = self.env.encode_axiom(mm.Statement.PROVABLE, final_claim)
+        final_mm_statement = self.env.encode_metamath_statement(final_claim)
         cached_proof = self.env.composer.lookup_proof_cache("quant-forall-elim-cache", final_mm_statement)
         if cached_proof is not None:
             return ProvableClaim(final_claim, cached_proof)

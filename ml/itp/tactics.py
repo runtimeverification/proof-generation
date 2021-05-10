@@ -27,9 +27,7 @@ class ApplyTactic(Tactic):
         self.applied_notation = False
 
     @staticmethod
-    def preprocess_theorem(
-        state: ProofState, theorem: Theorem, subst: Dict[str, Term]
-    ) -> PreprocessedTheorem:
+    def preprocess_theorem(state: ProofState, theorem: Theorem, subst: Dict[str, Term]) -> PreprocessedTheorem:
         """
         Replace all metavariables in the given theorem by fresh
         schematic variables, and return the substituted statement,
@@ -55,7 +53,9 @@ class ApplyTactic(Tactic):
 
         # substitute in schematic variables
         # and then sanitize format
-        transformer: Callable[[StructuredStatement], ProvableStatement] = lambda stmt: Goal.sanitize_goal_statement(stmt.substitute(new_subst))
+        transformer: Callable[
+            [StructuredStatement],
+            ProvableStatement] = lambda stmt: Goal.sanitize_goal_statement(stmt.substitute(new_subst))
 
         conclusion = transformer(theorem.statement)
         essentials = [transformer(essential) for essential in theorem.context.essentials]
@@ -318,7 +318,7 @@ class FromTactic(Tactic):
 
         # find the specified theorem
         theorem = self.init_theorem(state, theorem_name)
-        
+
         preprocessed = ApplyTactic.preprocess_theorem(state, theorem, self.metavars_substitution)
         theorem_conclusion = self.conclusion = preprocessed.conclusion
         theorem_essentials = preprocessed.essentials
