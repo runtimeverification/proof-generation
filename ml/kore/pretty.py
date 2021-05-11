@@ -30,7 +30,7 @@ from .ast import (
 )
 
 
-class PrettyPrinter(Printer, KoreVisitor):
+class PrettyPrinter(Printer, KoreVisitor[BaseAST[Any], None]):
     COLOR_KEYWORD = ANSI.in_blue
     COLOR_SYMBOL_INSTANCE = ANSI.in_green
     COLOR_STRING_LITERAL = ANSI.in_magenta
@@ -131,7 +131,7 @@ class PrettyPrinter(Printer, KoreVisitor):
 
         return result[3:] if result.startswith("Lbl") else result
 
-    def write_sort_arguments(self, sorts: Union[List[Sort], List[SortVariable]]):
+    def write_sort_arguments(self, sorts: Union[List[Sort], List[SortVariable]]) -> None:
         if self.skip_empty_sorts and len(sorts) == 0:
             return
 
@@ -142,16 +142,16 @@ class PrettyPrinter(Printer, KoreVisitor):
             self.visit(sort)
         self.write("}")
 
-    def postvisit_default(self, x, *args):
+    def postvisit_default(self, x: Any, *args: Any) -> None:
         raise NotImplementedError()
 
-    def postvisit_definition(self, definition: Definition, *args):
+    def postvisit_definition(self, definition: Definition, *args: Any) -> None:
         for i, module in enumerate(definition.module_map.values()):
             if i != 0:
                 self.write("\n\n")
             self.visit(module)
 
-    def postvisit_module(self, module: Module, *args):
+    def postvisit_module(self, module: Module, *args: Any) -> None:
         self.write(PrettyPrinter.COLOR_KEYWORD("module") + f" {module.name}\n")
 
         with self.indentation():
@@ -161,22 +161,22 @@ class PrettyPrinter(Printer, KoreVisitor):
 
         self.write(PrettyPrinter.COLOR_KEYWORD("endmodule"))
 
-    def postvisit_import_statement(self, import_stmt: ImportStatement, *args):
+    def postvisit_import_statement(self, import_stmt: ImportStatement, *args: Any) -> None:
         self.write(PrettyPrinter.COLOR_KEYWORD("import") + f" {import_stmt.get_module_name()}")
 
-    def postvisit_sort_definition(self, sort_definition: SortDefinition, *args):
+    def postvisit_sort_definition(self, sort_definition: SortDefinition, *args: Any) -> None:
         self.write(PrettyPrinter.COLOR_KEYWORD("sort") + " ")
         self.write(sort_definition.sort_id)
         self.write_sort_arguments(sort_definition.sort_variables)
 
-    def postvisit_sort_instance(self, sort_instance: SortInstance, *args):
+    def postvisit_sort_instance(self, sort_instance: SortInstance, *args: Any) -> None:
         self.write(sort_instance.get_sort_id())
         self.write_sort_arguments(sort_instance.arguments)
 
-    def postvisit_sort_variable(self, sort_variable: SortVariable):
+    def postvisit_sort_variable(self, sort_variable: SortVariable) -> None:
         self.write(PrettyPrinter.COLOR_SORT_VARIABLE(sort_variable.name))  # type: ignore
 
-    def postvisit_symbol_definition(self, definition: SymbolDefinition, *args):
+    def postvisit_symbol_definition(self, definition: SymbolDefinition, *args: Any) -> None:
         self.write(PrettyPrinter.COLOR_KEYWORD("symbol") + " ")
 
         symbol_name = definition.symbol
@@ -196,7 +196,7 @@ class PrettyPrinter(Printer, KoreVisitor):
         self.write("): ")
         self.visit(definition.output_sort)
 
-    def postvisit_symbol_instance(self, instance: SymbolInstance, *args):
+    def postvisit_symbol_instance(self, instance: SymbolInstance, *args: Any) -> None:
         symbol_name = instance.get_symbol_name()
         if self.demangle:
             symbol_name = PrettyPrinter.demangle_label(symbol_name)
@@ -206,7 +206,7 @@ class PrettyPrinter(Printer, KoreVisitor):
         self.write(symbol_name)
         self.write_sort_arguments(instance.sort_arguments)
 
-    def postvisit_alias_definition(self, alias: AliasDefinition, *args):
+    def postvisit_alias_definition(self, alias: AliasDefinition, *args: Any) -> None:
         self.write(PrettyPrinter.COLOR_KEYWORD("alias") + " ")
 
         symbol_name = alias.definition.symbol
@@ -236,18 +236,18 @@ class PrettyPrinter(Printer, KoreVisitor):
             self.write(" := ")
             self.visit(alias.rhs)
 
-    def postvisit_axiom(self, axiom: Axiom, *args):
+    def postvisit_axiom(self, axiom: Axiom, *args: Any) -> None:
         self.write(PrettyPrinter.COLOR_KEYWORD("axiom"))
         self.write_sort_arguments(axiom.sort_variables)
         self.write(" ")
         self.visit(axiom.pattern)
 
-    def postvisit_variable(self, var: Variable, *args):
+    def postvisit_variable(self, var: Variable, *args: Any) -> None:
         self.write(PrettyPrinter.COLOR_VARIABLE(var.name))  # type: ignore
         self.write(":")
         self.visit(var.sort)
 
-    def postvisit_string_literal(self, literal: StringLiteral):
+    def postvisit_string_literal(self, literal: StringLiteral) -> None:
         self.write(PrettyPrinter.COLOR_STRING_LITERAL(f"\"{literal.content}\""))
 
     def decide_if_compact(self, ast: BaseAST[Any]) -> bool:
@@ -262,7 +262,7 @@ class PrettyPrinter(Printer, KoreVisitor):
 
         return True
 
-    def postvisit_application(self, application: Application, *args):
+    def postvisit_application(self, application: Application, *args: Any) -> None:
         use_compact = self.decide_if_compact(application)
 
         self.visit(application.symbol)
@@ -281,7 +281,7 @@ class PrettyPrinter(Printer, KoreVisitor):
 
         self.write(")")
 
-    def postvisit_ml_pattern(self, ml_pattern: MLPattern, *args):
+    def postvisit_ml_pattern(self, ml_pattern: MLPattern, *args: Any) -> None:
         use_compact = self.compact or len(str(ml_pattern)) <= self.limit
 
         self.write(PrettyPrinter.COLOR_ML_CONSTRUCT(ml_pattern.construct))

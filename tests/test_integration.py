@@ -8,13 +8,13 @@ from ml.rewrite.__main__ import main as rewrite_main
 
 
 class TestIntegrationBase(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.output_proof_dir = tempfile.mkdtemp()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         shutil.rmtree(self.output_proof_dir)
 
-    def run_rewrite_proof_gen(self, pgm: str):
+    def run_rewrite_proof_gen(self, pgm: str) -> None:
         """
         pgm should point to a directory under the `integration` directory
         the suffix of the name of pgm should be of the form ".<defn>"
@@ -66,23 +66,23 @@ class TestIntegrationBase(unittest.TestCase):
 
 class TestRewriteProofGeneratorIntegeration(TestIntegrationBase):
     # TODO: verify using metamath
-    def test_foo(self):
+    def test_foo(self) -> None:
         self.run_rewrite_proof_gen("pgm-1.foo")
 
-    def test_lambda(self):
+    def test_lambda(self) -> None:
         self.run_rewrite_proof_gen("pgm-1.lambda")
 
-    def test_imp(self):
+    def test_imp(self) -> None:
         self.run_rewrite_proof_gen("pgm-1.imp")
 
-    def test_map_test_comm(self):
+    def test_map_test_comm(self) -> None:
         self.run_rewrite_proof_gen("pgm-comm.map-test")
 
-    def test_map_test_ac(self):
+    def test_map_test_ac(self) -> None:
         self.run_rewrite_proof_gen("pgm-ac-hard.map-test")
 
-    def test_map_test_unit(self):
+    def test_map_test_unit(self) -> None:
         self.run_rewrite_proof_gen("pgm-unit.map-test")
 
-    def test_map_test_acu(self):
+    def test_map_test_acu(self) -> None:
         self.run_rewrite_proof_gen("pgm-acu-hard.map-test")

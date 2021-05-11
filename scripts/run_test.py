@@ -1,4 +1,4 @@
-from typing import List, Optional, Mapping, Tuple, BinaryIO, Dict
+from typing import List, Optional, Mapping, Tuple, BinaryIO, Dict, Any
 
 import os
 import re
@@ -11,13 +11,14 @@ import subprocess
 import yaml
 
 import ml.kore.ast as kore
+from ml.kore.ast import KoreVisitor
 from ml.kore.parser import parse_definition, parse_pattern
-from ml.kore.visitors import KoreVisitor, PatternOnlyVisitorStructure
+from ml.kore.visitors import PatternOnlyVisitorStructure
 
 from ml.utils.ansi import ANSI
 
 
-def run_command(command: List[str], **kwargs) -> subprocess.Popen:
+def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:  # type: ignore
     command_str = " ".join([shlex.quote(frag) for frag in command])
     print(f"{ANSI.in_gray('+ ' + command_str)}", file=sys.stderr)
     return subprocess.Popen(command, **kwargs)
@@ -74,13 +75,13 @@ def parse_kore_log(log_src: str) -> List[Tuple[str, str]]:
     return log_items
 
 
-class Initializer(KoreVisitor, PatternOnlyVisitorStructure):
+class Initializer(KoreVisitor[kore.Pattern, kore.Pattern], PatternOnlyVisitorStructure[kore.Pattern, kore.Pattern]):
     def __init__(self, initializer_axioms: Mapping[str, kore.Pattern], pgm_pattern: kore.Pattern):
         super().__init__()
         self.initializer_axioms = initializer_axioms
         self.pgm_pattern = pgm_pattern
 
-    def postvisit_application(self, application: kore.Application, arguments: List[kore.Pattern]) -> kore.Application:
+    def postvisit_application(self, application: kore.Application, arguments: List[kore.Pattern]) -> kore.Pattern:
         symbol_name = application.symbol.get_symbol_name()
 
         if symbol_name in self.initializer_axioms:
@@ -125,7 +126,7 @@ def gen_init_config(kore_def_path: str, module: str, pgm_src: str) -> str:
     return f"inj{{SortGeneratedTopCell{{}}, SortKItem{{}}}}({init_config_pattern})"
 
 
-def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict:
+def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
     """
     Generate hints without modified backend
     This will not include substitutions or rule ids
@@ -199,7 +200,7 @@ def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict:
     }
 
 
-def gen_task(kompiled_dir: str, pgm: str) -> Dict:
+def gen_task(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
     proc = run_command(
         [
             "kast",
@@ -302,7 +303,7 @@ def gen_proof(
     pypy: bool = False,
     no_backend_hints: bool = False,
     proof_cache_threshold: Optional[int] = None,
-):
+) -> None:
     kdef = os.path.realpath(kdef)
     pgm = os.path.realpath(pgm)
 
@@ -386,7 +387,7 @@ def gen_proof(
         assert exit_code == 0, f"ml.rewrite failed with exit code {exit_code}"
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("kdef", help="The main .k file")
     parser.add_argument("module", help="The main module")

@@ -1,4 +1,4 @@
-from typing import List, BinaryIO, Tuple
+from typing import List, IO, Tuple, Any, Union, Dict
 
 import os
 import re
@@ -35,17 +35,17 @@ STATS_LABELS = [
 PRELUDE_THEORY = "theory"
 
 
-def debug(msg: str):
+def debug(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def run_command(command: List[str], **kwargs) -> subprocess.Popen:
+def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:  # type: ignore
     command_str = " ".join([shlex.quote(frag) for frag in command])
     debug(f"{ANSI.in_gray('+ ' + command_str)}")
     return subprocess.Popen(command, **kwargs)
 
 
-def read_stats(stream: BinaryIO, stats):
+def read_stats(stream: IO[bytes], stats: Dict[str, Union[int, float]]) -> None:
     while True:
         line = stream.readline().decode()
         if line == "":
@@ -58,7 +58,7 @@ def read_stats(stream: BinaryIO, stats):
             stats[head] = value
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "test_dir", nargs="+", help="each test directory should contain exactly one *.k file and one input.* file"
@@ -122,16 +122,16 @@ def main():
 
             print(f"found test {k_defn} {main_module} {input_file}, will output to {output}")
 
-    with open(args.output, "a" if args.append else "w") as output:
-        writer = csv.DictWriter(output, ["module-name", "pgm"] + STATS_LABELS)
+    with open(args.output, "a" if args.append else "w") as output_file:
+        writer = csv.DictWriter(output_file, ["module-name", "pgm"] + STATS_LABELS)
 
         if not args.append:
             writer.writeheader()
-            output.flush()
+            output_file.flush()
 
         for module_path, module_name, pgm_path, output_path in tests:
             debug(f"## collecting stats of {module_path} on program {pgm_path}")
-            stats = {}
+            stats: Dict[str, Any] = {}
 
             proc = run_command(
                 [
@@ -149,6 +149,7 @@ def main():
                 stderr=subprocess.DEVNULL,
             )
 
+            assert proc.stdout is not None
             read_stats(proc.stdout, stats)
 
             exit_code = proc.wait()
@@ -166,6 +167,7 @@ def main():
                 stderr=subprocess.DEVNULL,
             )
 
+            assert proc.stdout is not None
             read_stats(proc.stdout, stats)
 
             exit_code = proc.wait()
@@ -176,7 +178,7 @@ def main():
             print(stats)
 
             writer.writerow(stats)
-            output.flush()
+            output_file.flush()
 
 
 if __name__ == "__main__":

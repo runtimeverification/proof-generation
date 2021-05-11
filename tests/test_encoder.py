@@ -1,3 +1,5 @@
+from typing import Any
+
 import unittest
 
 import ml.kore.ast as kore
@@ -7,10 +9,7 @@ from ml.rewrite.encoder import KorePatternEncoder
 
 
 class TestKorePatternEncoder(unittest.TestCase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def setUp(self):
+    def setUp(self) -> None:
         self.encoder = KorePatternEncoder()
 
         self.sort_bool_definition = kore.SortDefinition("Bool", [], [])
@@ -20,26 +19,29 @@ class TestKorePatternEncoder(unittest.TestCase):
         self.symbol_config_definition = kore.SymbolDefinition(
             "config",
             [],
-            [self.sort_list_definition, self.sort_bool_definition],
-            self.sort_config_definition,
+            [
+                kore.SortInstance(self.sort_list_definition, [kore.SortVariable("S")]),
+                kore.SortInstance(self.sort_bool_definition, []),
+            ],
+            kore.SortInstance(self.sort_config_definition, []),
             [],
         )
 
-    def assertEncodingEqual(self, kore_ast: kore.BaseAST, encoding: str):
+    def assertEncodingEqual(self, kore_ast: kore.BaseAST[Any], encoding: str) -> None:
         self.assertEqual(str(self.encoder.visit(kore_ast)), encoding)
 
-    def assertPatternEncodingEqual(self, kore_text: str, encoding: str):
+    def assertPatternEncodingEqual(self, kore_text: str, encoding: str) -> None:
         pattern = parse_pattern(kore_text)
         self.assertEncodingEqual(pattern, encoding)
 
-    def assertAxiomEncodingEqual(self, module: kore.Module, kore_text: str, encoding: str):
+    def assertAxiomEncodingEqual(self, module: kore.Module, kore_text: str, encoding: str) -> None:
         axiom = parse_axiom(kore_text)
         axiom.resolve(module)
         axiom.set_parent(module)
         KoreUtils.quantify_all_free_variables_in_axiom(axiom)
         self.assertEncodingEqual(axiom, encoding)
 
-    def test_element_var_encoding(self):
+    def test_element_var_encoding(self) -> None:
         self.assertPatternEncodingEqual(r"X:Bool{}", r"kore-element-var-X")
         self.assertPatternEncodingEqual(r"VX:Bool{}", r"kore-element-var-VX")
         self.assertPatternEncodingEqual(r"Y:S", r"kore-element-var-Y")
@@ -47,7 +49,7 @@ class TestKorePatternEncoder(unittest.TestCase):
         self.assertPatternEncodingEqual(r"Y:Map{S1,S2}", r"kore-element-var-Y")
         self.assertPatternEncodingEqual(r"Y:List{Int{}}", r"kore-element-var-Y")
 
-    def test_kore_pattern_encoding(self):
+    def test_kore_pattern_encoding(self) -> None:
         self.assertPatternEncodingEqual(r"\top{S}()", r"( \kore-top kore-sort-var-S )")
         self.assertPatternEncodingEqual(r"\bottom{S}()", r"( \kore-bottom kore-sort-var-S )")
         self.assertPatternEncodingEqual(
@@ -102,7 +104,7 @@ class TestKorePatternEncoder(unittest.TestCase):
         )
         self.assertPatternEncodingEqual(r'\dv{Int{}}("12345")', r'( \kore-dv \kore-sort-Int "12345" )')
 
-    def test_kore_axiom_encoding(self):
+    def test_kore_axiom_encoding(self) -> None:
         module = parse_module(r"""
         module TEST
             sort Int{} []
@@ -131,7 +133,7 @@ class TestKorePatternEncoder(unittest.TestCase):
             r"( \kore-forall-sort kore-sort-var-S ( \kore-valid kore-sort-var-S ( \kore-forall kore-sort-var-S kore-sort-var-S kore-element-var-X kore-element-var-X ) ) )",
         )
 
-    def test_application_encoding(self):
+    def test_application_encoding(self) -> None:
         self.assertPatternEncodingEqual(r"c{}()", r"\kore-symbol-c")
         self.assertPatternEncodingEqual(r"f{}(c{}())", r"( \kore-symbol-f \kore-symbol-c )")
         self.assertPatternEncodingEqual(
@@ -171,12 +173,12 @@ class TestKorePatternEncoder(unittest.TestCase):
             r"( \kore-symbol-f \kore-sort-Int ( \kore-sort-List \kore-sort-Bool ) \kore-symbol-c1 ( \kore-symbol-g \kore-symbol-c2 ) )",
         )
 
-    def test_string_literal_encoding(self):
+    def test_string_literal_encoding(self) -> None:
         self.assertEncodingEqual(kore.StringLiteral("true"), r'"true"')
         self.assertEncodingEqual(kore.StringLiteral("10\n"), r'"10%0A"')
         self.assertEncodingEqual(kore.StringLiteral('"\n'), r'"%22%0A"')
 
-    def test_sort_instance_encoding(self):
+    def test_sort_instance_encoding(self) -> None:
         self.assertEncodingEqual(kore.SortInstance("Integer", []), r"\kore-sort-Integer")
 
         self.assertEncodingEqual(
@@ -189,11 +191,10 @@ class TestKorePatternEncoder(unittest.TestCase):
             r"( \kore-sort-List ( \kore-sort-Maybe kore-sort-var-V ) )",
         )
 
-    """
-    test if metainfo is collected correctly, e.g. metavariables, constants, domain values
-    """
-
-    def test_metainfo_collection(self):
+    def test_metainfo_collection(self) -> None:
+        """
+        test if metainfo is collected correctly, e.g. metavariables, constants, domain values
+        """
         sort_bool = kore.SortInstance(self.sort_bool_definition, [])
         sort_list = kore.SortInstance(self.sort_list_definition, [kore.SortVariable("S")])
         pattern = kore.Application(

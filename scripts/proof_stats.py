@@ -10,11 +10,11 @@ import subprocess
 from ml.utils.ansi import ANSI
 
 
-def debug(msg: str):
+def debug(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def run_command(command: List[str], **kwargs) -> subprocess.Popen:
+def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:  # type: ignore
     command_str = " ".join([shlex.quote(frag) for frag in command])
     debug(f"{ANSI.in_gray('+ ' + command_str)}")
     return subprocess.Popen(command, **kwargs)
@@ -81,7 +81,7 @@ def get_file_size(path: str, wrap: int) -> Tuple[int, int, int]:
     return lines, wrapped_lines, size_in_bytes
 
 
-def measure(proof_object: str, prelude_theory: str, line_wrap: int = 80):
+def measure(proof_object: str, prelude_theory: str, line_wrap: int = 80) -> None:
     # measure base loading time
     loading_time1, (goal_time, rewrite_time,
                     total_time) = verify_theorems(os.path.join(proof_object, "goal.mm"), ["goal", "rewrite-*", "*"])
@@ -162,7 +162,7 @@ def measure(proof_object: str, prelude_theory: str, line_wrap: int = 80):
     # }
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("theory", help="path to the prelude theory directory")
     parser.add_argument("proof", help="path to the proof object directory")

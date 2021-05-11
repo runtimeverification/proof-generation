@@ -1,4 +1,4 @@
-from typing import List, Union, Tuple, TypeVar
+from typing import List, Union, Tuple, TypeVar, Any
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
@@ -14,7 +14,8 @@ from .env import ProofEnvironment, ProofGenerator
 PAS = TypeVar("PAS", kore.Pattern, kore.Axiom, kore.Sort)
 
 
-class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor):
+class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[kore.Pattern, kore.Axiom, kore.Sort],
+                                                                        Proof]):
     """
     Given a kore pattern phi, pattern psi, and variable x, generate a proof for
 

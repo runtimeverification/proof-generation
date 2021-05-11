@@ -1,7 +1,8 @@
 from typing import List, Optional, Tuple
 
 from ml.metamath.parser import load_database
-from ml.metamath.composer import Composer, Proof
+from ml.metamath.ast import Proof
+from ml.metamath.composer import Composer
 
 import os
 import re
@@ -144,7 +145,7 @@ def update_comment_segments(comment_segments: List[Tuple[int, int]], pos: int, o
     return new_comment_segments
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Compress Metamath proofs")
     parser.add_argument("input", nargs="+", help="Input files or directories")
     parser.add_argument("output", help="Output directory")

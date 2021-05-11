@@ -4,11 +4,11 @@ from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapp
 from dataclasses import dataclass, field
 from io import StringIO
 
-from ml.utils.visitor import Visitor
+from ml.utils.visitor import Visitor, ResultT
 from ml.utils.printer import Printer
 
 
-class MetamathVisitor(Visitor):
+class MetamathVisitor(Visitor["BaseAST", ResultT]):
     """
     This is a less general version
     of metamath that preseves certain structures
@@ -66,7 +66,7 @@ class Term(BaseAST):
     def substitute(self, substitution: Mapping[str, Term]) -> Term:
         raise NotImplementedError()
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         raise NotImplementedError()
 
 
@@ -83,8 +83,8 @@ class Metavariable(Term):
         else:
             return self
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_metavariable(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_metavariable(self)  # type: ignore
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -98,7 +98,7 @@ class Metavariable(Term):
 class Application(Term):
     symbol: str
     subterms: Tuple[Term, ...] = ()
-    hash_cache: Optional[int] = None
+    hash_cache: Optional[int] = field(default=None, compare=False)
 
     def get_metavariables(self) -> Set[str]:
         metavars = set()
@@ -109,35 +109,35 @@ class Application(Term):
     def substitute(self, substitution: Mapping[str, Term]) -> Application:
         return Application(self.symbol, tuple(subterm.substitute(substitution) for subterm in self.subterms))
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_application(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_application(self)  # type: ignore
 
-    def __eq__(self, other: Any) -> bool:
-        # this function is specifically rewritten
-        # to not use recursion since it's used
-        # too many times and has become a performance
-        # bottleneck
-        if not isinstance(other, Application):
-            return False
+    # def __eq__(self, other: Any) -> bool:
+    #     # this function is specifically rewritten
+    #     # to not use recursion since it's used
+    #     # too many times and has become a performance
+    #     # bottleneck
+    #     if not isinstance(other, Application):
+    #         return False
 
-        comparison_left: List[Term] = [self]
-        comparison_right: List[Term] = [other]
+    #     comparison_left: List[Term] = [self]
+    #     comparison_right: List[Term] = [other]
 
-        while comparison_left:
-            left = comparison_left.pop()
-            right = comparison_right.pop()
+    #     while comparison_left:
+    #         left = comparison_left.pop()
+    #         right = comparison_right.pop()
 
-            if isinstance(left, Application) and isinstance(right, Application):
-                if left.symbol == right.symbol and len(left.subterms) == len(right.subterms):
-                    comparison_left.extend(left.subterms)
-                    comparison_right.extend(right.subterms)
-                else:
-                    return False
-            elif not (left == right):
-                # fall back to default equality
-                return False
+    #         if isinstance(left, Application) and isinstance(right, Application):
+    #             if left.symbol == right.symbol and len(left.subterms) == len(right.subterms):
+    #                 comparison_left.extend(left.subterms)
+    #                 comparison_right.extend(right.subterms)
+    #             else:
+    #                 return False
+    #         elif not (left == right):
+    #             # fall back to default equality
+    #             return False
 
-        return True
+    #     return True
 
     def __hash__(self) -> int:
         if self.hash_cache is not None:
@@ -158,7 +158,7 @@ class Statement(BaseAST):
     def substitute(self, substitution: Mapping[str, Term]) -> Statement:
         raise NotImplementedError()
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         raise NotImplementedError()
 
 
@@ -166,24 +166,24 @@ class Statement(BaseAST):
 class ConstantStatement(Statement):
     constants: Tuple[str, ...]
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_constant_statement(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_constant_statement(self)  # type: ignore
 
 
 @dataclass
 class VariableStatement(Statement):
     metavariables: Tuple[Metavariable, ...]
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_variable_statement(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_variable_statement(self)  # type: ignore
 
 
 @dataclass
 class DisjointStatement(Statement):
     metavariables: Tuple[Metavariable, ...]
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_disjoint_statement(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_disjoint_statement(self)  # type: ignore
 
 
 Terms = Tuple[Term, ...]
@@ -204,8 +204,8 @@ class StructuredStatement(Statement):
     def substitute(self: StmtT, substitution: Mapping[str, Term]) -> StmtT:
         return type(self)(self.label, tuple(term.substitute(substitution) for term in self.terms))
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_structured_statement(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_structured_statement(self)  # type: ignore
 
 
 @dataclass
@@ -242,16 +242,16 @@ class ProvableStatement(ConclusionStatement):
 class Comment(Statement):
     text: str
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_comment(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_comment(self)  # type: ignore
 
 
 @dataclass
 class IncludeStatement(Statement):
     path: str
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_include_statement(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_include_statement(self)  # type: ignore
 
 
 @dataclass
@@ -263,8 +263,8 @@ class Block(Statement):
 
     statements: Tuple[Statement, ...]
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_block(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_block(self)  # type: ignore
 
 
 @dataclass
@@ -277,8 +277,8 @@ class Database(BaseAST):
 
     statements: Tuple[Statement, ...]
 
-    def visit(self, visitor: MetamathVisitor) -> Any:
-        return visitor.proxy_visit_database(self)
+    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+        return visitor.proxy_visit_database(self)  # type: ignore
 
 
 class Proof:
@@ -490,7 +490,7 @@ class Proof:
         return Proof.compress_script(mandatory_hypotheses, script)
 
 
-class BaseEncoder(Printer, Visitor):
+class BaseEncoder(Printer, Visitor[BaseAST, None]):
     """
     Encoder for Metamath AST with options
     """

@@ -141,15 +141,15 @@ class KoreUtils:
             application.error_with_position("unmatched number of arguments in the use of alias")
 
         assignment = {var: arg for var, arg in zip(variables, application.arguments)}
-        assignment_visitor = PatternSubstitutionVisitor(assignment)
+        assignment_visitor: PatternSubstitutionVisitor[Pattern] = PatternSubstitutionVisitor(assignment)
 
         copied_rhs = KoreUtils.copy_ast(alias_def.get_module(), alias_def.rhs)
-        copied_rhs.visit(assignment_visitor)
+        assignment_visitor.visit(copied_rhs)
 
         return copied_rhs
 
     @staticmethod
-    def instantiate_one_alias_use(module: Module, alias_def: AliasDefinition):
+    def instantiate_one_alias_use(module: Module, alias_def: AliasDefinition) -> None:
         for user in alias_def.definition.users:
             parent = user.get_parent()
 
@@ -173,7 +173,7 @@ class KoreUtils:
                 user.error_with_position("unable to instantiate alias")
 
     @staticmethod
-    def instantiate_all_alias_uses(module: Module):
+    def instantiate_all_alias_uses(module: Module) -> None:
         """
         Replace all alias uses with their definition
         """
@@ -185,7 +185,7 @@ class KoreUtils:
             module.remove_sentence(alias_def)
 
     @staticmethod
-    def quantify_all_free_variables_in_axiom(axiom: Axiom):
+    def quantify_all_free_variables_in_axiom(axiom: Axiom) -> None:
         """
         Quantify all free (pattern) variables in the given axiom
         """
@@ -201,7 +201,7 @@ class KoreUtils:
         axiom.resolve(axiom.get_module())
 
     @staticmethod
-    def quantify_all_free_variables(module: Module):
+    def quantify_all_free_variables(module: Module) -> None:
         """
         Quantify all free (pattern) variables in the axioms
         """
@@ -299,7 +299,7 @@ class KoreUtils:
 
     @staticmethod
     def is_quantifier_free(pattern: Pattern) -> bool:
-        return QuantifierTester().visit(pattern)  # type: ignore
+        return QuantifierTester().visit(pattern)
 
     @staticmethod
     def is_existential(pattern: Pattern) -> bool:
@@ -334,6 +334,6 @@ class KoreUtils:
         return KoreUtils.is_concrete_sort(symbol_definition.output_sort)
 
     @staticmethod
-    def pretty_print(ast: BaseAST[Any], stream=sys.stdout, *args, **kwargs):
+    def pretty_print(ast: BaseAST[Any], stream: TextIO = sys.stdout, *args: Any, **kwargs: Any) -> None:
         PrettyPrinter.encode(stream, ast, *args, **kwargs)
         stream.write("\n")

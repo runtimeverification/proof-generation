@@ -58,7 +58,7 @@ class UnificationResult:
     def append_equation(self, equation: Equation, path: PatternPath) -> UnificationResult:
         return UnificationResult(self.substitution, self.applied_equations + [(equation, path)])
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "sigma = {{ {} }}, T = [ {} ]".format(
             ", ".join([f"{a} = {b}" for a, b in self.substitution.items()]),
             ", ".join([f"({e}, {p})" for e, p in self.applied_equations]),
@@ -69,7 +69,7 @@ class Equation:
     def __init__(self, env: ProofEnvironment):
         self.env = env
 
-    def __str__(self):
+    def __str__(self) -> str:
         return type(self).__name__
 
     def get_inverse(self) -> Equation:

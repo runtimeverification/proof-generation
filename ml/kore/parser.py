@@ -1,16 +1,16 @@
-from typing import Tuple, List, Any, Optional
-from lark import Lark, Transformer
+from typing import Tuple, List, Any, Optional, Callable
+from lark import Lark, Transformer, Tree, Token
 from lark.visitors import v_args
 from .ast import *
 
 
-def meta_info(f):
+def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
     """
     A decorator to attach extra info on each
     AST node when doing tranformation
     """
     @v_args(tree=True)
-    def wrapper(self, tree):
+    def wrapper(self: Transformer[BaseAST[Any]], tree: Tree) -> Any:
         node = f(self, tree.children)
         if isinstance(node, BaseAST) and not tree.meta.empty:
             node.set_position(
@@ -25,131 +25,132 @@ def meta_info(f):
 
 
 class ASTTransformer(Transformer[BaseAST[Any]]):
-    def identifier(self, args):
+    def identifier(self, args: List[Token]) -> str:
         return args[0].value
 
-    def symbol_id(self, args):
+    def symbol_id(self, args: List[Token]) -> str:
         return args[0].value
 
-    def set_var_id(self, args):
+    def set_var_id(self, args: List[Token]) -> str:
         return args[0].value
 
-    def string_literal(self, args):
+    def string_literal(self, args: List[Token]) -> str:
         literal = args[0].value
         assert literal.startswith('"') and literal.endswith('"')
         return literal[1:-1]
 
-    def ml_symbols(self, args):
+    def ml_symbols(self, args: List[Token]) -> str:
         return args[0].value
 
     @meta_info
-    def definition(self, args):
+    def definition(self, args: List[Any]) -> Definition:
         attributes, *modules = args
         return Definition(modules, attributes)
 
     @meta_info
-    def module(self, args):
+    def module(self, args: List[Any]) -> Module:
         name = args[0]
         sentences = args[1:-1]
         attributes = args[-1]
         return Module(name, sentences, attributes)
 
-    def sentence(self, args):
+    def sentence(self, args: List[Sentence]) -> Sentence:
         return args[0]
 
     @meta_info
-    def sort_variable(self, args):
+    def sort_variable(self, args: List[str]) -> SortVariable:
         return SortVariable(str(args[0]))
 
-    def sort_variables(self, args):
+    def sort_variables(self, args: List[SortVariable]) -> List[SortVariable]:
         return args
 
     @meta_info
-    def sort(self, args):
+    def sort(self, args: List[Any]) -> Sort:
         if len(args) == 1:
+            assert isinstance(args[0], SortVariable)
             return args[0]
         else:
             sort_id, sort_arguments = args
             return SortInstance(sort_id, sort_arguments)
 
-    def sorts(self, args):
+    def sorts(self, args: List[Sort]) -> List[Sort]:
         return args
 
-    def attribute(self, args):
+    def attribute(self, args: List[Application]) -> Application:
         return args[0]
 
-    def attributes(self, args):
+    def attributes(self, args: List[Application]) -> List[Application]:
         return args
 
     @meta_info
-    def sort_definition(self, args):
+    def sort_definition(self, args: List[Any]) -> SortDefinition:
         sort_id, sort_vars, attributes = args
         return SortDefinition(sort_id, sort_vars, attributes, hooked=False)
 
     @meta_info
-    def hooked_sort_definition(self, args):
+    def hooked_sort_definition(self, args: List[Any]) -> SortDefinition:
         sort_id, sort_vars, attributes = args
         return SortDefinition(sort_id, sort_vars, attributes, hooked=True)
 
     @meta_info
-    def symbol_definition(self, args):
+    def symbol_definition(self, args: List[Any]) -> SymbolDefinition:
         symbol, sort_variables, input_sorts, output_sort, attributes = args
         return SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, attributes, hooked=False)
 
     @meta_info
-    def hooked_symbol_definition(self, args):
+    def hooked_symbol_definition(self, args: List[Any]) -> SymbolDefinition:
         symbol, sort_variables, input_sorts, output_sort, attributes = args
         return SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, attributes, hooked=True)
 
     @meta_info
-    def axiom(self, args):
+    def axiom(self, args: List[Any]) -> Axiom:
         sort_variables, pattern, attributes = args
         return Axiom(sort_variables, pattern, attributes, is_claim=False)
 
     @meta_info
-    def claim(self, args):
+    def claim(self, args: List[Any]) -> Axiom:
         sort_variables, pattern, attributes = args
         return Axiom(sort_variables, pattern, attributes, is_claim=True)
 
     @meta_info
-    def import_statement(self, args):
+    def import_statement(self, args: List[Any]) -> ImportStatement:
         module_name, attributes = args
         return ImportStatement(module_name, attributes)
 
     @meta_info
-    def alias_definition(self, args):
+    def alias_definition(self, args: List[Any]) -> AliasDefinition:
         symbol, sort_variables, input_sorts, output_sort, lhs, rhs, attributes = args
         definition = SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, [], hooked=False)
         return AliasDefinition(definition, lhs, rhs, attributes)
 
     # patterns
-    def pattern(self, args):
+    def pattern(self, args: List[Pattern]) -> Pattern:
         return args[0]
 
-    def patterns(self, args):
+    def patterns(self, args: List[Pattern]) -> List[Pattern]:
         return args
 
     @meta_info
-    def string_literal_pattern(self, args):
+    def string_literal_pattern(self, args: List[str]) -> StringLiteral:
         return StringLiteral(args[0])
 
     @meta_info
-    def element_variable(self, args):
+    def element_variable(self, args: List[Any]) -> Variable:
         name, sort = args
         return Variable(str(name), sort, is_set_variable=False)
 
     @meta_info
-    def set_variable(self, args):
+    def set_variable(self, args: List[Any]) -> Variable:
         name, sort = args
         return Variable(str(name), sort, is_set_variable=True)
 
     @meta_info
-    def application_pattern(self, args):
+    def application_pattern(self, args: List[Any]) -> Application:
         symbol, sort_arguments, arguments = args
         return Application(SymbolInstance(symbol, sort_arguments), arguments)
 
     @meta_info
-    def ml_pattern(self, args):
+    def ml_pattern(self, args: List[Any]) -> MLPattern:
         symbol, sort_arguments, arguments = args
         return MLPattern(symbol, sort_arguments, arguments)
 

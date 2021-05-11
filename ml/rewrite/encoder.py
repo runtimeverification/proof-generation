@@ -1,4 +1,4 @@
-from typing import TextIO, Optional, Set, Union, Dict, Tuple
+from typing import TextIO, Optional, Set, Union, Dict, Tuple, Any
 
 from urllib.parse import quote_plus
 
@@ -9,7 +9,7 @@ from ml.kore.utils import KoreUtils
 from ml.metamath import ast as mm
 
 
-class KorePatternEncoder(KoreVisitor):
+class KorePatternEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
     """
     Encode a kore pattern as a Term and collect all metavariables
     and constant symbols
@@ -108,7 +108,7 @@ class KorePatternEncoder(KoreVisitor):
             var_term = self.visit(var)
             term = mm.Application(KorePatternEncoder.FORALL_SORT, (var_term, term))
 
-        return term  # type: ignore
+        return term
 
     def postvisit_sort_instance(self, sort_instance: kore.SortInstance) -> mm.Term:
         encoded = KorePatternEncoder.encode_sort(sort_instance)

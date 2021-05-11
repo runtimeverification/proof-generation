@@ -24,7 +24,7 @@ class KorePreprocessor:
         "Lbl'Unds'Map'Unds'",
     ]
 
-    def preprocess(self, definition: kore.Definition):
+    def preprocess(self, definition: kore.Definition) -> None:
         # modules in which MISSING_FUNCTIONAL_AXIOM
         # symbols are defined in
         # symbol name -> (module, definition)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO, Dict, Type
+from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO, Dict, Type, Any
 
 import re
 
@@ -81,7 +81,7 @@ class SubsortRelation:
 
         return None
 
-    def add_subsort(self, sort1: kore.SortInstance, sort2: kore.SortInstance, subsort_axiom: Theorem):
+    def add_subsort(self, sort1: kore.SortInstance, sort2: kore.SortInstance, subsort_axiom: Theorem) -> None:
         """
         Add sort1 < sort2
         """
@@ -92,7 +92,7 @@ class SubsortRelation:
             self.adj_list[sort1] = []
         self.adj_list[sort1].append((sort2, subsort_axiom))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "\n".join(
             [
                 "{} < {}".format(sort, ", ".join([str(supersort) for supersort, _ in supersorts]))
@@ -106,7 +106,7 @@ class ProofEnvironment:
     ProofEnvironment holds a composer
     and useful information in the module
     """
-    def __init__(self, module: kore.Module, composer: Composer = Composer(), dv_as_provable=False):
+    def __init__(self, module: kore.Module, composer: Composer = Composer(), dv_as_provable: bool = False):
         self.module = module
         self.loaded_modules: Dict[str, kore.Module] = {}
         self.composer = composer
@@ -183,7 +183,7 @@ class ProofEnvironment:
         # metamath does not allow some characters in the label
         return re.sub(r"[^a-zA-Z0-9_\-.]", "", label)
 
-    def load_metavariables(self, metavar_map: Mapping[str, str]):
+    def load_metavariables(self, metavar_map: Mapping[str, str]) -> None:
         """
         Load metavariables into the composer
         metavar_map: map from metavariable name to typecode
@@ -240,7 +240,7 @@ class ProofEnvironment:
         term = encoder.visit(pattern)
         self.load_metavariables(encoder.metavariables)
         self.load_domain_values(encoder.domain_values)
-        return term  # type: ignore
+        return term
 
     def encode_metamath_statement(
         self, axiom: kore.Axiom, cons: Type[mm.StructuredStatement] = mm.StructuredStatement
@@ -253,8 +253,8 @@ class ProofEnvironment:
     def get_theorem(self, label: str) -> Theorem:
         return self.composer.theorems[label]
 
-    def load_metamath_database(self, database: mm.Database):
-        return self.composer.load(database)
+    def load_metamath_database(self, database: mm.Database) -> None:
+        self.composer.load(database)
 
     def load_metamath_statement(self, statement: mm.Statement) -> Optional[Theorem]:
         return self.composer.load(statement)
@@ -266,11 +266,11 @@ class ProofEnvironment:
         """
         return self.composer.load_theorem(statement)
 
-    def cache_proof(self, *args, **kwargs) -> Proof:
+    def cache_proof(self, *args: Any, **kwargs: Any) -> Proof:
         return self.composer.cache_proof(*args, **kwargs)
 
-    def load_comment(self, comment: str):
-        return self.load_metamath_statement(mm.Comment(comment))
+    def load_comment(self, comment: str) -> None:
+        self.load_metamath_statement(mm.Comment(comment))
 
     def load_proof_as_theorem(self, label: str, proof: Proof) -> Theorem:
         """
@@ -285,7 +285,7 @@ class ProofEnvironment:
         new_proof = self.load_proof_as_theorem(label, provable.proof).as_proof()
         return ProvableClaim(provable.claim, new_proof)
 
-    def load_axiom(self, axiom: kore.Axiom, label: str, comment=True, provable=False) -> Theorem:
+    def load_axiom(self, axiom: kore.Axiom, label: str, comment: bool = True, provable: bool = False) -> Theorem:
         """
         Encode and load a Kore axiom into the generator
         and return the corresponding theorem object
@@ -303,7 +303,7 @@ class ProofEnvironment:
 
         return self.load_metamath_theorem(stmt)
 
-    def load_symbol_sorting_lemma(self, symbol_definition: kore.SymbolDefinition, label: str):
+    def load_symbol_sorting_lemma(self, symbol_definition: kore.SymbolDefinition, label: str) -> None:
         encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
         arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
 
@@ -364,7 +364,7 @@ class ProofEnvironment:
             )
         )
 
-    def load_symbol_constructor_axioms(self, symbol_definition: kore.SymbolDefinition, label: str):
+    def load_symbol_constructor_axioms(self, symbol_definition: kore.SymbolDefinition, label: str) -> None:
         """
         Generate constructor axioms for symbols marked with `constructor{}()` attribute
         """
@@ -396,10 +396,7 @@ class ProofEnvironment:
                 for left_arg, right_arg in zip(arg_pattern_vars_left, arg_pattern_vars_right)
             )
 
-            right_conj_pattern = mm.Application(
-                encoded_symbol,
-                sort_pattern_vars + conjunctions  # type: ignore
-            )
+            right_conj_pattern = mm.Application(encoded_symbol, sort_pattern_vars + conjunctions)
 
             statement = mm.AxiomaticStatement(
                 f"{label}-no-confusion",
@@ -469,7 +466,7 @@ class ProofEnvironment:
                 self.sort_to_constructors[symbol_definition.output_sort] = []
             self.sort_to_constructors[symbol_definition.output_sort].append(symbol_definition)
 
-    def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition, label: str):
+    def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition, label: str) -> None:
         encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
         arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
 
@@ -479,7 +476,7 @@ class ProofEnvironment:
         self.load_symbol_sorting_lemma(symbol_definition, label)
         self.load_symbol_constructor_axioms(symbol_definition, label)
 
-    def load_sort_definition(self, sort_definition: kore.SortDefinition, label: str):
+    def load_sort_definition(self, sort_definition: kore.SortDefinition, label: str) -> None:
         encoded_sort = KorePatternEncoder.encode_sort(sort_definition.sort_id)
         arity = len(sort_definition.sort_variables)
 
@@ -524,7 +521,7 @@ class ProofEnvironment:
 
             self.hooked_sorts.append(sort_definition)
 
-    def load_domain_values(self, domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]]):
+    def load_domain_values(self, domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]]) -> None:
         """
         Load a domain value and generate the corresponding functional axiom
         """
@@ -586,7 +583,7 @@ class ProofEnvironment:
 
         self.composer.end_segment()
 
-    def load_constant_substitution_lemma(self, symbol: str, arity: int, label: str):
+    def load_constant_substitution_lemma(self, symbol: str, arity: int, label: str) -> None:
         """
         Generate and prove the substitution rule for the given symbol
         """
@@ -635,7 +632,7 @@ class ProofEnvironment:
         assert substitution_rule_name in self.composer.theorems
         self.substitution_axioms[symbol] = self.composer.theorems[substitution_rule_name]
 
-    def load_application_context_lemma(self, symbol: str, arity: int, label: str):
+    def load_application_context_lemma(self, symbol: str, arity: int, label: str) -> None:
         self.composer.start_segment("substitution")
 
         (hole_var, ) = self.gen_metavariables("#Variable", 1)
@@ -687,7 +684,7 @@ class ProofEnvironment:
 
         self.composer.end_segment()
 
-    def load_constant(self, symbol: str, arity: int, label: str):
+    def load_constant(self, symbol: str, arity: int, label: str) -> None:
         """
         Load a constant symbol into the composer
         and generate appropriate axioms (e.g. substitution rule)
@@ -791,12 +788,9 @@ class ProofEnvironment:
     # TODO: find a better place for this method
     def existentially_quantify_free_variables(self, pattern: kore.Pattern) -> mm.Term:
         free_vars = FreePatternVariableVisitor().visit(pattern)
-        free_vars = list(free_vars)
-        free_vars.sort(key=lambda v: v.name, reverse=True)
-
         encoded_pattern = self.encode_pattern(pattern)
 
-        for var in free_vars:
+        for var in sorted(free_vars, key=lambda v: v.name, reverse=True):
             encoded_pattern = mm.Application(
                 "\\sorted-exists",
                 (
@@ -905,7 +899,7 @@ class ProofEnvironment:
                     theorem = self.load_metamath_theorem(axiom)
                     self.no_confusion_hooked_sort[symbol_definition.symbol, sort_instance] = theorem
 
-    def load_module_sentences(self, module: kore.Module):
+    def load_module_sentences(self, module: kore.Module) -> None:
         """
         Load all relavent sentences
         """

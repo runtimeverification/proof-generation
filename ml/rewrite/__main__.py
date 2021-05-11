@@ -25,7 +25,7 @@ from .disjointness import DisjointnessProofGenerator
 from .tasks import RewritingTask
 
 
-def load_prelude(composer: Composer, args):
+def load_prelude(composer: Composer, args: argparse.Namespace) -> None:
     # if we are not outputing a standalone proof object
     # there is no need to load proofs (which are huge)
     prelude = load_database(args.prelude, include_proof=args.standalone)
@@ -45,7 +45,7 @@ def load_rewriting_task(module: Module, task_path: str) -> RewritingTask:
 def prove_rewriting(
     env: ProofEnvironment,
     task: RewritingTask,
-):
+) -> None:
     gen = RewriteProofGenerator(env)
     final_claim = gen.prove_rewriting_task(task)
     env.load_comment(f"\nfinal goal:\n{task.initial}\n=>\n{task.final}\n")
@@ -56,9 +56,9 @@ def output_theory(
     composer: Composer,
     prelude: Optional[str],
     output: str,
-    standalone=False,
-    include_rewrite_proof=False,
-):
+    standalone: bool = False,
+    include_rewrite_proof: bool = False,
+) -> None:
     """
     Output to a standalone .mm file or a directory containing
     multiple interdepdent theories
@@ -108,7 +108,7 @@ def output_theory(
                 composer.encode(f, segment)
 
 
-def main(argv: Optional[Sequence[str]] = None):
+def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("definition", help="a kore file")
     parser.add_argument("module", help="the entry module name")

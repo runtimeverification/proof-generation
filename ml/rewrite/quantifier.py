@@ -113,7 +113,7 @@ class QuantifierProofGenerator(ProofGenerator):
         return ProvableClaim(final_claim, current_proof)
 
 
-class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor):
+class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor[kore.Pattern, ProvableClaim]):
     r"""
     Given a pattern phi, generate a proof for the statement in the form
 

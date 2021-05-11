@@ -490,7 +490,7 @@ class RewriteProofGenerator(ProofGenerator):
     def match_and_instantiate_anywhere_axiom(self,
                                              axiom: ProvableClaim,
                                              pattern: kore.Pattern,
-                                             is_owise=False) -> Optional[ProvableClaim]:
+                                             is_owise: bool = False) -> Optional[ProvableClaim]:
         # unify the LHS
         lhs, _, _, _ = self.decompose_anywhere_axiom(axiom.claim.pattern)
         unification_result = UnificationProofGenerator(self.env).unify_patterns(lhs, pattern)
@@ -673,7 +673,7 @@ class RewriteProofGenerator(ProofGenerator):
         return ProvableClaim(refl_claim, refl_proof)
 
 
-class InnermostNestedInjectionPathVisitor(KoreVisitor):
+class InnermostNestedInjectionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], Optional[PatternPath]]):
     def __init__(self, env: ProofEnvironment):
         super().__init__()
         self.env = env
@@ -688,7 +688,7 @@ class InnermostNestedInjectionPathVisitor(KoreVisitor):
         for i, arg in enumerate(application.arguments):
             path = self.visit(arg)
             if path is not None:
-                return [i] + path  # type: ignore
+                return [i] + path
 
         # if the current pattern is a nested injection
         if (application.symbol.definition == self.env.sort_injection_symbol
@@ -702,12 +702,12 @@ class InnermostNestedInjectionPathVisitor(KoreVisitor):
         for i, arg in enumerate(ml_pattern.arguments):
             path = self.visit(arg)
             if path is not None:
-                return [i] + path  # type: ignore
+                return [i] + path
 
         return None
 
 
-class InnermostFunctionPathVisitor(KoreVisitor):
+class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], Optional[PatternPath]]):
     """
     Return a path of an application subpattern with a function-like head such that
     it doesn't have any (sub-)subpattern with a function-like head
@@ -733,7 +733,7 @@ class InnermostFunctionPathVisitor(KoreVisitor):
         for i, arg in enumerate(application.arguments):
             path = self.visit(arg)
             if path is not None:
-                return [i] + path  # type: ignore
+                return [i] + path
 
         # if the application itself is a function, return the empty path (pointing to itself)
         if (isinstance(application.symbol.definition, kore.SymbolDefinition)
@@ -747,7 +747,7 @@ class InnermostFunctionPathVisitor(KoreVisitor):
         for i, arg in enumerate(ml_pattern.arguments):
             path = self.visit(arg)
             if path is not None:
-                return [i] + path  # type: ignore
+                return [i] + path
 
         return None
 

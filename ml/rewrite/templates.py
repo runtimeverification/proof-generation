@@ -245,14 +245,14 @@ class KoreTemplates:
         return pattern.arguments[1]
 
     @staticmethod
-    def in_place_swap_map_merge_pattern(pattern: kore.Pattern):
+    def in_place_swap_map_merge_pattern(pattern: kore.Pattern) -> None:
         assert KoreTemplates.is_map_merge_pattern(pattern)
         assert isinstance(pattern, kore.Application)
         pattern.arguments[0], pattern.arguments[1] = \
             pattern.arguments[1], pattern.arguments[0]
 
     @staticmethod
-    def in_place_rotate_right_map_merge_pattern(pattern: kore.Pattern):
+    def in_place_rotate_right_map_merge_pattern(pattern: kore.Pattern) -> None:
         assert KoreTemplates.is_map_merge_pattern(pattern)
         assert isinstance(pattern, kore.Application)
 

@@ -1,3 +1,6 @@
+from typing import Any
+
+from ml.kore.ast import BaseAST
 from ml.kore.parser import parse_definition, parse_pattern
 from ml.kore.utils import KoreUtils
 
@@ -5,7 +8,7 @@ import sys
 import argparse
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("input", nargs="?", help="input kore source, if not set then defaults to stdin")
     parser.add_argument(
@@ -20,7 +23,7 @@ def main():
             input_src = f.read()
 
     if args.definition:
-        ast = parse_definition(input_src)
+        ast: BaseAST[Any] = parse_definition(input_src)
     else:
         ast = parse_pattern(input_src)
 

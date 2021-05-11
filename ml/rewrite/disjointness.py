@@ -30,9 +30,7 @@ class DisjointnessProofGenerator(ProofGenerator):
     """
     def get_free_vars_in_pattern(self, pattern: kore.Pattern) -> List[kore.Variable]:
         free_vars = FreePatternVariableVisitor().visit(pattern)
-        free_vars = list(free_vars)
-        free_vars.sort(key=lambda v: v.name, reverse=True)
-        return free_vars  # type: ignore
+        return sorted(free_vars, key=lambda v: v.name, reverse=True)
 
     def existentially_quantify_free_variables(self, pattern: kore.Pattern) -> mm.Term:
         r"""

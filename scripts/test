@@ -2,6 +2,5 @@
 
 set -euo pipefail
 
-mypy --strict ml/aml
-mypy ml scripts tests
+mypy --strict ml scripts tests
 pytest "$@"
