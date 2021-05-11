@@ -325,8 +325,9 @@ class FromTactic(Tactic):
         self.metavars_substitution = preprocessed.schematic_substitution
 
         # add a local claim
-        theorem_conclusion.label = ClaimTactic.find_free_theorem_name(state, "hyp-")
-        local_theorem = Theorem(state.composer, Context(), theorem_conclusion)
+        theorem_conclusion_as_essential = \
+            EssentialStatement(ClaimTactic.find_free_theorem_name(state, "hyp-"), theorem_conclusion.terms)
+        local_theorem = Theorem(state.composer, Context(), theorem_conclusion_as_essential)
         phantom_goal = state.add_claim(local_theorem, is_local=True)
         state.resolve_top_goal(self)  # directly resolve it
 

@@ -281,7 +281,8 @@ class ProofState:
         self.push_derived_goals(parent, [statement])
 
     def get_next_schematic_variable(self, typecode: str) -> SchematicVariable:
-        var = SchematicVariable(typecode, len(self.schematic_vars))
+        num = len(self.schematic_vars)
+        var = SchematicVariable(f"${num}", typecode, num)
         self.schematic_vars.append(var)
         return var
 

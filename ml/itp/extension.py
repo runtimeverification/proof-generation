@@ -3,6 +3,7 @@ Extensions to the metamath AST as in proof.metamath.ast
 """
 
 from typing import Optional, Any
+from dataclasses import dataclass
 
 from ml.utils.visitor import ResultT
 
@@ -10,15 +11,13 @@ from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVis
 from ml.metamath.composer import Composer
 
 
+@dataclass
 class SchematicVariable(Metavariable):
-    def __init__(self, typecode: str, num: int):
-        # here we are assuming no metavariable starts with $
-        super().__init__(f"${num}")
-        self.num = num
-        self.typecode = typecode
+    typecode: str
+    num: int
 
-    def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
-        return visitor.proxy_visit_schematic_variable(self)  # type: ignore
+    # def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
+    #     return visitor.proxy_visit_schematic_variable(self)  # type: ignore
 
     def __gt__(self, other: Any) -> bool:
         assert isinstance(other, SchematicVariable)
