@@ -112,33 +112,6 @@ class Application(Term):
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_application(self)  # type: ignore
 
-    # def __eq__(self, other: Any) -> bool:
-    #     # this function is specifically rewritten
-    #     # to not use recursion since it's used
-    #     # too many times and has become a performance
-    #     # bottleneck
-    #     if not isinstance(other, Application):
-    #         return False
-
-    #     comparison_left: List[Term] = [self]
-    #     comparison_right: List[Term] = [other]
-
-    #     while comparison_left:
-    #         left = comparison_left.pop()
-    #         right = comparison_right.pop()
-
-    #         if isinstance(left, Application) and isinstance(right, Application):
-    #             if left.symbol == right.symbol and len(left.subterms) == len(right.subterms):
-    #                 comparison_left.extend(left.subterms)
-    #                 comparison_right.extend(right.subterms)
-    #             else:
-    #                 return False
-    #         elif not (left == right):
-    #             # fall back to default equality
-    #             return False
-
-    #     return True
-
     def __hash__(self) -> int:
         if self.hash_cache is not None:
             return self.hash_cache
@@ -281,6 +254,7 @@ class Database(BaseAST):
         return visitor.proxy_visit_database(self)  # type: ignore
 
 
+@dataclass
 class Proof:
     """
     A Metamath proof is a tree with each node being a
@@ -290,71 +264,32 @@ class Proof:
     This datastructure allows both reference to other proofs
     and raw, unparsed proofs to save space
     """
-    def __init__(self, conclusion: Iterable[Term]):
-        self.conclusion: Terms = tuple(conclusion)
 
-        self.nodes: List[Union[str, Tuple[str, ...]]] = []
-        # a node is either:
-        # - a label, which can be used for any node in the tree
-        # - a Proof, which can only be used for non-leaf nodes
-        # - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
-
-        self.node_to_conclusion: List[Terms] = []
-        # conclusions for each dag
-        # note that node_to_conclusion[0] == self.internal_conclusions
-
-        self.dag: Dict[int, Tuple[int, ...]] = {}
-        # a proof DAG should have a unique source at 0
-        # for now it's always a tree
-        # if a node has no out-edges, it SHOULD NOT
-        # have an entry in self.dag
+    conclusion: Terms
+    """
+    a node is either:
+      - a label, which can be used for any node in the tree
+      - a Proof, which can only be used for non-leaf nodes
+      - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
+    """
+    nodes: Tuple[Union[str, Tuple[str, ...]], ...]
+    """
+    conclusions for each dag
+    NOTE: node_to_conclusion[0] == self.internal_conclusions
+    """
+    node_to_conclusion: Tuple[Terms, ...]
+    """
+    A proof DAG should have a unique source at 0
+    if a node has no out-edges, it MAY NOT have an entry in self.dag
+    """
+    dag: Dict[int, Tuple[int, ...]]
 
     @staticmethod
     def from_script(statement: StructuredStatement, script: Union[str, Iterable[str]]) -> Proof:
         """
         Make a proof from the normal proof format as a list of labels
         """
-        proof = Proof(statement.terms)
-        proof.nodes = [script if isinstance(script, str) else tuple(script)]
-        proof.node_to_conclusion = [proof.conclusion]
-        return proof
-
-    def add_subproof(self, subproof: Proof, conclusion_to_node: Dict[Tuple[Term, ...], int] = {}) -> int:
-        """
-        Add a disconnected subproof
-
-        conclusion_to_node is a dictionary to keep track of nodes
-        with duplicated conclusions, provided by the caller to
-        reduce proof size
-        """
-        prev_num_nodes = next_node = len(self.nodes)
-
-        node_map: Dict[int, int] = {}
-        # from the old node from the new node
-
-        new_conclusion_to_node = {}
-
-        for i, item in enumerate(subproof.nodes):
-            item_conclusion = subproof.node_to_conclusion[i]
-            shared_node = conclusion_to_node.get(item_conclusion)
-
-            if shared_node is not None:
-                node_map[i] = shared_node
-            else:
-                node_map[i] = next_node
-                self.nodes.append(item)
-                self.node_to_conclusion.append(item_conclusion)
-                new_conclusion_to_node[item_conclusion] = next_node
-                next_node += 1
-
-        for i, neighbors in subproof.dag.items():
-            new_node = node_map[i]
-            if new_node >= prev_num_nodes:
-                self.dag[node_map[i]] = tuple(node_map[n] for n in neighbors)
-
-        conclusion_to_node.update(new_conclusion_to_node)
-
-        return node_map[0]
+        return Proof(statement.terms, (script if isinstance(script, str) else tuple(script), ), (statement.terms, ), {})
 
     @staticmethod
     def from_application(statement: StructuredStatement, root: str, children: Collection[Proof]) -> Proof:
@@ -362,15 +297,50 @@ class Proof:
         Combine the proof DAGs
         """
 
-        proof = Proof(statement.terms)
-        proof.nodes = [root]
-        proof.node_to_conclusion = [proof.conclusion]
+        dag: Dict[int, Tuple[int, ...]] = {}
+        nodes: List[Union[str, Tuple[str, ...]]] = [root]
+        node_to_conclusion: List[Terms] = [statement.terms]
+        children_of_root: List[int] = []
 
-        conclusion_to_node: Dict[Tuple[Term, ...], int] = {}
-        if len(children) != 0:
-            proof.dag[0] = tuple(proof.add_subproof(child, conclusion_to_node) for child in children)
+        next_node = 1
+        conclusion_to_node: Dict[Terms, int] = {}
 
-        return proof
+        # a greedy algorithm to combine common subproofs
+        for subproof in children:
+            # add each subproof as a disjoint subtree in the new proof
+            prev_num_nodes = next_node
+            node_map: Dict[int, int] = {}
+            new_conclusion_to_node: Dict[Terms, int] = {}
+
+            # add all nodes in the subproof
+            for i, item in enumerate(subproof.nodes):
+                item_conclusion = subproof.node_to_conclusion[i]
+                shared_node = conclusion_to_node.get(item_conclusion)
+
+                if shared_node is not None:
+                    # found a subtree with the same conclusion
+                    node_map[i] = shared_node
+                else:
+                    # subtree with new conclusion
+                    node_map[i] = next_node
+                    nodes.append(item)
+                    node_to_conclusion.append(item_conclusion)
+                    new_conclusion_to_node[item_conclusion] = next_node
+                    next_node += 1
+
+            # add all edges in the subproof
+            for i, neighbors in subproof.dag.items():
+                new_node = node_map[i]
+                if new_node >= prev_num_nodes:
+                    dag[node_map[i]] = tuple(node_map[n] for n in neighbors)
+
+            children_of_root.append(node_map[0])
+            conclusion_to_node.update(new_conclusion_to_node)
+
+        if len(children):
+            dag[0] = tuple(children_of_root)
+
+        return Proof(statement.terms, tuple(nodes), tuple(node_to_conclusion), dag)
 
     def as_statement(self, label: str) -> StructuredStatement:
         """

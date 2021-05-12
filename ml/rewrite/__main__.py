@@ -158,10 +158,16 @@ def set_additional_flags(parser: argparse.ArgumentParser) -> None:
         help="Enable profiler for memory usage",
     )
     parser.add_argument(
-        "--profile-mem-traceback-limit",
+        "--profile-mem-n-top",
+        type=int,
+        default=10,
+        help="Number of top memory-consuming items to show when the memory profiler is enable",
+    )
+    parser.add_argument(
+        "--profile-mem-trace-limit",
         type=int,
         default=1,
-        help="Traceback limit of memory profiler, used only if memory profiler is enabled",
+        help="Trace limit of memory profiler, used only if the memory profiler is enabled",
     )
 
 
@@ -177,7 +183,7 @@ def run_on_arguments(args: argparse.Namespace) -> None:
     ProofCache.THEOREM_CACHE_THRESHOLD = args.proof_cache_threshold
 
     if args.profile_mem:
-        MemoryProfiler.start(args.profile_mem_traceback_limit)
+        MemoryProfiler.start(args.profile_mem_trace_limit)
 
     composer = Composer()
 
@@ -230,7 +236,7 @@ def run_on_arguments(args: argparse.Namespace) -> None:
         print(f"gen-total {module_elapsed + rewrite_elapsed}")
 
     if args.profile_mem:
-        MemoryProfiler.print_current_snapshot()
+        MemoryProfiler.print_current_snapshot(num_top_stats=args.profile_mem_n_top)
         code.interact(local={**globals(), **vars()})
 
 

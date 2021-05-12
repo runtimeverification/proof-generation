@@ -12,9 +12,9 @@ class TestKorePatternEncoder(unittest.TestCase):
     def setUp(self) -> None:
         self.encoder = KorePatternEncoder()
 
-        self.sort_bool_definition = kore.SortDefinition("Bool", [], [])
-        self.sort_list_definition = kore.SortDefinition("List", [kore.SortVariable("S")], [])
-        self.sort_config_definition = kore.SortDefinition("Config", [], [])
+        self.sort_bool_definition = kore.SortDefinition("Bool", [])
+        self.sort_list_definition = kore.SortDefinition("List", [kore.SortVariable("S")])
+        self.sort_config_definition = kore.SortDefinition("Config", [])
 
         self.symbol_config_definition = kore.SymbolDefinition(
             "config",
@@ -24,7 +24,6 @@ class TestKorePatternEncoder(unittest.TestCase):
                 kore.SortInstance(self.sort_bool_definition, []),
             ],
             kore.SortInstance(self.sort_config_definition, []),
-            [],
         )
 
     def assertEncodingEqual(self, kore_ast: kore.BaseAST[Any], encoding: str) -> None:
