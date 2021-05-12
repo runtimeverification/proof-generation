@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from traceback import print_exc
+from contextlib import contextmanager
 
-from typing import List, Tuple, Mapping, Callable, Dict, Sequence, Collection, Set, Union, Any, Optional, Iterable, TextIO
+from typing import List, Tuple, Mapping, Callable, Dict, Sequence, Collection, Set, Union, Any, Optional, Iterable, TextIO, Generator
 from dataclasses import dataclass, field
 
 import re
@@ -12,6 +13,219 @@ from io import StringIO
 from .auto.unification import Unification
 
 from .ast import *
+
+
+@dataclass
+class Proof:
+    """
+    A Metamath proof is a DAG with each node being a
+    statement label and the number of children
+    should be equal to the nmuber of mandatory hypotheses
+
+    This data structure allows both reference to other proofs
+    and raw, unparsed proofs to save space
+    """
+
+    conclusion: Terms
+    """
+    a node is either:
+      - a label, which can be used for any node in the tree
+      - a Proof, which can only be used for non-leaf nodes
+      - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
+    """
+    nodes: Tuple[Union[str, Tuple[str, ...]], ...]
+    """
+    conclusions for each dag
+    NOTE: node_to_conclusion[0] == self.internal_conclusions
+    """
+    node_to_conclusion: Tuple[Terms, ...]
+    """
+    A proof DAG should have a unique source at 0
+    if a node has no out-edges, it MAY NOT have an entry in self.dag
+    """
+    dag: Dict[int, Tuple[int, ...]]
+
+    @staticmethod
+    def from_script(statement: StructuredStatement, script: Union[str, Iterable[str]]) -> Proof:
+        """
+        Make a proof from the normal proof format as a list of labels
+        """
+        return Proof(statement.terms, (script if isinstance(script, str) else tuple(script), ), (statement.terms, ), {})
+
+    @staticmethod
+    def from_application(statement: StructuredStatement, root: str, children: Collection[Proof]) -> Proof:
+        """
+        Combine the proof DAGs
+        """
+
+        dag: Dict[int, Tuple[int, ...]] = {}
+        nodes: List[Union[str, Tuple[str, ...]]] = [root]
+        node_to_conclusion: List[Terms] = [statement.terms]
+        children_of_root: List[int] = []
+
+        next_node = 1
+        conclusion_to_node: Dict[Terms, int] = {}
+
+        # a greedy algorithm to combine common subproofs
+        for subproof in children:
+            # add each subproof as a disjoint subtree in the new proof
+            prev_num_nodes = next_node
+            node_map: Dict[int, int] = {}
+            new_conclusion_to_node: Dict[Terms, int] = {}
+
+            # add all nodes in the subproof
+            for i, item in enumerate(subproof.nodes):
+                item_conclusion = subproof.node_to_conclusion[i]
+                shared_node = conclusion_to_node.get(item_conclusion)
+
+                if shared_node is not None:
+                    # found a subtree with the same conclusion
+                    node_map[i] = shared_node
+                else:
+                    # subtree with new conclusion
+                    node_map[i] = next_node
+                    nodes.append(item)
+                    node_to_conclusion.append(item_conclusion)
+                    new_conclusion_to_node[item_conclusion] = next_node
+                    next_node += 1
+
+            # add all edges in the subproof
+            for i, neighbors in subproof.dag.items():
+                new_node = node_map[i]
+                if new_node >= prev_num_nodes:
+                    dag[node_map[i]] = tuple(node_map[n] for n in neighbors)
+
+            children_of_root.append(node_map[0])
+            conclusion_to_node.update(new_conclusion_to_node)
+
+        if len(children):
+            dag[0] = tuple(children_of_root)
+
+        return Proof(statement.terms, tuple(nodes), tuple(node_to_conclusion), dag)
+
+    def as_statement(self, label: str) -> StructuredStatement:
+        """
+        Encode as a provable statement
+        """
+        return ProvableStatement(label, self.conclusion, self.encode_normal())
+
+    def as_compressed_statement(self, label: str, context: Context) -> StructuredStatement:
+        """
+        Same as above but uses compressed proof
+        """
+        mandatory_labels = context.flatten(StructuredStatement(label, self.conclusion)).get_all_mandatory_labels()
+        # print(mandatory_labels)
+        script = self.encode_compressed(mandatory_labels)
+        return ProvableStatement(label, self.conclusion, script)
+
+    def is_leaf(self, node: int) -> bool:
+        return node not in self.dag
+
+    def get_children_of(self, node: int) -> Tuple[int, ...]:
+        return self.dag.get(node, ())
+
+    def flatten(self, output_script: List[str], root: int = 0) -> None:
+        """
+        Flatten encodes a recursive hierarchy of proofs
+        as the normal Metamath proof format
+        """
+        for child in self.get_children_of(root):
+            self.flatten(output_script, child)
+
+        subproof = self.nodes[root]
+
+        if isinstance(subproof, str):
+            output_script.append(subproof)
+        else:
+            output_script.extend(subproof)
+
+    def is_proof_of(self, statement: StructuredStatement) -> bool:
+        return self.conclusion == tuple(statement.terms)
+
+    def __len__(self) -> int:
+        size = 0
+        for subproof in self.nodes:
+            if isinstance(subproof, str):
+                size += 1
+            else:
+                size += len(subproof)
+        return size
+
+    def __str__(self) -> str:
+        return f"<proof of {' '.join(map(str, self.conclusion))}>"
+
+    @staticmethod
+    def encode_index(n: int) -> str:
+        """
+        Encode an index in the Metamath compressed proof format
+        """
+
+        number = n - 1
+        final_letter = chr(ord("A") + number % 20)
+        if number < 20:
+            return final_letter
+
+        number //= 20
+
+        letters = []
+        while True:
+            number -= 1
+            letters.append(chr(ord("U") + ((number % 5))))
+            number //= 5
+            if not number:
+                break
+
+        letters.reverse()
+        letters.append(final_letter)
+        return "".join(letters)
+
+    @staticmethod
+    def compress_script(mandatory: Iterable[str], proof: List[str]) -> str:
+        label_to_letter = {"?": "?"}
+        mandatory_list = list(mandatory)
+
+        # rank the labels by frequency
+        frequency = {}
+        for label in proof:
+            # ? and mandatory labels are handled differently
+            if label == "?" or label in mandatory_list:
+                continue
+
+            if label not in frequency:
+                frequency[label] = 0
+
+            frequency[label] += 1
+
+        sorted_frequency = sorted(list(frequency.items()), reverse=True, key=lambda t: t[1])
+        unique_labels = [label for label, _ in sorted_frequency]
+
+        for i, hyp in enumerate(mandatory_list + unique_labels):
+            label_to_letter[hyp] = Proof.encode_index(i + 1)
+
+        labels_str = " ".join(["("] + unique_labels + [")"])
+        letters = [label_to_letter[label] for label in proof]
+        letters_str = "".join(letters)
+
+        return labels_str + " " + letters_str
+
+    def encode_normal(self) -> str:
+        """
+        Encode a proof in the normal format (i.e. a list of space-separated labels)
+        """
+        script: List[str] = []
+        self.flatten(script)
+        return " ".join(script)
+
+    def encode_compressed(self, mandatory_hypotheses: Iterable[str]) -> str:
+        """
+        Encode a proof in the compressed format
+        This requires some context information, namely the mandatory hypotheses
+        of the statement in the order they are defined
+        """
+        # TODO: share subtrees
+        script: List[str] = []
+        self.flatten(script)
+        return Proof.compress_script(mandatory_hypotheses, script)
 
 
 class AutoProof:
@@ -31,19 +245,14 @@ class MethodAutoProof(AutoProof):
         return self.method(composer, statement)
 
 
+@dataclass
 class Theorem:
     """
     A Theorem is any (structured) statement that can be used in a proof
     """
-    def __init__(
-        self,
-        composer: Composer,
-        context: Context,
-        statement: StructuredStatement,
-    ):
-        self.composer = composer
-        self.context = context
-        self.statement = statement
+    composer: Composer
+    statement: StructuredStatement
+    context: TheoremContext = field(default_factory=lambda: TheoremContext())
 
     def get_metavariables(self) -> Set[str]:
         """
@@ -51,14 +260,8 @@ class Theorem:
         """
         return set(self.context.get_all_floating_metavariables())
 
-    def get_mandatory_hypothesis_labels(self) -> List[str]:
-        labels = self.context.get_all_floating_labels()
-
-        for essential in self.context.essentials:
-            assert essential.label is not None
-            labels.append(essential.label)
-
-        return labels
+    def get_all_mandatory_labels(self) -> Tuple[str, ...]:
+        return self.context.get_all_mandatory_labels()
 
     def is_meta_substitution_consistent(self, substituted: Union[Proof, Term], term: Term) -> bool:
         if isinstance(substituted, Proof):
@@ -76,9 +279,7 @@ class Theorem:
         no essential is needed
         """
         assert len(self.context.essentials) == 0
-        script = self.context.get_all_floating_labels()
-        script.append(self.statement.label)
-        return Proof.from_script(self.statement, script)
+        return Proof.from_script(self.statement, self.context.get_all_floating_labels() + (self.statement.label, ))
 
     def match_and_apply(
         self, target: StructuredStatement, *args: Union[Proof, AutoProof], **kwargs: Union[Proof, Term]
@@ -221,8 +422,7 @@ class Theorem:
         """
         subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
 
-        hyp_labels = self.context.get_all_floating_labels() + \
-                     [ essential.label for essential in self.context.essentials ]
+        hyp_labels = self.context.get_all_mandatory_labels()
         assert len(subproofs) == len(hyp_labels)
         hyp_proof_map = dict(zip(hyp_labels, subproofs))
 
@@ -328,10 +528,10 @@ class ProofCache:
         if (not no_theorem_cache and len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD):
             self.stat_theorem_cache += 1
 
-            theorem_statement = proof.as_statement(self.get_next_label(domain))
-
             # do not index the cached statements
-            theorem = self.composer.load_theorem(theorem_statement, index=False)
+            theorem = self.composer.load_proof_as_compressed_statement(
+                self.get_next_label(domain), proof, index=False, top_level=True
+            )
             proof = theorem.as_proof()
 
         if domain not in self.cache_map:
@@ -339,6 +539,29 @@ class ProofCache:
         self.cache_map[domain][terms] = proof
 
         return proof
+
+
+@dataclass
+class TheoremContext:
+    """
+    Theorem context is a flattened snapshot of Context
+    """
+
+    floatings: Tuple[FloatingStatement, ...] = ()
+    essentials: Tuple[EssentialStatement, ...] = ()
+    disjoints: Tuple[DisjointStatement, ...] = ()
+
+    def get_all_floating_labels(self) -> Tuple[str, ...]:
+        return tuple(floating.label for floating in self.floatings)
+
+    def get_all_floating_metavariables(self) -> Tuple[str, ...]:
+        return tuple(floating.metavariable for floating in self.floatings)
+
+    def get_all_essential_labels(self) -> Tuple[str, ...]:
+        return tuple(essential.label for essential in self.essentials)
+
+    def get_all_mandatory_labels(self) -> Tuple[str, ...]:
+        return self.get_all_floating_labels() + self.get_all_essential_labels()
 
 
 @dataclass
@@ -351,9 +574,10 @@ class Context:
     floatings: List[FloatingStatement] = field(default_factory=lambda: [])
     essentials: List[EssentialStatement] = field(default_factory=lambda: [])
     disjoints: List[DisjointStatement] = field(default_factory=lambda: [])
+    statements: List[Statement] = field(default_factory=lambda: [])  # all statements in the context
     prev: Optional[Context] = None
 
-    def flatten(self, statement: StructuredStatement) -> Context:
+    def flatten(self, statement: StructuredStatement) -> TheoremContext:
         """
         Returns a compressed one-layer context,
         including only metavariables used in the essentials
@@ -367,7 +591,27 @@ class Context:
 
         floatings = self.find_floatings(metavariables)
 
-        return Context(floatings, essentials, self.get_all_disjoints())
+        return TheoremContext(tuple(floatings), tuple(essentials), tuple(self.get_all_disjoints()))
+
+    def get_top(self) -> Context:
+        """
+        Get the top level context
+        """
+
+        if self.prev is None:
+            return self
+        else:
+            return self.prev.get_top()
+
+    def add_statement(self, stmt: Statement) -> None:
+        if isinstance(stmt, FloatingStatement):
+            self.add_floating(stmt)
+        elif isinstance(stmt, EssentialStatement):
+            self.add_essential(stmt)
+        elif isinstance(stmt, DisjointStatement):
+            self.add_disjoint(stmt)
+
+        self.statements.append(stmt)
 
     def add_floating(self, floating: FloatingStatement) -> None:
         self.floatings.append(floating)
@@ -404,13 +648,6 @@ class Context:
         else:
             return self.floatings.copy()
 
-    def get_all_floating_labels(self) -> List[str]:
-        labels = [floating.label for floating in self.floatings]
-        if self.prev is not None:
-            return self.prev.get_all_floating_labels() + labels
-        else:
-            return labels
-
     def get_all_floating_metavariables(self) -> List[str]:
         metavars = [floating.metavariable for floating in self.floatings]
         if self.prev is not None:
@@ -433,16 +670,6 @@ class Context:
             return self.prev.get_all_essentials() + self.essentials
         else:
             return self.essentials.copy()
-
-    def get_all_essential_labels(self) -> List[str]:
-        labels = [essential.label for essential in self.essentials]
-        if self.prev is not None:
-            return self.prev.get_all_essential_labels() + labels
-        else:
-            return labels
-
-    def get_all_mandatory_labels(self) -> List[str]:
-        return self.get_all_floating_labels() + self.get_all_essential_labels()
 
     def get_all_disjoints(self) -> List[DisjointStatement]:
         if self.prev is not None:
@@ -480,7 +707,7 @@ class Composer:
         self.context = Context()  # outermost context for a database
         self.theorems: Dict[str, Theorem] = {}  # label -> Theorem
         self.theorems_by_typecode: Dict[str, List[Theorem]] = {}  # typecode -> [ Theorem ], sorted theorems by typecode
-        self.statements: List[Statement] = []  # all statements at the top level
+        # self.statements: List[Statement] = []  # all statements at the top level
         self.proof_cache = ProofCache(self)
 
         # mark each statement with a unique "segment label"
@@ -490,7 +717,7 @@ class Composer:
         # of setences in another segment and restore the old
         # segment
         self.segment_stack: List[str] = []  # a stack of current segments
-        self.segments: Dict[str, List[int]] = {}  # name -> [indices]
+        self.segments: Dict[str, Set[int]] = {}  # name -> [indices]
 
     def find_theorem(self, name: str) -> Optional[Theorem]:
         return self.theorems.get(name)
@@ -529,12 +756,12 @@ class Composer:
     def find_essential(self, name: str) -> Optional[Theorem]:
         essential = self.context.find_essential(name)
         if essential:
-            return Theorem(self, Context(), essential)
+            return Theorem(self, essential)
         else:
             return None
 
     def get_all_essentials(self) -> List[Theorem]:
-        return [Theorem(self, Context(), essential) for essential in self.context.get_all_essentials()]
+        return [Theorem(self, essential) for essential in self.context.get_all_essentials()]
 
     def get_all_disjoints(self) -> List[DisjointStatement]:
         return self.context.get_all_disjoints()
@@ -561,8 +788,8 @@ class Composer:
         return self.context.are_metavariables_disjoint({term1.name, term2.name})
 
     def encode(self, stream: TextIO, segment: Optional[str] = None, **args: Any) -> None:
-        statements = self.statements if segment is None else self.get_segment(segment)
-        Encoder.encode(self, stream, Database(tuple(statements)), **args)
+        statements = self.context.get_top().statements if segment is None else self.get_segment(segment)
+        Encoder.encode(stream, Database(tuple(statements)), **args)
 
     def cache_proof(self, *args: Any, **kwargs: Any) -> Proof:
         return self.proof_cache.cache(*args, **kwargs)
@@ -582,20 +809,28 @@ class Composer:
     def end_segment(self) -> None:
         self.segment_stack.pop()
 
+    @contextmanager
+    def in_segment(self, name: str) -> Generator[None, None, None]:
+        self.start_segment(name)
+        try:
+            yield
+        finally:
+            self.end_segment()
+
     def get_segment(self, name: str) -> List[Statement]:
         if name not in self.segments:
             return []
-        return [self.statements[i] for i in self.segments[name]]
+        return [self.context.get_top().statements[i] for i in sorted(self.segments[name])]
 
-    def add_indices_to_current_segment(self, indices: List[int]) -> None:
+    def add_index_to_current_segment(self, index: int) -> None:
         if len(self.segment_stack) == 0:
             return
 
         name = self.segment_stack[-1]
 
         if name not in self.segments:
-            self.segments[name] = []
-        self.segments[name] += indices
+            self.segments[name] = set()
+        self.segments[name].add(index)
 
     def find_metavariable(self, var: str) -> Optional[str]:
         """
@@ -624,16 +859,48 @@ class Composer:
         if (len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0):
             self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])
 
-    def load_theorem(self, statement: StructuredStatement, index: bool = True) -> Theorem:
-        theorem = self.load(statement, index)
+    def push_context(self) -> None:
+        self.context = Context(prev=self.context)
+
+    def pop_context(self) -> None:
+        assert self.context.prev is not None
+        block = Block(tuple(self.context.statements))
+        self.context = self.context.prev
+
+        if self.context.prev is None:
+            self.add_index_to_current_segment(len(self.context.get_top().statements))
+        self.context.add_statement(block)
+
+    @contextmanager
+    def new_context(self) -> Generator[None, None, None]:
+        self.push_context()
+        try:
+            yield
+        finally:
+            self.pop_context()
+
+    def load_theorem(self, statement: StructuredStatement, *args: Any, **kwargs: Any) -> Theorem:
+        theorem = self.load(statement, *args, **kwargs)
         assert theorem is not None, f"expecting statement {statement} to be a theorem"
         return theorem
+
+    def load_proof_as_compressed_statement(
+        self, label: str, proof: Proof, *args: Any, top_level: bool = False, **kwargs: Any
+    ) -> Theorem:
+        if top_level:
+            context = self.context.get_top()
+        else:
+            context = self.context
+        stmt = proof.as_compressed_statement(label, context)
+        return self.load_theorem(stmt, *args, top_level=top_level, **kwargs)
 
     def load(
         self,
         database_or_statement: Union[Database, Statement],
+        *_: Any,
         index: bool = True,
-        stop_at: Optional[str] = None
+        stop_at: Optional[str] = None,
+        top_level: bool = False,  # force the statement to be loaded at the top level
     ) -> Optional[Theorem]:
         """
         Add a structured statement/block/database to the composer
@@ -643,64 +910,60 @@ class Composer:
         after a statement with label stop_at is loaded.
         In particular, the Context will also stay at the given point
         """
+
+        if top_level:
+            assert stop_at is None, "cannot set top_level and stop_at at the same time"
+            assert isinstance(database_or_statement, Statement) and not isinstance(database_or_statement, Block), \
+                   "cannot load a block at the top level"
+
+        theorem: Optional[Theorem] = None
+
         if isinstance(database_or_statement, Database):
             assert self.context.prev is None, "loading a database at non-top level"
             for statement in database_or_statement.statements:
-                theorem = self.load(statement, index, stop_at)
+                theorem = self.load(statement, index=index, stop_at=stop_at)
                 if theorem is not None and stop_at is not None and theorem.statement.label == stop_at:
                     return theorem
-
             return None
+
         elif isinstance(database_or_statement, Statement):
-            if self.context.prev is None:
-                # add top level statements
-                self.add_indices_to_current_segment([len(self.statements)])
-                self.statements.append(database_or_statement)
+            stmt = database_or_statement
 
-            if isinstance(database_or_statement, Block):
-                prev_context = self.context
-                self.context = Context(prev=self.context)
+            if self.context.prev is None or top_level:
+                # record top level statements in the current segment
+                self.add_index_to_current_segment(len(self.context.get_top().statements))
 
-                for statement in database_or_statement.statements:
-                    theorem = self.load(statement, index, stop_at)
+            if isinstance(stmt, Block):
+                self.push_context()
+                for statement in stmt.statements:
+                    theorem = self.load(statement, index=index, stop_at=stop_at)
                     if theorem is not None and stop_at is not None and theorem.statement.label == stop_at:
                         return theorem
+                self.pop_context()
 
-                self.context = prev_context
-                return None
+            elif isinstance(stmt, FloatingStatement) or isinstance(stmt, EssentialStatement):
+                # floating and essential statements do not have free metavariables
+                theorem = Theorem(self, stmt)
+            elif isinstance(stmt, ConclusionStatement):
+                context = self.context.get_top() if top_level else self.context
+                theorem = Theorem(self, stmt, context.flatten(stmt))
+
+            if top_level or isinstance(stmt, VariableStatement) or isinstance(stmt, ConstantStatement):
+                # variables and constants are always added at the top level
+                self.context.get_top().add_statement(stmt)
             else:
-                return self.load_statement(database_or_statement, index)
+                self.context.add_statement(stmt)
+
+            if isinstance(stmt, FloatingStatement) or isinstance(stmt, ConclusionStatement):
+                assert theorem is not None
+                self.theorems[stmt.label] = theorem
+                if index:
+                    self.index_statement(stmt)
+
+            return theorem
 
         else:
             assert False, f"unable to load {database_or_statement}"
-
-    def load_statement(self, stmt: Statement, index: bool = True) -> Optional[Theorem]:
-        if not isinstance(stmt, StructuredStatement):
-            return None
-
-        theorem = None
-
-        if isinstance(stmt, FloatingStatement):
-            self.context.add_floating(stmt)
-        elif isinstance(stmt, EssentialStatement):
-            self.context.add_essential(stmt)
-        elif isinstance(stmt, DisjointStatement):
-            self.context.add_disjoint(stmt)
-
-        if isinstance(stmt, FloatingStatement):
-            self.theorems[stmt.label] = theorem = Theorem(self, Context(), stmt)
-            if index:
-                self.index_statement(stmt)
-
-        elif isinstance(stmt, EssentialStatement):
-            theorem = Theorem(self, Context(), stmt)
-
-        elif isinstance(stmt, ConclusionStatement):
-            self.theorems[stmt.label] = theorem = Theorem(self, self.context.flatten(stmt), stmt)
-            if index:
-                self.index_statement(stmt)
-
-        return theorem
 
 
 class TypecodeProver:
@@ -836,33 +1099,3 @@ class TypecodeProver:
                     return composer.cache_proof("typecode-cache-" + typecode, proof)
 
         return None
-
-
-class Encoder(BaseEncoder):
-    def __init__(self, composer: Composer, *args: Any, compressed: bool = True, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.composer = composer
-        self.compressed = compressed
-
-    @staticmethod
-    def encode(composer: Composer, output: TextIO, ast: BaseAST, *args: Any, **kwargs: Any) -> None:
-        encoder = Encoder(composer, output, *args, **kwargs)
-        encoder.visit(ast)
-        encoder.flush()
-
-    @staticmethod
-    def encode_string(composer: Composer, ast: BaseAST, *args: Any, **kwargs: Any) -> str:
-        stream = StringIO()
-        Encoder.encode(composer, stream, ast, *args, **kwargs)
-        return stream.getvalue()
-
-    def encode_proof(self, stmt: ProvableStatement) -> None:
-        assert stmt.proof is not None
-
-        if self.compressed:
-            theorem = self.composer.get_theorem(stmt.label)
-            mandatory = theorem.get_mandatory_hypothesis_labels()
-
-            self.write(stmt.proof.encode_compressed(mandatory))
-        else:
-            self.write(stmt.proof.encode_normal())

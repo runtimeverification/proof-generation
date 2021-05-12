@@ -7,8 +7,8 @@ from dataclasses import dataclass
 
 from ml.utils.visitor import ResultT
 
-from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor, Proof
-from ml.metamath.composer import Composer
+from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
+from ml.metamath.composer import Composer, Proof
 
 
 @dataclass

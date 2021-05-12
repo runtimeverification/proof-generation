@@ -4,8 +4,7 @@ from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
 
 from ml.metamath import ast as mm
-from ml.metamath.ast import Proof
-from ml.metamath.composer import Theorem
+from ml.metamath.composer import Theorem, Proof
 
 from .encoder import KorePatternEncoder
 

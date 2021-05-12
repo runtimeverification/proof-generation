@@ -3,8 +3,7 @@ from typing import Mapping, Set, List, Tuple, Optional
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
 
-from ml.metamath.ast import Proof
-from ml.metamath.composer import Theorem
+from ml.metamath.composer import Theorem, Proof
 
 from .env import ProofGenerator, ProvableClaim
 from .encoder import KorePatternEncoder

@@ -5,7 +5,7 @@ from ml.kore.visitors import PatternVariableVisitor, SortVariableVisitor
 from ml.kore.utils import KoreUtils, PatternPath
 
 from ml.metamath import ast as mm
-from ml.metamath.ast import Proof
+from ml.metamath.composer import Proof
 from ml.metamath.auto.sorting import SortingProver
 from ml.metamath.auto.substitution import SubstitutionProver
 

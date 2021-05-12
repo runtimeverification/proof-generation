@@ -92,11 +92,7 @@ class ASTTransformer(Transformer[BaseAST]):
         script = list(args[-1])
         tokens = args[:-1]
         terms = self.parse_terms(tokens)
-
-        statement = ProvableStatement(label, terms)
-        statement.proof = Proof.from_script(statement, script)
-
-        return statement
+        return ProvableStatement(label, terms, " ".join(script))
 
     def block(self, args: List[Statement]) -> Block:
         return Block(tuple(args))

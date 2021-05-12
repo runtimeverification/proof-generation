@@ -5,9 +5,9 @@ from typing import Optional, List, Iterable, TypeVar, Callable, Any, Tuple
 import readline
 import traceback
 
-from ml.metamath.ast import StructuredStatement, Statement, Application, Metavariable
+from ml.metamath.ast import StructuredStatement, Statement, Application, Metavariable, Encoder
 from ml.metamath.parser import load_database
-from ml.metamath.composer import Composer, Encoder, Theorem
+from ml.metamath.composer import Composer, Theorem
 
 from ml.itp.ast import Tactical
 from ml.itp.parser import parse_tactical
@@ -275,10 +275,9 @@ class InteractiveState:
 
     @BuiltinCommand.add("proof", help_message="once all goals are resolved, print the final proof")
     def command_proof(self, output_file: Optional[str] = None) -> None:
-        stmt = self.proof_state.gen_proof().as_statement(self.goal_name)
-        self.proof_state.composer.load(stmt)
-        proof_text = Encoder.encode_string(self.proof_state.composer, stmt)
-        self.proof_state.composer.remove_theorem(self.goal_name)
+        proof = self.proof_state.gen_proof()
+        stmt = proof.as_compressed_statement(self.goal_name, self.proof_state.composer.context)
+        proof_text = Encoder.encode_string(stmt)
 
         if output_file is not None:
             with open(output_file, "w") as output:

@@ -35,7 +35,7 @@ def get_metamath_steps(theorem: Theorem, compressed_proof: str) -> int:
     assert match is not None
 
     index_table = match.group(1).strip().split()
-    index_table = theorem.context.get_all_mandatory_labels() + index_table
+    index_table = list(theorem.context.get_all_mandatory_labels()) + index_table
 
     proof = match.group(2)
 

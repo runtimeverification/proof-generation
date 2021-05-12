@@ -9,8 +9,7 @@ from ml.kore.utils import KoreUtils
 from ml.kore.visitors import FreePatternVariableVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.ast import Proof
-from ml.metamath.composer import Composer, Theorem, Context
+from ml.metamath.composer import Composer, Theorem, Context, Proof
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.context import ApplicationContextProver
 
@@ -188,52 +187,50 @@ class ProofEnvironment:
         Load metavariables into the composer
         metavar_map: map from metavariable name to typecode
         """
-        self.composer.start_segment("variable")
 
-        # filter out existing metavariables and
-        # check duplication (different typecode for the same variable)
-        new_metavars: Dict[str, str] = {}
-        for var, typecode in metavar_map.items():
-            found_typecode = self.find_metavariable(var)
+        with self.composer.in_segment("variable"):
 
-            if found_typecode is None:
-                new_metavars[var] = typecode
-            else:
-                assert (found_typecode == typecode
-                        ), "inconsistent metavariable typecode: both {} and {} for variable {}".format(
-                            found_typecode, typecode, var
-                        )
+            # filter out existing metavariables and
+            # check duplication (different typecode for the same variable)
+            new_metavars: Dict[str, str] = {}
+            for var, typecode in metavar_map.items():
+                found_typecode = self.find_metavariable(var)
 
-        if not new_metavars:
-            self.composer.end_segment()
-            return
+                if found_typecode is None:
+                    new_metavars[var] = typecode
+                else:
+                    assert (found_typecode == typecode
+                            ), "inconsistent metavariable typecode: both {} and {} for variable {}".format(
+                                found_typecode, typecode, var
+                            )
 
-        self.load_comment(f"adding {len(new_metavars)} new metavariable(s)")
+            if not new_metavars:
+                return
 
-        var_stmt = mm.VariableStatement(tuple(map(mm.Metavariable, new_metavars.keys())))
-        self.load_metamath_statement(var_stmt)
+            self.load_comment(f"adding {len(new_metavars)} new metavariable(s)")
 
-        for var, typecode in new_metavars.items():
-            floating_stmt = mm.FloatingStatement(
-                f"{self.sanitize_label_name(var)}-{typecode.replace('#', '').lower()}",
-                (
-                    mm.Application(typecode),
-                    mm.Metavariable(var),
-                ),
-            )
+            var_stmt = mm.VariableStatement(tuple(map(mm.Metavariable, new_metavars.keys())))
+            self.load_metamath_statement(var_stmt)
 
-            self.load_metamath_statement(floating_stmt)
+            for var, typecode in new_metavars.items():
+                floating_stmt = mm.FloatingStatement(
+                    f"{self.sanitize_label_name(var)}-{typecode.replace('#', '').lower()}",
+                    (
+                        mm.Application(typecode),
+                        mm.Metavariable(var),
+                    ),
+                )
 
-        # if we have added any #ElementVariable
-        # and the total number of element variables
-        # is > 1, then generate a new disjoint statement
-        if "#ElementVariable" in set(new_metavars.values()):
-            element_vars = self.composer.find_metavariables_of_typecode("#ElementVariable")
-            if len(element_vars) > 1:
-                disjoint_stmt = mm.DisjointStatement(tuple(map(mm.Metavariable, element_vars)))
-                self.load_metamath_statement(disjoint_stmt)
+                self.load_metamath_statement(floating_stmt)
 
-        self.composer.end_segment()
+            # if we have added any #ElementVariable
+            # and the total number of element variables
+            # is > 1, then generate a new disjoint statement
+            if "#ElementVariable" in set(new_metavars.values()):
+                element_vars = self.composer.find_metavariables_of_typecode("#ElementVariable")
+                if len(element_vars) > 1:
+                    disjoint_stmt = mm.DisjointStatement(tuple(map(mm.Metavariable, element_vars)))
+                    self.load_metamath_statement(disjoint_stmt)
 
     def encode_pattern(self, pattern: Union[kore.Axiom, kore.Pattern, kore.Sort]) -> mm.Term:
         encoder = KorePatternEncoder()
@@ -259,6 +256,9 @@ class ProofEnvironment:
     def load_metamath_statement(self, statement: mm.Statement) -> Optional[Theorem]:
         return self.composer.load(statement)
 
+    def load_metamath_proof_as_compressed_statement(self, label: str, proof: Proof) -> Theorem:
+        return self.composer.load_proof_as_compressed_statement(label, proof)
+
     def load_metamath_theorem(self, statement: mm.StructuredStatement) -> Theorem:
         """
         Same as load_metamath_statement but checks that we can actually
@@ -272,17 +272,11 @@ class ProofEnvironment:
     def load_comment(self, comment: str) -> None:
         self.load_metamath_statement(mm.Comment(comment))
 
-    def load_proof_as_theorem(self, label: str, proof: Proof) -> Theorem:
-        """
-        Given a proof of some statement, turns it into a theorem
-        """
-        return self.load_metamath_theorem(proof.as_statement(label))
-
     def load_provable_claim_as_theorem(self, label: str, provable: ProvableClaim) -> ProvableClaim:
         """
         Returns a new provable claim with the proof using the loaded theorem
         """
-        new_proof = self.load_proof_as_theorem(label, provable.proof).as_proof()
+        new_proof = self.load_metamath_proof_as_compressed_statement(label, provable.proof).as_proof()
         return ProvableClaim(provable.claim, new_proof)
 
     def load_axiom(self, axiom: kore.Axiom, label: str, comment: bool = True, provable: bool = False) -> Theorem:
@@ -530,158 +524,149 @@ class ProofEnvironment:
         offset = len(self.domain_values)
         self.domain_values.update(new_domain_values)
 
-        self.composer.start_segment("dv")
+        with self.composer.in_segment("dv"):
+            for index, (sort, literal) in enumerate(new_domain_values):
+                assert isinstance(sort, kore.SortInstance)
 
-        for index, (sort, literal) in enumerate(new_domain_values):
-            assert isinstance(sort, kore.SortInstance)
+                index += offset
 
-            index += offset
+                self.load_comment(f"domain value {literal} of sort {sort}")
 
-            self.load_comment(f"domain value {literal} of sort {sort}")
+                self.load_constant(
+                    KorePatternEncoder.encode_string_literal(literal),
+                    0,
+                    f"domain-value-{index}",
+                )
 
-            self.load_constant(
-                KorePatternEncoder.encode_string_literal(literal),
-                0,
-                f"domain-value-{index}",
-            )
+                functional_rule_name = f"domain-value-{index}-functional"
 
-            functional_rule_name = f"domain-value-{index}-functional"
+                # TODO: check the literal is actually correct
 
-            # TODO: check the literal is actually correct
+                # generate the functinoal axiom for the domain value
+                sort_var, functional_var = self.gen_metavariables("#ElementVariable", 2)
 
-            # generate the functinoal axiom for the domain value
-            sort_var, functional_var = self.gen_metavariables("#ElementVariable", 2)
-
-            functional_axiom = kore.Axiom(
-                [kore.SortVariable(sort_var)],
-                kore.MLPattern(
-                    kore.MLPattern.EXISTS,
+                functional_axiom = kore.Axiom(
                     [kore.SortVariable(sort_var)],
-                    [
-                        kore.Variable(functional_var, sort),
-                        kore.MLPattern(
-                            kore.MLPattern.EQUALS,
-                            [sort, kore.SortVariable(sort_var)],
-                            [
-                                kore.Variable(functional_var, sort),
-                                kore.MLPattern(
-                                    kore.MLPattern.DV,
-                                    [sort],
-                                    [literal],
-                                ),
-                            ],
-                        ),
-                    ],
-                ),
-            )
+                    kore.MLPattern(
+                        kore.MLPattern.EXISTS,
+                        [kore.SortVariable(sort_var)],
+                        [
+                            kore.Variable(functional_var, sort),
+                            kore.MLPattern(
+                                kore.MLPattern.EQUALS,
+                                [sort, kore.SortVariable(sort_var)],
+                                [
+                                    kore.Variable(functional_var, sort),
+                                    kore.MLPattern(
+                                        kore.MLPattern.DV,
+                                        [sort],
+                                        [literal],
+                                    ),
+                                ],
+                            ),
+                        ],
+                    ),
+                )
 
-            functional_axiom.resolve(self.module)
+                functional_axiom.resolve(self.module)
 
-            theorem = self.load_axiom(functional_axiom, functional_rule_name)
-            self.domain_value_functional_axioms[sort, literal] = ProvableClaim(functional_axiom, theorem.as_proof())
-
-        self.composer.end_segment()
+                theorem = self.load_axiom(functional_axiom, functional_rule_name)
+                self.domain_value_functional_axioms[sort, literal] = ProvableClaim(functional_axiom, theorem.as_proof())
 
     def load_constant_substitution_lemma(self, symbol: str, arity: int, label: str) -> None:
         """
         Generate and prove the substitution rule for the given symbol
         """
 
-        (subst_var, ) = self.gen_metavariables("#Variable", 1)
-        pattern_var, *subpattern_vars = self.gen_metavariables("#Pattern", arity * 2 + 1)
+        with self.composer.in_segment("substitution"):
+            (subst_var, ) = self.gen_metavariables("#Variable", 1)
+            pattern_var, *subpattern_vars = self.gen_metavariables("#Pattern", arity * 2 + 1)
 
-        self.composer.start_segment("substitution")
+            with self.composer.new_context():
+                substitution_rule_name = label + "-substitution"
+                essentials = []
+                essential_theorems = []
 
-        substitution_rule_name = label + "-substitution"
-        essentials = []
-        essential_theorems = []
+                for i in range(arity):
+                    after = subpattern_vars[i]
+                    before = subpattern_vars[i + arity]
 
-        for i in range(arity):
-            after = subpattern_vars[i]
-            before = subpattern_vars[i + arity]
+                    essential = mm.EssentialStatement(
+                        f"{substitution_rule_name}.{i}",
+                        (
+                            mm.Application("#Substitution"),
+                            mm.Metavariable(after),
+                            mm.Metavariable(before),
+                            mm.Metavariable(pattern_var),
+                            mm.Metavariable(subst_var),
+                        ),
+                    )
 
-            essential = mm.EssentialStatement(
-                f"{substitution_rule_name}.{i}",
-                (
-                    mm.Application("#Substitution"),
-                    mm.Metavariable(after),
-                    mm.Metavariable(before),
+                    essentials.append(essential)
+                    essential_theorems.append(self.load_metamath_theorem(essential))
+
+                # prove the substitution rule
+                subst_proof = SubstitutionProver.prove_substitution(
+                    self.composer,
+                    mm.Application(symbol, tuple(map(mm.Metavariable, subpattern_vars[:arity]))),
+                    mm.Application(symbol, tuple(map(mm.Metavariable, subpattern_vars[arity:]))),
                     mm.Metavariable(pattern_var),
                     mm.Metavariable(subst_var),
-                ),
-            )
+                    essential_theorems,
+                )
 
-            essentials.append(essential)
-            essential_theorems.append(Theorem(self.composer, Context(), essential))
-
-        # prove the substitution rule
-        subst_proof = SubstitutionProver.prove_substitution(
-            self.composer,
-            mm.Application(symbol, tuple(map(mm.Metavariable, subpattern_vars[:arity]))),
-            mm.Application(symbol, tuple(map(mm.Metavariable, subpattern_vars[arity:]))),
-            mm.Metavariable(pattern_var),
-            mm.Metavariable(subst_var),
-            essential_theorems,
-        )
-
-        self.load_metamath_statement(mm.Block(tuple(essentials) + (subst_proof.as_statement(substitution_rule_name), )))
-
-        self.composer.end_segment()
-
-        assert substitution_rule_name in self.composer.theorems
-        self.substitution_axioms[symbol] = self.composer.theorems[substitution_rule_name]
+                self.substitution_axioms[symbol] = \
+                    self.load_metamath_proof_as_compressed_statement(substitution_rule_name, subst_proof)
 
     def load_application_context_lemma(self, symbol: str, arity: int, label: str) -> None:
-        self.composer.start_segment("substitution")
+        with self.composer.in_segment("substitution"):
+            (hole_var, ) = self.gen_metavariables("#Variable", 1)
+            pattern_var_names = self.gen_metavariables("#Pattern", arity)
+            pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
-        (hole_var, ) = self.gen_metavariables("#Variable", 1)
-        pattern_var_names = self.gen_metavariables("#Pattern", arity)
-        pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
+            # generate one lemma for each argument
+            lemmas = []
 
-        # generate one lemma for each argument
-        lemmas = []
+            for i in range(arity):
+                app_ctx_rule_name = f"{label}-application-context-{i}"
 
-        for i in range(arity):
-            app_ctx_rule_name = f"{label}-application-context-{i}"
+                with self.composer.new_context():
+                    for j in range(arity):
+                        if i != j:
+                            self.load_metamath_statement(
+                                mm.DisjointStatement(
+                                    (mm.Metavariable(hole_var), mm.Metavariable(pattern_vars[j].name))
+                                )
+                            )
 
-            disjoint_statements = tuple(
-                mm.DisjointStatement((mm.Metavariable(hole_var), mm.Metavariable(pattern_vars[j].name)))
-                for j in range(arity) if i != j
-            )
+                    assumption = mm.EssentialStatement(
+                        f"{app_ctx_rule_name}.0",
+                        (
+                            mm.Application("#ApplicationContext"),
+                            mm.Metavariable(hole_var),
+                            pattern_vars[i],
+                        ),
+                    )
+                    self.load_metamath_statement(assumption)
 
-            assumption = mm.EssentialStatement(
-                f"{app_ctx_rule_name}.0",
-                (
-                    mm.Application("#ApplicationContext"),
-                    mm.Metavariable(hole_var),
-                    pattern_vars[i],
-                ),
-            )
+                    conclusion = mm.ProvableStatement(
+                        app_ctx_rule_name,
+                        (
+                            mm.Application("#ApplicationContext"),
+                            mm.Metavariable(hole_var),
+                            mm.Application(symbol, pattern_vars),
+                        ),
+                    )
 
-            conclusion = mm.ProvableStatement(
-                app_ctx_rule_name,
-                (
-                    mm.Application("#ApplicationContext"),
-                    mm.Metavariable(hole_var),
-                    mm.Application(symbol, pattern_vars),
-                ),
-            )
+                    proof = ApplicationContextProver.prove_application_context_statement(
+                        self.composer,
+                        conclusion,
+                        [Theorem(self.composer, assumption)],
+                    )
+                    theorem = self.load_metamath_proof_as_compressed_statement(app_ctx_rule_name, proof)
+                    lemmas.append(theorem)
 
-            proof = ApplicationContextProver.prove_application_context_statement(
-                self.composer,
-                conclusion,
-                [Theorem(self.composer, Context(), assumption)],
-            )
-            conclusion.proof = proof
-
-            block = mm.Block(disjoint_statements + (assumption, conclusion))
-            self.load_metamath_statement(block)
-
-            lemmas.append(self.get_theorem(app_ctx_rule_name))
-
-        self.app_ctx_lemmas[symbol] = lemmas
-
-        self.composer.end_segment()
+            self.app_ctx_lemmas[symbol] = lemmas
 
     def load_constant(self, symbol: str, arity: int, label: str) -> None:
         """
@@ -912,15 +897,13 @@ class ProofEnvironment:
             assert isinstance(import_stmt.module, kore.Module)
             self.load_module_sentences(import_stmt.module)
 
-        self.composer.start_segment("sort")
-        for index, (_, sort_definition) in enumerate(module.sort_map.items()):
-            self.load_sort_definition(sort_definition, f"{module.name}-sort-{index}")
-        self.composer.end_segment()
+        with self.composer.in_segment("sort"):
+            for index, (_, sort_definition) in enumerate(module.sort_map.items()):
+                self.load_sort_definition(sort_definition, f"{module.name}-sort-{index}")
 
-        self.composer.start_segment("symbol")
-        for index, (_, symbol_definition) in enumerate(module.symbol_map.items()):
-            self.load_symbol_definition(symbol_definition, f"{module.name}-symbol-{index}")
-        self.composer.end_segment()
+        with self.composer.in_segment("symbol"):
+            for index, (_, symbol_definition) in enumerate(module.symbol_map.items()):
+                self.load_symbol_definition(symbol_definition, f"{module.name}-symbol-{index}")
 
         for index, axiom in enumerate(module.axioms):
             functional_symbol = KoreTemplates.get_symbol_of_functional_axiom(axiom)

@@ -202,9 +202,8 @@ def run_on_arguments(args: argparse.Namespace) -> None:
 
     module_begin = time.time()
 
-    composer.start_segment("module")
-    env = ProofEnvironment(module, composer, dv_as_provable=args.dv_as_provable)
-    composer.end_segment()
+    with composer.in_segment("module"):
+        env = ProofEnvironment(module, composer, dv_as_provable=args.dv_as_provable)
 
     module_elapsed = time.time() - module_begin
 
@@ -215,9 +214,9 @@ def run_on_arguments(args: argparse.Namespace) -> None:
         rewriting_task = load_rewriting_task(module, args.task)
 
         rewrite_begin = time.time()
-        composer.start_segment("rewrite")
-        prove_rewriting(env, rewriting_task)
-        composer.end_segment()
+        with composer.in_segment("rewrite"):
+            prove_rewriting(env, rewriting_task)
+
         rewrite_elapsed = time.time() - rewrite_begin
 
     if args.output is not None:

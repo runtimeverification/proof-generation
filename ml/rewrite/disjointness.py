@@ -7,7 +7,7 @@ from ml.kore.utils import KoreUtils
 from ml.kore.visitors import FreePatternVariableVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.ast import Proof
+from ml.metamath.composer import Proof
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.sorting import SortingProver
 

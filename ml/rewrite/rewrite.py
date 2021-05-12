@@ -7,8 +7,7 @@ from ml.kore.utils import KoreUtils, PatternPath
 from ml.kore.ast import KoreVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.ast import Proof
-from ml.metamath.composer import Theorem
+from ml.metamath.composer import Theorem, Proof
 from ml.metamath.auto.sorting import SortingProver
 
 from .encoder import KorePatternEncoder
@@ -788,15 +787,14 @@ class BuiltinFunctionEvaluator(ProofGenerator):
 
         # TODO: we need to generate a proof obligation for
         # this arithmetic fact
-        self.env.composer.start_segment("dv")
-        self.env.load_comment("NOTE: domain value reasoning checked by external tool")
-        thm = self.env.load_axiom(
-            claim,
-            f"{self.env.sanitize_label_name(application.symbol.get_symbol_name())}-domain-fact-{self.axiom_counter}",
-            comment=False,
-            provable=self.env.dv_as_provable,
-        )
-        self.env.composer.end_segment()
+        with self.env.composer.in_segment("dv"):
+            self.env.load_comment("NOTE: domain value reasoning checked by external tool")
+            thm = self.env.load_axiom(
+                claim,
+                f"{self.env.sanitize_label_name(application.symbol.get_symbol_name())}-domain-fact-{self.axiom_counter}",
+                comment=False,
+                provable=self.env.dv_as_provable,
+            )
 
         print(f"> bulitin symbol proof obligation: {claim}")
 
