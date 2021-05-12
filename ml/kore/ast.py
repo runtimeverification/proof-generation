@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Union, Optional, Any, Dict, Set, TypeVar, Generic, NoReturn
+from typing import List, Union, Optional, Any, Dict, Set, TypeVar, Generic, NoReturn, Tuple
 
 from collections import OrderedDict
 
@@ -13,20 +13,23 @@ KoreVisitor = Visitor[TreeT, ResultT]
 
 
 class BaseAST(Generic[ParentT]):
-    def __init__(self, attributes: List[Application] = []):
-        self.meta_line: Optional[int] = None
-        self.meta_column: Optional[int] = None
-        self.meta_end_line: Optional[int] = None
-        self.meta_end_column: Optional[int] = None
+    INCLUDE_PARSING_INFO = False  # e.g. line number
+
+    def __init__(self) -> None:
+        if BaseAST.INCLUDE_PARSING_INFO:
+            self.meta_line: Optional[int] = None
+            self.meta_column: Optional[int] = None
+            self.meta_end_line: Optional[int] = None
+            self.meta_end_column: Optional[int] = None
+
         self.meta_parent: Optional[ParentT] = None
-        self.meta_module: Optional[Module] = None
-        self.attributes = attributes
 
     def set_position(self, line: int, column: int, end_line: int, end_column: int) -> None:
-        self.meta_line = line
-        self.meta_column = column
-        self.meta_end_line = end_line
-        self.meta_end_column = end_column
+        if BaseAST.INCLUDE_PARSING_INFO:
+            self.meta_line = line
+            self.meta_column = column
+            self.meta_end_line = end_line
+            self.meta_end_column = end_column
 
     def visit(self, visitor: KoreVisitor[BaseAST[ParentT], ResultT]) -> ResultT:
         raise NotImplementedError()
@@ -41,6 +44,20 @@ class BaseAST(Generic[ParentT]):
     def set_parent(self, parent: ParentT) -> None:
         self.meta_parent = parent
 
+    def error_with_position(self, msg: str, *args: Any, **kwargs: Any) -> NoReturn:
+        if BaseAST.INCLUDE_PARSING_INFO:
+            err_msg = "at line {}, column {}: {}".format(self.meta_line, self.meta_column, msg.format(*args, **kwargs))
+        else:
+            err_msg = msg.format(*args, **kwargs)
+        raise Exception(err_msg)
+
+    def resolve(self, parent: ParentT) -> None:
+        self.set_parent(parent)
+
+
+class AttributeMixin:
+    attributes: Tuple[Application, ...]
+
     def get_attribute_by_symbol(self, symbol: str) -> Optional[Application]:
         for attr in self.attributes:
             # here we are assuming all attribute symbols are unresolved
@@ -54,28 +71,18 @@ class BaseAST(Generic[ParentT]):
         else:
             return False
 
-    def error_with_position(self, msg: str, *args: Any, **kwargs: Any) -> NoReturn:
-        err_msg = "at line {}, column {}: {}".format(self.meta_line, self.meta_column, msg.format(*args, **kwargs))
-        raise Exception(err_msg)
 
-    def resolve(self, module: Module) -> None:
-        self.meta_module = module
-
-    def get_module(self) -> Module:
-        assert self.meta_module is not None, f"{self} does not have a parent module"
-        return self.meta_module
-
-
-class Definition(BaseAST[None]):
-    def __init__(self, modules: List[Module], attributes: List[Application]):
-        super().__init__(attributes)
+class Definition(BaseAST[None], AttributeMixin):
+    def __init__(self, modules: List[Module], attributes: Tuple[Application, ...] = ()):
+        super().__init__()
 
         self.module_map: Dict[str, Module] = OrderedDict()
+        self.attributes = attributes
 
         for module in modules:
             self.module_map[module.name] = module
 
-    def resolve_all(self) -> None:
+    def resolve(self, _: None = None) -> None:
         """
         Resolves sort, symbol, alias, and module references,
         and add circular reference for users and uses, parents and chlidren
@@ -83,8 +90,7 @@ class Definition(BaseAST[None]):
 
         # TODO: check cyclic module imports
         for module in self.module_map.values():
-            module.set_parent(self)
-            module.resolve_all()
+            module.resolve(self)
 
     def get_module_by_name(self, name: str) -> Optional[Module]:
         return self.module_map.get(name)
@@ -98,12 +104,11 @@ class Definition(BaseAST[None]):
         return "definition {{\n{}\n}}".format("\n".join(map(str, self.module_map.values())))
 
 
-class Module(BaseAST[Definition]):
-    def __init__(self, name: str, sentences: List[Sentence], attributes: List[Application]):
-        super().__init__(attributes)
-
+class Module(BaseAST[Definition], AttributeMixin):
+    def __init__(self, name: str, sentences: List[Sentence], attributes: Tuple[Application, ...] = ()):
         self.name = name
         self.all_sentences: List[Sentence] = []
+        self.attributes = attributes
 
         # sort out different sentences
         self.imports: Set[ImportStatement] = set()
@@ -174,7 +179,9 @@ class Module(BaseAST[Definition]):
         elif isinstance(sentence, Axiom):
             self.axioms.remove(sentence)
 
-    def resolve_all(self) -> None:
+    def resolve(self, parent: Definition) -> None:
+        super().resolve(parent)
+
         for sentence in self.all_sentences:
             sentence.set_parent(self)
 
@@ -195,12 +202,13 @@ class Module(BaseAST[Definition]):
         return "module {} {{\n{}\n}}".format(self.name, "\n".join(map(str, self.all_sentences)))
 
 
-class Sentence(BaseAST[Any]):
-    def __init__(self, attributes: List[Application] = []):
-        super().__init__(attributes)
+class Sentence(BaseAST[Module], AttributeMixin):
+    def __init__(self, attributes: Tuple[Application, ...] = ()):
+        super().__init__()
+        self.attributes = attributes
 
 
-class Pattern(BaseAST[Union[Sentence, "Pattern"]]):
+class Pattern(BaseAST[Module]):
     def __init__(self) -> None:
         super().__init__()
 
@@ -212,15 +220,15 @@ class Pattern(BaseAST[Union[Sentence, "Pattern"]]):
 
 
 class ImportStatement(Sentence):
-    def __init__(self, module: Union[str, Module], attributes: List[Application]):
+    def __init__(self, module: Union[str, Module], attributes: Tuple[Application, ...] = ()):
         super().__init__(attributes)
         self.module = module
 
-    def resolve(self, module: Module) -> None:
-        super().resolve(module)
+    def resolve(self, parent: Module) -> None:
+        super().resolve(parent)
 
         if isinstance(self.module, str):
-            resolved_module = module.get_parent().get_module_by_name(self.module)
+            resolved_module = parent.get_parent().get_module_by_name(self.module)
             if resolved_module is None:
                 self.error_with_position("unable to find module {}", self.module)
 
@@ -247,7 +255,7 @@ class SortDefinition(Sentence):
         self,
         sort_id: str,
         sort_variables: List[SortVariable],
-        attributes: List[Application],
+        attributes: Tuple[Application, ...] = (),
         hooked: bool = False,
     ):
         super().__init__(attributes)
@@ -272,24 +280,24 @@ class SortDefinition(Sentence):
         return "sort {}({})".format(self.sort_id, ", ".join(map(str, self.sort_variables)))
 
 
-class SortInstance(BaseAST[Pattern]):
+class SortInstance(BaseAST[Module]):
     def __init__(self, definition: Union[str, SortDefinition], arguments: List[Sort]):
         super().__init__()
         self.definition = definition
         self.arguments = arguments
 
-    def resolve(self, module: Module) -> None:
-        super().resolve(module)
+    def resolve(self, parent: Module) -> None:
+        super().resolve(parent)
 
         if isinstance(self.definition, str):
-            resloved_definition = module.get_sort_by_id(self.definition)
+            resloved_definition = parent.get_sort_by_id(self.definition)
             if resloved_definition is None:
                 self.error_with_position("unable to find sort {}", self.definition)
 
             self.definition = resloved_definition
 
         for arg in self.arguments:
-            arg.resolve(module)
+            arg.resolve(parent)
 
     def visit(self, visitor: KoreVisitor[SortInstance, ResultT]) -> ResultT:
         visitor.previsit_sort_instance(self)
@@ -322,7 +330,7 @@ class SortInstance(BaseAST[Pattern]):
             return self.definition.sort_id
 
 
-class SortVariable(BaseAST[Pattern]):
+class SortVariable(BaseAST[Module]):
     def __init__(self, name: str):
         self.name = name
 
@@ -357,7 +365,7 @@ class SymbolDefinition(Sentence):
         sort_variables: List[SortVariable],
         input_sorts: List[Sort],
         output_sort: Sort,
-        attributes: List[Application],
+        attributes: Tuple[Application, ...] = (),
         hooked: bool = False,
     ):
         super().__init__(attributes)
@@ -367,18 +375,13 @@ class SymbolDefinition(Sentence):
         self.output_sort = output_sort
         self.hooked = hooked
 
-        # a set of patterns that uses this symbol
-        self.users: List[Pattern] = []
+    def resolve(self, parent: Module) -> None:
+        super().resolve(parent)
 
-    def add_user(self, user: Pattern) -> None:
-        self.users.append(user)
-
-    def resolve(self, module: Module) -> None:
-        super().resolve(module)
         # resolve input and output sorts
         for sort in self.input_sorts:
-            sort.resolve(module)
-        self.output_sort.resolve(module)
+            sort.resolve(parent)
+        self.output_sort.resolve(parent)
 
     def visit(self, visitor: KoreVisitor[SymbolDefinition, ResultT]) -> ResultT:
         visitor.previsit_symbol_definition(self)
@@ -398,28 +401,28 @@ class SymbolDefinition(Sentence):
         return "symbol {}({}): {}".format(self.symbol, ", ".join(map(str, self.input_sorts)), self.output_sort)
 
 
-class SymbolInstance(BaseAST[Pattern]):
+class SymbolInstance(BaseAST[Module]):
     def __init__(self, definition: Union[str, SymbolDefinition], sort_arguments: List[Sort]):
         super().__init__()
         self.definition = definition
         self.sort_arguments = sort_arguments
 
-    def resolve(self, module: Module) -> None:
-        super().resolve(module)
+    def resolve(self, parent: Module) -> None:
+        super().resolve(parent)
 
         if isinstance(self.definition, str):
-            resolved_definition = module.get_symbol_by_name(self.definition)
+            resolved_definition = parent.get_symbol_by_name(self.definition)
             if resolved_definition is None:
                 self.error_with_position(
                     "unable to find symbol {} in module {}",
                     self.definition,
-                    module.name,
+                    parent.name,
                 )
 
             self.definition = resolved_definition
 
         for arg in self.sort_arguments:
-            arg.resolve(module)
+            arg.resolve(parent)
 
     def visit(self, visitor: KoreVisitor[SymbolInstance, ResultT]) -> ResultT:
         visitor.previsit_symbol_instance(self)
@@ -457,7 +460,7 @@ class Axiom(Sentence):
         self,
         sort_variables: List[SortVariable],
         pattern: Pattern,
-        attributes: List[Application],
+        attributes: Tuple[Application, ...] = (),
         is_claim: bool = False,
     ):
         super().__init__(attributes)
@@ -465,14 +468,11 @@ class Axiom(Sentence):
         self.pattern = pattern
         self.is_claim = is_claim
 
-    def resolve(self, module: Module) -> None:
-        super().resolve(module)
-
+    def resolve(self, parent: Module) -> None:
+        super().resolve(parent)
         for var in self.sort_variables:
-            var.resolve(module)
-
-        self.pattern.set_parent(self)
-        self.pattern.resolve(module)
+            var.resolve(parent)
+        self.pattern.resolve(parent)
 
     def visit(self, visitor: KoreVisitor[Axiom, ResultT]) -> ResultT:
         visitor.previsit_axiom(self)
@@ -500,23 +500,18 @@ class AliasDefinition(Sentence):
         definition: SymbolDefinition,
         lhs: Application,
         rhs: Pattern,
-        attributes: List[Application],
+        attributes: Tuple[Application, ...] = (),
     ):
         super().__init__(attributes)
         self.definition = definition
         self.lhs = lhs
         self.rhs = rhs
 
-    def resolve(self, module: Module) -> None:
-        super().resolve(module)
-
-        self.definition.set_parent(self)
-        self.lhs.set_parent(self)
-        self.rhs.set_parent(self)
-
-        self.definition.resolve(module)
-        self.lhs.resolve(module)
-        self.rhs.resolve(module)
+    def resolve(self, parent: Module) -> None:
+        super().resolve(parent)
+        self.definition.resolve(parent)
+        self.lhs.resolve(parent)
+        self.rhs.resolve(parent)
 
     def get_binding_variables(self) -> List[Variable]:
         assert isinstance(self.lhs, Application)
@@ -550,9 +545,9 @@ class Variable(Pattern):
         self.sort = sort
         self.is_set_variable = is_set_variable
 
-    def resolve(self, module: Module) -> None:
-        super().resolve(module)
-        self.sort.resolve(module)
+    def resolve(self, parent: Module) -> None:
+        super().resolve(parent)
+        self.sort.resolve(parent)
 
     def visit(self, visitor: KoreVisitor[Variable, ResultT]) -> ResultT:
         visitor.previsit_variable(self)
@@ -613,18 +608,11 @@ class Application(Pattern):
         self.symbol = symbol
         self.arguments = arguments
 
-    def resolve(self, module: Module) -> None:
-        super().resolve(module)
-
-        self.symbol.set_parent(self)
-        self.symbol.resolve(module)
-
-        assert isinstance(self.symbol.definition, SymbolDefinition)
-        self.symbol.definition.add_user(self)
-
+    def resolve(self, parent: Module) -> None:
+        super().resolve(parent)
+        self.symbol.resolve(parent)
         for arg in self.arguments:
-            arg.set_parent(self)
-            arg.resolve(module)
+            arg.resolve(parent)
 
     def visit(self, visitor: KoreVisitor[Application, ResultT]) -> ResultT:
         visitor.previsit_application(self)
@@ -677,15 +665,14 @@ class MLPattern(Pattern):
         self.sorts = sorts
         self.arguments = arguments
 
-    def resolve(self, module: Module) -> None:
-        super().resolve(module)
+    def resolve(self, parent: Module) -> None:
+        super().resolve(parent)
 
         for sort in self.sorts:
-            sort.resolve(module)
+            sort.resolve(parent)
 
         for arg in self.arguments:
-            arg.set_parent(self)
-            arg.resolve(module)
+            arg.resolve(parent)
 
     def is_binder(self) -> bool:
         return self.construct == MLPattern.FORALL or \

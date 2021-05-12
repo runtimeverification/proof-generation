@@ -77,7 +77,7 @@ class KorePreprocessor:
                         )
                     ]
                 ),
-                [kore.Application(kore.SymbolInstance("functional", []), [])],
+                (kore.Application(kore.SymbolInstance("functional", []), []), ),
             )
 
             module.add_sentence(axiom)

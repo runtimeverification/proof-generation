@@ -303,7 +303,7 @@ class Proof:
         # conclusions for each dag
         # note that node_to_conclusion[0] == self.internal_conclusions
 
-        self.dag: Dict[int, List[int]] = {}
+        self.dag: Dict[int, Tuple[int, ...]] = {}
         # a proof DAG should have a unique source at 0
         # for now it's always a tree
         # if a node has no out-edges, it SHOULD NOT
@@ -350,7 +350,7 @@ class Proof:
         for i, neighbors in subproof.dag.items():
             new_node = node_map[i]
             if new_node >= prev_num_nodes:
-                self.dag[node_map[i]] = [node_map[n] for n in neighbors]
+                self.dag[node_map[i]] = tuple(node_map[n] for n in neighbors)
 
         conclusion_to_node.update(new_conclusion_to_node)
 
@@ -368,10 +368,7 @@ class Proof:
 
         conclusion_to_node: Dict[Tuple[Term, ...], int] = {}
         if len(children) != 0:
-            proof.dag[0] = []
-            for child in children:
-                child_root = proof.add_subproof(child, conclusion_to_node)
-                proof.dag[0].append(child_root)
+            proof.dag[0] = tuple(proof.add_subproof(child, conclusion_to_node) for child in children)
 
         return proof
 
@@ -384,8 +381,8 @@ class Proof:
     def is_leaf(self, node: int) -> bool:
         return node not in self.dag
 
-    def get_children_of(self, node: int) -> List[int]:
-        return self.dag.get(node, [])
+    def get_children_of(self, node: int) -> Tuple[int, ...]:
+        return self.dag.get(node, ())
 
     def flatten(self, output_script: List[str], root: int = 0) -> None:
         """

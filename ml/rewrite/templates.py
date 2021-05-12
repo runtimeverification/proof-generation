@@ -78,7 +78,7 @@ class KoreTemplates:
         return eqn_lhs.symbol
 
     @staticmethod
-    def get_sorts_of_subsort_axiom(axiom: kore.Axiom, ) -> Optional[Tuple[kore.SortInstance, kore.SortInstance]]:
+    def get_sorts_of_subsort_axiom(axiom: kore.Axiom) -> Optional[Tuple[kore.SortInstance, kore.SortInstance]]:
         attribute = axiom.get_attribute_by_symbol("subsort")
         if attribute is None:
             return None

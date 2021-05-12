@@ -2,12 +2,15 @@ import re
 import os
 import sys
 import time
+import code
 import argparse
 
 from typing import List, Tuple, Optional, Sequence
 from io import StringIO
 
 import yaml
+
+from ml.utils.profiler import MemoryProfiler
 
 from ml.kore.parser import parse_definition, parse_pattern
 from ml.kore.visitors import FreePatternVariableVisitor, PatternSubstitutionVisitor
@@ -108,58 +111,79 @@ def output_theory(
                 composer.encode(f, segment)
 
 
-def main(argv: Optional[Sequence[str]] = None) -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("definition", help="a kore file")
-    parser.add_argument("module", help="the entry module name")
+def set_additional_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "-sa",
         "--standalone",
         action="store_const",
         const=True,
         default=False,
-        help="output a standalone .mm file",
+        help="Output a standalone .mm file",
     )
     parser.add_argument(
         "-o",
         "--output",
-        help="directory to store the translated module and proof object",
+        help="Directory to store the translated module and proof object",
     )
     parser.add_argument("--prelude", help="prelude mm file")
     parser.add_argument(
         "--task",
-        help="a task description file in YAML. we currently only support rewriting tasks",
+        help="Task description file in YAML. we currently only support rewriting tasks",
     )
     parser.add_argument(
         "--benchmark",
         action="store_const",
         const=True,
         default=False,
-        help="output the time spent for translating module and proving rewriting",
+        help="Output the time spent for translating module and proving rewriting",
     )
     parser.add_argument(
         "--dv-as-provable",
         action="store_const",
         const=True,
         default=False,
-        help="generate domain facts as provable instead of axiom",
+        help="Generate domain facts as provable instead of axiom",
     )
     parser.add_argument(
         "--proof-cache-threshold",
         type=int,
         default=ProofCache.THEOREM_CACHE_THRESHOLD,
-        help="maximum uncached proof size",
+        help="Maximum uncached proof size",
     )
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "--profile-mem",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Enable profiler for memory usage",
+    )
+    parser.add_argument(
+        "--profile-mem-traceback-limit",
+        type=int,
+        default=1,
+        help="Traceback limit of memory profiler, used only if memory profiler is enabled",
+    )
 
-    # TODO: this is a bit hacky
+
+def get_arguments(argv: Optional[Sequence[str]]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("definition", help="Input Kore definition")
+    parser.add_argument("module", help="Entry module name")
+    set_additional_flags(parser)
+    return parser.parse_args(argv)
+
+
+def run_on_arguments(args: argparse.Namespace) -> None:
     ProofCache.THEOREM_CACHE_THRESHOLD = args.proof_cache_threshold
+
+    if args.profile_mem:
+        MemoryProfiler.start(args.profile_mem_traceback_limit)
 
     composer = Composer()
 
     with open(args.definition) as f:
         definition = parse_definition(f.read())
-        definition.resolve_all()
+        definition.resolve()
 
     if args.prelude is not None:
         load_prelude(composer, args)
@@ -204,6 +228,14 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         print(f"gen-module {module_elapsed}")
         print(f"gen-rewrite {rewrite_elapsed}")
         print(f"gen-total {module_elapsed + rewrite_elapsed}")
+
+    if args.profile_mem:
+        MemoryProfiler.print_current_snapshot()
+        code.interact(local={**globals(), **vars()})
+
+
+def main(argv: Optional[Sequence[str]] = None) -> None:
+    run_on_arguments(get_arguments(argv))
 
 
 if __name__ == "__main__":

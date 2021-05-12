@@ -573,7 +573,6 @@ class ProofEnvironment:
                         ),
                     ],
                 ),
-                [],
             )
 
             functional_axiom.resolve(self.module)

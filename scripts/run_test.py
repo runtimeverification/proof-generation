@@ -17,6 +17,8 @@ from ml.kore.visitors import PatternOnlyVisitorStructure
 
 from ml.utils.ansi import ANSI
 
+from ml.rewrite.__main__ import run_on_arguments, set_additional_flags
+
 
 def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:  # type: ignore
     command_str = " ".join([shlex.quote(frag) for frag in command])
@@ -294,21 +296,19 @@ def gen_task(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
     }
 
 
-def gen_proof(
-    kdef: str,
-    module: str,
-    pgm: str,
-    output: Optional[str] = None,
-    benchmark: bool = False,
-    pypy: bool = False,
-    no_backend_hints: bool = False,
-    proof_cache_threshold: Optional[int] = None,
-) -> None:
-    kdef = os.path.realpath(kdef)
-    pgm = os.path.realpath(pgm)
+def gen_proof(args: argparse.Namespace) -> None:
+    kdef = os.path.realpath(args.kdef)
+    pgm = os.path.realpath(args.pgm)
+    module = args.module
+    no_backend_hints = args.no_backend_hints
 
-    if output is not None:
-        output = os.path.realpath(output)
+    del args.kdef
+    del args.pgm
+    del args.module
+    del args.no_backend_hints
+
+    if args.output is not None:
+        args.output = os.path.realpath(args.output)
 
     # get kdef file name (without extension)
     kdef_basename = os.path.basename(kdef)
@@ -365,72 +365,33 @@ def gen_proof(
             yaml.dump(task_obj, f)
 
     ### step 4. generate proof object
-    if output is not None:
+    if args.output is not None:
         print(f"- generating proof")
-        proc = run_command(
-            [
-                "pypy3" if pypy else "python3",
-                "-m",
-                "ml.rewrite",
-                kore_definition,
-                module,
-                "--prelude",
-                "theory/prelude.mm",
-                "--task",
-                task_path,
-                "--output",
-                output,
-            ] + (["--benchmark"] if benchmark else []) +
-            (["--proof-cache-threshold", str(proof_cache_threshold)] if proof_cache_threshold is not None else [])
-        )
-        exit_code = proc.wait()
-        assert exit_code == 0, f"ml.rewrite failed with exit code {exit_code}"
+
+        args.definition = kore_definition
+        args.module = module
+        if args.prelude is None:
+            args.prelude = "theory/prelude.mm"
+        args.task = task_path
+
+        run_on_arguments(args)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("kdef", help="The main .k file")
-    parser.add_argument("module", help="The main module")
-    parser.add_argument("pgm", help="The program to run")
-    parser.add_argument("-o", "--output", help="output directory for the proof object")
+    parser.add_argument("kdef", help="Input K definition")
+    parser.add_argument("module", help="Input main module name")
+    parser.add_argument("pgm", help="Program to run")
     parser.add_argument(
         "--no-backend-hints",
         action="store_const",
         const=True,
         default=False,
-        help="do not use/expect hints from the backend but generate snapshots using well-defined interface",
+        help="Do not use/expect hints from the backend but generate snapshots using well-defined interface",
     )
-    parser.add_argument(
-        "--pypy",
-        action="store_const",
-        const=True,
-        default=False,
-        help="use PyPy instead of CPython",
-    )
-    parser.add_argument(
-        "--benchmark",
-        action="store_const",
-        const=True,
-        default=False,
-        help="output the time spent for translating module and proving rewriting",
-    )
-    parser.add_argument(
-        "--proof-cache-threshold",
-        type=int,
-        help="maximum uncached proof size",
-    )
+    set_additional_flags(parser)
     args = parser.parse_args()
-
-    gen_proof(
-        args.kdef,
-        args.module,
-        args.pgm,
-        output=args.output,
-        benchmark=args.benchmark,
-        pypy=args.pypy,
-        no_backend_hints=args.no_backend_hints,
-        proof_cache_threshold=args.proof_cache_threshold,
-    )
+    gen_proof(args)
 
 
 if __name__ == "__main__":

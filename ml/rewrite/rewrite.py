@@ -161,7 +161,6 @@ class RewriteProofGenerator(ProofGenerator):
                     [instantiated_axiom.claim.pattern.sorts[0]],
                     [lhs, rhs],
                 ),
-                [],
             )
             concrete_rewrite.resolve(self.env.module)
 
@@ -303,7 +302,6 @@ class RewriteProofGenerator(ProofGenerator):
         new_claim = kore.Claim(
             [],
             kore.MLPattern(kore.MLPattern.REWRITES_STAR, [pattern_sort], [lhs, rhs]),
-            [],
         )
         new_claim.resolve(self.env.module)
 
@@ -330,7 +328,6 @@ class RewriteProofGenerator(ProofGenerator):
         new_claim = kore.Claim(
             [],
             kore.MLPattern(kore.MLPattern.REWRITES_STAR, [pattern_sort], [lhs1, rhs2]),
-            [],
         )
         new_claim.resolve(self.env.module)
 
@@ -415,7 +412,6 @@ class RewriteProofGenerator(ProofGenerator):
                     ],
                     [lhs, lhs],
                 ),
-                [],
             )
             claim.resolve(self.env.module)
             provable = ProvableClaim(claim, proof)
@@ -434,7 +430,6 @@ class RewriteProofGenerator(ProofGenerator):
                     ],
                     [lhs, lhs],
                 ),
-                [],
             )
             claim.resolve(self.env.module)
             provable = ProvableClaim(claim, proof)
@@ -457,7 +452,7 @@ class RewriteProofGenerator(ProofGenerator):
         # TODO: currently we don't have enough axioms in the kore definition
         # to show this condition, so we will just assume it being true
 
-        claim = kore.Claim([output_sort], condition, [])
+        claim = kore.Claim([output_sort], condition)
         claim.resolve(self.env.module)
 
         try:
@@ -532,7 +527,6 @@ class RewriteProofGenerator(ProofGenerator):
         instantiated_axiom_claim = kore.Claim(
             instantiated_axiom.claim.sort_variables,
             instantiated_axiom.claim.pattern.arguments[1],
-            [],
         )
         instantiated_axiom_claim.resolve(self.env.module)
         instantiated_axiom = ProvableClaim(instantiated_axiom_claim, removed_requires)
@@ -546,7 +540,6 @@ class RewriteProofGenerator(ProofGenerator):
         instantiated_axiom_claim = kore.Claim(
             instantiated_axiom.claim.sort_variables,
             instantiated_axiom.claim.pattern.arguments[0],
-            [],
         )
         instantiated_axiom_claim.resolve(self.env.module)
         instantiated_axiom = ProvableClaim(instantiated_axiom_claim, and_eliminated)
@@ -660,7 +653,6 @@ class RewriteProofGenerator(ProofGenerator):
         refl_claim = kore.Claim(
             [],
             kore.MLPattern(kore.MLPattern.REWRITES_STAR, [pattern_sort], [pattern, pattern]),
-            [],
         )
         refl_claim.resolve(self.env.module)
 
@@ -790,7 +782,6 @@ class BuiltinFunctionEvaluator(ProofGenerator):
                 [output_sort, sort_var],
                 [application, result],
             ),
-            [],
         )
 
         claim.resolve(self.env.module)

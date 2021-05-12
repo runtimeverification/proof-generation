@@ -120,7 +120,7 @@ class ASTTransformer(Transformer[BaseAST[Any]]):
     @meta_info
     def alias_definition(self, args: List[Any]) -> AliasDefinition:
         symbol, sort_variables, input_sorts, output_sort, lhs, rhs, attributes = args
-        definition = SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, [], hooked=False)
+        definition = SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, hooked=False)
         return AliasDefinition(definition, lhs, rhs, attributes)
 
     # patterns

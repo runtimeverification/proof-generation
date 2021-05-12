@@ -81,7 +81,7 @@ class QuantifierProofGenerator(ProofGenerator):
             claim_pattern = substituted_body
             eliminated += 1
 
-        final_claim = kore.Claim(provable.claim.sort_variables, claim_pattern, [])
+        final_claim = kore.Claim(provable.claim.sort_variables, claim_pattern)
         final_claim.resolve(self.env.module)
 
         # test if the final claim has already been proved

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Tuple, Optional, NewType, TypeVar, Union, Dict, TextIO, Any
+from typing import Mapping, List, Tuple, Optional, NewType, TypeVar, Union, Dict, TextIO, Any, Iterable
 
 import sys
 
@@ -23,8 +23,10 @@ from .ast import (
     MLPattern,
     SortVariable,
     StringLiteral,
+    KoreVisitor,
 )
 from .visitors import (
+    PatternOnlyVisitorStructure,
     PatternSubstitutionVisitor,
     SortSubstitutionVisitor,
     CopyVisitor,
@@ -45,6 +47,60 @@ PA = TypeVar("PA", Pattern, Axiom)
 PAS = TypeVar("PAS", Pattern, Axiom, Sort)
 
 
+class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisitorStructure[BaseAST[Any], None]):
+    """
+    Exapand a given list of alias definitions
+    Assuming the definitions are not interdependent
+    """
+    def __init__(self, alias_definitions: Iterable[AliasDefinition]):
+        super().__init__()
+        self.alias_map: Dict[str, AliasDefinition] = {}
+
+        for alias_def in alias_definitions:
+            self.alias_map[alias_def.definition.symbol] = alias_def
+
+    @staticmethod
+    def expand_alias_def(application: Application, alias_def: AliasDefinition) -> Pattern:
+        """
+        Expand one pattern that uses an alias definition
+        and return a new pattern
+        """
+
+        assert application.symbol.definition == alias_def.definition
+
+        variables = alias_def.get_binding_variables()
+
+        if len(application.arguments) != len(variables):
+            application.error_with_position("unmatched number of arguments in the use of alias")
+
+        assignment = {var: arg for var, arg in zip(variables, application.arguments)}
+        assignment_visitor: PatternSubstitutionVisitor[Pattern] = PatternSubstitutionVisitor(assignment)
+
+        copied_rhs = KoreUtils.copy_ast(alias_def.get_parent(), alias_def.rhs)
+        assignment_visitor.visit(copied_rhs)
+
+        return copied_rhs
+
+    def postvisit_axiom(self, axiom: Axiom, *args: Any) -> None:
+        if isinstance(axiom.pattern, Application):
+            symbol_name = axiom.pattern.symbol.get_symbol_name()
+            if symbol_name in self.alias_map:
+                axiom.pattern = AliasDefinitionExpander.expand_alias_def(axiom.pattern, self.alias_map[symbol_name])
+
+    def expand_in_application_or_ml_pattern(self, pattern: Union[Application, MLPattern]) -> None:
+        for i, arg in enumerate(pattern.arguments):
+            if isinstance(arg, Application):
+                symbol_name = arg.symbol.get_symbol_name()
+                if symbol_name in self.alias_map:
+                    pattern.arguments[i] = AliasDefinitionExpander.expand_alias_def(arg, self.alias_map[symbol_name])
+
+    def postvisit_application(self, application: Application, *args: Any) -> None:
+        self.expand_in_application_or_ml_pattern(application)
+
+    def postvisit_ml_pattern(self, ml_pattern: MLPattern, *args: Any) -> None:
+        self.expand_in_application_or_ml_pattern(ml_pattern)
+
+
 class KoreUtils:
     """
     Utility functions on KORE AST
@@ -57,11 +113,11 @@ class KoreUtils:
 
     @staticmethod
     def copy_pattern(pattern: P) -> P:
-        return KoreUtils.copy_ast(pattern.get_module(), pattern)
+        return KoreUtils.copy_ast(pattern.get_parent(), pattern)
 
     @staticmethod
     def copy_and_substitute_pattern(ast: PAS, substitution: Mapping[Variable, Pattern]) -> PAS:
-        copied = KoreUtils.copy_ast(ast.get_module(), ast)
+        copied = KoreUtils.copy_ast(ast.get_parent(), ast)
         return PatternSubstitutionVisitor(substitution).visit(copied)  # type: ignore
 
     @staticmethod
@@ -69,7 +125,7 @@ class KoreUtils:
         """
         Note that the substitution should be sort variable -> sort
         """
-        copied = KoreUtils.copy_ast(ast.get_module(), ast)
+        copied = KoreUtils.copy_ast(ast.get_parent(), ast)
         return SortSubstitutionVisitor(substitution).visit(copied)  # type: ignore
 
     @staticmethod
@@ -123,63 +179,18 @@ class KoreUtils:
 
     @staticmethod
     def copy_and_replace_path_by_pattern_in_axiom(ast: Axiom, path: PatternPath, replacement: Pattern) -> Axiom:
-        copied = KoreUtils.copy_ast(ast.get_module(), ast)
+        copied = KoreUtils.copy_ast(ast.get_parent(), ast)
         return KoreUtils.replace_path_by_pattern_in_axiom(copied, path, replacement)
-
-    @staticmethod
-    def expand_alias_def(application: Application, alias_def: AliasDefinition) -> Pattern:
-        """
-        Expand one pattern that uses an alias definition
-        and return a new pattern
-        """
-
-        assert application.symbol.definition == alias_def.definition
-
-        variables = alias_def.get_binding_variables()
-
-        if len(application.arguments) != len(variables):
-            application.error_with_position("unmatched number of arguments in the use of alias")
-
-        assignment = {var: arg for var, arg in zip(variables, application.arguments)}
-        assignment_visitor: PatternSubstitutionVisitor[Pattern] = PatternSubstitutionVisitor(assignment)
-
-        copied_rhs = KoreUtils.copy_ast(alias_def.get_module(), alias_def.rhs)
-        assignment_visitor.visit(copied_rhs)
-
-        return copied_rhs
-
-    @staticmethod
-    def instantiate_one_alias_use(module: Module, alias_def: AliasDefinition) -> None:
-        for user in alias_def.definition.users:
-            parent = user.get_parent()
-
-            if isinstance(parent, Application) or isinstance(parent, MLPattern):
-                for i, arg in enumerate(parent.arguments):
-                    if arg == user:
-                        assert isinstance(arg, Application)
-                        parent.arguments[i] = KoreUtils.expand_alias_def(arg, alias_def)
-                        break
-                else:
-                    assert False, "unable to find corresponding child"
-            elif isinstance(parent, AliasDefinition):
-                if parent.rhs == user:
-                    assert isinstance(parent.rhs, Application)
-                    parent.rhs = KoreUtils.expand_alias_def(parent.rhs, alias_def)
-            elif isinstance(parent, Axiom):
-                assert parent.pattern == user
-                assert isinstance(parent.pattern, Application)
-                parent.pattern = KoreUtils.expand_alias_def(parent.pattern, alias_def)
-            else:
-                user.error_with_position("unable to instantiate alias")
 
     @staticmethod
     def instantiate_all_alias_uses(module: Module) -> None:
         """
         Replace all alias uses with their definition
+        and remove all alias definitions
         """
         alias_defs = list(module.alias_map.values())
-        for alias_def in alias_defs:
-            KoreUtils.instantiate_one_alias_use(module, alias_def)
+
+        AliasDefinitionExpander(alias_defs).visit(module)
 
         for alias_def in alias_defs:
             module.remove_sentence(alias_def)
@@ -198,7 +209,7 @@ class KoreUtils:
             body = MLPattern(MLPattern.FORALL, [body_sort], [free_var, body])
 
         axiom.pattern = body
-        axiom.resolve(axiom.get_module())
+        axiom.resolve(axiom.get_parent())
 
     @staticmethod
     def quantify_all_free_variables(module: Module) -> None:
