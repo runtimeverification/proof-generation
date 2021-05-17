@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
 import os
+import lzma
 
 from .ast import Statement, Encoder, IncludeStatement
 
@@ -31,6 +32,36 @@ class NullBackend(Backend):
     """
     def dump_statement(self, segment: SegmentLabel, statement: Statement) -> None:
         return None
+
+
+class StandaloneFileBackend(Backend):
+    """
+    Store everything (including the prelude file)
+    to a standalone output file
+    """
+    def __init__(self, path: str, compression: bool = False):
+        self.path = path
+        self.compression = compression
+
+        assert not os.path.exists(path), f"file {path} already exists"
+
+        if compression:
+            self.file_handle: TextIO = lzma.open(path, "wt")
+        else:
+            self.file_handle = open(path, "w")
+
+    def __enter__(self) -> StandaloneFileBackend:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        self.close()
+
+    def dump_statement(self, segment: SegmentLabel, statement: Statement) -> None:
+        Encoder.encode(self.file_handle, statement)
+        self.file_handle.write("\n")
+
+    def close(self) -> None:
+        self.file_handle.close()
 
 
 class MultipleFileBackend(Backend):
@@ -70,6 +101,12 @@ class MultipleFileBackend(Backend):
 
         self.write_headers()
 
+    def __enter__(self) -> MultipleFileBackend:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        self.close()
+
     def write_headers(self) -> None:
         for label, node in self.graph.items():
             if node is None:
@@ -102,9 +139,3 @@ class MultipleFileBackend(Backend):
             if node is not None:
                 node.file_handle.close()
         self.graph = {}
-
-    def __enter__(self) -> MultipleFileBackend:
-        return self
-
-    def __exit__(self, *args: Any) -> None:
-        self.close()

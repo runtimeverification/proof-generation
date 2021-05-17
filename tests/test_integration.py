@@ -58,8 +58,8 @@ class TestIntegrationBase(unittest.TestCase):
                 prelude_path,
                 "--task",
                 task_path,
-                "--output",
-                self.output_proof_dir,
+                # "--output",
+                # self.output_proof_dir,
             ]
         )
 

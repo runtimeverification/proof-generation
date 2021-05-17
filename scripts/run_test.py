@@ -365,16 +365,15 @@ def gen_proof(args: argparse.Namespace) -> None:
             yaml.dump(task_obj, f)
 
     ### step 4. generate proof object
-    if args.output is not None:
-        print(f"- generating proof")
+    print(f"- generating proof")
 
-        args.definition = kore_definition
-        args.module = module
-        if args.prelude is None:
-            args.prelude = "theory/prelude.mm"
-        args.task = task_path
+    args.definition = kore_definition
+    args.module = module
+    if args.prelude is None:
+        args.prelude = "theory/prelude.mm"
+    args.task = task_path
 
-        run_on_arguments(args)
+    run_on_arguments(args)
 
 
 def main() -> None:
