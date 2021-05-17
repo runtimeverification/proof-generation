@@ -154,7 +154,8 @@ class KoreComposer(Composer):
         self.sort_injection_axiom: Optional[ProvableClaim] = None
         self.subsort_relation = SubsortRelation()
 
-        self.domain_values: Set[Tuple[kore.Sort, kore.StringLiteral]] = set()  # set of (sort, string literal)
+        self.string_literals: Set[kore.StringLiteral] = set()
+        self.domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]] = set()
 
     def load_module(self, module: kore.Module) -> None:
         self.module = module
@@ -497,58 +498,61 @@ class KoreComposer(Composer):
         Load a domain value and generate the corresponding functional axiom
         """
 
-        new_domain_values = domain_values.difference(self.domain_values)
-        offset = len(self.domain_values)
-        self.domain_values.update(new_domain_values)
-
         with self.in_segment("dv"):
-            for index, (sort, literal) in enumerate(new_domain_values):
-                assert isinstance(sort, kore.SortInstance)
+            for sort, literal in domain_values:
+                # add the corresponding string literal
+                if literal not in self.string_literals:
+                    index = len(self.string_literals)
+                    self.string_literals.add(literal)
 
-                index += offset
+                    self.load_comment(f"string literal {literal}")
 
-                self.load_comment(f"domain value {literal} of sort {sort}")
+                    self.load_constant(
+                        KorePatternEncoder.encode_string_literal(literal),
+                        0,
+                        f"string-literal-{index}",
+                    )
 
-                self.load_constant(
-                    KorePatternEncoder.encode_string_literal(literal),
-                    0,
-                    f"domain-value-{index}",
-                )
+                # add functional axiom for the domain value
+                if (sort, literal) not in self.domain_values:
+                    index = len(self.domain_values)
+                    self.domain_values.add((sort, literal))
 
-                functional_rule_name = f"domain-value-{index}-functional"
+                    functional_rule_name = f"domain-value-{index}-functional"
 
-                # TODO: check the literal is actually correct
+                    # TODO: check the literal is actually correct
 
-                # generate the functinoal axiom for the domain value
-                sort_var, functional_var = self.gen_metavariables("#ElementVariable", 2)
+                    # generate the functinoal axiom for the domain value
+                    sort_var, functional_var = self.gen_metavariables("#ElementVariable", 2)
 
-                functional_axiom = kore.Axiom(
-                    [kore.SortVariable(sort_var)],
-                    kore.MLPattern(
-                        kore.MLPattern.EXISTS,
+                    functional_axiom = kore.Axiom(
                         [kore.SortVariable(sort_var)],
-                        [
-                            kore.Variable(functional_var, sort),
-                            kore.MLPattern(
-                                kore.MLPattern.EQUALS,
-                                [sort, kore.SortVariable(sort_var)],
-                                [
-                                    kore.Variable(functional_var, sort),
-                                    kore.MLPattern(
-                                        kore.MLPattern.DV,
-                                        [sort],
-                                        [literal],
-                                    ),
-                                ],
-                            ),
-                        ],
-                    ),
-                )
+                        kore.MLPattern(
+                            kore.MLPattern.EXISTS,
+                            [kore.SortVariable(sort_var)],
+                            [
+                                kore.Variable(functional_var, sort),
+                                kore.MLPattern(
+                                    kore.MLPattern.EQUALS,
+                                    [sort, kore.SortVariable(sort_var)],
+                                    [
+                                        kore.Variable(functional_var, sort),
+                                        kore.MLPattern(
+                                            kore.MLPattern.DV,
+                                            [sort],
+                                            [literal],
+                                        ),
+                                    ],
+                                ),
+                            ],
+                        ),
+                    )
 
-                functional_axiom.resolve(self.module)
+                    functional_axiom.resolve(self.module)
 
-                theorem = self.load_axiom(functional_axiom, functional_rule_name)
-                self.domain_value_functional_axioms[sort, literal] = ProvableClaim(functional_axiom, theorem.as_proof())
+                    theorem = self.load_axiom(functional_axiom, functional_rule_name)
+                    self.domain_value_functional_axioms[sort,
+                                                        literal] = ProvableClaim(functional_axiom, theorem.as_proof())
 
     def load_constant_substitution_lemma(self, symbol: str, arity: int, label: str) -> None:
         """
