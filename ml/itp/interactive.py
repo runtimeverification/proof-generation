@@ -74,10 +74,10 @@ class InteractiveState:
 
         composer.remove_theorem(goal_name)
 
-        self.init_theory_path = theory_path
-        self.init_goal = goal
-        self.goal_name = goal_name
-        self.proof_state = ProofState(composer, goal.statement)
+        self.init_theory_path: str = theory_path
+        self.init_goal: Theorem = goal
+        self.goal_name: str = goal_name
+        self.proof_state: ProofState = ProofState(composer, goal.statement)
 
         # initialize completer
         readline.set_completer_delims(" ")

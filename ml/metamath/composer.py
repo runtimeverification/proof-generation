@@ -3,7 +3,7 @@ from __future__ import annotations
 from traceback import print_exc
 from contextlib import contextmanager
 
-from typing import List, Tuple, Mapping, Callable, Dict, Sequence, Collection, Set, Union, Any, Optional, Iterable, TextIO, Generator
+from typing import List, Tuple, Mapping, Callable, Dict, Sequence, Collection, Set, Union, Any, Optional, Iterable, TextIO, Generator, overload
 from dataclasses import dataclass, field
 
 import re
@@ -13,6 +13,7 @@ from io import StringIO
 from .auto.unification import Unification
 
 from .ast import *
+from .backend import Backend, NullBackend, SegmentLabel, DEFAULT_SEGMENT
 
 
 @dataclass
@@ -529,7 +530,7 @@ class ProofCache:
             self.stat_theorem_cache += 1
 
             # do not index the cached statements
-            theorem = self.composer.load_proof_as_compressed_statement(
+            theorem = self.composer.load_proof_as_statement(
                 self.get_next_label(domain), proof, index=False, top_level=True
             )
             proof = theorem.as_proof()
@@ -703,11 +704,10 @@ class Composer:
     Composer is a utility class used for
     emitting metamath statements and proofs
     """
-    def __init__(self) -> None:
+    def __init__(self, *, backend: Backend = NullBackend()) -> None:
         self.context = Context()  # outermost context for a database
         self.theorems: Dict[str, Theorem] = {}  # label -> Theorem
         self.theorems_by_typecode: Dict[str, List[Theorem]] = {}  # typecode -> [ Theorem ], sorted theorems by typecode
-        # self.statements: List[Statement] = []  # all statements at the top level
         self.proof_cache = ProofCache(self)
 
         # mark each statement with a unique "segment label"
@@ -716,8 +716,8 @@ class Composer:
         # the stack is used so that one can mark a set
         # of setences in another segment and restore the old
         # segment
-        self.segment_stack: List[str] = []  # a stack of current segments
-        self.segments: Dict[str, Set[int]] = {}  # name -> [indices]
+        self.segment_stack: List[SegmentLabel] = [DEFAULT_SEGMENT]  # a stack of current segments
+        self.backend = backend
 
     def find_theorem(self, name: str) -> Optional[Theorem]:
         return self.theorems.get(name)
@@ -787,10 +787,6 @@ class Composer:
 
         return self.context.are_metavariables_disjoint({term1.name, term2.name})
 
-    def encode(self, stream: TextIO, segment: Optional[str] = None, **args: Any) -> None:
-        statements = self.context.get_top().statements if segment is None else self.get_segment(segment)
-        Encoder.encode(stream, Database(tuple(statements)), **args)
-
     def cache_proof(self, *args: Any, **kwargs: Any) -> Proof:
         return self.proof_cache.cache(*args, **kwargs)
 
@@ -809,6 +805,9 @@ class Composer:
     def end_segment(self) -> None:
         self.segment_stack.pop()
 
+    def get_current_segment(self) -> SegmentLabel:
+        return self.segment_stack[-1]
+
     @contextmanager
     def in_segment(self, name: str) -> Generator[None, None, None]:
         self.start_segment(name)
@@ -816,21 +815,6 @@ class Composer:
             yield
         finally:
             self.end_segment()
-
-    def get_segment(self, name: str) -> List[Statement]:
-        if name not in self.segments:
-            return []
-        return [self.context.get_top().statements[i] for i in sorted(self.segments[name])]
-
-    def add_index_to_current_segment(self, index: int) -> None:
-        if len(self.segment_stack) == 0:
-            return
-
-        name = self.segment_stack[-1]
-
-        if name not in self.segments:
-            self.segments[name] = set()
-        self.segments[name].add(index)
 
     def find_metavariable(self, var: str) -> Optional[str]:
         """
@@ -866,10 +850,7 @@ class Composer:
         assert self.context.prev is not None
         block = Block(tuple(self.context.statements))
         self.context = self.context.prev
-
-        if self.context.prev is None:
-            self.add_index_to_current_segment(len(self.context.get_top().statements))
-        self.context.add_statement(block)
+        self.add_statement_at_context(self.context, block)
 
     @contextmanager
     def new_context(self) -> Generator[None, None, None]:
@@ -879,28 +860,72 @@ class Composer:
         finally:
             self.pop_context()
 
-    def load_theorem(self, statement: StructuredStatement, *args: Any, **kwargs: Any) -> Theorem:
-        theorem = self.load(statement, *args, **kwargs)
-        assert theorem is not None, f"expecting statement {statement} to be a theorem"
+    def add_statement_at_context(self, context: Context, statement: Statement) -> None:
+        context.add_statement(statement)
+
+        if context.prev is None:
+            # write the top level statements to the backend
+            self.backend.dump_statement(self.get_current_segment(), statement)
+            context.statements = []
+
+    def record_theorem_at_context(self,
+                                  context: Context,
+                                  statement: Statement,
+                                  index: bool = True) -> Optional[Theorem]:
+        """
+        Create theorem object for a statement if applicable and add it to the theorem dict
+        """
+
+        if isinstance(statement, FloatingStatement) or isinstance(statement, EssentialStatement):
+            # floating and essential statements do not have free metavariables
+            theorem = Theorem(self, statement)
+        elif isinstance(statement, ConclusionStatement):
+            theorem = Theorem(self, statement, context.flatten(statement))
+        else:
+            return None
+
+        # add to the theorem dictionary
+        if isinstance(statement, FloatingStatement) or isinstance(statement, ConclusionStatement):
+            self.theorems[statement.label] = theorem
+            if index:
+                self.index_statement(statement)
+
         return theorem
 
-    def load_proof_as_compressed_statement(
-        self, label: str, proof: Proof, *args: Any, top_level: bool = False, **kwargs: Any
-    ) -> Theorem:
+    def load_proof_as_statement(self, label: str, proof: Proof, top_level: bool = False, **kwargs: Any) -> Theorem:
+        """
+        Convert the proof to a labeled statement and load it into the composer
+        """
+
         if top_level:
             context = self.context.get_top()
         else:
             context = self.context
         stmt = proof.as_compressed_statement(label, context)
-        return self.load_theorem(stmt, *args, top_level=top_level, **kwargs)
+        return self.load(stmt, top_level=top_level, **kwargs)
+
+    @overload
+    def load(self, ast: StructuredStatement, **kwargs: Any) -> Theorem:
+        ...
+
+    @overload
+    def load(
+        self, ast: Union[Database, Block, ConstantStatement, VariableStatement, DisjointStatement], **kwargs: Any
+    ) -> None:
+        ...
+
+    @overload
+    def load(self, ast: Statement, **kwargs: Any) -> Optional[Theorem]:
+        ...
 
     def load(
         self,
-        database_or_statement: Union[Database, Statement],
-        *_: Any,
+        ast: Union[Database, Statement],
+        *,
         index: bool = True,
         stop_at: Optional[str] = None,
-        top_level: bool = False,  # force the statement to be loaded at the top level
+        top_level: bool = False,
+        **kwargs: Any,  # a placeholder to make overload typing easier
     ) -> Optional[Theorem]:
         """
         Add a structured statement/block/database to the composer
@@ -909,61 +934,48 @@ class Composer:
         When stop_at is specified, the loading procedure will stop
         after a statement with label stop_at is loaded.
         In particular, the Context will also stay at the given point
+
+        Parameters:
+        index: index theorems by their typecode for faster lookup
+        stop_at: stop lodaing when a specific label is encounter, and keep the context right at the point
+        top_level: add the given statement (which cannot be a block) at the top level before any unfinished block
         """
 
         if top_level:
             assert stop_at is None, "cannot set top_level and stop_at at the same time"
-            assert isinstance(database_or_statement, Statement) and not isinstance(database_or_statement, Block), \
-                   "cannot load a block at the top level"
+            assert isinstance(ast, StructuredStatement), \
+                   "can only load a structured statement directly at the top level"
 
-        theorem: Optional[Theorem] = None
-
-        if isinstance(database_or_statement, Database):
+        if isinstance(ast, Database):
             assert self.context.prev is None, "loading a database at non-top level"
-            for statement in database_or_statement.statements:
+            for statement in ast.statements:
                 theorem = self.load(statement, index=index, stop_at=stop_at)
-                if theorem is not None and stop_at is not None and theorem.statement.label == stop_at:
+                if theorem is not None and theorem.statement.label == stop_at:
                     return theorem
             return None
 
-        elif isinstance(database_or_statement, Statement):
-            stmt = database_or_statement
-
-            if self.context.prev is None or top_level:
-                # record top level statements in the current segment
-                self.add_index_to_current_segment(len(self.context.get_top().statements))
-
-            if isinstance(stmt, Block):
-                self.push_context()
-                for statement in stmt.statements:
-                    theorem = self.load(statement, index=index, stop_at=stop_at)
-                    if theorem is not None and stop_at is not None and theorem.statement.label == stop_at:
-                        return theorem
-                self.pop_context()
-
-            elif isinstance(stmt, FloatingStatement) or isinstance(stmt, EssentialStatement):
-                # floating and essential statements do not have free metavariables
-                theorem = Theorem(self, stmt)
-            elif isinstance(stmt, ConclusionStatement):
-                context = self.context.get_top() if top_level else self.context
-                theorem = Theorem(self, stmt, context.flatten(stmt))
-
-            if top_level or isinstance(stmt, VariableStatement) or isinstance(stmt, ConstantStatement):
-                # variables and constants are always added at the top level
-                self.context.get_top().add_statement(stmt)
-            else:
-                self.context.add_statement(stmt)
-
-            if isinstance(stmt, FloatingStatement) or isinstance(stmt, ConclusionStatement):
-                assert theorem is not None
-                self.theorems[stmt.label] = theorem
-                if index:
-                    self.index_statement(stmt)
-
-            return theorem
+        elif isinstance(ast, Block):
+            self.push_context()
+            for statement in ast.statements:
+                theorem = self.load(statement, index=index, stop_at=stop_at)
+                if theorem is not None and theorem.statement.label == stop_at:
+                    return theorem
+            self.pop_context()
+            return None
 
         else:
-            assert False, f"unable to load {database_or_statement}"
+            stmt = ast
+            assert isinstance(stmt, Statement)
+
+            # get the indicated context: current or top level
+            if top_level or isinstance(stmt, VariableStatement) or isinstance(stmt, ConstantStatement):
+                context = self.context.get_top()
+            else:
+                context = self.context
+
+            self.add_statement_at_context(context, stmt)
+
+            return self.record_theorem_at_context(context, stmt, index=index)
 
 
 class TypecodeProver:

@@ -11,7 +11,7 @@ from ml.kore.utils import KoreUtils, PatternPath
 from ml.metamath import ast as mm
 from ml.metamath.composer import TypecodeProver, Proof
 
-from .env import ProofGenerator, ProofEnvironment, ProvableClaim
+from .env import ProofGenerator, KoreComposer, ProvableClaim
 from .equality import EqualityProofGenerator
 from .sort import SortProofGenerator
 from .quantifier import QuantifierProofGenerator
@@ -65,8 +65,8 @@ class UnificationResult:
 
 
 class Equation:
-    def __init__(self, env: ProofEnvironment):
-        self.env = env
+    def __init__(self, env: KoreComposer):
+        self.composer = env
 
     def __str__(self) -> str:
         return type(self).__name__
@@ -93,15 +93,15 @@ class DuplicateConjunction(Equation):
         assert (isinstance(subpattern, kore.MLPattern) and subpattern.construct == kore.MLPattern.AND)
         assert subpattern.arguments[0] == subpattern.arguments[1]
 
-        encoded_sort = self.env.encode_pattern(subpattern.sorts[0])
-        encoded_pattern = self.env.encode_pattern(subpattern.arguments[0])
+        encoded_sort = self.composer.encode_pattern(subpattern.sorts[0])
+        encoded_pattern = self.composer.encode_pattern(subpattern.arguments[0])
 
-        equal_gen = EqualityProofGenerator(self.env)
+        equal_gen = EqualityProofGenerator(self.composer)
         return equal_gen.replace_equal_subpattern(
             provable,
             path,
             subpattern.arguments[0],
-            self.env.get_theorem("kore-dup-and").apply(
+            self.composer.get_theorem("kore-dup-and").apply(
                 x=mm.Metavariable("x"),
                 ph0=encoded_sort,
                 ph1=encoded_pattern,
@@ -117,7 +117,8 @@ class InjectionCombine(Equation):
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
         assert (
-            isinstance(subpattern, kore.Application) and subpattern.symbol.definition == self.env.sort_injection_symbol
+            isinstance(subpattern, kore.Application)
+            and subpattern.symbol.definition == self.composer.sort_injection_symbol
         )
 
         sort_b, sort_c = subpattern.symbol.sort_arguments
@@ -125,21 +126,21 @@ class InjectionCombine(Equation):
         subsubpattern = subpattern.arguments[0]
         assert (
             isinstance(subsubpattern, kore.Application)
-            and subsubpattern.symbol.definition == self.env.sort_injection_symbol
+            and subsubpattern.symbol.definition == self.composer.sort_injection_symbol
         )
 
         sort_a, sort_b1 = subsubpattern.symbol.sort_arguments
         assert sort_b1 == sort_b, f"ill-sorted injection {subpattern}"
 
         # sort_a < sort_b < sort_c
-        inj_axiom_instance = SortProofGenerator(self.env).get_inj_instance(sort_a, sort_b, sort_c)
+        inj_axiom_instance = SortProofGenerator(self.composer).get_inj_instance(sort_a, sort_b, sort_c)
         inj_axiom_instance = QuantifierProofGenerator(
-            self.env
+            self.composer
         ).prove_forall_elim_single(inj_axiom_instance, subsubpattern.arguments[0])
 
         assert isinstance(inj_axiom_instance.claim.pattern, kore.MLPattern)
 
-        return EqualityProofGenerator(self.env).replace_equal_subpattern(
+        return EqualityProofGenerator(self.composer).replace_equal_subpattern(
             provable,
             path,
             # RHS of the inj axiom
@@ -161,8 +162,8 @@ class MapCommutativity(Equation):
         # TODO:: assert here that subpattern is a mapmerge
 
         # get the two variable (names) in the commutativity axiom
-        assert self.env.map_commutativity_axiom is not None
-        comm_axiom = self.env.map_commutativity_axiom
+        assert self.composer.map_commutativity_axiom is not None
+        comm_axiom = self.composer.map_commutativity_axiom
 
         comm_axiom_body = KoreUtils.strip_forall(comm_axiom.claim.pattern)
         assert isinstance(comm_axiom_body, kore.MLPattern)
@@ -172,9 +173,9 @@ class MapCommutativity(Equation):
         assert isinstance(var1, kore.Variable) and isinstance(var2, kore.Variable)
 
         subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
-        axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(comm_axiom, subst)
+        axiom_instance = QuantifierProofGenerator(self.composer).prove_forall_elim(comm_axiom, subst)
 
-        return EqualityProofGenerator(self.env).replace_equal_subpattern_with_equation(
+        return EqualityProofGenerator(self.composer).replace_equal_subpattern_with_equation(
             provable,
             path,
             axiom_instance,
@@ -186,20 +187,20 @@ class MapAssociativity(Equation):
     mapmerge(mapmerge(M1, M2), M3) <==> mapmerge(M1, mapmerge(M2, M3))
     We use a boolean rotate_right to control the direction.
     """
-    def __init__(self, env: ProofEnvironment, rotate_right: bool):
+    def __init__(self, env: KoreComposer, rotate_right: bool):
         super().__init__(env)
         self.rotate_right: bool = rotate_right
 
     def get_inverse(self) -> MapAssociativity:
-        return MapAssociativity(self.env, not self.rotate_right)
+        return MapAssociativity(self.composer, not self.rotate_right)
 
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
         assert isinstance(subpattern, kore.Application)
         assert KoreTemplates.is_map_merge_pattern(subpattern)
 
-        assert self.env.map_associativity_axiom is not None
-        assoc_axiom = self.env.map_associativity_axiom
+        assert self.composer.map_associativity_axiom is not None
+        assoc_axiom = self.composer.map_associativity_axiom
 
         assoc_axiom_body = KoreUtils.strip_forall(assoc_axiom.claim.pattern)
         assert isinstance(assoc_axiom_body, kore.MLPattern)
@@ -231,9 +232,9 @@ class MapAssociativity(Equation):
                 var3: subpattern.arguments[1].arguments[1],
             }
 
-        axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(assoc_axiom, subst)
+        axiom_instance = QuantifierProofGenerator(self.composer).prove_forall_elim(assoc_axiom, subst)
 
-        eq_proof_gen = EqualityProofGenerator(self.env)
+        eq_proof_gen = EqualityProofGenerator(self.composer)
 
         # apply symmetry
         if not self.rotate_right:
@@ -250,7 +251,7 @@ class MapRightUnit(Equation):
     """
     merge(M, .Map) == M
     """
-    def __init__(self, env: ProofEnvironment, inverse: bool = False):
+    def __init__(self, env: KoreComposer, inverse: bool = False):
         """
         When inverse is true, apply the equation from left to right:
         M => merge(M, .Map)
@@ -259,15 +260,15 @@ class MapRightUnit(Equation):
         self.inverse = inverse
 
     def get_inverse(self) -> MapRightUnit:
-        return MapRightUnit(self.env, not self.inverse)
+        return MapRightUnit(self.composer, not self.inverse)
 
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
         assert isinstance(subpattern, kore.Pattern)
         assert KoreTemplates.is_map_pattern(subpattern)
 
-        assert self.env.map_right_unit_axiom is not None
-        right_unit_axiom = self.env.map_right_unit_axiom
+        assert self.composer.map_right_unit_axiom is not None
+        right_unit_axiom = self.composer.map_right_unit_axiom
 
         right_unit_axiom_body = KoreUtils.strip_forall(right_unit_axiom.claim.pattern)
         assert isinstance(right_unit_axiom_body, kore.MLPattern)
@@ -282,9 +283,9 @@ class MapRightUnit(Equation):
             assert KoreTemplates.is_map_unit_pattern(KoreTemplates.get_map_merge_right(subpattern))
             subst = {var: KoreTemplates.get_map_merge_left(subpattern)}
 
-        axiom_instance = QuantifierProofGenerator(self.env).prove_forall_elim(right_unit_axiom, subst)
+        axiom_instance = QuantifierProofGenerator(self.composer).prove_forall_elim(right_unit_axiom, subst)
 
-        eq_proof_gen = EqualityProofGenerator(self.env)
+        eq_proof_gen = EqualityProofGenerator(self.composer)
 
         if self.inverse:
             axiom_instance = eq_proof_gen.apply_symmetry(axiom_instance)
@@ -301,7 +302,7 @@ class MapUnificationMixin:
     A mixin class for map unification
     """
 
-    env = None  # type: ProofEnvironment
+    composer = None  # type: KoreComposer
 
     def bubble_smallest_map_pattern(self,
                                     pattern: kore.Pattern) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
@@ -320,7 +321,7 @@ class MapUnificationMixin:
         pointer = copied
         for depth, left_or_right in enumerate(path):
             if left_or_right == 1:  # if it's at the RHS, swap
-                equations.append((MapCommutativity(self.env), [0] * depth))
+                equations.append((MapCommutativity(self.composer), [0] * depth))
                 KoreTemplates.in_place_swap_map_merge_pattern(pointer)
 
             pointer = KoreTemplates.get_map_merge_left(pointer)
@@ -330,7 +331,7 @@ class MapUnificationMixin:
         while KoreTemplates.is_map_merge_pattern(pointer) and \
               KoreTemplates.is_map_merge_pattern(KoreTemplates.get_map_merge_left(pointer)):
             KoreTemplates.in_place_rotate_right_map_merge_pattern(pointer)
-            equations.append((MapAssociativity(self.env, True), []))
+            equations.append((MapAssociativity(self.composer, True), []))
 
         return copied, equations
 
@@ -369,7 +370,7 @@ class MapUnificationMixin:
         applied_eqs = applied_eqs_bubbled + UnificationResult.prepend_path_to_applied_eqs(applied_eqs_right, 1)
 
         if KoreTemplates.is_map_unit_pattern(pattern_bubbled_right_sorted):
-            applied_eqs.append((MapRightUnit(self.env), []))
+            applied_eqs.append((MapRightUnit(self.composer), []))
             return pattern_bubbled.arguments[0], applied_eqs
 
         return sorted_pattern, applied_eqs
@@ -529,7 +530,7 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
                 if merged is None:
                     return None
 
-                return merged.append_equation(DuplicateConjunction(self.env), [])
+                return merged.append_equation(DuplicateConjunction(self.composer), [])
 
         return None
 
@@ -543,8 +544,8 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         """
 
         if (isinstance(pattern1, kore.Application) and isinstance(pattern2, kore.Application)
-                and pattern1.symbol.definition == self.env.sort_injection_symbol
-                and pattern2.symbol.definition == self.env.sort_injection_symbol):
+                and pattern1.symbol.definition == self.composer.sort_injection_symbol
+                and pattern2.symbol.definition == self.composer.sort_injection_symbol):
 
             sort_a = pattern1.symbol.sort_arguments[0]
             sort_b = pattern2.symbol.sort_arguments[0]
@@ -553,21 +554,21 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
 
             if (sort_c1 == sort_c2 and sort_a != sort_b and isinstance(sort_a, kore.SortInstance)
                     and isinstance(sort_b, kore.SortInstance)
-                    and self.env.subsort_relation.get_subsort_chain(sort_b, sort_a) is not None):
+                    and self.composer.subsort_relation.get_subsort_chain(sort_b, sort_a) is not None):
 
                 split_right_inj = kore.Application(
                     kore.SymbolInstance(
-                        self.env.sort_injection_symbol,
+                        self.composer.sort_injection_symbol,
                         [sort_b, sort_a],
                     ),
                     [pattern2.arguments[0]],
                 )
-                split_right_inj.resolve(self.env.module)
+                split_right_inj.resolve(self.composer.module)
 
                 result = self.unify_patterns(pattern1.arguments[0], split_right_inj)
                 if result is None:
                     return None
 
-                return result.prepend_path(0).append_equation(InjectionCombine(self.env), [])
+                return result.prepend_path(0).append_equation(InjectionCombine(self.composer), [])
 
         return None

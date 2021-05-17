@@ -8,7 +8,7 @@ from ml.metamath.composer import Theorem, Proof
 
 from .encoder import KorePatternEncoder
 
-from .env import ProofEnvironment, ProofGenerator
+from .env import KoreComposer, ProofGenerator
 
 PAS = TypeVar("PAS", kore.Pattern, kore.Axiom, kore.Sort)
 
@@ -27,7 +27,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
     """
     def __init__(
         self,
-        env: ProofEnvironment,
+        env: KoreComposer,
         var: Union[kore.Variable, kore.SortVariable],
         substitute: Union[kore.Pattern, kore.Sort],
     ):
@@ -41,12 +41,12 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
         self.var = var
         self.substitute = substitute
 
-        self.var_encoded = self.env.encode_pattern(var)
-        self.substitute_encoded = self.env.encode_pattern(substitute)
+        self.var_encoded = self.composer.encode_pattern(var)
+        self.substitute_encoded = self.composer.encode_pattern(substitute)
 
         # get a "template" for the target statement
         # for convenience
-        tmp1, tmp2 = self.env.gen_metavariables("#Pattern", 2)
+        tmp1, tmp2 = self.composer.gen_metavariables("#Pattern", 2)
         self.target = mm.ProvableStatement(
             "",
             (
@@ -78,16 +78,16 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
         # look up proof cache
         cache_key = (
             mm.Application("#Substitution"),
-            self.env.encode_pattern(substituted),
-            self.env.encode_pattern(pattern_or_sort),
+            self.composer.encode_pattern(substituted),
+            self.composer.encode_pattern(pattern_or_sort),
             self.substitute_encoded,
             self.var_encoded,
         )
-        cached_proof = self.env.composer.lookup_proof_cache("substitution-cache", cache_key)
+        cached_proof = self.composer.lookup_proof_cache("substitution-cache", cache_key)
         if cached_proof is not None:
             return cached_proof, substituted
 
-        proof = self.env.cache_proof("substitution-cache", self.visit(pattern_or_sort))
+        proof = self.composer.cache_proof("substitution-cache", self.visit(pattern_or_sort))
 
         return proof, substituted
 
@@ -99,7 +99,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
         pattern_subst_proof = self.visit(axiom.pattern)
         sort_subst_proof = self.visit(pattern_sort)
 
-        proof = self.env.get_theorem("substitution-kore-valid").apply(
+        proof = self.composer.get_theorem("substitution-kore-valid").apply(
             sort_subst_proof,
             pattern_subst_proof,
         )
@@ -125,7 +125,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
                         ),
                     )
 
-                proof = self.env.get_theorem("substitution-kore-forall-sort-shadowed").apply(
+                proof = self.composer.get_theorem("substitution-kore-forall-sort-shadowed").apply(
                     x=self.var_encoded,
                     ph0=body,
                     ph1=self.substitute_encoded,
@@ -134,7 +134,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
         # wrap the rest of forall-sort quantifiers
         for sort_var in axiom.sort_variables[:shadowed_index][::-1]:
             encoded_sort_var = KorePatternEncoder.encode_sort_variable(sort_var)
-            proof = self.env.get_theorem("substitution-kore-forall-sort").apply(
+            proof = self.composer.get_theorem("substitution-kore-forall-sort").apply(
                 proof, x=mm.Metavariable(encoded_sort_var)
             )
 
@@ -142,38 +142,42 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
 
     def postvisit_sort_instance(self, sort_instance: kore.SortInstance) -> Proof:
         symbol = KorePatternEncoder.encode_sort(sort_instance)
-        return self.env.substitution_axioms[symbol].match_and_apply(
+        return self.composer.substitution_axioms[symbol].match_and_apply(
             self.target,
             *(self.visit(arg) for arg in sort_instance.arguments),
         )
 
     def postvisit_sort_variable(self, sort_variable: kore.SortVariable) -> Proof:
         if sort_variable.name == self.var.name:
-            return self.env.get_theorem("substitution-var-same").apply(ph0=self.substitute_encoded, xX=self.var_encoded)
+            return self.composer.get_theorem("substitution-var-same").apply(
+                ph0=self.substitute_encoded, xX=self.var_encoded
+            )
         else:
-            return self.env.get_theorem("substitution-var-diff").apply(
-                yY=self.env.encode_pattern(sort_variable),
+            return self.composer.get_theorem("substitution-var-diff").apply(
+                yY=self.composer.encode_pattern(sort_variable),
                 ph0=self.substitute_encoded,
                 xX=self.var_encoded,
             )
 
     def postvisit_variable(self, var: kore.Variable) -> Proof:
         if var.name == self.var.name:
-            return self.env.get_theorem("substitution-var-same").apply(ph0=self.substitute_encoded, xX=self.var_encoded)
+            return self.composer.get_theorem("substitution-var-same").apply(
+                ph0=self.substitute_encoded, xX=self.var_encoded
+            )
         else:
-            return self.env.get_theorem("substitution-var-diff").apply(
-                yY=self.env.encode_pattern(var),
+            return self.composer.get_theorem("substitution-var-diff").apply(
+                yY=self.composer.encode_pattern(var),
                 ph0=self.substitute_encoded,
                 xX=self.var_encoded,
             )
 
     def postvisit_string_literal(self, literal: kore.StringLiteral) -> Proof:
         symbol = KorePatternEncoder.encode_string_literal(literal)
-        return self.env.substitution_axioms[symbol].match_and_apply(self.target)
+        return self.composer.substitution_axioms[symbol].match_and_apply(self.target)
 
     def postvisit_application(self, application: kore.Application) -> Proof:
         symbol = KorePatternEncoder.encode_symbol(application.symbol)
-        return self.env.substitution_axioms[symbol].match_and_apply(
+        return self.composer.substitution_axioms[symbol].match_and_apply(
             self.target,
             *(self.visit(arg) for arg in application.symbol.sort_arguments),
             *(self.visit(arg) for arg in application.arguments),
@@ -198,7 +202,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
     def postvisit_ml_pattern(self, ml_pattern: kore.MLPattern) -> Proof:
         if (ml_pattern.construct in SingleSubstitutionProofGenerator.ML_PATTERN_SUBST_MAP):
             theorem_label = SingleSubstitutionProofGenerator.ML_PATTERN_SUBST_MAP[ml_pattern.construct]
-            return self.env.get_theorem(theorem_label).apply(
+            return self.composer.get_theorem(theorem_label).apply(
                 *(self.visit(arg) for arg in ml_pattern.sorts),
                 *(self.visit(arg) for arg in ml_pattern.arguments),
             )
@@ -215,7 +219,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
                     "substitution-kore-forall-shadowed"
                     if ml_pattern.construct == kore.MLPattern.FORALL else "substitution-kore-exists-shadowed"
                 )
-                return self.env.get_theorem(theorem_name).apply(ph2=self.env.encode_pattern(body))
+                return self.composer.get_theorem(theorem_name).apply(ph2=self.composer.encode_pattern(body))
             else:
                 theorem_name = (
                     "substitution-kore-forall"
@@ -225,14 +229,14 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
                 var_sort_subproof = self.visit(binding_var.sort)
                 body_subproof = self.visit(body)
 
-                encoded_body_sort = self.env.encode_pattern(body_sort)
+                encoded_body_sort = self.composer.encode_pattern(body_sort)
 
-                return self.env.get_theorem(theorem_name).apply(
+                return self.composer.get_theorem(theorem_name).apply(
                     var_sort_subproof,
                     body_subproof,
                     ph1=encoded_body_sort,
                     ph4=encoded_body_sort,
-                    y=self.env.encode_pattern(binding_var),  # still need to specify the binding variable
+                    y=self.composer.encode_pattern(binding_var),  # still need to specify the binding variable
                 )
 
         else:

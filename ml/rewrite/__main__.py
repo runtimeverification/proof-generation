@@ -5,12 +5,14 @@ import time
 import code
 import argparse
 
-from typing import List, Tuple, Optional, Sequence
+from typing import List, Tuple, Optional, Sequence, ContextManager
 from io import StringIO
+from contextlib import nullcontext
 
 import yaml
 
 from ml.utils.profiler import MemoryProfiler
+from ml.utils.stopwatch import Stopwatch
 
 from ml.kore.parser import parse_definition, parse_pattern
 from ml.kore.visitors import FreePatternVariableVisitor, PatternSubstitutionVisitor
@@ -20,19 +22,13 @@ from ml.kore.utils import KoreUtils
 from ml.metamath.parser import load_database
 from ml.metamath.ast import Statement, StructuredStatement, IncludeStatement, Comment
 from ml.metamath.composer import Composer, ProofCache
+from ml.metamath.backend import Backend, MultipleFileBackend, NullBackend, SegmentLabel
 
-from .env import ProofEnvironment
+from .env import KoreComposer
 from .rewrite import RewriteProofGenerator
 from .preprocessor import KorePreprocessor
 from .disjointness import DisjointnessProofGenerator
 from .tasks import RewritingTask
-
-
-def load_prelude(composer: Composer, args: argparse.Namespace) -> None:
-    # if we are not outputing a standalone proof object
-    # there is no need to load proofs (which are huge)
-    prelude = load_database(args.prelude, include_proof=args.standalone)
-    composer.load(prelude)
 
 
 def load_rewriting_task(module: Module, task_path: str) -> RewritingTask:
@@ -46,7 +42,7 @@ def load_rewriting_task(module: Module, task_path: str) -> RewritingTask:
 
 
 def prove_rewriting(
-    env: ProofEnvironment,
+    env: KoreComposer,
     task: RewritingTask,
 ) -> None:
     gen = RewriteProofGenerator(env)
@@ -55,71 +51,7 @@ def prove_rewriting(
     env.load_provable_claim_as_theorem("goal", final_claim)
 
 
-def output_theory(
-    composer: Composer,
-    prelude: Optional[str],
-    output: str,
-    standalone: bool = False,
-    include_rewrite_proof: bool = False,
-) -> None:
-    """
-    Output to a standalone .mm file or a directory containing
-    multiple interdepdent theories
-    """
-    if standalone:
-        assert not os.path.isdir(output), f"path {output} exists and is a directory"
-        print(f"dumping standalone metamath theory to {output}")
-        with open(output, "w") as out:
-            composer.encode(out)
-    else:
-        assert not os.path.isfile(output), f"path {output} exists and is a file"
-        print(f"dumping multiple metamath theories to {output}")
-
-        if not os.path.isdir(output):
-            os.mkdir(output)
-
-        assert prelude is not None
-
-        abs_output_path = os.path.realpath(output)
-        abs_prelude_path = os.path.realpath(prelude)
-        assert abs_output_path is not None and abs_prelude_path is not None
-
-        output_list = [
-            ("variable", "variable.mm"),
-            ("sort", "module-sort.mm"),
-            ("symbol", "module-symbol.mm"),
-            ("dv", "dv.mm"),
-            ("module", "module-axiom.mm"),
-        ]
-
-        if include_rewrite_proof:
-            output_list += [
-                ("substitution", "substitution.mm"),
-                ("rewrite", "goal.mm"),
-            ]
-
-        for i, (segment, output_path) in enumerate(output_list):
-            full_path = os.path.join(abs_output_path, output_path)
-            with open(full_path, "w") as f:
-                # include the last file
-                if i == 0:
-                    previous_path = abs_prelude_path
-                else:
-                    previous_path = os.path.join(abs_output_path, output_list[i - 1][1])
-
-                f.write(f"{IncludeStatement(previous_path)}\n")
-                composer.encode(f, segment)
-
-
 def set_additional_flags(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "-sa",
-        "--standalone",
-        action="store_const",
-        const=True,
-        default=False,
-        help="Output a standalone .mm file",
-    )
     parser.add_argument(
         "-o",
         "--output",
@@ -180,55 +112,70 @@ def get_arguments(argv: Optional[Sequence[str]]) -> argparse.Namespace:
 
 
 def run_on_arguments(args: argparse.Namespace) -> None:
+    stopwatch = Stopwatch()
+
     ProofCache.THEOREM_CACHE_THRESHOLD = args.proof_cache_threshold
 
     if args.profile_mem:
         MemoryProfiler.start(args.profile_mem_trace_limit)
 
-    composer = Composer()
-
-    with open(args.definition) as f:
-        definition = parse_definition(f.read())
-        definition.resolve()
-
     if args.prelude is not None:
-        load_prelude(composer, args)
+        prelude_deps: Tuple[str, ...] = (os.path.realpath(args.prelude), )
+    else:
+        prelude_deps = ()
 
-    # do some preliminary transformations
-    # and add missing axioms
-    KorePreprocessor().preprocess(definition)
+    # layout of the output proof object
+    layout = (
+        (None, None, ()),  # ignore all statements without assigned segment (e.g. prelude)
+        ("variable", "variable.mm", prelude_deps),
+        ("sort", "module-sort.mm", ("variable", )),
+        ("symbol", "module-symbol.mm", ("sort", )),
+        ("dv", "dv.mm", ("symbol", )),
+        ("module", "module-axiom.mm", ("dv", )),
+        ("substitution", "substitution.mm", ("module", )),
+        ("rewrite", "goal.mm", ("substitution", )),
+    )
 
-    module = definition.module_map[args.module]
-
-    module_begin = time.time()
-
-    with composer.in_segment("module"):
-        env = ProofEnvironment(module, composer, dv_as_provable=args.dv_as_provable)
-
-    module_elapsed = time.time() - module_begin
-
-    # TODO: currently only supports rewriting hints
-    rewriting_task: Optional[RewritingTask] = None
-
-    if args.task is not None:
-        rewriting_task = load_rewriting_task(module, args.task)
-
-        rewrite_begin = time.time()
-        with composer.in_segment("rewrite"):
-            prove_rewriting(env, rewriting_task)
-
-        rewrite_elapsed = time.time() - rewrite_begin
-
+    # backend is where
     if args.output is not None:
-        output_theory(
-            composer,
-            args.prelude,
-            args.output,
-            standalone=args.standalone,
-            include_rewrite_proof=args.task is not None,
-        )
+        print(f"storing output to {args.output}")
+        context_manager: ContextManager[Backend] = MultipleFileBackend(args.output, layout)
+    else:
+        context_manager = nullcontext(NullBackend())
+
+    with context_manager as backend:
+        # initialize proof environment
+        env = KoreComposer(backend=backend, dv_as_provable=args.dv_as_provable)
+
+        # load prelude into the proof environment
+        if args.prelude is not None:
+            env.load(load_database(args.prelude, include_proof=False))
+
+        # parse the input kore definition
+        with open(args.definition) as f:
+            definition = parse_definition(f.read())
+            definition.resolve()
+
+        # do some preliminary transformations and add missing axioms
+        KorePreprocessor().preprocess(definition)
+        module = definition.module_map[args.module]
+
+        with stopwatch.start("module"), env.in_segment("module"):
+            env.load_module(module)
+
+        # TODO: currently only supports rewriting hints
+        rewriting_task: Optional[RewritingTask] = None
+
+        if args.task is not None:
+            rewriting_task = load_rewriting_task(module, args.task)
+
+            with stopwatch.start("rewrite"), env.in_segment("rewrite"):
+                prove_rewriting(env, rewriting_task)
 
     if args.benchmark:
+        module_elapsed = stopwatch.get_elapsed("module")
+        rewrite_elapsed = stopwatch.get_elapsed("rewrite")
+
         print("==================")
         print(f"gen-module {module_elapsed}")
         print(f"gen-rewrite {rewrite_elapsed}")
