@@ -2,9 +2,9 @@ module IMP-SYNTAX
   imports DOMAINS-SYNTAX
   syntax AExp  ::= Int | Id
                  | "-" Int                    [format(%1%2)]
-                 | AExp "/" AExp              [left, strict, color(pink)]
+                 | AExp "/" AExp              [left, seqstrict, color(pink)]
                  | "(" AExp ")"               [bracket]
-                 > AExp "+" AExp              [left, strict, color(pink)]
+                 > AExp "+" AExp              [left, seqstrict, color(pink)]
   syntax BExp  ::= Bool
                  | AExp "<=" AExp             [seqstrict, latex({#1}\leq{#2}), color(pink)]
                  | "!" BExp                   [strict, color(pink)]
