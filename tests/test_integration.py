@@ -86,3 +86,7 @@ class TestRewriteProofGeneratorIntegeration(TestIntegrationBase):
 
     def test_map_test_acu(self) -> None:
         self.run_rewrite_proof_gen("pgm-acu-hard.map-test")
+
+    def test_owise(self) -> None:
+        # a function with a owise rule and 3 other rules
+        self.run_rewrite_proof_gen("pgm.owise")

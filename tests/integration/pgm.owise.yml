@@ -1,0 +1,13 @@
+final: "/* Fl Fn D Sfa Cl */\nLbl'-LT-'generatedTop'-GT-'{}(\n    /* Fl Fn D Sfa Cl\
+  \ */\n    Lbl'-LT-'k'-GT-'{}(\n        /* Fl Fn D Sfa Cl */\n        kseq{}(\n \
+  \           /* Fl Fn D Sfa Cli */\n            /* Inj: */ inj{SortFoo{}, SortKItem{}}(\n\
+  \                /* Fl Fn D Sfa Cl */\n                Lbla'LParUndsRParUnds'OWISE'Unds'Foo'Unds'Foo{}(\n\
+  \                    /* Fl Fn D Sfa Cl */ Lbld'LParRParUnds'OWISE'Unds'Foo{}()\n\
+  \                )\n            ),\n            /* Fl Fn D Sfa Cl */ dotk{}()\n\
+  \        )\n    ),\n    /* Fl Fn D Sfa Cl */\n    Lbl'-LT-'generatedCounter'-GT-'{}(/*\
+  \ Fl Fn D Sfa Cl */ \\dv{SortInt{}}(\"0\"))\n)\n"
+initial: inj{SortGeneratedTopCell{}, SortKItem{}}(Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortFoo{},
+  SortKItem{}}(Lblf'LParUndsRParUnds'OWISE'Unds'Foo'Unds'Foo{}(Lbld'LParRParUnds'OWISE'Unds'Foo{}())),
+  dotk{}())), Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))))
+steps: []
+task: rewriting
