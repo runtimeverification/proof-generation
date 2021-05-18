@@ -226,35 +226,26 @@ def gen_task(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
             kompiled_dir,
             "--haskell-backend-command",
             # to print logs about rewriting and substitutions
-            "kore-exec --log-entries DebugRewriteSubstitution,DebugExecGoal",
+            "kore-exec --log-entries DebugRewriteSubstitution",
             "--output",
-            "none",
+            "kore",
             pgm,
         ],
+        stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    assert proc.stderr is not None
+    assert proc.stdout is not None and proc.stderr is not None
     stderr = proc.stderr.read().decode()
+    final_config = proc.stdout.read().decode()
     exit_code = proc.wait()
     assert exit_code == 0, f"krun failed with exit code {exit_code}"
 
     log_items = parse_kore_log(stderr)
 
     steps = []
-    initial: Optional[str] = None
-    final: Optional[str] = None
 
     for name, content in log_items:
-        if name == "DebugExecGoal":
-            assert final is None, "multiple exec goal logs"
-
-            obj = yaml.load(content, Loader=yaml.Loader)
-            assert "initial" in obj and "final" in obj, f"ill-formed exec goal log: {obj}"
-
-            initial = obj["initial"].strip()
-            final = obj["final"].strip()
-
-        elif name == "DebugRewriteSubstitution":
+        if name == "DebugRewriteSubstitution":
             if content.strip() == "":
                 continue
 
@@ -286,12 +277,10 @@ def gen_task(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
                 }
             )
 
-    assert final is not None, f"unable to find exec goal log item"
-
     return {
         "task": "rewriting",
         "initial": init_config,
-        "final": final,
+        "final": final_config,
         "steps": steps,
     }
 
