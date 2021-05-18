@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import copy
 
-from typing import List, Tuple, NewType, Optional, Mapping, Dict, Union
+from typing import List, Tuple, NewType, Optional, Mapping, Dict, Union, Iterable
+from dataclasses import dataclass, field
 
 from ml.kore import ast as kore
 from ml.kore.visitors import FreePatternVariableVisitor
@@ -20,14 +21,10 @@ from .templates import KoreTemplates
 # AppliedEquation = List[Tuple[Equation, PatternPath]]
 
 
+@dataclass
 class UnificationResult:
-    def __init__(
-        self,
-        substitution: Dict[kore.Variable, kore.Pattern] = {},
-        applied_equations: List[Tuple[Equation, PatternPath]] = [],
-    ):
-        self.substitution = substitution
-        self.applied_equations = applied_equations
+    substitution: Dict[kore.Variable, kore.Pattern] = field(default_factory=lambda: {})
+    applied_equations: List[Tuple[Equation, PatternPath]] = field(default_factory=lambda: [])
 
     def merge(self, other: UnificationResult) -> Optional[UnificationResult]:
         # check consistency of the substitution
@@ -48,11 +45,17 @@ class UnificationResult:
                                     prefix: int) -> List[Tuple[Equation, PatternPath]]:
         return [(eqn, [prefix] + path) for eqn, path in applied_eqs]
 
-    def prepend_path(self, prefix: int) -> UnificationResult:
-        return UnificationResult(
-            self.substitution,
-            [(eqn, [prefix] + path) for eqn, path in self.applied_equations],
-        )
+    def prepend_path(self, prefix: Union[int, Iterable[int]]) -> UnificationResult:
+        if isinstance(prefix, int):
+            return UnificationResult(
+                self.substitution,
+                [(eqn, [prefix] + path) for eqn, path in self.applied_equations],
+            )
+        else:
+            return UnificationResult(
+                self.substitution,
+                [(eqn, list(prefix) + path) for eqn, path in self.applied_equations],
+            )
 
     def append_equation(self, equation: Equation, path: PatternPath) -> UnificationResult:
         return UnificationResult(self.substitution, self.applied_equations + [(equation, path)])

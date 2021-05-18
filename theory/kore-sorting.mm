@@ -349,3 +349,9 @@ kore-rewrites-sorting $p |- ( \imp ( \and ( \in-sort ph1 ph0 ) ( \in-sort ph2 ph
         sorting
     $)
     ( in-sort-is-pattern kore-next-is-pattern and-is-pattern kore-implies-is-pattern kore-rewrites-is-pattern rule-imp-transitivity notation-reflexivity imp-is-pattern imp-reflexivity and-elim-left-sugar and-elim-right-sugar kore-next-sorting rule-and-intro-alt2-sugar kore-implies-sorting kore-rewrites-is-sugar notation-symmetry notation-transitivity notation-in-sort notation-imp notation-proof ) BADCADFABACEGADKBADCADFABCHADKBADCADFBADACEADFABACEGADBADCADFBADACEADBADCADFBADBADBADCADMBADLIBADCADFCADACEADBADCADFCADCADBADCADNCADLIACOIPABACEQIBADCADFABCHADBADCADFABACEGADBADCADFJABCHAABACEGAABCHABACEGABACEGABCRABACEGABACEGABACEGJSTAJUAUBUC $.
+
+kore-in-sorting $p |- ( \in-sort ( \kore-in ph0 ph1 ph2 ph3 ) ph1 ) $=
+    $(
+        apply "kore-floor-sorting"
+    $)
+    ( kore-implies-is-pattern kore-floor-is-pattern kore-in-is-pattern in-sort-is-pattern notation-reflexivity kore-floor-sorting kore-in-is-sugar notation-symmetry notation-transitivity notation-in-sort notation-proof ) ABACDEFBHABCDGBHAACDEBJABCDGBABACDEFBABCDGABACDEFABACDEFABCDKABACDEFABACDEFABACDEFILMBINO $.

@@ -231,7 +231,8 @@ class ProofState:
         assert theorem.statement.label is not None
         top_claim_label = self.get_current_scope()
         goal = self.push_isolated_goal(theorem.statement, theorem.statement.label)
-        self.claims[theorem.statement.label] = Claim(goal.goal_id, theorem, is_local, top_claim_label)
+        self.claims[theorem.statement.label
+                    ] = Claim(goal.goal_id, theorem, is_local, top_claim_label if is_local else None)
         return goal
 
     def find_claim(self, name: str) -> Optional[Claim]:

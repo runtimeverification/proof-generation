@@ -334,8 +334,8 @@ class Encoder(Printer, Visitor[BaseAST, None]):
             return "a"
         elif isinstance(stmt, ProvableStatement):
             return "p"
-
-        assert False, f"not a valid structured statement {stmt}"
+        else:
+            return "?"
 
     def postvisit_structured_statement(self, stmt: StructuredStatement) -> None:
         if stmt.label:
