@@ -253,6 +253,9 @@ def gen_task(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
             assert isinstance(obj, list), \
                    f"ill-formed rewrite log {content}"
 
+            if len(obj) == 0:
+                continue
+
             assert len(obj) == 1, "non-determinism not supported"
             step_obj = obj[0]
 
