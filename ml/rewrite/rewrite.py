@@ -1040,62 +1040,67 @@ class KNotEqualityEvaluator(BuiltinFunctionEvaluator):
 
 
 class SetInEvaluator(BuiltinFunctionEvaluator):
+    def is_element(self, app: kore.Application, element: kore.Pattern) -> bool:
+
+        if KoreTemplates.is_set_unit_pattern(app):
+            return False
+        elif KoreTemplates.is_set_merge_pattern(app):
+
+            left, right = app.arguments
+            assert isinstance(left, kore.Application)
+            assert isinstance(right, kore.Application)
+
+            element_in_left = self.is_element(left, element)
+            element_in_right = self.is_element(right, element)
+
+            return element_in_left or element_in_right
+        elif KoreTemplates.is_set_singleton_pattern(app):
+            found_element = app.arguments
+
+            return element == found_element
+
+        return False
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         key, set_pattern = application.arguments
 
-        def is_element(app: kore.Application, element) -> bool:
-
-            if KoreTemplates.is_set_unit_pattern(app):
-                return False
-            elif KoreTemplates.is_set_merge_pattern(app):
-
-                left, right = app.arguments
-                assert isinstance(left, kore.Application)
-                assert isinstance(right, kore.Application)
-
-                element_in_left = is_element(left, element)
-                element_in_right = is_element(right, element)
-
-                return element_in_left or element_in_right
-            elif KoreTemplates.is_set_singleton_pattern(app):
-                found_element = app.arguments
-
-                return element == found_element
-
         assert isinstance(set_pattern, kore.Application)
-        return self.build_arithmetic_equation(application, is_element(set_pattern, key))
+        return self.build_arithmetic_equation(
+            application, self.is_element(set_pattern, key)
+        )
 
 
 class MapKeysEvaluator(BuiltinFunctionEvaluator):
+    def get_keys(self, app: kore.Application) -> kore.Pattern:
+        if KoreTemplates.is_map_unit_pattern(app):
+            unit_symbol = self.env.module.get_symbol_by_name("Lbl'Stop'Set")
+            assert unit_symbol is not None
+            unit_symbol_instance = kore.SymbolInstance(unit_symbol, [])
+            return kore.Application(unit_symbol_instance, [])
+        elif KoreTemplates.is_map_merge_pattern(app):
+
+            left, right = app.arguments
+            merge_symbol = self.env.module.get_symbol_by_name("Lbl'Unds'Set'Unds")
+            assert isinstance(left, kore.Application)
+            assert isinstance(right, kore.Application)
+            assert merge_symbol is not None
+
+            left_keys = self.get_keys(left)
+            right_keys = self.get_keys(right)
+
+            merge_symbol_instance = kore.SymbolInstance(merge_symbol, [])
+            return kore.Application(merge_symbol_instance, [left_keys, right_keys])
+        else:
+            assert KoreTemplates.is_map_mapsto_pattern(app)
+            key, value = app.arguments
+
+            singleton_symbol = self.env.module.get_symbol_by_name("LblSetItem")
+            assert singleton_symbol is not None
+            singleton_symbol_instance = kore.SymbolInstance(singleton_symbol, [])
+            return kore.Application(singleton_symbol_instance, [key])
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         map_pattern = application.arguments[0]
 
-        def get_keys(app: kore.Application) -> kore.Pattern:
-            if KoreTemplates.is_map_unit_pattern(app):
-                unit_symbol = self.env.module.get_symbol_by_name("Lbl'Stop'Set")
-                assert unit_symbol is not None
-                unit_symbol_instance = kore.SymbolInstance(unit_symbol, [])
-                return kore.Application(unit_symbol_instance, [])
-            elif KoreTemplates.is_map_merge_pattern(app):
-
-                left, right = app.arguments
-                merge_symbol = self.env.module.get_symbol_by_name("Lbl'Unds'Set'Unds")
-                assert isinstance(left, kore.Application)
-                assert isinstance(right, kore.Application)
-                assert merge_symbol is not None
-
-                left_keys = get_keys(left)
-                right_keys = get_keys(right)
-
-                merge_symbol_instance = kore.SymbolInstance(merge_symbol, [])
-                return kore.Application(merge_symbol_instance, [left_keys, right_keys])
-            elif KoreTemplates.is_map_mapsto_pattern(app):
-                key, value = app.arguments
-
-                singleton_symbol = self.env.module.get_symbol_by_name("LblSetItem")
-                assert singleton_symbol is not None
-                singleton_symbol_instance = kore.SymbolInstance(singleton_symbol, [])
-                return kore.Application(singleton_symbol_instance, [key])
-
         assert isinstance(map_pattern, kore.Application)
-        return self.build_equation(application, get_keys(map_pattern))
+        return self.build_equation(application, self.get_keys(map_pattern))
