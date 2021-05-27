@@ -1,0 +1,353 @@
+task: rewriting
+initial: '/* Fn */ LblinitGeneratedTopCell{}( /* Fn */ Lbl''Unds''Map''Unds''{}( /*
+  Fl Fn D */ Lbl''Stop''Map{}(), /* Fl Fn D Spa */ Lbl''UndsPipe''-''-GT-Unds''{}(
+  /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortKConfigVar{}, SortKItem{}}( /* Fl Fn D
+  Sfa Cl */ \dv{SortKConfigVar{}}(/* Fl Fn D Sfa Cl */ "$PGM") ), /* Fl Fn D Sfa Cli
+  */ /* Inj: */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+  /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+  /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl
+  */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+  /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+  SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+  /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+  /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */
+  \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}(
+  /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) ) ) ), /* Fl Fn D Sfa Cli */ /* Inj:
+  */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+  /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+  SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) ) ), /* Fl Fn D Sfa Cli
+  */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+  /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+  SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) ) ) ) ) )'
+steps:
+- remainders: []
+  applied-rules:
+  - substitution:
+    - value: /* Fl Fn D Sfa Cl */ Lbl'-LT-'generatedCounter'-GT-'{}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("0") )
+      key: Var'Unds'DotVar0:SortGeneratedCounterCell{}
+    - value: /* Fl Fn D Sfa Cl */ dotk{}()
+      key: Var'Unds'DotVar1:SortK{}
+    - value: '/* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D
+        Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+        SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) ) ) ), /* Fl Fn
+        D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */
+        Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) )
+        )'
+      key: VarHOLE:SortTerm{}
+    - value: '/* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl
+        Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) )'
+      key: VarK1:SortTerm{}
+    results:
+    - term: '/* Fl Fn D Spa */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Spa */
+        Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Spa */ kseq{}( /* Fl Fn D Sfa Cli */ /*
+        Inj: */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D
+        Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+        SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) ) ) ), /* Fl Fn
+        D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */
+        Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) )
+        ) ), /* Fl Fn D Spa */ kseq{}( /* Fl Fn D Spa */ Lbl''Hash''freezer''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term0''Unds''{}(
+        /* Fl Fn D Spa */ kseq{}( /* Fl Fn D Spa */ /* Inj: */ inj{SortTerm{}, SortKItem{}}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D
+        Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) )
+        ), /* Fl Fn D Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ dotk{}() ) ) ),
+        /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("0") ) )'
+      constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+    rule-id: 4b249d0d5a20fd27a3678382a57ff0a3ed4d321a5c7fa9b014cb79f6aaecd08e
+  initial:
+    term: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa
+      Cl */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli
+      */ /* Inj: */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa
+      Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+      Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) ) ) ), /* Fl Fn
+      D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) ) ), /* Fl Fn D Sfa
+      Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) ) ), /* Fl Fn D
+      Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0") ) )'
+    constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+
+- remainders: []
+  applied-rules:
+  - substitution:
+    - value: /* Fl Fn D Sfa Cl */ Lbl'-LT-'generatedCounter'-GT-'{}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("0") )
+      key: Var'Unds'DotVar0:SortGeneratedCounterCell{}
+    - value: '/* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cl */ Lbl''Hash''freezer''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term0''Unds''{}(
+        /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+        SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ),
+        /* Fl Fn D Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ dotk{}() )'
+      key: Var'Unds'DotVar1:SortK{}
+    - value: '/* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) )'
+      key: VarS:SortValue{}
+    - value: '/* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl
+        Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+        SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) )'
+      key: VarT:SortTerm{}
+    - value: /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1")
+      key: VarX:SortInt{}
+    results:
+    - term: '/* Fl Fn D Spa */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Spa */
+        Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Spa */ kseq{}( /* Fl Fn D Spa */ /* Inj:
+        */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Spa */ Lblsubstitute''LParUndsCommUndsCommUndsRParUnds''LAMBDA-CUSTOM-SUBSTITUTION''Unds''Term''Unds''Term''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D
+        Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+        SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) ), /* Fl Fn D
+        Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+        SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) )
+        ) ), /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cl */ Lbl''Hash''freezer''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term0''Unds''{}(
+        /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+        SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ),
+        /* Fl Fn D Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ dotk{}() ) ) ), /*
+        Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}( /* Fl Fn D Sfa Cl
+        */ \dv{SortInt{}}("0") ) )'
+      constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+    rule-id: a66822cce81b8c1733e72c41056ba1470cc4549ecce7fb73b9be09a5a4aa123a
+  initial:
+    term: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa
+      Cl */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli
+      */ /* Inj: */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa
+      Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+      Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) ) ) ), /* Fl Fn
+      D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) ) ) ), /* Fl Fn D
+      Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cl */ Lbl''Hash''freezer''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term0''Unds''{}(
+      /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+      SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ), /* Fl Fn D Sfa
+      Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ dotk{}() ) ) ), /* Fl Fn D Sfa Cl */
+      Lbl''-LT-''generatedCounter''-GT-''{}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+      ) )'
+    constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+
+- remainders: []
+  applied-rules:
+  - substitution:
+    - value: /* Fl Fn D Sfa Cl */ Lbl'-LT-'generatedCounter'-GT-'{}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("0") )
+      key: Var'Unds'DotVar0:SortGeneratedCounterCell{}
+    - value: /* Fl Fn D Sfa Cl */ dotk{}()
+      key: Var'Unds'DotVar1:SortK{}
+    - value: '/* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl
+        Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+        SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) )
+        ) ) )'
+      key: VarHOLE:SortTerm{}
+    - value: '/* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl
+        Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) )'
+      key: VarK1:SortTerm{}
+    results:
+    - term: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa
+        Cl */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa
+        Cli */ /* Inj: */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D
+        Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+        SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) )
+        ) ) ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl
+        Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) )
+        ) ), /* Fl Fn D Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0") ) )'
+      constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+    rule-id: f369a89b7654d3b04e7c9c3efdb5f5d0c18a6c981c88c3f45517038e19329092
+  initial:
+    term: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa
+      Cl */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli
+      */ /* Inj: */ inj{SortValue{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+      Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) ) ) ) ), /* Fl Fn
+      D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cl */ Lbl''Hash''freezer''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term0''Unds''{}(
+      /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+      SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ), /* Fl Fn D Sfa
+      Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ dotk{}() ) ) ), /* Fl Fn D Sfa Cl */
+      Lbl''-LT-''generatedCounter''-GT-''{}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")
+      ) )'
+    constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+
+- remainders: []
+  applied-rules:
+  - substitution:
+    - value: /* Fl Fn D Sfa Cl */ Lbl'-LT-'generatedCounter'-GT-'{}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("0") )
+      key: Var'Unds'DotVar0:SortGeneratedCounterCell{}
+    - value: /* Fl Fn D Sfa Cl */ dotk{}()
+      key: Var'Unds'DotVar1:SortK{}
+    - value: '/* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) )'
+      key: VarS:SortValue{}
+    - value: '/* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+        SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) )
+        )'
+      key: VarT:SortTerm{}
+    - value: /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2")
+      key: VarX:SortInt{}
+    results:
+    - term: '/* Fl Fn D Spa */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Spa */
+        Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Spa */ kseq{}( /* Fl Fn D Spa */ /* Inj:
+        */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Spa */ Lblsubstitute''LParUndsCommUndsCommUndsRParUnds''LAMBDA-CUSTOM-SUBSTITUTION''Unds''Term''Unds''Term''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+        SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) )
+        ), /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj:
+        */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) )
+        ) ), /* Fl Fn D Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0") ) )'
+      constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+    rule-id: a66822cce81b8c1733e72c41056ba1470cc4549ecce7fb73b9be09a5a4aa123a
+  initial:
+    term: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa
+      Cl */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli
+      */ /* Inj: */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa
+      Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+      Cl */ \dv{SortInt{}}("2") ), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) ) ) ) ), /* Fl Fn
+      D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ) ) ), /* Fl Fn D
+      Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0") ) )'
+    constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+
+- remainders: []
+  applied-rules:
+  - substitution:
+    - value: /* Fl Fn D Sfa Cl */ Lbl'-LT-'generatedCounter'-GT-'{}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("0") )
+      key: Var'Unds'DotVar0:SortGeneratedCounterCell{}
+    - value: /* Fl Fn D Sfa Cl */ dotk{}()
+      key: Var'Unds'DotVar1:SortK{}
+    - value: '/* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) )'
+      key: VarS:SortValue{}
+    - value: '/* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn
+        D Sfa Cl */ \dv{SortInt{}}("1") )'
+      key: VarT:SortTerm{}
+    - value: /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1")
+      key: VarX:SortInt{}
+    results:
+    - term: '/* Fl Fn D Spa */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Spa */
+        Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Spa */ kseq{}( /* Fl Fn D Spa */ /* Inj:
+        */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Spa */ Lblsubstitute''LParUndsCommUndsCommUndsRParUnds''LAMBDA-CUSTOM-SUBSTITUTION''Unds''Term''Unds''Term''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ \dv{SortInt{}}("1") ), /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /*
+        Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa
+        Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */
+        inj{SortInt{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) )
+        ) ), /* Fl Fn D Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}(
+        /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0") ) )'
+      constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+    rule-id: a66822cce81b8c1733e72c41056ba1470cc4549ecce7fb73b9be09a5a4aa123a
+  initial:
+    term: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa
+      Cl */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli
+      */ /* Inj: */ inj{SortTerm{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbl''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Term''Unds''Term''Unds''Term{}(
+      /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa
+      Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("1") ) ) ), /* Fl Fn D Sfa
+      Cli */ /* Inj: */ inj{SortValue{}, SortTerm{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+      SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) ) ) ), /* Fl Fn D
+      Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}(
+      /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0") ) )'
+    constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+
+finals:
+- term: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa Cl
+    */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli */
+    /* Inj: */ inj{SortValue{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbllambda''UndsUndsUnds''LAMBDA-SYNTAX''Unds''Value''Unds''Int''Unds''Term{}(
+    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2"), /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortInt{},
+    SortTerm{}}( /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("2") ) ) ), /* Fl Fn D Sfa Cl
+    */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}( /*
+    Fl Fn D Sfa Cl */ \dv{SortInt{}}("0") ) )'
+  constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+

@@ -38,7 +38,9 @@ def load_rewriting_task(module: Module, task_path: str) -> RewritingTask:
     """
     with open(task_path) as task_file:
         loaded_obj = yaml.load(task_file, Loader=yaml.Loader)
-        return RewritingTask.load_from_object(module, loaded_obj)
+        task = RewritingTask.load_from_object(loaded_obj)
+        task.resolve(module)
+        return task
 
 
 def prove_rewriting(
@@ -47,7 +49,7 @@ def prove_rewriting(
 ) -> None:
     gen = RewriteProofGenerator(env)
     final_claim = gen.prove_rewriting_task(task)
-    env.load_comment(f"\nfinal goal:\n{task.initial}\n=>\n{task.final}\n")
+    env.load_comment(f"final goal")
     env.load_provable_claim_as_theorem("goal", final_claim)
 
 

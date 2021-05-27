@@ -42,6 +42,7 @@ class RewriteProofGenerator(ProofGenerator):
             "LblnotBool'Unds'": BooleanNotEvaluator(env),
             "Lbl'UndsEqlsEqls'K'Unds'": KEqualityEvaluator(env),
             "Lbl'UndsEqlsSlshEqls'K'Unds'": KNotEqualityEvaluator(env),
+            "LblMap'Coln'lookup": MapLookupEvaluator(env),
         }
         self.disjoint_gen = DisjointnessProofGenerator(env)
 
@@ -188,12 +189,21 @@ class RewriteProofGenerator(ProofGenerator):
         """
         Prove a single rewriting step
         """
-        assert rewriting_step.initial is not None
-
         # TODO: this is a hack to load all domain values
-        self.composer.encode_pattern(rewriting_step.initial)
+        initial_pattern = rewriting_step.initial.assume_concrete()
 
-        return self.rewrite_from_pattern(rewriting_step.initial, rewriting_step.rule_id, rewriting_step.substitution)
+        self.composer.encode_pattern(initial_pattern)
+
+        assert len(rewriting_step.applied_rules) == 1 and len(rewriting_step.remainders) == 0, \
+               "non-determinism not supported"
+
+        rule = rewriting_step.applied_rules[0]
+
+        return self.rewrite_from_pattern(
+            initial_pattern,
+            rule.rule_id,
+            rule.substitution,
+        )
 
     def check_equal_or_unify(self, given: kore.Pattern, expected: kore.Pattern) -> Optional[ProvableClaim]:
         """
@@ -235,31 +245,32 @@ class RewriteProofGenerator(ProofGenerator):
         Prove a rewriting task which may contain multiple rewrite steps,
         from the given hints
         """
-        current_pattern = task.initial
+        initial_pattern = task.get_initial_pattern().assume_concrete()
+        final_patterns = task.get_final_patterns()
+
+        assert len(final_patterns) == 1, "non-determinism not supported"
+        final_pattern = final_patterns[0].assume_concrete()
 
         # simplify before rewriting
         print("==================")
         print("simplifying initial pattern")
-        simplification_claim = self.apply_reflexivity(current_pattern)
+        simplification_claim = self.apply_reflexivity(initial_pattern)
         simplification_claim = self.simplify_pattern(simplification_claim, [0, 1])
         _, current_pattern = self.decompose_concrete_rewrite_claim(simplification_claim)
 
         # if the RHS is already the same as to_pattern, no need to do more
-        if current_pattern == task.final:
+        if current_pattern == final_pattern:
             return simplification_claim
 
         step_claims = [simplification_claim]
 
-        for i, step in enumerate(task.steps):
+        for i, step in enumerate(task.get_all_steps()):
             print("==================")
             print("proving rewriting step {}".format(i))
 
-            # check that the current pattern
-            # is the same as expected
-            # otherwise try to unify
-            assert step.initial is not None, "insufficient hints"
+            step_initial = step.initial.assume_concrete()
 
-            unification_claim = self.check_equal_or_unify(current_pattern, step.initial)
+            unification_claim = self.check_equal_or_unify(current_pattern, step_initial)
             if unification_claim is not None:
                 step_claims.append(unification_claim)
                 _, current_pattern = self.decompose_concrete_rewrite_claim(unification_claim)
@@ -267,8 +278,8 @@ class RewriteProofGenerator(ProofGenerator):
             step_claim = self.prove_rewriting_step(step)
             lhs, rhs = self.decompose_concrete_rewrite_claim(step_claim)
 
-            assert step.initial == lhs, \
-                   f"unexpected rewriting claim, expected to rewrite from {step.initial}, but got {lhs}"
+            assert step_initial == lhs, \
+                   f"unexpected rewriting claim, expected to rewrite from {step_initial}, but got {lhs}"
 
             self.composer.load_comment(f"\nrewriting step:\n{lhs}\n=>\n{rhs}\n")
             step_claim = self.composer.load_provable_claim_as_theorem(
@@ -280,7 +291,7 @@ class RewriteProofGenerator(ProofGenerator):
             current_pattern = rhs
 
         # unify with the final expected pattern
-        unification_claim = self.check_equal_or_unify(current_pattern, task.final)
+        unification_claim = self.check_equal_or_unify(current_pattern, final_pattern)
         if unification_claim is not None:
             step_claims.append(unification_claim)
 
@@ -973,3 +984,35 @@ class KNotEqualityEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, a != b)
+
+
+class MapLookupEvaluator(BuiltinFunctionEvaluator):
+    """
+    Implements the K builtin function MAP.lookup
+    """
+    def lookup(self, map_pattern: kore.Application, key_pattern: kore.Pattern) -> Optional[kore.Pattern]:
+        if KoreTemplates.is_map_unit_pattern(map_pattern):
+            return None
+        elif KoreTemplates.is_map_merge_pattern(map_pattern):
+            left = KoreTemplates.get_map_merge_left(map_pattern)
+            right = KoreTemplates.get_map_merge_right(map_pattern)
+            assert isinstance(left, kore.Application) and isinstance(right, kore.Application)
+
+            return self.lookup(left, key_pattern) or self.lookup(right, key_pattern)
+        else:
+            assert KoreTemplates.is_map_mapsto_pattern(map_pattern)
+            key, value = map_pattern.arguments
+
+            if key == key_pattern:
+                return value
+
+            return None
+
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        map_pattern, key_pattern = application.arguments
+        assert isinstance(map_pattern, kore.Application)
+
+        found = self.lookup(map_pattern, key_pattern)
+        assert found is not None, f"key {key_pattern} does not exist in map pattern {map_pattern}"
+
+        return self.build_equation(application, found)

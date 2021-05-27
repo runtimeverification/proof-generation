@@ -70,10 +70,10 @@ class TestRewriteProofGeneratorIntegeration(TestIntegrationBase):
         self.run_rewrite_proof_gen("pgm-1.foo")
 
     def test_lambda(self) -> None:
-        self.run_rewrite_proof_gen("pgm-1.lambda")
+        self.run_rewrite_proof_gen("pgm-1.lambda-custom-substitution")
 
     def test_imp(self) -> None:
-        self.run_rewrite_proof_gen("pgm-1.imp")
+        self.run_rewrite_proof_gen("pgm-1.imp-custom-map")
 
     def test_map_test_comm(self) -> None:
         self.run_rewrite_proof_gen("pgm-comm.map-test")
