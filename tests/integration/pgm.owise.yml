@@ -1,13 +1,17 @@
-final: "/* Fl Fn D Sfa Cl */\nLbl'-LT-'generatedTop'-GT-'{}(\n    /* Fl Fn D Sfa Cl\
-  \ */\n    Lbl'-LT-'k'-GT-'{}(\n        /* Fl Fn D Sfa Cl */\n        kseq{}(\n \
-  \           /* Fl Fn D Sfa Cli */\n            /* Inj: */ inj{SortFoo{}, SortKItem{}}(\n\
-  \                /* Fl Fn D Sfa Cl */\n                Lbla'LParUndsRParUnds'OWISE'Unds'Foo'Unds'Foo{}(\n\
-  \                    /* Fl Fn D Sfa Cl */ Lbld'LParRParUnds'OWISE'Unds'Foo{}()\n\
-  \                )\n            ),\n            /* Fl Fn D Sfa Cl */ dotk{}()\n\
-  \        )\n    ),\n    /* Fl Fn D Sfa Cl */\n    Lbl'-LT-'generatedCounter'-GT-'{}(/*\
-  \ Fl Fn D Sfa Cl */ \\dv{SortInt{}}(\"0\"))\n)\n"
-initial: inj{SortGeneratedTopCell{}, SortKItem{}}(Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortFoo{},
-  SortKItem{}}(Lblf'LParUndsRParUnds'OWISE'Unds'Foo'Unds'Foo{}(Lbld'LParRParUnds'OWISE'Unds'Foo{}())),
-  dotk{}())), Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0"))))
-steps: []
 task: rewriting
+initial: '/* Fn */ LblinitGeneratedTopCell{}( /* Fn */ Lbl''Unds''Map''Unds''{}( /*
+  Fl Fn D */ Lbl''Stop''Map{}(), /* Fl Fn D Spa */ Lbl''UndsPipe''-''-GT-Unds''{}(
+  /* Fl Fn D Sfa Cli */ /* Inj: */ inj{SortKConfigVar{}, SortKItem{}}( /* Fl Fn D
+  Sfa Cl */ \dv{SortKConfigVar{}}(/* Fl Fn D Sfa Cl */ "$PGM") ), /* Fl Fn D Spa */
+  /* Inj: */ inj{SortFoo{}, SortKItem{}}( /* Fl Fn D Spa */ Lblf''LParUndsRParUnds''OWISE''Unds''Foo''Unds''Foo{}(
+  /* Fl Fn D Sfa Cl */ Lbld''LParRParUnds''OWISE''Unds''Foo{}() ) ) ) ) )'
+steps:
+finals:
+- term: '/* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedTop''-GT-''{}( /* Fl Fn D Sfa Cl
+    */ Lbl''-LT-''k''-GT-''{}( /* Fl Fn D Sfa Cl */ kseq{}( /* Fl Fn D Sfa Cli */
+    /* Inj: */ inj{SortFoo{}, SortKItem{}}( /* Fl Fn D Sfa Cl */ Lbla''LParUndsRParUnds''OWISE''Unds''Foo''Unds''Foo{}(
+    /* Fl Fn D Sfa Cl */ Lbld''LParRParUnds''OWISE''Unds''Foo{}() ) ), /* Fl Fn D
+    Sfa Cl */ dotk{}() ) ), /* Fl Fn D Sfa Cl */ Lbl''-LT-''generatedCounter''-GT-''{}(
+    /* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0") ) )'
+  constraint: /* D Sfa */ \top{SortGeneratedTopCell{}}()
+

@@ -20,7 +20,7 @@ The itp and rewrite prover use Python (3.7+). Some dependencies are required:
 You would also need to build and install a custom version of K at [here](https://github.com/rod-lin/k/tree/matching-logic-proof-checker),
 which uses a modified haskell backend to print extra proof hints for rewriting.
 
-You could also try to use the official K at version `v5.0.0-bbc70cb` but
+You could also try to use the current version of K but
 you would need to add an extra flag `--no-backend-hints` for the `scripts.run_test`
 script below.
 

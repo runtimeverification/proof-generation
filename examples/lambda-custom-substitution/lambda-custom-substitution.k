@@ -13,7 +13,7 @@ syntax Value ::= "lambda" Int Term
 
 endmodule
 
-module LAMBDA
+module LAMBDA-CUSTOM-SUBSTITUTION
 
 imports LAMBDA-SYNTAX
 
