@@ -202,7 +202,7 @@ class RewriteProofGenerator(ProofGenerator):
         return self.rewrite_from_pattern(
             initial_pattern,
             rule.rule_id,
-            rule.substitution,
+            rule.get_substitution(),
         )
 
     def check_equal_or_unify(self, given: kore.Pattern, expected: kore.Pattern) -> Optional[ProvableClaim]:
