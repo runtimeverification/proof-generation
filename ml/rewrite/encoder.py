@@ -58,10 +58,8 @@ class KorePatternEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
     def encode_symbol(symbol: Union[kore.SymbolInstance, str]) -> str:
         if isinstance(symbol, str):
             symbol_str = symbol
-        elif isinstance(symbol.definition, str):
-            symbol_str = symbol.definition
         else:
-            symbol_str = symbol.definition.symbol
+            symbol_str = symbol.get_symbol_name()
 
         if symbol_str == "inj":
             return "\\kore-inj"
@@ -71,11 +69,11 @@ class KorePatternEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
     @staticmethod
     def encode_sort(sort: Union[kore.SortInstance, str]) -> str:
         if isinstance(sort, str):
-            return "\\kore-sort-" + sort
-        elif isinstance(sort.definition, str):
-            return "\\kore-sort-" + sort.definition
+            sort_id = sort
         else:
-            return "\\kore-sort-" + sort.definition.sort_id
+            sort_id = sort.get_sort_id()
+
+        return "\\kore-sort-" + sort_id
 
     @staticmethod
     def encode_string_literal(literal: kore.StringLiteral) -> str:

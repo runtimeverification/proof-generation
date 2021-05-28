@@ -54,7 +54,7 @@ syntax Pgm ::= Stmt
 
 endmodule
 
-module IMP
+module IMP-CUSTOM-MAP
 
 imports IMP-SYNTAX
 imports K-EQUAL

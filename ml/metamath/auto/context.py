@@ -1,7 +1,7 @@
 from typing import List, Optional
 
-from ..ast import Metavariable, Term, Application, ProvableStatement, StructuredStatement, Proof
-from ..composer import Composer, Theorem, MethodAutoProof
+from ..ast import Metavariable, Term, Application, ProvableStatement, StructuredStatement
+from ..composer import Composer, Theorem, MethodAutoProof, Proof
 
 from .notation import NotationProver
 

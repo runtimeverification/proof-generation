@@ -1,8 +1,8 @@
 from typing import Mapping, Optional, List, Tuple, Dict, Any, Callable
 from dataclasses import dataclass
 
-from ml.metamath.ast import Term, StructuredStatement, Statement, Application, Metavariable, Proof, EssentialStatement, ProvableStatement
-from ml.metamath.composer import Theorem, TypecodeProver, Context
+from ml.metamath.ast import Term, StructuredStatement, Statement, Application, Metavariable, EssentialStatement, ProvableStatement
+from ml.metamath.composer import Theorem, TypecodeProver, Context, Proof, TheoremContext
 from ml.metamath.auto.notation import NotationProver
 
 from .state import ProofState, Goal, Tactic
@@ -251,7 +251,7 @@ class ClaimTactic(Tactic):
 
         floatings = state.composer.context.find_floatings(metavariables)
 
-        self.claim_theorm = Theorem(state.composer, Context(floatings, essentials), conclusion)
+        self.claim_theorm = Theorem(state.composer, conclusion, TheoremContext(tuple(floatings), tuple(essentials)))
         self.claim_goal = state.add_claim(self.claim_theorm)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
@@ -327,7 +327,7 @@ class FromTactic(Tactic):
         # add a local claim
         theorem_conclusion_as_essential = \
             EssentialStatement(ClaimTactic.find_free_theorem_name(state, "hyp-"), theorem_conclusion.terms)
-        local_theorem = Theorem(state.composer, Context(), theorem_conclusion_as_essential)
+        local_theorem = Theorem(state.composer, theorem_conclusion_as_essential)
         phantom_goal = state.add_claim(local_theorem, is_local=True)
         state.resolve_top_goal(self)  # directly resolve it
 

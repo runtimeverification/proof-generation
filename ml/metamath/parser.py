@@ -34,11 +34,10 @@ class ASTTransformer(Transformer[BaseAST]):
         assert (variable in self.metavariables), "variable {} used before declaration".format(variable)
         return FloatingStatement(label, (Application(typecode), Metavariable(variable)))
 
-    """
-    Parse a term from a list of tokens, returns the term and the rest of the unused tokens
-    """
-
     def parse_term(self, tokens: List[str]) -> Tuple[Term, List[str]]:
+        """
+        Parse a term from a list of tokens, returns the term and the rest of the unused tokens
+        """
         assert len(tokens)
 
         first = tokens[0]
@@ -93,11 +92,7 @@ class ASTTransformer(Transformer[BaseAST]):
         script = list(args[-1])
         tokens = args[:-1]
         terms = self.parse_terms(tokens)
-
-        statement = ProvableStatement(label, terms)
-        statement.proof = Proof.from_script(statement, script)
-
-        return statement
+        return ProvableStatement(label, terms, " ".join(script))
 
     def block(self, args: List[Statement]) -> Block:
         return Block(tuple(args))

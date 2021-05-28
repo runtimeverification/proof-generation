@@ -18,8 +18,8 @@ from typing import (
 )
 from abc import abstractmethod
 
-from ml.metamath.ast import StructuredStatement, Metavariable, Term, Terms, ProvableStatement, Proof, Application
-from ml.metamath.composer import Composer, Theorem, Context, TypecodeProver
+from ml.metamath.ast import StructuredStatement, Metavariable, Term, Terms, ProvableStatement, Application
+from ml.metamath.composer import Composer, Theorem, Context, TypecodeProver, Proof, TheoremContext
 from ml.metamath.parser import (
     parse_term_with_metavariables,
     parse_terms_with_metavariables,
@@ -154,7 +154,7 @@ class ProofState:
             claim = self.claims[goal.claim_label]
             for essential in claim.theorem.context.essentials:
                 if essential.label == name:
-                    return Theorem(self.composer, Context(), essential)
+                    return Theorem(self.composer, essential)
             return None
         else:
             return self.composer.find_essential(name)
@@ -163,7 +163,7 @@ class ProofState:
         top_goal = self.get_top_goal()
         if top_goal.claim_label is not None:
             claim = self.claims[top_goal.claim_label]
-            return [Theorem(self.composer, Context(), essential) for essential in claim.theorem.context.essentials]
+            return [Theorem(self.composer, essential) for essential in claim.theorem.context.essentials]
         else:
             return self.composer.get_all_essentials()
 
@@ -231,7 +231,8 @@ class ProofState:
         assert theorem.statement.label is not None
         top_claim_label = self.get_current_scope()
         goal = self.push_isolated_goal(theorem.statement, theorem.statement.label)
-        self.claims[theorem.statement.label] = Claim(goal.goal_id, theorem, is_local, top_claim_label)
+        self.claims[theorem.statement.label
+                    ] = Claim(goal.goal_id, theorem, is_local, top_claim_label if is_local else None)
         return goal
 
     def find_claim(self, name: str) -> Optional[Claim]:

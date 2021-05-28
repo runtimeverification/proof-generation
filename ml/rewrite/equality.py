@@ -5,7 +5,7 @@ from ml.kore.visitors import PatternVariableVisitor, SortVariableVisitor
 from ml.kore.utils import KoreUtils, PatternPath
 
 from ml.metamath import ast as mm
-from ml.metamath.ast import Proof
+from ml.metamath.composer import Proof
 from ml.metamath.auto.sorting import SortingProver
 from ml.metamath.auto.substitution import SubstitutionProver
 
@@ -42,8 +42,8 @@ class EqualityProofGenerator(ProofGenerator):
         final_claim = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, replacement)
 
         # check for proof cache
-        cached_proof = self.env.composer.lookup_proof_cache(
-            "equality-cache", self.env.encode_metamath_statement(final_claim)
+        cached_proof = self.composer.lookup_proof_cache(
+            "equality-cache", self.composer.encode_metamath_statement(final_claim)
         )
         if cached_proof is not None:
             return ProvableClaim(final_claim, cached_proof)
@@ -57,18 +57,20 @@ class EqualityProofGenerator(ProofGenerator):
             KorePatternEncoder.encode_variable(var)
             for var in PatternVariableVisitor().visit(provable.claim)
         }
-        (fresh_var, ) = self.env.gen_fresh_metavariables("#ElementVariable", 1, all_metavars)
+        (fresh_var, ) = self.composer.gen_fresh_metavariables("#ElementVariable", 1, all_metavars)
 
         sort = KoreUtils.infer_sort(original)
         assert sort == KoreUtils.infer_sort(replacement)
 
         # make a template/context for the replacement
         var = kore.Variable(fresh_var, sort)
-        var.resolve(self.env.module)
+        var.resolve(self.composer.module)
         template_pattern = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, var)
 
-        subst_proof1 = SingleSubstitutionProofGenerator(self.env, var, original).prove_substitution(template_pattern)
-        subst_proof2 = SingleSubstitutionProofGenerator(self.env, var, replacement).prove_substitution(template_pattern)
+        subst_proof1 = SingleSubstitutionProofGenerator(self.composer, var,
+                                                        original).prove_substitution(template_pattern)
+        subst_proof2 = SingleSubstitutionProofGenerator(self.composer, var,
+                                                        replacement).prove_substitution(template_pattern)
 
         # kore-equality requires that the sort variable in the equation
         # should be disjoint from the main statement being substituted
@@ -85,7 +87,7 @@ class EqualityProofGenerator(ProofGenerator):
         current_sort_var = equation_proof.conclusion[1].subterms[0].name
 
         if current_sort_var in all_sort_metavars:
-            (fresh_sort_var, ) = self.env.gen_fresh_metavariables(
+            (fresh_sort_var, ) = self.composer.gen_fresh_metavariables(
                 "#ElementVariable",
                 1,
                 all_sort_metavars.union(all_metavars).union({fresh_var}),
@@ -95,14 +97,14 @@ class EqualityProofGenerator(ProofGenerator):
             equation_body_subst = equation_body.substitute({current_sort_var: mm.Metavariable(fresh_sort_var)})
 
             # apply alpha renaming
-            equation_proof = self.env.get_theorem("alpha-kore-forall-sort-alt").apply(
+            equation_proof = self.composer.get_theorem("alpha-kore-forall-sort-alt").apply(
                 SubstitutionProver.auto,
                 equation_proof,
                 y=mm.Metavariable(fresh_sort_var),
                 ph1=equation_body_subst,
             )
 
-        final_proof = self.env.get_theorem("kore-equality").apply(
+        final_proof = self.composer.get_theorem("kore-equality").apply(
             equation_proof,
             provable.proof,
             subst_proof1,
@@ -112,7 +114,7 @@ class EqualityProofGenerator(ProofGenerator):
             SortingProver.auto,
         )
 
-        final_proof = self.env.cache_proof("equality-cache", final_proof)
+        final_proof = self.composer.cache_proof("equality-cache", final_proof)
 
         return ProvableClaim(final_claim, final_proof)
 
@@ -137,9 +139,9 @@ class EqualityProofGenerator(ProofGenerator):
         """
         Apply symmetry to a given equation
         """
-        proof = self.env.get_theorem("kore-equal-symmetry-v1").apply(equation.proof)
+        proof = self.composer.get_theorem("kore-equal-symmetry-v1").apply(equation.proof)
 
-        copied_claim = KoreUtils.copy_ast(self.env.module, equation.claim)
+        copied_claim = KoreUtils.copy_ast(self.composer.module, equation.claim)
         assert isinstance(copied_claim.pattern, kore.MLPattern)
         copied_claim.pattern.arguments[0], copied_claim.pattern.arguments[1] = \
             copied_claim.pattern.arguments[1], copied_claim.pattern.arguments[0]

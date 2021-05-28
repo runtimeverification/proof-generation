@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapping, Tuple, Collection, NamedTuple, TypeVar
-from dataclasses import dataclass, field
 from io import StringIO
+from dataclasses import dataclass, field
 
 from ml.utils.visitor import Visitor, ResultT
 from ml.utils.printer import Printer
@@ -48,11 +48,7 @@ class MetamathVisitor(Visitor["BaseAST", ResultT]):
 
 class BaseAST:
     def __str__(self) -> str:
-        stream = StringIO()
-        encoder = BaseEncoder(stream)
-        encoder.visit(self)
-        encoder.flush()
-        return stream.getvalue()
+        return Encoder.encode_string(self, omit_proof=True)
 
     def __repr__(self) -> str:
         return str(self)
@@ -111,33 +107,6 @@ class Application(Term):
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_application(self)  # type: ignore
-
-    # def __eq__(self, other: Any) -> bool:
-    #     # this function is specifically rewritten
-    #     # to not use recursion since it's used
-    #     # too many times and has become a performance
-    #     # bottleneck
-    #     if not isinstance(other, Application):
-    #         return False
-
-    #     comparison_left: List[Term] = [self]
-    #     comparison_right: List[Term] = [other]
-
-    #     while comparison_left:
-    #         left = comparison_left.pop()
-    #         right = comparison_right.pop()
-
-    #         if isinstance(left, Application) and isinstance(right, Application):
-    #             if left.symbol == right.symbol and len(left.subterms) == len(right.subterms):
-    #                 comparison_left.extend(left.subterms)
-    #                 comparison_right.extend(right.subterms)
-    #             else:
-    #                 return False
-    #         elif not (left == right):
-    #             # fall back to default equality
-    #             return False
-
-    #     return True
 
     def __hash__(self) -> int:
         if self.hash_cache is not None:
@@ -235,7 +204,7 @@ class AxiomaticStatement(ConclusionStatement):
 
 @dataclass
 class ProvableStatement(ConclusionStatement):
-    proof: Optional[Proof] = None
+    proof: Optional[str] = None
 
 
 @dataclass
@@ -281,222 +250,25 @@ class Database(BaseAST):
         return visitor.proxy_visit_database(self)  # type: ignore
 
 
-class Proof:
-    """
-    A Metamath proof is a tree with each node being a
-    statement label and the number of children
-    should be equal to the nmuber of mandatory hypotheses
-
-    This datastructure allows both reference to other proofs
-    and raw, unparsed proofs to save space
-    """
-    def __init__(self, conclusion: Iterable[Term]):
-        self.conclusion: Terms = tuple(conclusion)
-
-        self.nodes: List[Union[str, Tuple[str, ...]]] = []
-        # a node is either:
-        # - a label, which can be used for any node in the tree
-        # - a Proof, which can only be used for non-leaf nodes
-        # - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
-
-        self.node_to_conclusion: List[Terms] = []
-        # conclusions for each dag
-        # note that node_to_conclusion[0] == self.internal_conclusions
-
-        self.dag: Dict[int, List[int]] = {}
-        # a proof DAG should have a unique source at 0
-        # for now it's always a tree
-        # if a node has no out-edges, it SHOULD NOT
-        # have an entry in self.dag
-
-    @staticmethod
-    def from_script(statement: StructuredStatement, script: Union[str, Iterable[str]]) -> Proof:
-        """
-        Make a proof from the normal proof format as a list of labels
-        """
-        proof = Proof(statement.terms)
-        proof.nodes = [script if isinstance(script, str) else tuple(script)]
-        proof.node_to_conclusion = [proof.conclusion]
-        return proof
-
-    def add_subproof(self, subproof: Proof, conclusion_to_node: Dict[Tuple[Term, ...], int] = {}) -> int:
-        """
-        Add a disconnected subproof
-
-        conclusion_to_node is a dictionary to keep track of nodes
-        with duplicated conclusions, provided by the caller to
-        reduce proof size
-        """
-        prev_num_nodes = next_node = len(self.nodes)
-
-        node_map: Dict[int, int] = {}
-        # from the old node from the new node
-
-        new_conclusion_to_node = {}
-
-        for i, item in enumerate(subproof.nodes):
-            item_conclusion = subproof.node_to_conclusion[i]
-            shared_node = conclusion_to_node.get(item_conclusion)
-
-            if shared_node is not None:
-                node_map[i] = shared_node
-            else:
-                node_map[i] = next_node
-                self.nodes.append(item)
-                self.node_to_conclusion.append(item_conclusion)
-                new_conclusion_to_node[item_conclusion] = next_node
-                next_node += 1
-
-        for i, neighbors in subproof.dag.items():
-            new_node = node_map[i]
-            if new_node >= prev_num_nodes:
-                self.dag[node_map[i]] = [node_map[n] for n in neighbors]
-
-        conclusion_to_node.update(new_conclusion_to_node)
-
-        return node_map[0]
-
-    @staticmethod
-    def from_application(statement: StructuredStatement, root: str, children: Collection[Proof]) -> Proof:
-        """
-        Combine the proof DAGs
-        """
-
-        proof = Proof(statement.terms)
-        proof.nodes = [root]
-        proof.node_to_conclusion = [proof.conclusion]
-
-        conclusion_to_node: Dict[Tuple[Term, ...], int] = {}
-        if len(children) != 0:
-            proof.dag[0] = []
-            for child in children:
-                child_root = proof.add_subproof(child, conclusion_to_node)
-                proof.dag[0].append(child_root)
-
-        return proof
-
-    def as_statement(self, label: str) -> StructuredStatement:
-        """
-        Encode as a provable statement
-        """
-        return ProvableStatement(label, self.conclusion, self)
-
-    def is_leaf(self, node: int) -> bool:
-        return node not in self.dag
-
-    def get_children_of(self, node: int) -> List[int]:
-        return self.dag.get(node, [])
-
-    def flatten(self, output_script: List[str], root: int = 0) -> None:
-        """
-        Flatten encodes a recursive hierarchy of proofs
-        as the normal Metamath proof format
-        """
-        for child in self.get_children_of(root):
-            self.flatten(output_script, child)
-
-        subproof = self.nodes[root]
-
-        if isinstance(subproof, str):
-            output_script.append(subproof)
-        else:
-            output_script.extend(subproof)
-
-    def is_proof_of(self, statement: StructuredStatement) -> bool:
-        return self.conclusion == tuple(statement.terms)
-
-    def __len__(self) -> int:
-        size = 0
-        for subproof in self.nodes:
-            if isinstance(subproof, str):
-                size += 1
-            else:
-                size += len(subproof)
-        return size
-
-    def __str__(self) -> str:
-        return f"<proof of {' '.join(map(str, self.conclusion))}>"
-
-    @staticmethod
-    def encode_index(n: int) -> str:
-        """
-        Encode an index in the Metamath compressed proof format
-        """
-
-        number = n - 1
-        final_letter = chr(ord("A") + number % 20)
-        if number < 20:
-            return final_letter
-
-        number //= 20
-
-        letters = []
-        while True:
-            number -= 1
-            letters.append(chr(ord("U") + ((number % 5))))
-            number //= 5
-            if not number:
-                break
-
-        letters.reverse()
-        letters.append(final_letter)
-        return "".join(letters)
-
-    @staticmethod
-    def compress_script(mandatory: List[str], proof: List[str]) -> str:
-        label_to_letter = {"?": "?"}
-
-        # rank the labels by frequency
-        frequency = {}
-        for label in proof:
-            # ? and mandatory labels are handled differently
-            if label == "?" or label in mandatory:
-                continue
-
-            if label not in frequency:
-                frequency[label] = 0
-
-            frequency[label] += 1
-
-        sorted_frequency = sorted(list(frequency.items()), reverse=True, key=lambda t: t[1])
-        unique_labels = [label for label, _ in sorted_frequency]
-
-        for i, hyp in enumerate(mandatory + unique_labels):
-            label_to_letter[hyp] = Proof.encode_index(i + 1)
-
-        labels_str = " ".join(["("] + unique_labels + [")"])
-        letters = [label_to_letter[label] for label in proof]
-        letters_str = "".join(letters)
-
-        return labels_str + " " + letters_str
-
-    def encode_normal(self) -> str:
-        """
-        Encode a proof in the normal format (i.e. a list of space-separated labels)
-        """
-        script: List[str] = []
-        self.flatten(script)
-        return " ".join(script)
-
-    def encode_compressed(self, mandatory_hypotheses: List[str]) -> str:
-        """
-        Encode a proof in the compressed format
-        This requires some context information, namely the mandatory hypotheses
-        of the statement in the order they are defined
-        """
-        # TODO: share subtrees
-        script: List[str] = []
-        self.flatten(script)
-        return Proof.compress_script(mandatory_hypotheses, script)
-
-
-class BaseEncoder(Printer, Visitor[BaseAST, None]):
+class Encoder(Printer, Visitor[BaseAST, None]):
     """
     Encoder for Metamath AST with options
     """
     def __init__(self, output: TextIO, tab: str = "   ", omit_proof: bool = False):
         super().__init__(output, tab)
         self.omit_proof = omit_proof
+
+    @staticmethod
+    def encode(output: TextIO, ast: BaseAST, *args: Any, **kwargs: Any) -> None:
+        encoder = Encoder(output, *args, **kwargs)
+        encoder.visit(ast)
+        encoder.flush()
+
+    @staticmethod
+    def encode_string(ast: BaseAST, *args: Any, **kwargs: Any) -> str:
+        stream = StringIO()
+        Encoder.encode(stream, ast, *args, **kwargs)
+        return stream.getvalue()
 
     def postvisit_metavariable(self, metavar: Metavariable) -> None:
         self.write(metavar.name)
@@ -553,10 +325,6 @@ class BaseEncoder(Printer, Visitor[BaseAST, None]):
         self.write(include.path)
         self.write(" $]")
 
-    def encode_proof(self, stmt: ProvableStatement) -> None:
-        assert stmt.proof is not None
-        self.write(stmt.proof.encode_normal())
-
     def get_statement_type(self, stmt: StructuredStatement) -> str:
         if isinstance(stmt, FloatingStatement):
             return "f"
@@ -566,8 +334,8 @@ class BaseEncoder(Printer, Visitor[BaseAST, None]):
             return "a"
         elif isinstance(stmt, ProvableStatement):
             return "p"
-
-        assert False, f"not a valid structured statement {stmt}"
+        else:
+            return "?"
 
     def postvisit_structured_statement(self, stmt: StructuredStatement) -> None:
         if stmt.label:
@@ -587,7 +355,7 @@ class BaseEncoder(Printer, Visitor[BaseAST, None]):
                     self.write(" $= <omitted>")
                 else:
                     self.write(" $= ")
-                    self.encode_proof(stmt)
+                    self.write(stmt.proof)
             else:
                 self.write(" $= ?")
 

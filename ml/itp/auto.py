@@ -4,8 +4,8 @@ Some automated tactics
 
 from typing import Optional, Tuple, List, Union, Dict
 
-from ml.metamath.ast import (Application, Term, Metavariable, StructuredStatement, Statement, ProvableStatement, Proof)
-from ml.metamath.composer import Theorem, TypecodeProver
+from ml.metamath.ast import Application, Term, Metavariable, StructuredStatement, Statement, ProvableStatement
+from ml.metamath.composer import Theorem, TypecodeProver, Proof
 
 from ml.metamath.auto.unification import Unification
 from ml.metamath.auto.notation import NotationProver

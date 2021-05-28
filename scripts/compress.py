@@ -1,39 +1,11 @@
 from typing import List, Optional, Tuple
 
 from ml.metamath.parser import load_database
-from ml.metamath.ast import Proof
-from ml.metamath.composer import Composer
+from ml.metamath.composer import Composer, Proof
 
 import os
 import re
 import argparse
-
-
-def compress(mandatory: List[str], proof: List[str]) -> str:
-    label_to_letter = {"?": "?"}
-
-    # rank the labels by frequency
-    frequency = {}
-    for label in proof:
-        # ? and mandatory labels are handled differently
-        if label == "?" or label in mandatory:
-            continue
-
-        if label not in frequency:
-            frequency[label] = 0
-
-        frequency[label] += 1
-
-    sorted_frequency = sorted(list(frequency.items()), reverse=True, key=lambda t: t[1])
-    unique_labels = [label for label, _ in sorted_frequency]
-
-    for i, hyp in enumerate(mandatory + unique_labels):
-        label_to_letter[hyp] = Proof.encode_index(i + 1)
-
-    labels_str = " ".join(["("] + unique_labels + [")"])
-    letters = [label_to_letter[label] for label in proof]
-    letters_str = "".join(letters)
-    return labels_str + " " + letters_str
 
 
 def locate_comment_segment(comment_segments: List[Tuple[int, int]], pos: int) -> Optional[Tuple[int, int]]:
@@ -85,7 +57,7 @@ def transform_provable_statement(
 
     theorem = composer.get_theorem(label)
     mandatory = theorem.context.get_all_mandatory_labels()
-    new_proof = compress(mandatory, stmt_src[proof_start_pos:proof_end_pos].split())
+    new_proof = Proof.compress_script(mandatory, stmt_src[proof_start_pos:proof_end_pos].split())
 
     return stmt_src[:proof_start_pos] + new_proof + stmt_src[proof_end_pos:]
 

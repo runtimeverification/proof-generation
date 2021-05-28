@@ -7,16 +7,15 @@ from ml.kore.utils import KoreUtils, PatternPath
 from ml.kore.ast import KoreVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.ast import Proof
-from ml.metamath.composer import Theorem
+from ml.metamath.composer import Theorem, Proof
 from ml.metamath.auto.sorting import SortingProver
 
 from .encoder import KorePatternEncoder
 
-from .env import ProofEnvironment, ProofGenerator, ProvableClaim
+from .env import KoreComposer, ProofGenerator, ProvableClaim
 from .equality import EqualityProofGenerator
 from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
-from .unification import UnificationProofGenerator, InjectionCombine
+from .unification import UnificationProofGenerator, InjectionCombine, UnificationResult
 from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
 from .tasks import RewritingStep, RewritingTask
@@ -27,7 +26,7 @@ class RewriteProofGenerator(ProofGenerator):
     Generate proofs for rewriting related claims
     """
 
-    def __init__(self, env: ProofEnvironment):
+    def __init__(self, env: KoreComposer):
         super().__init__(env)
         self.owise_assumption_counter = 0
         self.rewrite_claim_counter = 0
@@ -46,6 +45,7 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'UndsEqlsSlshEqls'K'Unds'": KNotEqualityEvaluator(env),
             "Lblkeys'LParUndsRParUnds'MAP'Unds'Set'Unds'Map": MapKeysEvaluator(env),
             "LblSet'Coln'in": SetInEvaluator(env),
+            "LblMap'Coln'lookup": MapLookupEvaluator(env),
         }
         self.disjoint_gen = DisjointnessProofGenerator(env)
 
@@ -104,15 +104,15 @@ class RewriteProofGenerator(ProofGenerator):
         Find and instantiate a rewrite axiom for the given pattern,
         and then resolve all the functions in the RHS
         """
-        unification_gen = UnificationProofGenerator(self.env)
+        unification_gen = UnificationProofGenerator(self.composer)
 
         if rule_hint is not None:
             assert (
-                rule_hint in self.env.rewrite_axioms
+                rule_hint in self.composer.rewrite_axioms
             ), f"unable to find axiom with id {rule_hint} in the hint"
-            axioms = [self.env.rewrite_axioms[rule_hint]]
+            axioms = [self.composer.rewrite_axioms[rule_hint]]
         else:
-            axioms = list(self.env.rewrite_axioms.values())
+            axioms = list(self.composer.rewrite_axioms.values())
 
         for rewrite_axiom in axioms:
             print(
@@ -134,7 +134,9 @@ class RewriteProofGenerator(ProofGenerator):
             if substitution_hints is not None:
                 substitution = {**substitution, **substitution_hints}
 
-            instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(
+            instantiated_axiom = QuantifierProofGenerator(
+                self.composer
+            ).prove_forall_elim(
                 rewrite_axiom,
                 substitution,
             )
@@ -159,7 +161,7 @@ class RewriteProofGenerator(ProofGenerator):
             if requires_proof is None:
                 continue
 
-            concrete_rewrite_proof = self.env.get_theorem(
+            concrete_rewrite_proof = self.composer.get_theorem(
                 "kore-rewrites-conditional-concrete"
             ).apply(
                 SortingProver.auto,
@@ -178,9 +180,8 @@ class RewriteProofGenerator(ProofGenerator):
                     [instantiated_axiom.claim.pattern.sorts[0]],
                     [lhs, rhs],
                 ),
-                [],
             )
-            concrete_rewrite.resolve(self.env.module)
+            concrete_rewrite.resolve(self.composer.module)
 
             concrete_rewrite_claim = ProvableClaim(
                 concrete_rewrite, concrete_rewrite_proof
@@ -215,13 +216,22 @@ class RewriteProofGenerator(ProofGenerator):
         """
         Prove a single rewriting step
         """
-        assert rewriting_step.initial is not None
-
         # TODO: this is a hack to load all domain values
-        self.env.encode_pattern(rewriting_step.initial)
+        initial_pattern = rewriting_step.initial.assume_concrete()
+
+        self.composer.encode_pattern(initial_pattern)
+
+        assert (
+            len(rewriting_step.applied_rules) == 1
+            and len(rewriting_step.remainders) == 0
+        ), "non-determinism not supported"
+
+        rule = rewriting_step.applied_rules[0]
 
         return self.rewrite_from_pattern(
-            rewriting_step.initial, rewriting_step.rule_id, rewriting_step.substitution
+            initial_pattern,
+            rule.rule_id,
+            rule.substitution,
         )
 
     def check_equal_or_unify(
@@ -240,7 +250,7 @@ class RewriteProofGenerator(ProofGenerator):
         if given == expected:
             return None
 
-        unification_result = UnificationProofGenerator(self.env).unify_patterns(
+        unification_result = UnificationProofGenerator(self.composer).unify_patterns(
             expected, given
         )
         assert (
@@ -270,31 +280,32 @@ class RewriteProofGenerator(ProofGenerator):
         Prove a rewriting task which may contain multiple rewrite steps,
         from the given hints
         """
-        current_pattern = task.initial
+        initial_pattern = task.get_initial_pattern().assume_concrete()
+        final_patterns = task.get_final_patterns()
+
+        assert len(final_patterns) == 1, "non-determinism not supported"
+        final_pattern = final_patterns[0].assume_concrete()
 
         # simplify before rewriting
         print("==================")
         print("simplifying initial pattern")
-        simplification_claim = self.apply_reflexivity(current_pattern)
+        simplification_claim = self.apply_reflexivity(initial_pattern)
         simplification_claim = self.simplify_pattern(simplification_claim, [0, 1])
         _, current_pattern = self.decompose_concrete_rewrite_claim(simplification_claim)
 
         # if the RHS is already the same as to_pattern, no need to do more
-        if current_pattern == task.final:
+        if current_pattern == final_pattern:
             return simplification_claim
 
         step_claims = [simplification_claim]
 
-        for i, step in enumerate(task.steps):
+        for i, step in enumerate(task.get_all_steps()):
             print("==================")
             print("proving rewriting step {}".format(i))
 
-            # check that the current pattern
-            # is the same as expected
-            # otherwise try to unify
-            assert step.initial is not None, "insufficient hints"
+            step_initial = step.initial.assume_concrete()
 
-            unification_claim = self.check_equal_or_unify(current_pattern, step.initial)
+            unification_claim = self.check_equal_or_unify(current_pattern, step_initial)
             if unification_claim is not None:
                 step_claims.append(unification_claim)
                 _, current_pattern = self.decompose_concrete_rewrite_claim(
@@ -305,11 +316,11 @@ class RewriteProofGenerator(ProofGenerator):
             lhs, rhs = self.decompose_concrete_rewrite_claim(step_claim)
 
             assert (
-                step.initial == lhs
-            ), f"unexpected rewriting claim, expected to rewrite from {step.initial}, but got {lhs}"
+                step_initial == lhs
+            ), f"unexpected rewriting claim, expected to rewrite from {step_initial}, but got {lhs}"
 
-            self.env.load_comment(f"\nrewriting step:\n{lhs}\n=>\n{rhs}\n")
-            step_claim = self.env.load_provable_claim_as_theorem(
+            self.composer.load_comment(f"\nrewriting step:\n{lhs}\n=>\n{rhs}\n")
+            step_claim = self.composer.load_provable_claim_as_theorem(
                 f"rewrite-step-{self.rewrite_claim_counter}", step_claim
             )
             self.rewrite_claim_counter += 1
@@ -318,7 +329,7 @@ class RewriteProofGenerator(ProofGenerator):
             current_pattern = rhs
 
         # unify with the final expected pattern
-        unification_claim = self.check_equal_or_unify(current_pattern, task.final)
+        unification_claim = self.check_equal_or_unify(current_pattern, final_pattern)
         if unification_claim is not None:
             step_claims.append(unification_claim)
 
@@ -339,13 +350,12 @@ class RewriteProofGenerator(ProofGenerator):
         new_claim = kore.Claim(
             [],
             kore.MLPattern(kore.MLPattern.REWRITES_STAR, [pattern_sort], [lhs, rhs]),
-            [],
         )
-        new_claim.resolve(self.env.module)
+        new_claim.resolve(self.composer.module)
 
         return ProvableClaim(
             new_claim,
-            self.env.get_theorem("kore-rewrites-star-intro").apply(
+            self.composer.get_theorem("kore-rewrites-star-intro").apply(
                 SortingProver.auto,
                 SortingProver.auto,
                 step.proof,
@@ -368,13 +378,12 @@ class RewriteProofGenerator(ProofGenerator):
         new_claim = kore.Claim(
             [],
             kore.MLPattern(kore.MLPattern.REWRITES_STAR, [pattern_sort], [lhs1, rhs2]),
-            [],
         )
-        new_claim.resolve(self.env.module)
+        new_claim.resolve(self.composer.module)
 
         return ProvableClaim(
             new_claim,
-            self.env.get_theorem("kore-rewrites-star-transitivity").apply(
+            self.composer.get_theorem("kore-rewrites-star-transitivity").apply(
                 SortingProver.auto,
                 SortingProver.auto,
                 SortingProver.auto,
@@ -392,99 +401,48 @@ class RewriteProofGenerator(ProofGenerator):
             isinstance(inner_pattern, kore.MLPattern)
             and inner_pattern.construct == kore.MLPattern.IMPLIES
         )
-
         requires, conjunction = inner_pattern.arguments
 
         assert (
             isinstance(conjunction, kore.MLPattern)
             and conjunction.construct == kore.MLPattern.AND
         )
-
         equation, ensures = conjunction.arguments
 
         assert (
             isinstance(equation, kore.MLPattern)
             and equation.construct == kore.MLPattern.EQUALS
         )
-
         lhs, rhs = equation.arguments
 
         return lhs, requires, rhs, ensures
 
-    def prove_requires_clause(self, pattern: kore.Pattern) -> Optional[Proof]:
-        r"""
-        Prove a pattern of the form
-        - top{S{}}(), or
-        - \equals{...}(..., ...)
-
-        For \equals, it can have either a concrete sort
-        or a sort variable as the output sort
-        """
-
-        assert isinstance(pattern, kore.MLPattern)
-
-        # if the pattern is top, then it's trivially true
-        if pattern.construct == kore.MLPattern.TOP:
-            sort = pattern.sorts[0]
-            encoded_sort = self.env.encode_pattern(sort)
-            if isinstance(sort, kore.SortInstance):
-                return self.env.get_theorem("kore-top-valid").apply(ph0=encoded_sort)
-            else:
-                assert isinstance(sort, kore.SortVariable)
-                return self.env.get_theorem("kore-top-valid-v1").apply(x=encoded_sort)
-
-        # assert pattern.construct == kore.MLPattern.EQUALS, \
-        #        f"unable to prove the requires clause {pattern}"
-        if pattern.construct != kore.MLPattern.EQUALS:
-            return None
+    def prove_equal_reflexivity(self, pattern: kore.MLPattern) -> Optional[Proof]:
+        assert pattern.construct == kore.MLPattern.EQUALS
 
         input_sort, output_sort = pattern.sorts
-        encoded_input_sort = self.env.encode_pattern(input_sort)
-        encoded_output_sort = self.env.encode_pattern(output_sort)
+        encoded_input_sort = self.composer.encode_pattern(input_sort)
+        encoded_output_sort = self.composer.encode_pattern(output_sort)
 
         lhs, rhs = pattern.arguments
-        encoded_lhs = self.env.encode_pattern(lhs)
+        encoded_lhs = self.composer.encode_pattern(lhs)
 
-        # we only support two cases right now:
-        # either the equals pattern depends on one
-        # free sort variable, or none
-        if isinstance(output_sort, kore.SortInstance):
-            proof = self.env.get_theorem("kore-equals-reflexivity").apply(
-                ph0=encoded_output_sort, ph1=encoded_input_sort, ph2=encoded_lhs
-            )
-            claim = kore.Claim(
-                [],
-                kore.MLPattern(
-                    kore.MLPattern.EQUALS,
-                    [
-                        input_sort,
-                        output_sort,
-                    ],
-                    [lhs, lhs],
-                ),
-                [],
-            )
-            claim.resolve(self.env.module)
-            provable = ProvableClaim(claim, proof)
-        else:
-            assert isinstance(output_sort, kore.SortVariable)
-            proof = self.env.get_theorem("kore-equals-reflexivity-v1").apply(
-                x=encoded_output_sort, ph0=encoded_input_sort, ph1=encoded_lhs
-            )
-            claim = kore.Claim(
-                [output_sort],
-                kore.MLPattern(
-                    kore.MLPattern.EQUALS,
-                    [
-                        input_sort,
-                        output_sort,
-                    ],
-                    [lhs, lhs],
-                ),
-                [],
-            )
-            claim.resolve(self.env.module)
-            provable = ProvableClaim(claim, proof)
+        proof = self.composer.get_theorem("kore-equals-reflexivity").apply(
+            ph0=encoded_output_sort, ph1=encoded_input_sort, ph2=encoded_lhs
+        )
+        claim = kore.Claim(
+            [],
+            kore.MLPattern(
+                kore.MLPattern.EQUALS,
+                [
+                    input_sort,
+                    output_sort,
+                ],
+                [lhs, lhs],
+            ),
+        )
+        claim.resolve(self.composer.module)
+        provable = ProvableClaim(claim, proof)
 
         provable = self.simplify_pattern(provable, [0, 1])
 
@@ -495,71 +453,243 @@ class RewriteProofGenerator(ProofGenerator):
 
         return provable.proof
 
-    def prove_owise_clause(self, condition: kore.Pattern) -> Optional[Proof]:
-        assert (
-            isinstance(condition, kore.MLPattern)
-            and condition.construct == kore.MLPattern.AND
-        )
+    def prove_negation_requires(self, pattern: kore.Pattern) -> Optional[Proof]:
+        r"""
+        Try to prove ( \kore-not <pattern> )
+        """
 
-        (output_sort,) = condition.sorts
-        assert isinstance(output_sort, kore.SortVariable)
+        if isinstance(pattern, kore.MLPattern):
+            if pattern.construct == kore.MLPattern.OR:
+                # reduce to proving each disjunct is bottom
+                left, right = pattern.arguments
 
-        # TODO: currently we don't have enough axioms in the kore definition
-        # to show this condition, so we will just assume it being true
+                left_proof = self.prove_negation_requires(left)
+                right_proof = self.prove_negation_requires(right)
 
-        claim = kore.Claim([output_sort], condition, [])
-        claim.resolve(self.env.module)
+                if left_proof is None or right_proof is None:
+                    return None
 
-        try:
-            # trying to prove the simplest case with 1 other rule and 1 free variable
-            # TODO: make this more general
-            eq = KoreUtils.get_subpattern_by_path(condition, [0, 0, 0, 1, 1, 0, 0])
-            assert isinstance(eq, kore.MLPattern)
-            left, right = eq.arguments
+                return self.composer.get_theorem("kore-de-morgan-alt").apply(
+                    left_proof,
+                    right_proof,
+                )
 
-            print("> proving disjointness claim")
-            disjoint_proof = self.disjoint_gen.prove_disjointness(left, right)
+            elif pattern.construct == kore.MLPattern.BOTTOM:
+                encoded_sort = self.composer.encode_pattern(pattern.sorts[0])
+                return self.composer.get_theorem("kore-not-bot").apply(
+                    ph0=encoded_sort,
+                )
 
-            proof = self.env.get_theorem("owise-1-rule-1-var").match_and_apply(
-                self.env.encode_metamath_statement(claim),
-                disjoint_proof,
+            elif pattern.construct == kore.MLPattern.EXISTS:
+                # disjointness condition
+                # right now we only support one variable with no side condition
+
+                _, body = pattern.arguments
+
+                # the following chunk of nonsense basically
+                # checks that body is of the form
+                # top /\ (<innter condition> /\ top)
+                if (
+                    isinstance(body, kore.MLPattern)
+                    and body.construct == kore.MLPattern.AND
+                    and isinstance(body.arguments[0], kore.MLPattern)
+                    and body.arguments[0].construct == kore.MLPattern.TOP
+                    and isinstance(body.arguments[1], kore.MLPattern)
+                    and body.arguments[1].construct == kore.MLPattern.AND
+                    and isinstance(body.arguments[1].arguments[1], kore.MLPattern)
+                    and body.arguments[1].arguments[1].construct == kore.MLPattern.TOP
+                ):
+
+                    inner_condition = body.arguments[1].arguments[0]
+
+                    if isinstance(inner_condition, kore.MLPattern):
+                        if (
+                            inner_condition.construct == kore.MLPattern.CEIL
+                            and isinstance(inner_condition.arguments[0], kore.MLPattern)
+                            and inner_condition.arguments[0].construct
+                            == kore.MLPattern.AND
+                        ):
+                            # ( \ceil ( \and <left> <right> ) )
+                            lemma = "owise-var-1-cond-0"
+                            left, right = inner_condition.arguments[0].arguments
+                        elif inner_condition.construct == kore.MLPattern.IN:
+                            # ( \in <left> <right> )
+                            lemma = "owise-var-1-cond-0-alt"
+                            left, right = inner_condition.arguments
+                        else:
+                            assert (
+                                False
+                            ), f"expecting disjointness condition, got {inner_condition}"
+
+                        output_sort = KoreUtils.infer_sort(pattern)
+                        claim = kore.Claim(
+                            [],
+                            kore.MLPattern(
+                                kore.MLPattern.NOT, [output_sort], [pattern]
+                            ),
+                        )
+                        claim.resolve(self.composer.module)
+
+                        print("> proving disjointness claim")
+                        disjoint_proof = self.disjoint_gen.prove_disjointness(
+                            left, right
+                        )
+
+                        return self.composer.get_theorem(lemma).match_and_apply(
+                            self.composer.encode_metamath_statement(claim),
+                            disjoint_proof,
+                        )
+
+            print(f"!!! unable to prove the validity of the negation of {pattern}")
+
+        return None
+
+    def prove_requires_clause(self, pattern: kore.Pattern) -> Optional[Proof]:
+        r"""
+        Prove a pattern phi of the form
+        - top{S{}}(), or
+        - \equals{...}(..., ...)
+        - \in{...}(..., ...)
+        - \and{...}(phi1, phi2)
+
+        For \equals, it can have either a concrete sort
+        or a sort variable as the output sort
+        """
+
+        assert isinstance(pattern, kore.MLPattern)
+
+        if pattern.construct == kore.MLPattern.AND:
+            left, right = pattern.arguments
+            left_proof = self.prove_requires_clause(left)
+            right_proof = self.prove_requires_clause(right)
+
+            if left_proof is None or right_proof is None:
+                return None
+
+            return self.composer.get_theorem("kore-and-intro-alt").apply(
+                left_proof, right_proof
             )
 
-            return proof
-        except:
-            print_exc()
-            print("failed to prove owise condition, leavinig it as an assumption")
-            theorem = self.env.load_axiom(
-                claim,
-                f"owise-assumption-{self.owise_assumption_counter}",
-                provable=True,
-            )
-            self.owise_assumption_counter += 1
-            return theorem.as_proof()
+        # if the pattern is top, then it's trivially true
+        if pattern.construct == kore.MLPattern.TOP:
+            sort = pattern.sorts[0]
+            encoded_sort = self.composer.encode_pattern(sort)
+            return self.composer.get_theorem("kore-top-valid").apply(ph0=encoded_sort)
+
+        if pattern.construct == kore.MLPattern.EQUALS:
+            return self.prove_equal_reflexivity(pattern)
+
+        if pattern.construct == kore.MLPattern.IN:
+            # expecting left and right hand side already unified
+            left, right = pattern.arguments
+            input_sort, output_sort = pattern.sorts
+
+            if left == right:
+                encoded_input_sort = self.composer.encode_pattern(input_sort)
+                encoded_output_sort = self.composer.encode_pattern(output_sort)
+                encoded_left = self.composer.encode_pattern(left)
+                return self.composer.get_theorem("kore-in-reflexivity").apply(
+                    SortingProver.auto,
+                    ph0=encoded_input_sort,
+                    ph1=encoded_output_sort,
+                    ph2=encoded_left,
+                )
+
+        if pattern.construct == kore.MLPattern.NOT:
+            return self.prove_negation_requires(pattern.arguments[0])
+
+        return None
+
+    def resolve_unification_obligations_in_requires_clause(
+        self, requires: kore.Pattern
+    ) -> Optional[UnificationResult]:
+        if isinstance(requires, kore.MLPattern):
+            if requires.construct == kore.MLPattern.AND:
+                # resolve each side separately and combine
+                left, right = requires.arguments
+                left_unification = (
+                    self.resolve_unification_obligations_in_requires_clause(left)
+                )
+                right_unification = (
+                    self.resolve_unification_obligations_in_requires_clause(right)
+                )
+
+                if left_unification is None or right_unification is None:
+                    return None
+
+                return left_unification.prepend_path(0).merge(
+                    right_unification.prepend_path(1)
+                )
+
+            elif requires.construct == kore.MLPattern.IN:
+                left, right = requires.arguments
+
+                # putting <right> in the left since at this point <right> is usually smybolic
+                result = UnificationProofGenerator(self.composer).unify_patterns(
+                    right, left
+                )
+                if result is None:
+                    return None
+
+                return result.prepend_path(1)
+
+        return UnificationResult()
 
     def match_and_instantiate_anywhere_axiom(
-        self, axiom: ProvableClaim, pattern: kore.Pattern, is_owise: bool = False
+        self, axiom: ProvableClaim, pattern: kore.Pattern
     ) -> Optional[ProvableClaim]:
         # unify the LHS
-        lhs, _, _, _ = self.decompose_anywhere_axiom(axiom.claim.pattern)
-        unification_result = UnificationProofGenerator(self.env).unify_patterns(
+        lhs, requires, _, _ = self.decompose_anywhere_axiom(axiom.claim.pattern)
+        unification_result = UnificationProofGenerator(self.composer).unify_patterns(
             lhs, pattern
         )
         if unification_result is None:
             return None
 
+        # prepend the path to the lhs in the equation:
+        #   <requires> => <lhs> = <rhs> /\ <ensures>
+        # which has path [0, 1, 0, 0] from the root
+        unification_result = unification_result.prepend_path([0, 1, 0, 0])
+
+        # there could be more unification conditions in the require clause
+        requires_substituted = KoreUtils.copy_and_substitute_pattern(
+            requires, unification_result.substitution
+        )
+        side_unification_result = (
+            self.resolve_unification_obligations_in_requires_clause(
+                requires_substituted
+            )
+        )
+
+        if side_unification_result is None:
+            return None
+
+        # prepend the path from root to the requires clause
+        side_unification_result = side_unification_result.prepend_path([0, 0])
+
+        # merge it with the main unification result
+        unification_result = unification_result.merge(side_unification_result)
+
+        if unification_result is None:
+            # side condition unification is inconsistent
+            return None
+
         # eliminate all universal quantifiers
-        instantiated_axiom = QuantifierProofGenerator(self.env).prove_forall_elim(
+        instantiated_axiom = QuantifierProofGenerator(self.composer).prove_forall_elim(
             axiom, unification_result.substitution
         )
+
+        # apply equations used in unification
+        for equation, path in unification_result.applied_equations:
+            instantiated_axiom = equation.replace_equal_subpattern(
+                instantiated_axiom, path
+            )
 
         lhs, requires, _, ensures = self.decompose_anywhere_axiom(
             instantiated_axiom.claim.pattern
         )
 
-        # assert isinstance(ensures, kore.MLPattern) and \
-        #        ensures.construct == kore.MLPattern.TOP, \
-        #        f"unsupported ensures clause {ensures}"
+        # right now we don't support other forms of ensures clause
         if not (
             isinstance(ensures, kore.MLPattern)
             and ensures.construct == kore.MLPattern.TOP
@@ -569,53 +699,44 @@ class RewriteProofGenerator(ProofGenerator):
         # from \implies{R}(<requires>, \and{R}(<equation>, top))
         # if we can prove the requires clause
         # we can get \and{R}(<equation>, top)
-        if not is_owise:
-            requires_proof = self.prove_requires_clause(requires)
-            if requires_proof is None:
-                return None
-        else:
-            # if the current axiom is labelled [owise]
-            # we have failed to match other non-owise axioms.
-            # by the informal semantics of [owise] we should
-            # use this rule if it matches.
-            requires_proof = self.prove_owise_clause(requires)
-            assert (
-                requires_proof is not None
-            ), f"unable to prove owise condition {requires}"
+        requires_proof = self.prove_requires_clause(requires)
+        if requires_proof is None:
+            return None
 
-        removed_requires = self.env.get_theorem("kore-mp-v1").apply(
-            requires_proof,
+        (sort_param,) = instantiated_axiom.claim.sort_variables
+        encoded_sort_param = self.composer.encode_pattern(sort_param)
+
+        removed_requires = self.composer.get_theorem("kore-mp-v1").apply(
+            # the proof of the requires clause does not depend on the additional
+            # sort parameter, so we are just throwing in an extra quantifier here
+            self.composer.get_theorem("kore-forall-sort-intro").apply(
+                requires_proof,
+                x=encoded_sort_param,
+            ),
             instantiated_axiom.proof,
         )
         assert isinstance(instantiated_axiom.claim.pattern, kore.MLPattern)
         instantiated_axiom_claim = kore.Claim(
             instantiated_axiom.claim.sort_variables,
             instantiated_axiom.claim.pattern.arguments[1],
-            [],
         )
-        instantiated_axiom_claim.resolve(self.env.module)
+        instantiated_axiom_claim.resolve(self.composer.module)
         instantiated_axiom = ProvableClaim(instantiated_axiom_claim, removed_requires)
 
         # now we have a conjunction and{R}(<equation>, <ensures>)
         # since we assumed ensures is top, we can remove it as well
         # that is, from \and{R}(<equation>, top)
         # we can get <equation>
-        and_eliminated = self.env.get_theorem("kore-and-equals-top-elim-v1").apply(
+        and_eliminated = self.composer.get_theorem("kore-and-equals-top-elim-v1").apply(
             instantiated_axiom.proof,
         )
         assert isinstance(instantiated_axiom.claim.pattern, kore.MLPattern)
         instantiated_axiom_claim = kore.Claim(
             instantiated_axiom.claim.sort_variables,
             instantiated_axiom.claim.pattern.arguments[0],
-            [],
         )
-        instantiated_axiom_claim.resolve(self.env.module)
+        instantiated_axiom_claim.resolve(self.composer.module)
         instantiated_axiom = ProvableClaim(instantiated_axiom_claim, and_eliminated)
-
-        for equation, path in unification_result.applied_equations:
-            instantiated_axiom = equation.replace_equal_subpattern(
-                instantiated_axiom, [0, 0] + path
-            )
 
         return instantiated_axiom
 
@@ -628,13 +749,13 @@ class RewriteProofGenerator(ProofGenerator):
 
         head_symbol = pattern.symbol
         assert (
-            head_symbol in self.env.equational_axioms
+            head_symbol in self.composer.equational_axioms
         ), f"head symbol {head_symbol} does not have any equational axioms associated to it"
 
         non_owise_axioms = []
         owise_axiom = None
 
-        for axiom in self.env.equational_axioms[head_symbol]:
+        for axiom in self.composer.equational_axioms[head_symbol]:
             if axiom.claim.get_attribute_by_symbol("owise") is None:
                 non_owise_axioms.append(axiom)
             else:
@@ -650,7 +771,7 @@ class RewriteProofGenerator(ProofGenerator):
         # try owise if other ones failed to match
         if owise_axiom is not None:
             instantiated = self.match_and_instantiate_anywhere_axiom(
-                owise_axiom, pattern, is_owise=True
+                owise_axiom, pattern
             )
             if instantiated is not None:
                 return instantiated
@@ -665,7 +786,9 @@ class RewriteProofGenerator(ProofGenerator):
         it contains duplicate injections and/or unevaluated functions
         """
 
-        nested_inj_path = InnermostNestedInjectionPathVisitor(self.env).visit(pattern)
+        nested_inj_path = InnermostNestedInjectionPathVisitor(self.composer).visit(
+            pattern
+        )
         if nested_inj_path is not None:
             return True
 
@@ -693,12 +816,12 @@ class RewriteProofGenerator(ProofGenerator):
             subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
 
             # simplify nested inj
-            nested_inj_path = InnermostNestedInjectionPathVisitor(self.env).visit(
+            nested_inj_path = InnermostNestedInjectionPathVisitor(self.composer).visit(
                 subpattern
             )
             if nested_inj_path is not None:
                 print(f"> simplifying nested inj")
-                provable = InjectionCombine(self.env).replace_equal_subpattern(
+                provable = InjectionCombine(self.composer).replace_equal_subpattern(
                     provable, path + nested_inj_path
                 )
                 continue
@@ -723,7 +846,7 @@ class RewriteProofGenerator(ProofGenerator):
 
                 # finish up the rewriting by substituting in the rhs
                 provable = EqualityProofGenerator(
-                    self.env
+                    self.composer
                 ).replace_equal_subpattern_with_equation(
                     provable, path + function_path, axiom
                 )
@@ -741,14 +864,13 @@ class RewriteProofGenerator(ProofGenerator):
             kore.MLPattern(
                 kore.MLPattern.REWRITES_STAR, [pattern_sort], [pattern, pattern]
             ),
-            [],
         )
-        refl_claim.resolve(self.env.module)
+        refl_claim.resolve(self.composer.module)
 
-        refl_proof = self.env.get_theorem("kore-rewrites-star-reflexivity").apply(
+        refl_proof = self.composer.get_theorem("kore-rewrites-star-reflexivity").apply(
             SortingProver.auto,
-            ph0=self.env.encode_pattern(pattern_sort),
-            ph1=self.env.encode_pattern(pattern),
+            ph0=self.composer.encode_pattern(pattern_sort),
+            ph1=self.composer.encode_pattern(pattern),
         )
 
         return ProvableClaim(refl_claim, refl_proof)
@@ -757,9 +879,9 @@ class RewriteProofGenerator(ProofGenerator):
 class InnermostNestedInjectionPathVisitor(
     KoreVisitor[Union[kore.Pattern, kore.Axiom], Optional[PatternPath]]
 ):
-    def __init__(self, env: ProofEnvironment):
+    def __init__(self, env: KoreComposer):
         super().__init__()
-        self.env = env
+        self.composer = env
 
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
         return None
@@ -779,10 +901,10 @@ class InnermostNestedInjectionPathVisitor(
 
         # if the current pattern is a nested injection
         if (
-            application.symbol.definition == self.env.sort_injection_symbol
+            application.symbol.definition == self.composer.sort_injection_symbol
             and isinstance(application.arguments[0], kore.Application)
             and application.arguments[0].symbol.definition
-            == self.env.sort_injection_symbol
+            == self.composer.sort_injection_symbol
         ):
             return []
 
@@ -861,7 +983,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
     Common base class for evaluator of the builtin sort SortInt{}
     """
 
-    def __init__(self, env: ProofEnvironment):
+    def __init__(self, env: KoreComposer):
         super().__init__(env)
         self.axiom_counter = 0
 
@@ -908,22 +1030,22 @@ class BuiltinFunctionEvaluator(ProofGenerator):
                 [output_sort, sort_var],
                 [application, result],
             ),
-            [],
         )
 
-        claim.resolve(self.env.module)
+        claim.resolve(self.composer.module)
 
         # TODO: we need to generate a proof obligation for
         # this arithmetic fact
-        self.env.composer.start_segment("dv")
-        self.env.load_comment("NOTE: domain value reasoning checked by external tool")
-        thm = self.env.load_axiom(
-            claim,
-            f"{self.env.sanitize_label_name(application.symbol.get_symbol_name())}-domain-fact-{self.axiom_counter}",
-            comment=False,
-            provable=self.env.dv_as_provable,
-        )
-        self.env.composer.end_segment()
+        with self.composer.in_segment("dv"):
+            self.composer.load_comment(
+                "NOTE: domain value reasoning checked by external tool"
+            )
+            thm = self.composer.load_axiom(
+                claim,
+                f"{self.composer.sanitize_label_name(application.symbol.get_symbol_name())}-domain-fact-{self.axiom_counter}",
+                comment=False,
+                provable=self.composer.dv_as_provable,
+            )
 
         print(f"> bulitin symbol proof obligation: {claim}")
 
@@ -951,7 +1073,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         domain_value = kore.MLPattern(
             kore.MLPattern.DV, [output_sort], [kore.StringLiteral(result_literal)]
         )
-        domain_value.resolve(self.env.module)
+        domain_value.resolve(self.composer.module)
 
         return self.build_equation(application, domain_value)
 
@@ -1039,6 +1161,45 @@ class KNotEqualityEvaluator(BuiltinFunctionEvaluator):
         return self.build_arithmetic_equation(application, a != b)
 
 
+class MapLookupEvaluator(BuiltinFunctionEvaluator):
+    """
+    Implements the K builtin function MAP.lookup
+    """
+
+    def lookup(
+        self, map_pattern: kore.Application, key_pattern: kore.Pattern
+    ) -> Optional[kore.Pattern]:
+        if KoreTemplates.is_map_unit_pattern(map_pattern):
+            return None
+        elif KoreTemplates.is_map_merge_pattern(map_pattern):
+            left = KoreTemplates.get_map_merge_left(map_pattern)
+            right = KoreTemplates.get_map_merge_right(map_pattern)
+            assert isinstance(left, kore.Application) and isinstance(
+                right, kore.Application
+            )
+
+            return self.lookup(left, key_pattern) or self.lookup(right, key_pattern)
+        else:
+            assert KoreTemplates.is_map_mapsto_pattern(map_pattern)
+            key, value = map_pattern.arguments
+
+            if key == key_pattern:
+                return value
+
+            return None
+
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        map_pattern, key_pattern = application.arguments
+        assert isinstance(map_pattern, kore.Application)
+
+        found = self.lookup(map_pattern, key_pattern)
+        assert (
+            found is not None
+        ), f"key {key_pattern} does not exist in map pattern {map_pattern}"
+
+        return self.build_equation(application, found)
+
+
 class SetInEvaluator(BuiltinFunctionEvaluator):
     def is_element(self, app: kore.Application, element: kore.Pattern) -> bool:
 
@@ -1060,14 +1221,6 @@ class SetInEvaluator(BuiltinFunctionEvaluator):
             return element == found_element
 
         return False
-
-    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
-        key, set_pattern = application.arguments
-
-        assert isinstance(set_pattern, kore.Application)
-        return self.build_arithmetic_equation(
-            application, self.is_element(set_pattern, key)
-        )
 
 
 class MapKeysEvaluator(BuiltinFunctionEvaluator):
