@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# push to another tag named after the commit id
+commit_hash=$(echo $SOURCE_COMMIT | cut -c 1-7)
+docker tag $IMAGE_NAME $DOCKER_REPO:$commit_hash
+docker push $DOCKER_REPO:$commit_hash
