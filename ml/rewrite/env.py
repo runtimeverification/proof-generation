@@ -37,6 +37,14 @@ class ProvableClaim:
         self.claim = claim
         self.proof = proof
 
+    @staticmethod
+    def without_proof(composer: KoreComposer, claim: kore.Claim) -> ProvableClaim:
+        mm_pattern = composer.encode_pattern(claim)
+        return ProvableClaim(
+            claim,
+            Proof.from_script(mm.StructuredStatement("", (mm.Application("|-"), mm_pattern)), "?"),
+        )
+
 
 class SubsortRelation:
     """
@@ -207,7 +215,7 @@ class KoreComposer(Composer):
             if not new_metavars:
                 return
 
-            self.load_comment(f"adding {len(new_metavars)} new metavariable(s)")
+            self.load_comment(f"adding {len(new_metavars)} new metavariable(s)", top_level=True)
 
             var_stmt = mm.VariableStatement(tuple(map(mm.Metavariable, new_metavars.keys())))
             self.load(var_stmt)
@@ -221,7 +229,7 @@ class KoreComposer(Composer):
                     ),
                 )
 
-                self.load(floating_stmt)
+                self.load(floating_stmt, top_level=True)
 
             # if we have added any #ElementVariable
             # and the total number of element variables
@@ -230,7 +238,7 @@ class KoreComposer(Composer):
                 element_vars = self.find_metavariables_of_typecode("#ElementVariable")
                 if len(element_vars) > 1:
                     disjoint_stmt = mm.DisjointStatement(tuple(map(mm.Metavariable, element_vars)))
-                    self.load(disjoint_stmt)
+                    self.load(disjoint_stmt, top_level=True)
 
     def encode_pattern(self, pattern: Union[kore.Axiom, kore.Pattern, kore.Sort]) -> mm.Term:
         encoder = KorePatternEncoder()
@@ -247,8 +255,8 @@ class KoreComposer(Composer):
             (mm.Application("|-"), self.encode_pattern(axiom)),
         )
 
-    def load_comment(self, comment: str) -> None:
-        self.load(mm.Comment(comment))
+    def load_comment(self, comment: str, **kwargs: Any) -> None:
+        self.load(mm.Comment(comment), **kwargs)
 
     def load_provable_claim_as_theorem(self, label: str, provable: ProvableClaim) -> ProvableClaim:
         """

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Tuple, Optional, NewType, TypeVar, Union, Dict, TextIO, Any, Iterable
+from typing import Mapping, List, Tuple, Optional, NewType, TypeVar, Union, Dict, TextIO, Any, Iterable, Set
 
 import sys
 
@@ -194,6 +194,10 @@ class KoreUtils:
 
         for alias_def in alias_defs:
             module.remove_sentence(alias_def)
+
+    @staticmethod
+    def get_free_variables(ast: BaseAST) -> Set[Variable]:
+        return FreePatternVariableVisitor().visit(ast)
 
     @staticmethod
     def quantify_all_free_variables_in_axiom(axiom: Axiom) -> None:
