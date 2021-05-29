@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Optional, Any, Dict, Callable, Tuple, TypeVar, Type
+from typing import Mapping, List, Optional, Any, Dict, Callable, Tuple, TypeVar, Type, Set
 from dataclasses import dataclass, field
 
 import schema  # type: ignore
 
 from ml.kore import ast as kore
 from ml.kore.parser import parse_pattern
+from ml.kore.utils import KoreUtils
 
 from .templates import KoreTemplates
 
@@ -45,6 +46,53 @@ class Substitution(WithSchema):
             k.resolve(module)
             v.resolve(module)
 
+    def as_constraint(self, sort: kore.Sort) -> kore.Pattern:
+        r"""
+        Encode a substitution as a predicate
+        { k |-> v }
+        =>
+        k = v /\ ...
+        """
+
+        items = list(self.substitution.items())
+        items.sort(key=lambda t: t[0], reverse=True)
+
+        constraint = kore.MLPattern(kore.MLPattern.TOP, [sort], [])
+
+        for k, v in items:
+            constraint = kore.MLPattern(
+                kore.MLPattern.AND,
+                [sort],
+                [
+                    kore.MLPattern(
+                        kore.MLPattern.EQUALS,
+                        [k.sort, sort],
+                        [k, v],
+                    ),
+                    constraint,
+                ]
+            )
+
+        return constraint
+
+    def split(self, variables: Set[kore.Variable]) -> Tuple[Substitution, Substitution]:
+        """
+        Split the subsitution to two parts:
+        - sigma1 where the variables are all in <variables>
+        - sigma2 where the variables are not in <variables>
+        """
+        
+        subst1 = {}
+        subst2 = {}
+
+        for k, v in self.substitution.items():
+            if k in variables:
+                subst1[k] = v
+            else:
+                subst2[k] = v
+
+        return Substitution(subst1), Substitution(subst2)
+
     @staticmethod
     def get_raw_schema() -> Any:
         return [
@@ -74,7 +122,10 @@ class ConstrainedPattern(WithSchema):
     constraint: kore.Pattern
     substitution: Substitution
 
-    def assume_concrete(self) -> kore.Pattern:
+    def get_free_variables(self) -> Set[kore.Variable]:
+        return KoreUtils.get_free_variables(self.pattern)
+
+    def assume_unconstrained(self) -> kore.Pattern:
         assert isinstance(self.constraint, kore.MLPattern) and \
                self.constraint.construct == kore.MLPattern.TOP and \
                self.substitution.is_empty()
@@ -83,9 +134,32 @@ class ConstrainedPattern(WithSchema):
     def get_substitution(self) -> Mapping[kore.Variable, kore.Pattern]:
         return self.substitution.substitution if self.substitution is not None else {}
 
+    def constraint_as_pattern(self) -> kore.Pattern:
+        """
+        Encode the constraint and substitution as a kore pattern
+        """
+        sort = KoreUtils.infer_sort(self.pattern)
+        return kore.MLPattern(
+            kore.MLPattern.AND,
+            [sort],
+            [self.constraint, self.substitution.as_constraint(sort)],
+        )
+
+    def as_pattern(self) -> kore.Pattern:
+        """
+        Encode as a kore pattern
+        """
+        sort = KoreUtils.infer_sort(self.pattern)
+        return kore.MLPattern(
+            kore.MLPattern.AND,
+            [sort],
+            [ self.constraint_as_pattern(), self.pattern ],
+        )
+
     def resolve(self, module: kore.Module) -> None:
         self.pattern.resolve(module)
         self.constraint.resolve(module)
+        self.substitution.resolve(module)
 
     @staticmethod
     def get_raw_schema() -> Any:
@@ -166,6 +240,12 @@ class RewritingStep(WithSchema):
 
     def is_final(self) -> bool:
         return len(self.applied_rules) == 0
+
+    def get_initial_pattern(self) -> ConstrainedPattern:
+        return self.initial
+
+    def get_rewritten_patterns(self) -> Tuple[ConstrainedPattern, ...]:
+        return sum(( rule.results for rule in self.applied_rules ), start=())
 
     def resolve(self, module: kore.Module) -> None:
         self.initial.resolve(module)

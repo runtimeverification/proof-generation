@@ -279,8 +279,18 @@ class Theorem:
         Treat the theorem itself as a proof of itself, provided
         no essential is needed
         """
-        assert len(self.context.essentials) == 0
-        return Proof.from_script(self.statement, self.context.get_all_floating_labels() + (self.statement.label, ))
+
+        essential_proofs = []
+
+        for essential in self.context.essentials:
+            for existing_essentials in self.composer.get_all_essentials():
+                if essential.terms == existing_essentials.statement.terms:
+                    essential_proofs.append(existing_essentials.statement.label)
+                    break
+            else:
+                assert False, f"unable to prove obligation {essential} from existing hypotheses"
+
+        return Proof.from_script(self.statement, self.context.get_all_floating_labels() + tuple(essential_proofs) + (self.statement.label, ))
 
     def match_and_apply(
         self, target: StructuredStatement, *args: Union[Proof, AutoProof], **kwargs: Union[Proof, Term]
@@ -470,7 +480,7 @@ class ProofCache:
     THEOREM_CACHE_THRESHOLD = 10
 
     # certain tools (e.g. itp) would need all cache disabled
-    DISABLED = False
+    DISABLED = True
 
     def __init__(self, composer: Composer):
         self.composer = composer
@@ -943,8 +953,8 @@ class Composer:
 
         if top_level:
             assert stop_at is None, "cannot set top_level and stop_at at the same time"
-            assert isinstance(ast, StructuredStatement), \
-                   "can only load a structured statement directly at the top level"
+            assert not isinstance(ast, Block), \
+                   "cannot load a block directly at the top level"
 
         if isinstance(ast, Database):
             assert self.context.prev is None, "loading a database at non-top level"

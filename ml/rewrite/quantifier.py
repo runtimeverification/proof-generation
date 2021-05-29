@@ -6,6 +6,7 @@ from ml.kore.utils import KoreUtils
 from ml.metamath import ast as mm
 from ml.metamath.composer import Proof
 from ml.metamath.auto.sorting import SortingProver
+from ml.metamath.auto.hypothesis import HypothesisProver
 
 from .env import ProofGenerator, ProvableClaim
 from .substitution import SingleSubstitutionProofGenerator
@@ -207,6 +208,41 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor[kore.Pattern, Pr
             subst[arg] = app_arg
 
         return subst
+
+    def postvisit_variable(self, variable: kore.Variable) -> ProvableClaim:
+        encoded_var = self.composer.encode_pattern(variable)
+        encoded_sort = self.composer.encode_pattern(variable.sort)
+
+        x, y = self.composer.gen_fresh_metavariables("#ElementVariable", 2, { encoded_var })
+        sort_var = kore.SortVariable(x)
+        elem_var = kore.Variable(y, variable.sort)
+
+        proof = self.composer.get_theorem("in-sort-var-to-functional").apply(
+            HypothesisProver.auto,
+            x=self.composer.encode_pattern(sort_var),
+            y=self.composer.encode_pattern(elem_var),
+            z=encoded_var,
+            ph0=encoded_sort,
+        )
+
+        claim = kore.Claim(
+            [sort_var],
+            kore.MLPattern(
+                kore.MLPattern.EXISTS,
+                [ sort_var ],
+                [
+                    elem_var,
+                    kore.MLPattern(
+                        kore.MLPattern.EQUALS,
+                        [ variable.sort, sort_var ],
+                        [ elem_var, variable ],
+                    )
+                ]
+            )
+        )
+        claim.resolve(self.composer.module)
+
+        return ProvableClaim(claim, proof)
 
     def postvisit_application(self, application: kore.Application) -> ProvableClaim:
         if application.symbol not in self.composer.functional_axioms:

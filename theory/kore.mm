@@ -29,6 +29,7 @@ $c \kore-dv $.
 $c \kore-valid $.
 $c \kore-is-sort $.
 $c \kore-inj $.
+$c \kore-is-predicate $.
 
 kore-exists-is-pattern $a #Pattern ( \kore-exists ph0 ph1 x ph2 ) $.
 kore-exists-is-sugar $a #Notation ( \kore-exists ph0 ph1 x ph2 ) ( \and ( \sorted-exists x ph0 ph2 ) ( \inh ph1 ) ) $.
@@ -112,3 +113,6 @@ kore-inj-is-pattern $a #Pattern ( \kore-inj ph0 ph1 ph2 ) $.
 kore-inj-is-sugar $a #Notation ( \kore-inj ph0 ph1 ph2 ) ( \app ( \app ( \app \kore-inj-symbol ph0 ) ph1 ) ph2 ) $.
 
 kore-inj-id $a |- ( \eq ( \kore-inj ph0 ph1 ph2 ) ph2 ) $.
+
+kore-is-predicate-is-pattern $a #Pattern ( \kore-is-predicate ph0 ph1 ) $.
+kore-is-predicate-is-sugar $a #Notation ( \kore-is-predicate ph0 ph1 ) ( \or ( \kore-valid ph0 ph1 ) ( \is-bot ph1 ) ) $.

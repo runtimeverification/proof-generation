@@ -18,7 +18,7 @@ from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
 from .unification import UnificationProofGenerator, InjectionCombine, UnificationResult
 from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
-from .tasks import RewritingStep, RewritingTask
+from .tasks import RewritingStep, RewritingTask, ConstrainedPattern, Substitution, AppliedRule
 
 
 class RewriteProofGenerator(ProofGenerator):
@@ -190,7 +190,7 @@ class RewriteProofGenerator(ProofGenerator):
         Prove a single rewriting step
         """
         # TODO: this is a hack to load all domain values
-        initial_pattern = rewriting_step.initial.assume_concrete()
+        initial_pattern = rewriting_step.initial.assume_unconstrained()
 
         self.composer.encode_pattern(initial_pattern)
 
@@ -245,11 +245,11 @@ class RewriteProofGenerator(ProofGenerator):
         Prove a rewriting task which may contain multiple rewrite steps,
         from the given hints
         """
-        initial_pattern = task.get_initial_pattern().assume_concrete()
+        initial_pattern = task.get_initial_pattern().assume_unconstrained()
         final_patterns = task.get_final_patterns()
 
         assert len(final_patterns) == 1, "non-determinism not supported"
-        final_pattern = final_patterns[0].assume_concrete()
+        final_pattern = final_patterns[0].assume_unconstrained()
 
         # simplify before rewriting
         print("==================")
@@ -268,7 +268,7 @@ class RewriteProofGenerator(ProofGenerator):
             print("==================")
             print("proving rewriting step {}".format(i))
 
-            step_initial = step.initial.assume_concrete()
+            step_initial = step.initial.assume_unconstrained()
 
             unification_claim = self.check_equal_or_unify(current_pattern, step_initial)
             if unification_claim is not None:
@@ -301,6 +301,332 @@ class RewriteProofGenerator(ProofGenerator):
             final_claim = self.apply_rewrite_star_transitivity(final_claim, claim)
 
         return final_claim
+
+    def check_smt_implication(
+        self,
+        premise: kore.Pattern,
+        conclusion: kore.Pattern,
+    ) -> ProvableClaim:
+        """
+        Check an implication using an SMT solver
+        but without producing an explicity proof in metamath
+        """
+        # TODO: implement this
+
+        sort = KoreUtils.infer_sort(premise)
+        conclusion_sort = KoreUtils.infer_sort(conclusion)
+        assert sort == conclusion_sort
+
+        claim = kore.Claim(
+            [],
+            kore.MLPattern(
+                kore.MLPattern.IMPLIES,
+                [sort],
+                [ premise, conclusion ]
+            )
+        )
+        claim.resolve(self.composer.module)
+        return ProvableClaim.without_proof(self.composer, claim)
+
+    def constrain_pattern_and_simplify(
+        self,
+        pattern: kore.Pattern,
+        constraint: kore.Pattern,
+        substitution: Substitution,
+    ) -> Tuple[ConstrainedPattern, ProvableClaim]:
+        r"""
+        Restrict the given pattern phi to
+        the given constraint psi and substitution sigma:
+        phi /\ psi /\ sigma
+
+        The substitution is applied directly
+        to the pattern to get phi',
+        and we also return a proof of
+        phi /\ psi /\ sigma -> phi' /\ psi /\ sigma
+
+        Return phi', psi, sigma
+        """
+        
+        substituted_pattern = KoreUtils.copy_and_substitute_pattern(pattern, substitution.substitution)
+        constrained_pattern = ConstrainedPattern(substituted_pattern, constraint, substitution)
+
+        sort = KoreUtils.infer_sort(pattern)
+
+        # TODO: right now we only state the claim without proof
+        simplification_claim = kore.Claim(
+            [],
+            kore.MLPattern(
+                kore.MLPattern.IMPLIES,
+                [sort],
+                [
+                    ConstrainedPattern(pattern, constraint, substitution).as_pattern(),
+                    constrained_pattern.as_pattern(),
+                ]
+            )
+        )
+        simplification_claim.resolve(self.composer.module)
+
+        return constrained_pattern, ProvableClaim.without_proof(self.composer, simplification_claim)
+
+    def remove_ensures(
+        self,
+        rewrite_claim: ProvableClaim,
+    ) -> ProvableClaim:
+        """
+        Removes the ensure clause from a rewrite claim
+        """
+        lhs, requires, rhs, ensures = self.decompose_rewrite_axiom(rewrite_claim.claim.pattern)
+
+        if not (isinstance(ensures, kore.MLPattern) and ensures.construct == kore.MLPattern.TOP):
+            print(f"> warning: non-top ensures clause ignored: {ensures}")
+
+        proof = self.composer.get_theorem("kore-rewrites-ignore-ensures").apply(
+            SortingProver.auto,
+            rewrite_claim.proof,
+        )
+
+        # reconstruct the rewrite pattern in kore
+        assert isinstance(rewrite_claim.claim.pattern, kore.MLPattern)
+        sort = KoreUtils.infer_sort(lhs)
+        new_claim = kore.Claim(
+            [],
+            kore.MLPattern(
+                kore.MLPattern.REWRITES,
+                [sort],
+                [kore.MLPattern(kore.MLPattern.AND, [sort], [requires, lhs]), rhs],
+            ),
+        )
+        new_claim.resolve(self.composer.module)
+
+        return ProvableClaim(new_claim, proof)
+
+    def prove_kore_is_predicate(
+        self,
+        constrained_pattern: ConstrainedPattern,
+    ) -> Proof:
+        r"""
+        Prove that a constraint is a kore prediate (\kore-is-predicate)
+        """
+
+        constraint = constrained_pattern.constraint_as_pattern()
+        sort = KoreUtils.infer_sort(constraint)
+
+        encoded_constraint = self.composer.encode_pattern(constraint)
+        encoded_sort = self.composer.encode_pattern(sort)
+
+        # TODO: actually prove this
+        return Proof.from_script(mm.StructuredStatement("", (
+            mm.Application("|-"),
+            mm.Application("\\kore-is-predicate", (encoded_sort, encoded_constraint)),
+        )), "?")
+
+    def prove_symbolic_step_branch(
+        self,
+        initial: ConstrainedPattern,
+        applied_rule: AppliedRule,
+    ) -> ProvableClaim:
+        """
+        Prove a single branch in one step of symbolic execution
+        """
+        assert applied_rule.substitution is not None and \
+               applied_rule.rule_id is not None, \
+               f"symbolic execution requires backend hints"
+
+        assert len(applied_rule.results) == 1, \
+               f"splitting on equations is currently not supported"
+
+        final = applied_rule.results[0]
+
+        config_free_vars = KoreUtils.get_free_variables(initial.pattern)
+        _, rule_substitution = applied_rule.substitution.split(config_free_vars)
+
+        rewrite_axiom = self.composer.rewrite_axioms[applied_rule.rule_id]
+
+        lhs, _, rhs, _ = self.decompose_rewrite_axiom(rewrite_axiom.claim.pattern)
+
+        # unify the LHS with the initial pattern
+        lhs_unification_result = UnificationProofGenerator(self.composer).unify_patterns(lhs, initial.pattern)
+        assert lhs_unification_result is not None, f"unable to unify the LHS of {applied_rule.rule_id} with the initial pattern {initial.pattern}"
+
+        # unify the RHS with the final pattern
+        rhs_unification_result = UnificationProofGenerator(self.composer).unify_patterns(rhs, final.pattern)
+        assert rhs_unification_result is not None, f"unable to unify the RHS {applied_rule.rule_id} with the final pattern {final.pattern}"
+
+        instantiated_axiom = QuantifierProofGenerator(self.composer).prove_forall_elim(
+            rewrite_axiom,
+            rule_substitution.substitution,
+        )
+
+        # re-apply equations used in the unification
+        for equation, path in lhs_unification_result.applied_equations:
+            print("> applying unification equation", equation)
+            instantiated_axiom = equation.replace_equal_subpattern(instantiated_axiom, [0, 0, 1] + path)
+
+        for equation, path in rhs_unification_result.applied_equations:
+            print("> applying unification equation", equation)
+            instantiated_axiom = equation.replace_equal_subpattern(instantiated_axiom, [0, 1, 1] + path)
+
+        lhs, requires, rhs, _ = self.decompose_rewrite_axiom(instantiated_axiom.claim.pattern)
+
+        # TODO: simplify the requires clause here?
+
+        new_constrained_pattern, simplification = self.constrain_pattern_and_simplify(initial.pattern, final.constraint, final.substitution)
+
+        assert new_constrained_pattern.pattern == lhs, \
+               f"expecting the instantiated LHS to be the same as the initial pattern: {new_constrained_pattern.pattern} and {lhs}"
+
+        constraint_implication = self.check_smt_implication(new_constrained_pattern.constraint_as_pattern(), requires)
+
+        instantiated_axiom = self.remove_ensures(instantiated_axiom)
+
+        # connect three parts
+        #  - simplification
+        #  - constraint_implication
+        #  - instantiated_axiom
+        subsumption_proof = self.composer.get_theorem("kore-rewrites-subsumption-lemma").apply(
+            simplification.proof,
+            constraint_implication.proof,
+            instantiated_axiom.proof,
+        )
+        
+        proof = self.composer.get_theorem("kore-rewrites-constraint-lemma").apply(
+            self.prove_kore_is_predicate(new_constrained_pattern),
+            subsumption_proof,
+        )
+
+        initial_sort = KoreUtils.infer_sort(initial.pattern)
+        claim = kore.Claim(
+            [],
+            kore.MLPattern(
+                kore.MLPattern.REWRITES,
+                [initial_sort],
+                [
+                    ConstrainedPattern(initial.pattern, final.constraint, final.substitution).as_pattern(),
+                    final.as_pattern(),
+                ],
+            ),
+        )
+        claim.resolve(self.composer.module)
+
+        final_rewrite_claim = ProvableClaim(claim, proof)
+
+        print(final_rewrite_claim.claim)
+
+        return final_rewrite_claim
+
+    def add_free_variable_sorting_hypotheses(
+        self,
+        pattern: ConstrainedPattern,
+    ) -> None:
+        """
+        Add the sorting hypotheses of all free variables in the given constrained pattern
+        """
+        free_variables = pattern.get_free_variables()
+        for i, free_var in enumerate(free_variables):
+            encoded_free_var = self.composer.encode_pattern(free_var)
+            encoded_free_var_sort = self.composer.encode_pattern(free_var.sort)
+
+            sorting_statement = mm.EssentialStatement(
+                f"symbolic-sorting-{i}",
+                (mm.Application("|-"), mm.Application("\\in-sort", (encoded_free_var, encoded_free_var_sort))),
+            )
+            self.composer.load(sorting_statement)
+
+    def prove_symbolic_step(
+        self,
+        step: RewritingStep,
+    ) -> ProvableClaim:
+        initial_pattern = step.get_initial_pattern()
+
+        with self.composer.new_context():
+            # TODO: maybe we need to change the free variable name to avoid conflict
+            self.add_free_variable_sorting_hypotheses(initial_pattern)
+
+            for applied_rule in step.applied_rules:
+                self.prove_symbolic_step_branch(initial_pattern, applied_rule)
+
+    def prove_symbolic_rewriting_task(
+        self,
+        task: RewritingTask,
+    ) -> ProvableClaim:
+        """
+        Prove a rewriting task which may contain multiple rewrite steps,
+        from the given hints
+        """
+
+        for step in task.steps:
+            self.prove_symbolic_step(step)
+
+        # initial_pattern = task.get_initial_pattern()
+        # final_patterns = task.get_final_patterns()
+
+        # assert len(final_patterns) == 1, "non-determinism not supported"
+        # final_pattern = final_patterns[0]
+
+        # initial_pattern.assume_unconstrained()
+        # final_pattern.assume_unconstrained()
+
+        # with self.composer.new_context():
+        #     # maybe we need to change the free variable name to avoid conflict
+
+        #     # add sorting claims for variables
+        #     free_variables = final_pattern.get_free_variables()
+        #     for i, free_var in enumerate(free_variables):
+        #         encoded_free_var = self.composer.encode_pattern(free_var)
+        #         encoded_free_var_sort = self.composer.encode_pattern(free_var.sort)
+
+        #         sorting_statement = mm.EssentialStatement(
+        #             f"symbolic-sorting-{i}",
+        #             (mm.Application("|-"), mm.Application("\\in-sort", (encoded_free_var, encoded_free_var_sort))),
+        #         )
+        #         self.composer.load(sorting_statement)
+
+        #     # simplify before rewriting
+        #     print("==================")
+        #     print("simplifying initial pattern")
+        #     simplification_claim = self.apply_reflexivity(initial_pattern.pattern)
+        #     simplification_claim = self.simplify_pattern(simplification_claim, [0, 1])
+        #     _, current_pattern = self.decompose_concrete_rewrite_claim(simplification_claim)
+
+        #     step_claims = [simplification_claim]
+
+        #     for i, step in enumerate(task.get_all_steps()):
+        #         print("==================")
+        #         print("proving rewriting step {}".format(i))
+
+        #         step_initial = step.initial.assume_unconstrained()
+
+        #         unification_claim = self.check_equal_or_unify(current_pattern, step_initial)
+        #         if unification_claim is not None:
+        #             step_claims.append(unification_claim)
+        #             _, current_pattern = self.decompose_concrete_rewrite_claim(unification_claim)
+
+        #         step_claim = self.prove_rewriting_step(step)
+        #         lhs, rhs = self.decompose_concrete_rewrite_claim(step_claim)
+
+        #         assert step_initial == lhs, \
+        #             f"unexpected rewriting claim, expected to rewrite from {step_initial}, but got {lhs}"
+
+        #         self.composer.load_comment(f"\nrewriting step:\n{lhs}\n=>\n{rhs}\n")
+        #         step_claim = self.composer.load_provable_claim_as_theorem(
+        #             f"rewrite-step-{self.rewrite_claim_counter}", step_claim
+        #         )
+        #         self.rewrite_claim_counter += 1
+
+        #         step_claims.append(step_claim)
+        #         current_pattern = rhs
+
+        #     # unify with the final expected pattern
+        #     unification_claim = self.check_equal_or_unify(current_pattern, final_pattern.pattern)
+        #     if unification_claim is not None:
+        #         step_claims.append(unification_claim)
+
+        #     final_claim = step_claims[0]
+
+        #     for claim in step_claims[1:]:
+        #         final_claim = self.apply_rewrite_star_transitivity(final_claim, claim)
+
+        #     return final_claim
 
     def apply_rewrite_star_intro(self, step: ProvableClaim) -> ProvableClaim:
         """
@@ -633,7 +959,7 @@ class RewriteProofGenerator(ProofGenerator):
         # since we assumed ensures is top, we can remove it as well
         # that is, from \and{R}(<equation>, top)
         # we can get <equation>
-        and_eliminated = self.composer.get_theorem("kore-and-equals-top-elim-v1").apply(instantiated_axiom.proof, )
+        and_eliminated = self.composer.get_theorem("kore-and-equals-top-elim-v1").apply(instantiated_axiom.proof)
         assert isinstance(instantiated_axiom.claim.pattern, kore.MLPattern)
         instantiated_axiom_claim = kore.Claim(
             instantiated_axiom.claim.sort_variables,
@@ -809,6 +1135,13 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
         "Lbl'Unds'Map'Unds'",
         "Lbl'Stop'Map",
     }
+    
+    """
+    These functions do not accept non-concrete arguments
+    """
+    CONCRETE_FUNCTIONS = {
+        "Lbl'UndsPlus'Int'Unds'"
+    }
 
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
         return None
@@ -824,8 +1157,19 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
 
         # if the application itself is a function, return the empty path (pointing to itself)
         if (isinstance(application.symbol.definition, kore.SymbolDefinition)
-                and application.symbol.definition.get_attribute_by_symbol("function") is not None
-                and application.symbol.definition.symbol not in InnermostFunctionPathVisitor.EXCEPTIONS):
+            and application.symbol.definition.get_attribute_by_symbol("function") is not None):
+
+            symbol_name = application.symbol.get_symbol_name()
+
+            if symbol_name in InnermostFunctionPathVisitor.EXCEPTIONS:
+                return None
+
+            # do not find symbolic instances of concrete functions
+            # TODO: slightly hacky
+            if symbol_name in InnermostFunctionPathVisitor.CONCRETE_FUNCTIONS and \
+               len(KoreUtils.get_free_variables(application)) != 0:
+                return None
+
             return []
 
         return None
