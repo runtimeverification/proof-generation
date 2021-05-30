@@ -285,6 +285,7 @@ class Theorem:
         for essential in self.context.essentials:
             for existing_essentials in self.composer.get_all_essentials():
                 if essential.terms == existing_essentials.statement.terms:
+                    # apply all essentials as the same statement
                     essential_proofs.append(existing_essentials.statement.label)
                     break
             else:
@@ -292,7 +293,7 @@ class Theorem:
 
         return Proof.from_script(
             self.statement,
-            self.context.get_all_floating_labels() + tuple(essential_proofs) + (self.statement.label, )
+            self.context.get_all_floating_labels() + tuple(essential_proofs) + (self.statement.label, ),
         )
 
     def match_and_apply(
@@ -539,7 +540,7 @@ class ProofCache:
         self.stat_cache_miss += 1
 
         # cache the proof as a theorem
-        if (not no_theorem_cache and len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD):
+        if not no_theorem_cache and len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD:
             self.stat_theorem_cache += 1
 
             # do not index the cached statements
@@ -866,12 +867,19 @@ class Composer:
         self.add_statement_at_context(self.context, block)
 
     @contextmanager
-    def new_context(self) -> Generator[None, None, None]:
+    def new_context(self, top_level: bool = False) -> Generator[None, None, None]:
+        if top_level:
+            old_context = self.context
+            self.context = self.context.get_top()
+
         self.push_context()
         try:
             yield
         finally:
             self.pop_context()
+
+            if top_level:
+                self.context = old_context
 
     def add_statement_at_context(self, context: Context, statement: Statement) -> None:
         context.add_statement(statement)
@@ -1102,7 +1110,7 @@ class TypecodeProver:
                 for floating in theorem.context.floatings:
                     assert (
                         floating.metavariable in solution
-                    ), f"unable to determine metavarible {floating.metavariable} in theorem {theorem}"
+                    ), f"unable to determine metavarible {floating.metavariable} in theorem {theorem.statement}"
 
                     metavar_proof = TypecodeProver.prove_typecode(
                         composer, floating.typecode, solution[floating.metavariable]

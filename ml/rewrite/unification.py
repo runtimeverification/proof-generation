@@ -398,11 +398,22 @@ class MapUnificationMixin:
 
 
 class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
+    def __init__(
+        self, composer: KoreComposer, additional_equations: Tuple[Tuple[kore.Pattern, kore.Pattern], ...] = ()
+    ):
+        """
+        additional_equations specifies a list of equations that
+        we should consider equal. Used for constrained patterns
+        """
+        super().__init__(composer)
+        self.additional_equations = additional_equations
+
     """
     Unify two patterns modulo certain equations
     NOTE: this generator currently only supports
     unifying a pattern with a CONCRETE pattern
     """
+
     def unify_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
         """
         Losely following https://github.com/kframework/kore/blob/master/docs/2018-11-12-Unification.md
@@ -415,12 +426,20 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
             self.unify_left_duplicate_conjunction,
             self.unify_right_splittable_inj,
             self.unify_concrete_map_patterns,
+            self.unify_additional_equations,
         ]
         for algo in algorithms:
             result = algo(pattern1, pattern2)
             if result is not None:
                 return result
 
+        return None
+
+    def unify_additional_equations(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        for left, right in self.additional_equations:
+            if (left == pattern1 and right == pattern2) or (left == pattern2 and right == pattern1):
+                # TODO: we may want to record where this happens
+                return UnificationResult()
         return None
 
     def unify_vars(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:

@@ -456,9 +456,17 @@ class KoreUtils:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.AND
 
     @staticmethod
+    def is_equals(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.EQUALS
+
+    @staticmethod
     def is_ceil(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.CEIL
 
     @staticmethod
     def is_in(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.IN
+
+    @staticmethod
+    def is_rewrite_star(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.REWRITES_STAR

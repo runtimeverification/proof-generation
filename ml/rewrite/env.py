@@ -37,14 +37,6 @@ class ProvableClaim:
         self.claim = claim
         self.proof = proof
 
-    @staticmethod
-    def without_proof(composer: KoreComposer, claim: kore.Claim) -> ProvableClaim:
-        mm_pattern = composer.encode_pattern(claim)
-        return ProvableClaim(
-            claim,
-            Proof.from_script(mm.StructuredStatement("", (mm.Application("|-"), mm_pattern)), "?"),
-        )
-
 
 class SubsortRelation:
     """
@@ -281,7 +273,25 @@ class KoreComposer(Composer):
         new_proof = self.load_proof_as_statement(label, provable.proof).as_proof()
         return ProvableClaim(provable.claim, new_proof)
 
-    def load_axiom(self, axiom: kore.Axiom, label: str, comment: bool = True, provable: bool = False) -> Theorem:
+    def load_claim_without_proof(self, label: str, claim: kore.Claim) -> ProvableClaim:
+        """
+        Load a claim without proof in the current context
+        """
+        mm_pattern = self.encode_pattern(claim)
+        proof = Proof.from_script(mm.StructuredStatement("", (mm.Application("|-"), mm_pattern)), "?")
+        theorem = self.load_proof_as_statement(label, proof)
+
+        # we need to apply all essentials
+        theorem.as_proof()
+
+        return ProvableClaim(
+            claim,
+            theorem.as_proof(),
+        )
+
+    def load_axiom(
+        self, axiom: kore.Axiom, label: str, comment: bool = True, provable: bool = False, **kwargs: Any
+    ) -> Theorem:
         """
         Encode and load a Kore axiom into the generator
         and return the corresponding theorem object
@@ -289,7 +299,7 @@ class KoreComposer(Composer):
         term = self.encode_pattern(axiom)
 
         if comment:
-            self.load_comment(str(axiom))
+            self.load_comment(str(axiom), **kwargs)
 
         # <label> $a |- <axiom> $.
         if provable:
@@ -297,7 +307,7 @@ class KoreComposer(Composer):
         else:
             stmt = mm.AxiomaticStatement(label, (mm.Application("|-"), term))
 
-        return self.load(stmt)
+        return self.load(stmt, **kwargs)
 
     def load_symbol_sorting_lemma(self, symbol_definition: kore.SymbolDefinition, label: str) -> None:
         encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
@@ -529,7 +539,7 @@ class KoreComposer(Composer):
                     index = len(self.string_literals)
                     self.string_literals.add(literal)
 
-                    self.load_comment(f"string literal {literal}")
+                    self.load_comment(f"string literal {literal}", top_level=True)
 
                     self.load_constant(
                         KorePatternEncoder.encode_string_literal(literal),
@@ -574,7 +584,7 @@ class KoreComposer(Composer):
 
                     functional_axiom.resolve(self.module)
 
-                    theorem = self.load_axiom(functional_axiom, functional_rule_name)
+                    theorem = self.load_axiom(functional_axiom, functional_rule_name, top_level=True)
                     self.domain_value_functional_axioms[sort,
                                                         literal] = ProvableClaim(functional_axiom, theorem.as_proof())
 
@@ -587,7 +597,7 @@ class KoreComposer(Composer):
             (subst_var, ) = self.gen_metavariables("#Variable", 1)
             pattern_var, *subpattern_vars = self.gen_metavariables("#Pattern", arity * 2 + 1)
 
-            with self.new_context():
+            with self.new_context(top_level=True):
                 substitution_rule_name = label + "-substitution"
                 essentials = []
                 essential_theorems = []
@@ -635,7 +645,7 @@ class KoreComposer(Composer):
             for i in range(arity):
                 app_ctx_rule_name = f"{label}-application-context-{i}"
 
-                with self.new_context():
+                with self.new_context(top_level=True):
                     for j in range(arity):
                         if i != j:
                             self.load(
@@ -691,7 +701,7 @@ class KoreComposer(Composer):
         # declare metamath constant
         # this is the actual symbol at the matching logic level used for application
         applicative_symbol = symbol + "-symbol"
-        self.load(mm.ConstantStatement((symbol, applicative_symbol)))
+        self.load(mm.ConstantStatement((symbol, applicative_symbol)), top_level=True)
 
         sugared_pattern = mm.Application(symbol, tuple(mm.Metavariable(v) for v in pattern_vars))
 
@@ -703,17 +713,21 @@ class KoreComposer(Composer):
                     mm.Application("#Symbol"),
                     mm.Application(applicative_symbol),
                 ),
-            )
+            ),
+            top_level=True,
         )
 
         # declare #Pattern
-        self.load(mm.AxiomaticStatement(
-            f"{label}-is-pattern",
-            (
-                mm.Application("#Pattern"),
-                sugared_pattern,
+        self.load(
+            mm.AxiomaticStatement(
+                f"{label}-is-pattern",
+                (
+                    mm.Application("#Pattern"),
+                    sugared_pattern,
+                ),
             ),
-        ))
+            top_level=True,
+        )
 
         # declare syntax sugar
         desugared = mm.Application(applicative_symbol)
@@ -728,7 +742,8 @@ class KoreComposer(Composer):
                     sugared_pattern,
                     desugared,
                 ),
-            )
+            ),
+            top_level=True,
         )
 
         # generate substitution rule
