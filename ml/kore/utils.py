@@ -24,6 +24,7 @@ from .ast import (
     SortVariable,
     StringLiteral,
     KoreVisitor,
+    Claim,
 )
 from .visitors import (
     PatternOnlyVisitorStructure,
@@ -196,7 +197,7 @@ class KoreUtils:
             module.remove_sentence(alias_def)
 
     @staticmethod
-    def get_free_variables(ast: BaseAST) -> Set[Variable]:
+    def get_free_variables(ast: BaseAST[Any]) -> Set[Variable]:
         return FreePatternVariableVisitor().visit(ast)
 
     @staticmethod
@@ -261,11 +262,11 @@ class KoreUtils:
             return pattern.sort
 
         if isinstance(pattern, Application):
-            # NOTE: assuming the application has been resolved
             symbol_def = pattern.symbol.definition
             sort_arguments = pattern.symbol.sort_arguments
 
-            assert isinstance(symbol_def, SymbolDefinition)
+            assert isinstance(symbol_def, SymbolDefinition), \
+                   f"cannot infer the sort of {pattern} without context"
             assert len(sort_arguments) == len(symbol_def.sort_variables)
 
             substitution = {var: arg for var, arg in zip(symbol_def.sort_variables, sort_arguments)}
@@ -352,3 +353,112 @@ class KoreUtils:
     def pretty_print(ast: BaseAST[Any], stream: TextIO = sys.stdout, *args: Any, **kwargs: Any) -> None:
         PrettyPrinter.encode(stream, ast, *args, **kwargs)
         stream.write("\n")
+
+    @staticmethod
+    def construct_top(sort: Sort) -> MLPattern:
+        return MLPattern(MLPattern.TOP, [sort], [])
+
+    @staticmethod
+    def construct_bottom(sort: Sort) -> MLPattern:
+        return MLPattern(MLPattern.BOTTOM, [sort], [])
+
+    @staticmethod
+    def construct_not(pattern: Pattern) -> MLPattern:
+        sort = KoreUtils.infer_sort(pattern)
+        return MLPattern(MLPattern.NOT, [sort], [pattern])
+
+    @staticmethod
+    def construct_dv(sort: Sort, literal: str) -> MLPattern:
+        return MLPattern(MLPattern.DV, [sort], [StringLiteral(literal)])
+
+    @staticmethod
+    def construct_binary_ml_pattern(construct: str, left: Pattern, right: Pattern) -> MLPattern:
+        left_sort = KoreUtils.infer_sort(left)
+        right_sort = KoreUtils.infer_sort(right)
+        assert left_sort == right_sort, \
+               f"unmatched sort {left_sort} and {right_sort}"
+        return MLPattern(construct, [left_sort], [left, right])
+
+    @staticmethod
+    def construct_and(left: Pattern, right: Pattern) -> MLPattern:
+        return KoreUtils.construct_binary_ml_pattern(MLPattern.AND, left, right)
+
+    @staticmethod
+    def construct_or(left: Pattern, right: Pattern) -> MLPattern:
+        return KoreUtils.construct_binary_ml_pattern(MLPattern.OR, left, right)
+
+    @staticmethod
+    def construct_rewrites(left: Pattern, right: Pattern) -> MLPattern:
+        return KoreUtils.construct_binary_ml_pattern(MLPattern.REWRITES, left, right)
+
+    @staticmethod
+    def construct_rewrites_star(left: Pattern, right: Pattern) -> MLPattern:
+        return KoreUtils.construct_binary_ml_pattern(MLPattern.REWRITES_STAR, left, right)
+
+    @staticmethod
+    def construct_implies(left: Pattern, right: Pattern) -> MLPattern:
+        return KoreUtils.construct_binary_ml_pattern(MLPattern.IMPLIES, left, right)
+
+    @staticmethod
+    def construct_equals(output_sort: Sort, left: Pattern, right: Pattern) -> MLPattern:
+        left_sort = KoreUtils.infer_sort(left)
+        right_sort = KoreUtils.infer_sort(right)
+        assert left_sort == right_sort, \
+               f"unmatched sort {left_sort} and {right_sort}"
+        return MLPattern(MLPattern.EQUALS, [left_sort, output_sort], [left, right])
+
+    @staticmethod
+    def destruct_ml_pattern(construct: str, pattern: Pattern) -> List[Pattern]:
+        assert isinstance(pattern, MLPattern) and \
+               pattern.construct == construct and \
+               len(pattern.arguments) == MLPattern.get_number_of_arguments_for_construct(construct), \
+               f"expecting {pattern} to be a {construct}"
+        return pattern.arguments
+
+    @staticmethod
+    def destruct_and(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.AND, pattern)
+
+    @staticmethod
+    def destruct_or(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.OR, pattern)
+
+    @staticmethod
+    def destruct_rewrites(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.REWRITES, pattern)
+
+    @staticmethod
+    def destruct_rewrites_star(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.REWRITES_STAR, pattern)
+
+    @staticmethod
+    def destruct_equals(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.EQUALS, pattern)
+
+    @staticmethod
+    def destruct_implies(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.IMPLIES, pattern)
+
+    @staticmethod
+    def destruct_ceil(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.CEIL, pattern)
+
+    @staticmethod
+    def destruct_in(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.IN, pattern)
+
+    @staticmethod
+    def is_top(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.TOP
+
+    @staticmethod
+    def is_and(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.AND
+
+    @staticmethod
+    def is_ceil(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.CEIL
+
+    @staticmethod
+    def is_in(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.IN

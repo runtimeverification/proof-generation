@@ -290,7 +290,10 @@ class Theorem:
             else:
                 assert False, f"unable to prove obligation {essential} from existing hypotheses"
 
-        return Proof.from_script(self.statement, self.context.get_all_floating_labels() + tuple(essential_proofs) + (self.statement.label, ))
+        return Proof.from_script(
+            self.statement,
+            self.context.get_all_floating_labels() + tuple(essential_proofs) + (self.statement.label, )
+        )
 
     def match_and_apply(
         self, target: StructuredStatement, *args: Union[Proof, AutoProof], **kwargs: Union[Proof, Term]
@@ -480,7 +483,7 @@ class ProofCache:
     THEOREM_CACHE_THRESHOLD = 10
 
     # certain tools (e.g. itp) would need all cache disabled
-    DISABLED = True
+    DISABLED = False
 
     def __init__(self, composer: Composer):
         self.composer = composer
