@@ -2392,3 +2392,19 @@ ${
     kore-rewrites-constraint-lemma.1 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) $.
     kore-rewrites-constraint-lemma   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) $= ? $.
 $}
+
+${
+    kore-rewrites-star-union.0 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ( \kore-and ph0 ph1 ph3 ) ph4 ) ) $.
+    kore-rewrites-star-union.1 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ( \kore-and ph0 ph2 ph3 ) ph5 ) ) $.
+    kore-rewrites-star-union   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ( \kore-and ph0 ( \kore-or ph0 ph1 ph2 ) ph3 ) ( \kore-or ph0 ph4 ph5 ) ) ) $= ? $.
+$}
+
+${
+    kore-rewrites-star-intro-alt.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
+    kore-rewrites-star-intro-alt   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph2 ) ) $= ? $.
+$}
+
+${
+    kore-rewrites-star-constraint-simplification.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
+    kore-rewrites-star-constraint-simplification   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ( \kore-and ph0 ph1 ph3 ) ( \kore-and ph0 ph2 ph3 ) ) ) $= ? $.
+$}
