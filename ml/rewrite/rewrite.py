@@ -326,6 +326,9 @@ class RewriteProofGenerator(ProofGenerator):
             )
         )
         claim.resolve(self.composer.module)
+
+        print("SMT proof obligation:", claim)
+
         return ProvableClaim.without_proof(self.composer, claim)
 
     def constrain_pattern_and_simplify(
@@ -425,8 +428,18 @@ class RewriteProofGenerator(ProofGenerator):
         initial: ConstrainedPattern,
         applied_rule: AppliedRule,
     ) -> ProvableClaim:
-        """
+        r"""
         Prove a single branch in one step of symbolic execution
+
+        Given a initial constrained term phi /\ psi /\ sigma
+        where phi is the term, psi is the constraint, and sigma is the substitution
+        
+        and a final term phi' /\ psi' /\ sigma'
+        
+        Assuming psi' /\ sigma' -> psi /\ sigma
+
+        We try to prove and return
+        phi /\ psi' /\ sigma' => phi' /\ psi' /\ sigma'
         """
         assert applied_rule.substitution is not None and \
                applied_rule.rule_id is not None, \
@@ -510,8 +523,6 @@ class RewriteProofGenerator(ProofGenerator):
 
         final_rewrite_claim = ProvableClaim(claim, proof)
 
-        print(final_rewrite_claim.claim)
-
         return final_rewrite_claim
 
     def add_free_variable_sorting_hypotheses(
@@ -532,18 +543,108 @@ class RewriteProofGenerator(ProofGenerator):
             )
             self.composer.load(sorting_statement)
 
+    def combine_branches(
+        self,
+        rewrite1: ProvableClaim,
+        rewrite2: ProvableClaim,
+    ) -> ProvableClaim:
+        r"""
+        Given two provable claims
+          psi_1 /\ phi =>* phi'_1
+          psi_2 /\ phi =>* phi'_2
+
+        return a provable claim
+          (psi_1 \/ psi_2) /\ phi =>* phi'_1 \/ phi'_2
+        """
+
+        lhs1, left_constraints1, rhs1, right_constraints1 = self.decompose_rewrite_axiom(rewrite1.claim.pattern)
+        lhs2, left_constraints2, rhs2, right_constraints2 = self.decompose_rewrite_axiom(rewrite2.claim.pattern)
+        assert lhs1 == lhs2
+
+        proof = self.composer.get_theorem("kore-rewrites-star-union").apply(
+            rewrite1.proof,
+            rewrite2.proof,
+        )
+
+        sort = KoreUtils.infer_sort(lhs1)
+
+        claim = kore.Claim(
+            [],
+            kore.MLPattern(
+                kore.MLPattern.REWRITES_STAR,
+                [sort],
+                [
+                    kore.MLPattern(
+                        kore.MLPattern.AND,
+                        [sort],
+                        [
+                            kore.MLPattern(kore.MLPattern.OR, [sort], [ left_constraints1, left_constraints2 ]),
+                            lhs1
+                        ]
+                    ),
+                    kore.MLPattern(
+                        kore.MLPattern.OR,
+                        [sort],
+                        [
+                            kore.MLPattern(kore.MLPattern.AND, [sort], [right_constraints1, rhs1]),
+                            kore.MLPattern(kore.MLPattern.AND, [sort], [right_constraints2, rhs2]),
+                        ],
+                    ),
+                ],
+            ),
+        )
+        claim.resolve(self.composer.module)
+
+        return ProvableClaim(claim, proof)
+
     def prove_symbolic_step(
         self,
         step: RewritingStep,
     ) -> ProvableClaim:
+        """
+        Prove that the initial pattern in the step
+        rewrites to the union of all final patterns
+        """
+
         initial_pattern = step.get_initial_pattern()
 
         with self.composer.new_context():
             # TODO: maybe we need to change the free variable name to avoid conflict
             self.add_free_variable_sorting_hypotheses(initial_pattern)
 
-            for applied_rule in step.applied_rules:
-                self.prove_symbolic_step_branch(initial_pattern, applied_rule)
+            assert len(step.applied_rules) != 0
+            branches = [ self.prove_symbolic_step_branch(initial_pattern, applied_rule) for applied_rule in step.applied_rules ]
+
+            # no changes to the remainder
+            for remainder in step.remainders:
+                branches.append(self.apply_reflexivity(remainder.as_pattern()))
+
+            step_claim = self.apply_rewrite_star_intro(branches[-1])
+            for branch in branches[:-1][::-1]:
+                step_claim = self.combine_branches(self.apply_rewrite_star_intro(branch), step_claim)
+
+            # prove that the initial constraint
+            # implies the disjunction of all cases
+            lhs, _ = step_claim.claim.pattern.arguments
+            lhs_constraint, lhs_term = lhs.arguments
+            initial_constraint = initial_pattern.constraint_as_pattern()
+
+            assert lhs_term == initial_pattern.pattern
+
+            constraint_splitting = self.check_smt_implication(initial_constraint, lhs_constraint)
+
+            proof = self.composer.get_theorem("kore-rewrites-star-constraint-simplification").apply(
+                constraint_splitting.proof,
+                ph3=self.composer.encode_pattern(lhs_term),
+            )
+            sort = KoreUtils.infer_sort(lhs_term)
+            claim = kore.Claim([], kore.MLPattern(kore.MLPattern.REWRITES_STAR, [sort], [initial_pattern.as_pattern(), lhs]))
+            simplification_claim = ProvableClaim(claim, proof)
+
+            final_claim = self.apply_rewrite_star_transitivity(simplification_claim, step_claim)
+            print(final_claim.claim)
+
+            return final_claim
 
     def prove_symbolic_rewriting_task(
         self,
@@ -557,82 +658,13 @@ class RewriteProofGenerator(ProofGenerator):
         for step in task.steps:
             self.prove_symbolic_step(step)
 
-        # initial_pattern = task.get_initial_pattern()
-        # final_patterns = task.get_final_patterns()
-
-        # assert len(final_patterns) == 1, "non-determinism not supported"
-        # final_pattern = final_patterns[0]
-
-        # initial_pattern.assume_unconstrained()
-        # final_pattern.assume_unconstrained()
-
-        # with self.composer.new_context():
-        #     # maybe we need to change the free variable name to avoid conflict
-
-        #     # add sorting claims for variables
-        #     free_variables = final_pattern.get_free_variables()
-        #     for i, free_var in enumerate(free_variables):
-        #         encoded_free_var = self.composer.encode_pattern(free_var)
-        #         encoded_free_var_sort = self.composer.encode_pattern(free_var.sort)
-
-        #         sorting_statement = mm.EssentialStatement(
-        #             f"symbolic-sorting-{i}",
-        #             (mm.Application("|-"), mm.Application("\\in-sort", (encoded_free_var, encoded_free_var_sort))),
-        #         )
-        #         self.composer.load(sorting_statement)
-
-        #     # simplify before rewriting
-        #     print("==================")
-        #     print("simplifying initial pattern")
-        #     simplification_claim = self.apply_reflexivity(initial_pattern.pattern)
-        #     simplification_claim = self.simplify_pattern(simplification_claim, [0, 1])
-        #     _, current_pattern = self.decompose_concrete_rewrite_claim(simplification_claim)
-
-        #     step_claims = [simplification_claim]
-
-        #     for i, step in enumerate(task.get_all_steps()):
-        #         print("==================")
-        #         print("proving rewriting step {}".format(i))
-
-        #         step_initial = step.initial.assume_unconstrained()
-
-        #         unification_claim = self.check_equal_or_unify(current_pattern, step_initial)
-        #         if unification_claim is not None:
-        #             step_claims.append(unification_claim)
-        #             _, current_pattern = self.decompose_concrete_rewrite_claim(unification_claim)
-
-        #         step_claim = self.prove_rewriting_step(step)
-        #         lhs, rhs = self.decompose_concrete_rewrite_claim(step_claim)
-
-        #         assert step_initial == lhs, \
-        #             f"unexpected rewriting claim, expected to rewrite from {step_initial}, but got {lhs}"
-
-        #         self.composer.load_comment(f"\nrewriting step:\n{lhs}\n=>\n{rhs}\n")
-        #         step_claim = self.composer.load_provable_claim_as_theorem(
-        #             f"rewrite-step-{self.rewrite_claim_counter}", step_claim
-        #         )
-        #         self.rewrite_claim_counter += 1
-
-        #         step_claims.append(step_claim)
-        #         current_pattern = rhs
-
-        #     # unify with the final expected pattern
-        #     unification_claim = self.check_equal_or_unify(current_pattern, final_pattern.pattern)
-        #     if unification_claim is not None:
-        #         step_claims.append(unification_claim)
-
-        #     final_claim = step_claims[0]
-
-        #     for claim in step_claims[1:]:
-        #         final_claim = self.apply_rewrite_star_transitivity(final_claim, claim)
-
-        #     return final_claim
-
     def apply_rewrite_star_intro(self, step: ProvableClaim) -> ProvableClaim:
         """
         Transform a rewrite claim to a rewrite-star claim
         """
-        lhs, rhs = self.decompose_concrete_rewrite_claim(step)
+        assert isinstance(step.claim.pattern, kore.MLPattern) and step.claim.pattern.construct == kore.MLPattern.REWRITES
+
+        lhs, rhs = step.claim.pattern.arguments
         pattern_sort = KoreUtils.infer_sort(lhs)
 
         new_claim = kore.Claim(
@@ -654,9 +686,11 @@ class RewriteProofGenerator(ProofGenerator):
         """
         Connect two rewrite-star claims
         """
+        assert isinstance(step1.claim.pattern, kore.MLPattern) and step1.claim.pattern.construct == kore.MLPattern.REWRITES_STAR
+        assert isinstance(step2.claim.pattern, kore.MLPattern) and step2.claim.pattern.construct == kore.MLPattern.REWRITES_STAR
 
-        lhs1, rhs1 = self.decompose_concrete_rewrite_claim(step1)
-        lhs2, rhs2 = self.decompose_concrete_rewrite_claim(step2)
+        lhs1, rhs1 = step1.claim.pattern.arguments
+        lhs2, rhs2 = step2.claim.pattern.arguments
         assert rhs1 == lhs2, "unable to apply transitivity"
 
         pattern_sort = KoreUtils.infer_sort(lhs1)
