@@ -213,7 +213,9 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor[kore.Pattern, Pr
         encoded_var = self.composer.encode_pattern(variable)
         encoded_sort = self.composer.encode_pattern(variable.sort)
 
-        x, y = self.composer.gen_fresh_metavariables("#ElementVariable", 2, { encoded_var })
+        x, y = self.composer.gen_fresh_metavariables(
+            "#ElementVariable", 2, {KorePatternEncoder.encode_variable(variable)}
+        )
         sort_var = kore.SortVariable(x)
         elem_var = kore.Variable(y, variable.sort)
 
@@ -228,16 +230,13 @@ class FunctionalProofGenerator(ProofGenerator, kore.KoreVisitor[kore.Pattern, Pr
         claim = kore.Claim(
             [sort_var],
             kore.MLPattern(
-                kore.MLPattern.EXISTS,
-                [ sort_var ],
-                [
-                    elem_var,
-                    kore.MLPattern(
-                        kore.MLPattern.EQUALS,
-                        [ variable.sort, sort_var ],
-                        [ elem_var, variable ],
-                    )
-                ]
+                kore.MLPattern.EXISTS, [sort_var],
+                [elem_var,
+                 kore.MLPattern(
+                     kore.MLPattern.EQUALS,
+                     [variable.sort, sort_var],
+                     [elem_var, variable],
+                 )]
             )
         )
         claim.resolve(self.composer.module)

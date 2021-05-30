@@ -46,7 +46,7 @@ class Substitution(WithSchema):
             k.resolve(module)
             v.resolve(module)
 
-    def as_constraint(self, sort: kore.Sort) -> kore.Pattern:
+    def as_predicate(self, sort: kore.Sort) -> kore.Pattern:
         r"""
         Encode a substitution as a predicate
         { k |-> v }
@@ -57,23 +57,49 @@ class Substitution(WithSchema):
         items = list(self.substitution.items())
         items.sort(key=lambda t: t[0], reverse=True)
 
-        constraint = kore.MLPattern(kore.MLPattern.TOP, [sort], [])
+        constraint = KoreUtils.construct_top(sort)
 
         for k, v in items:
-            constraint = kore.MLPattern(
-                kore.MLPattern.AND,
-                [sort],
-                [
-                    kore.MLPattern(
-                        kore.MLPattern.EQUALS,
-                        [k.sort, sort],
-                        [k, v],
-                    ),
-                    constraint,
-                ]
+            construct = KoreUtils.construct_and(
+                KoreUtils.construct_equals(sort, k, v),
+                constraint,
             )
 
         return constraint
+
+    @staticmethod
+    def from_predicate(predicate: kore.Pattern) -> Substitution:
+        assert isinstance(predicate, kore.MLPattern), \
+               f"{predicate} is not a substitution constraint"
+
+        if predicate.construct == kore.MLPattern.AND:
+            left, right = predicate.arguments
+            return Substitution.from_predicate(left).merge(Substitution.from_predicate(right))
+        else:
+            left, right = KoreUtils.destruct_equals(predicate)
+            assert isinstance(left, kore.Variable), \
+                   f"{predicate} is not a substitution constraint"
+            return Substitution({left: right})
+
+    def merge(self, other: Substitution) -> Substitution:
+        return Substitution({**self.substitution, **other.substitution})
+
+    def orient(self, preferable_value: Set[kore.Variable]) -> Substitution:
+        """
+        Orient mappings in the substitution such that if we have
+        v1 |-> v2 in substitution
+        if v1 is in <preferable_value> but v2 is not in <preferable_value>
+        then we switch it to v2 |-> v1
+        """
+        subst: Dict[kore.Variable, kore.Pattern] = {}
+
+        for k, v in self.substitution.items():
+            if isinstance(v, kore.Variable) and k in preferable_value and v not in preferable_value:
+                subst[v] = k
+            else:
+                subst[k] = v
+
+        return Substitution(subst)
 
     def split(self, variables: Set[kore.Variable]) -> Tuple[Substitution, Substitution]:
         """
@@ -81,7 +107,7 @@ class Substitution(WithSchema):
         - sigma1 where the variables are all in <variables>
         - sigma2 where the variables are not in <variables>
         """
-        
+
         subst1 = {}
         subst2 = {}
 
@@ -134,32 +160,29 @@ class ConstrainedPattern(WithSchema):
     def get_substitution(self) -> Mapping[kore.Variable, kore.Pattern]:
         return self.substitution.substitution if self.substitution is not None else {}
 
-    def constraint_as_pattern(self) -> kore.Pattern:
+    def get_constraint_as_pattern(self) -> kore.Pattern:
         """
         Encode the constraint and substitution as a kore pattern
         """
         sort = KoreUtils.infer_sort(self.pattern)
-        return kore.MLPattern(
-            kore.MLPattern.AND,
-            [sort],
-            [self.constraint, self.substitution.as_constraint(sort)],
-        )
-
-    def as_pattern(self) -> kore.Pattern:
-        """
-        Encode as a kore pattern
-        """
-        sort = KoreUtils.infer_sort(self.pattern)
-        return kore.MLPattern(
-            kore.MLPattern.AND,
-            [sort],
-            [ self.constraint_as_pattern(), self.pattern ],
-        )
+        return KoreUtils.construct_and(self.constraint, self.substitution.as_predicate(sort))
 
     def resolve(self, module: kore.Module) -> None:
         self.pattern.resolve(module)
         self.constraint.resolve(module)
         self.substitution.resolve(module)
+
+    def as_pattern(self) -> kore.Pattern:
+        """
+        Encode as a kore pattern
+        """
+        return KoreUtils.construct_and(self.get_constraint_as_pattern(), self.pattern)
+
+    @staticmethod
+    def from_pattern(pattern: kore.Pattern) -> ConstrainedPattern:
+        constraint, term = KoreUtils.destruct_and(pattern)
+        constraint_left, constraint_right = KoreUtils.destruct_and(constraint)
+        return ConstrainedPattern(term, constraint_left, Substitution.from_predicate(constraint_right))
 
     @staticmethod
     def get_raw_schema() -> Any:
@@ -245,7 +268,7 @@ class RewritingStep(WithSchema):
         return self.initial
 
     def get_rewritten_patterns(self) -> Tuple[ConstrainedPattern, ...]:
-        return sum(( rule.results for rule in self.applied_rules ), start=())
+        return sum((rule.results for rule in self.applied_rules), start=())
 
     def resolve(self, module: kore.Module) -> None:
         self.initial.resolve(module)

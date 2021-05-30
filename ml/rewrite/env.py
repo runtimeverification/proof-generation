@@ -255,6 +255,22 @@ class KoreComposer(Composer):
             (mm.Application("|-"), self.encode_pattern(axiom)),
         )
 
+    def construct_claim(
+        self, pattern: kore.Pattern, sort_variables: Optional[List[kore.SortVariable]] = None
+    ) -> kore.Claim:
+        claim = kore.Claim(sort_variables or [], pattern)
+        claim.resolve(self.module)
+        return claim
+
+    def construct_provable_claim(
+        self,
+        pattern: kore.Pattern,
+        proof: Proof,
+        sort_variables: Optional[List[kore.SortVariable]] = None
+    ) -> ProvableClaim:
+        claim = self.construct_claim(pattern, sort_variables)
+        return ProvableClaim(claim, proof)
+
     def load_comment(self, comment: str, **kwargs: Any) -> None:
         self.load(mm.Comment(comment), **kwargs)
 

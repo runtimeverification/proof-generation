@@ -659,6 +659,32 @@ class MLPattern(Pattern):
 
     DV = "\\dv"
 
+    NUM_ARGUMENTS = {
+        TOP: 0,
+        BOTTOM: 0,
+        NOT: 1,
+        AND: 2,
+        OR: 2,
+        IMPLIES: 2,
+        IFF: 2,
+        EXISTS: 2,
+        FORALL: 2,
+        MU: 2,
+        NU: 2,
+        CEIL: 1,
+        FLOOR: 1,
+        EQUALS: 2,
+        IN: 2,
+        NEXT: 1,
+        REWRITES: 2,
+        REWRITES_STAR: 2,
+        DV: 1,
+    }
+
+    @staticmethod
+    def get_number_of_arguments_for_construct(construct: str) -> int:
+        return MLPattern.NUM_ARGUMENTS[construct]
+
     def __init__(self, construct: str, sorts: List[Sort], arguments: List[Pattern]):
         super().__init__()
         self.construct = construct
