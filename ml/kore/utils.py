@@ -468,5 +468,5 @@ class KoreUtils:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.IN
 
     @staticmethod
-    def is_rewrite_star(pattern: Pattern) -> bool:
+    def is_rewrites_star(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.REWRITES_STAR

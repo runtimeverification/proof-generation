@@ -164,7 +164,7 @@ class RewriteProofGenerator(ProofGenerator):
                 print("> applying unification equation", equation)
                 concrete_rewrite_claim = equation.replace_equal_subpattern(concrete_rewrite_claim, [0, 0] + path)
 
-            concrete_rewrite_claim = self.apply_rewrite_star_intro(concrete_rewrite_claim)
+            concrete_rewrite_claim = self.apply_rewrites_star_intro(concrete_rewrite_claim)
 
             # apply simplification to the rhs of the rewriting claim
             concrete_rewrite_claim = self.simplify_pattern(concrete_rewrite_claim, [0, 1])
@@ -217,7 +217,7 @@ class RewriteProofGenerator(ProofGenerator):
         assert len(unification_result.substitution) == 0, \
                "patterns should be concrete"
 
-        simplification_claim = self.apply_reflexivity(expected)
+        simplification_claim = self.apply_rewrites_star_reflexivity(expected)
 
         for equation, path in unification_result.applied_equations:
             print("> applying unification equation", equation)
@@ -245,7 +245,7 @@ class RewriteProofGenerator(ProofGenerator):
         # simplify before rewriting
         print("==================")
         print("simplifying initial pattern")
-        simplification_claim = self.apply_reflexivity(initial_pattern)
+        simplification_claim = self.apply_rewrites_star_reflexivity(initial_pattern)
         simplification_claim = self.simplify_pattern(simplification_claim, [0, 1])
         _, _, current_pattern, _ = self.destruct_rewrite_axiom(simplification_claim)
 
@@ -289,7 +289,7 @@ class RewriteProofGenerator(ProofGenerator):
         final_claim = step_claims[0]
 
         for claim in step_claims[1:]:
-            final_claim = self.apply_rewrite_star_transitivity(final_claim, claim)
+            final_claim = self.apply_rewrites_star_transitivity(final_claim, claim)
 
         return final_claim
 
@@ -323,6 +323,86 @@ class RewriteProofGenerator(ProofGenerator):
 
         return self.composer.load_claim_without_proof(f"smt-obligation-counter-{counter}", claim)
 
+    def apply_implies_reflexivity(self, pattern: kore.Pattern) -> ProvableClaim:
+        claim = self.composer.construct_claim(KoreUtils.construct_implies(pattern, pattern))
+
+        return ProvableClaim(
+            claim,
+            self.composer.get_theorem("kore-implies-reflexivity").match_and_apply(
+                self.composer.encode_metamath_statement(claim),
+                SortingProver.auto,
+            ),
+        )
+
+    def prove_trivial_subsumption(
+        self,
+        pattern1: ConstrainedPattern,
+        pattern2: ConstrainedPattern,
+    ) -> Optional[ProvableClaim]:
+        """
+        Try to prove the subsumption if it's trivial
+        (the terms are unifiable without using constraints)
+        """
+
+        # TODO: the current unification algorithm
+        # is somewhat oriented, so we have to try two directions
+        reverse = False
+        unification_result = UnificationProofGenerator(self.composer).unify_patterns(pattern1.pattern, pattern2.pattern)
+
+        if unification_result is None or len(unification_result.substitution) != 0:
+            reverse = True
+            unification_result = UnificationProofGenerator(self.composer
+                                                           ).unify_patterns(pattern2.pattern, pattern1.pattern)
+
+            if unification_result is None or len(unification_result.substitution) != 0:
+                return None
+
+        if reverse:
+            claim = self.apply_implies_reflexivity(
+                ConstrainedPattern(
+                    pattern2.pattern,
+                    pattern1.constraint,
+                    pattern1.substitution,
+                ).as_pattern(),
+            )
+        else:
+            claim = self.apply_implies_reflexivity(pattern1.as_pattern())
+
+        pattern1_constraint = pattern1.get_constraint_as_pattern()
+        pattern2_constraint = pattern2.get_constraint_as_pattern()
+
+        if pattern1_constraint != pattern2_constraint:
+            # check that the constraint of pattern1
+            # implies the constraint the pattern2,
+            # if they are not the same
+            constraint_impl = self.check_smt_implication(pattern1_constraint, pattern2_constraint)
+            claim = self.composer.construct_provable_claim(
+                pattern=KoreUtils.construct_implies(
+                    ConstrainedPattern(
+                        pattern2.pattern if reverse else pattern1.pattern,
+                        pattern1.constraint,
+                        pattern1.substitution,
+                    ).as_pattern(),
+                    ConstrainedPattern(
+                        pattern2.pattern if reverse else pattern1.pattern,
+                        pattern2.constraint,
+                        pattern2.substitution,
+                    ).as_pattern(),
+                ),
+                proof=self.composer.get_theorem("kore-imp-conj-simplify").apply(
+                    constraint_impl.proof,
+                    claim.proof,
+                ),
+            )
+
+        for equation, path in unification_result.applied_equations:
+            if reverse:
+                claim = equation.replace_equal_subpattern(claim, [0, 0, 1] + path)  # lhs
+            else:
+                claim = equation.replace_equal_subpattern(claim, [0, 1, 1] + path)  # rhs
+
+        return claim
+
     def prove_constrained_pattern_subsumption(
         self,
         pattern1: ConstrainedPattern,
@@ -333,6 +413,13 @@ class RewriteProofGenerator(ProofGenerator):
         - phi /\ x = psi -> phi[psi/x] /\ x = psi
         - phi /\ psi1 = psi2 -> phi[psi1/psi2] /\ psi1 = psi2
         """
+
+        counter = self.pattern_subsumption_counter
+        self.pattern_subsumption_counter += 1
+
+        provable = self.prove_trivial_subsumption(pattern1, pattern2)
+        if provable is not None:
+            return self.composer.load_provable_claim_as_theorem(f"pattern-subsumption-{counter}", provable)
 
         # steps:
         # 1. unify two patterns and obtain a substitution and a proof obligation
@@ -349,8 +436,8 @@ class RewriteProofGenerator(ProofGenerator):
             )
         )
 
-        counter = self.pattern_subsumption_counter
-        self.pattern_subsumption_counter += 1
+        # print("nontrivial subsumption:")
+        # KoreUtils.pretty_print(claim.pattern)
 
         return self.composer.load_claim_without_proof(f"pattern-subsumption-{counter}", claim)
 
@@ -474,7 +561,8 @@ class RewriteProofGenerator(ProofGenerator):
             },
         )
         instantiated_axiom = self.remove_ensures(instantiated_axiom)
-        instantiated_axiom = self.simplify_pattern(instantiated_axiom, [0, 1])
+        instantiated_axiom = self.simplify_pattern(instantiated_axiom, [0, 1])  # rhs
+        instantiated_axiom = self.simplify_pattern(instantiated_axiom, [0, 0, 0])  # requires clause
 
         lhs, requires, rhs, _ = self.destruct_rewrite_axiom(instantiated_axiom)
         assert requires is not None
@@ -607,11 +695,11 @@ class RewriteProofGenerator(ProofGenerator):
 
             # no changes to the remainder
             for remainder in step.remainders:
-                branches.append(self.apply_reflexivity(remainder.as_pattern()))
+                branches.append(self.apply_rewrites_star_reflexivity(remainder.as_pattern()))
 
-            step_claim = self.apply_rewrite_star_intro(branches[-1])
+            step_claim = self.apply_rewrites_star_intro(branches[-1])
             for branch in branches[:-1][::-1]:
-                step_claim = self.combine_branches(self.apply_rewrite_star_intro(branch), step_claim)
+                step_claim = self.combine_branches(self.apply_rewrites_star_intro(branch), step_claim)
 
             # prove that the initial constraint
             # implies the disjunction of all cases
@@ -634,7 +722,7 @@ class RewriteProofGenerator(ProofGenerator):
                 ),
             )
 
-            final_claim = self.apply_rewrite_star_transitivity(simplification_claim, step_claim)
+            final_claim = self.apply_rewrites_star_transitivity(simplification_claim, step_claim)
             final_claim = self.composer.load_provable_claim_as_theorem(f"symbolic-step-{step_index}", final_claim)
 
             return final_claim
@@ -651,11 +739,11 @@ class RewriteProofGenerator(ProofGenerator):
             print(f"######## symbolic step {i} ########")
             self.prove_symbolic_step(i, step)
 
-    def apply_rewrite_star_intro(self, step: ProvableClaim) -> ProvableClaim:
+    def apply_rewrites_star_intro(self, step: ProvableClaim) -> ProvableClaim:
         """
         Transform a rewrite claim to a rewrite-star claim
         """
-        if KoreUtils.is_rewrite_star(step.claim.pattern):
+        if KoreUtils.is_rewrites_star(step.claim.pattern):
             return step
 
         lhs, rhs = KoreUtils.destruct_rewrites(step.claim.pattern)
@@ -669,7 +757,7 @@ class RewriteProofGenerator(ProofGenerator):
             ),
         )
 
-    def apply_rewrite_star_transitivity(self, step1: ProvableClaim, step2: ProvableClaim) -> ProvableClaim:
+    def apply_rewrites_star_transitivity(self, step1: ProvableClaim, step2: ProvableClaim) -> ProvableClaim:
         """
         Connect two rewrite-star claims
         """
@@ -1058,7 +1146,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         return provable
 
-    def apply_reflexivity(self, pattern: kore.Pattern) -> ProvableClaim:
+    def apply_rewrites_star_reflexivity(self, pattern: kore.Pattern) -> ProvableClaim:
         pattern_sort = KoreUtils.infer_sort(pattern)
         return self.composer.construct_provable_claim(
             pattern=KoreUtils.construct_rewrites_star(pattern, pattern),
@@ -1122,7 +1210,9 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
     """
     These functions can accept symbolic arguments
     """
-    SYMBOLIC_FUNCTIONS: Set[str] = set()
+    SYMBOLIC_FUNCTIONS = {
+        "LblisKResult",
+    }
 
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
         return None
