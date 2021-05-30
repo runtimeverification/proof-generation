@@ -87,9 +87,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator, kore.KoreVisitor[Union[ko
         if cached_proof is not None:
             return cached_proof, substituted
 
-        proof = self.composer.cache_proof("substitution-cache", self.visit(pattern_or_sort))
-
-        return proof, substituted
+        return self.composer.cache_proof("substitution-cache", self.visit(pattern_or_sort)), substituted
 
     def postvisit_axiom(self, axiom: kore.Axiom) -> Proof:
         # prove substitution of the pattern

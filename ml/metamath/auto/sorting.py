@@ -315,18 +315,16 @@ class SortingProver:
 
         if conclusion.symbol == "\\and":
             # top level must be an \and, so we break it into two goals
-            return composer.cache_proof(
-                "sorting-cache",
-                composer.get_theorem("rule-and-intro-alt2-sugar").apply(
-                    SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion.subterms[0]),
-                    SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion.subterms[1]),
-                ),
+            proof = composer.get_theorem("rule-and-intro-alt2-sugar").apply(
+                SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion.subterms[0]),
+                SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion.subterms[1]),
             )
+            # proof = composer.cache_proof("sorting-cache", proof)
+            return proof
 
-        return composer.cache_proof(
-            "sorting-cache",
-            SortingProver.prove_single_sorting_judgement(composer, hypothesis, conclusion),
-        )
+        proof = SortingProver.prove_single_sorting_judgement(composer, hypothesis, conclusion)
+        # proof = composer.cache_proof("sorting-cache", proof)
+        return proof
 
     r"""
     Prove a statement of the form:

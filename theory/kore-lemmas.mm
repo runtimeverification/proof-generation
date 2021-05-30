@@ -2361,12 +2361,6 @@ ${
     kore-next-commutes-with-predicate $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ( \kore-next ph0 ph1 ) ph2 ) ( \kore-next ph0 ( \kore-and ph1 ph2 ) ) ) ) $= ? $.
 $}
 
-$( ${
-    kore-rewrites-constrained.0 $e |- ( \kore-is-predicate ph0 ph3 ) $.
-    kore-rewrites-constrained.0 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph2 ) ) $.
-    kore-rewrites-constrained $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph3 ) ( \kore-and ph0 ph2 ph3 ) ) ) $= ? $.
-$} $)
-
 ${
     kore-rewrites-ignore-ensures.2 $e |- ( \in-sort ph3 ph0 ) $.
     kore-rewrites-ignore-ensures.3 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ( \kore-and ph0 ph2 ph3 ) ) ) $.
@@ -2374,16 +2368,15 @@ ${
 $}
 
 ${
-    $( term simplification under constraint (ph1 is the constraint and ph2, ph3 are the terms) $)
-    kore-rewrites-subsumption-lemma.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) $.
+    kore-rewrites-subsumption-lhs.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
+    kore-rewrites-subsumption-lhs.1 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph2 ph3 ) ) $.
+    kore-rewrites-subsumption-lhs   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) $= ? $.
+$}
 
-    $( constraint simplification $)
-    kore-rewrites-subsumption-lemma.1 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph4 ) ) $.
-
-    $( original rewrite claim $)
-    kore-rewrites-subsumption-lemma.2 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph4 ph3 ) ph5 ) ) $.
-
-    kore-rewrites-subsumption-lemma   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ph5 ) ) $= ? $.
+${
+    kore-rewrites-subsumption-rhs.0 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph2 ) ) $.
+    kore-rewrites-subsumption-rhs.1 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph3 ) ) $.
+    kore-rewrites-subsumption-rhs   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) $= ? $.
 $}
 
 ${
@@ -2391,6 +2384,10 @@ ${
     kore-rewrites-constraint-lemma.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
     kore-rewrites-constraint-lemma.1 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) $.
     kore-rewrites-constraint-lemma   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) $= ? $.
+$}
+
+${
+    kore-and-top-alt $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ( \kore-and ph0 ph1 ( \kore-top ph0 ) ) ph2 ) ( \kore-and ph0 ph1 ph2 ) ) ) $= ? $.
 $}
 
 ${
