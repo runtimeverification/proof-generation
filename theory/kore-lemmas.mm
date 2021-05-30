@@ -2405,3 +2405,11 @@ ${
     kore-rewrites-star-constraint-simplification.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
     kore-rewrites-star-constraint-simplification   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ( \kore-and ph0 ph1 ph3 ) ( \kore-and ph0 ph2 ph3 ) ) ) $= ? $.
 $}
+
+${
+    $( TODO: put this to kore-propositional $)
+
+    kore-imp-conj-simplify.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
+    kore-imp-conj-simplify.1 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph3 ( \kore-and ph0 ph1 ph4 ) ) ) $.
+    kore-imp-conj-simplify   $p |- ( \kore-valid ph0 ( \kore-implies ph0 ph3 ( \kore-and ph0 ph2 ph4 ) ) ) $= ? $.
+$}

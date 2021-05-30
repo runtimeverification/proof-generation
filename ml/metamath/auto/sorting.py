@@ -68,13 +68,12 @@ class SortingProver:
         assert body is not None, f"not a provability statement {statement}"
         return body
 
-    """
-    Check if the given term is an implication of conjunctions
-    and return the tuple of conjuncts
-    """
-
     @staticmethod
     def is_imp_conjunctions(term: Term) -> Optional[Tuple[List[Term], List[Term]]]:
+        """
+        Check if the given term is an implication of conjunctions
+        and return the tuple of conjuncts
+        """
         if (not isinstance(term, Application) or term.symbol != "\\imp" or len(term.subterms) != 2):
             return None
 
@@ -147,15 +146,15 @@ class SortingProver:
 
         return None
 
-    r"""
-    Prove a statement of the form:
-    |- ( \kore-is-sort ph0 )
-
-    TODO: add support for sort-parametric sorts
-    """
-
     @staticmethod
     def prove_kore_is_sort(composer: Composer, statement: StructuredStatement) -> Proof:
+        r"""
+        Prove a statement of the form:
+        |- ( \kore-is-sort ph0 )
+
+        TODO: add support for sort-parametric sorts
+        """
+
         term = SortingProver.get_provability_body(statement)
         assert term is not None, f"statement {statement} is not a provability claim"
 
@@ -188,12 +187,11 @@ class SortingProver:
 
         return proof
 
-    """
-    Conclusion should be a single sorting claim
-    """
-
     @staticmethod
     def prove_single_sorting_judgement(composer: Composer, hypothesis: Application, conclusion: Application) -> Proof:
+        """
+        Conclusion should be a single sorting claim
+        """
         left_conjuncts = SortingProver.get_conjuncts(hypothesis)
 
         # if the conclusion is a \kore-is-sort claims
@@ -326,13 +324,13 @@ class SortingProver:
         # proof = composer.cache_proof("sorting-cache", proof)
         return proof
 
-    r"""
-    Prove a statement of the form:
-    |- ( \imp <hypotheses> ( conjunction of the form of either ( \in-sort ph0 ph1 ) or ( \kore-is-sort ph0 ) ) )
-    """
-
     @staticmethod
     def prove_sorting_statement(composer: Composer, statement: StructuredStatement) -> Proof:
+        r"""
+        Prove a statement of the form:
+        |- ( \imp <hypotheses> ( conjunction of the form of either ( \in-sort ph0 ph1 ) or ( \kore-is-sort ph0 ) ) )
+        """
+
         term = SortingProver.get_provability_body(statement)
         assert term is not None, f"statement {statement} is not a provability claim"
         assert isinstance(term, Application)

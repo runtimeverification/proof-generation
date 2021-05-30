@@ -60,6 +60,9 @@ class UnificationResult:
     def append_equation(self, equation: Equation, path: PatternPath) -> UnificationResult:
         return UnificationResult(self.substitution, self.applied_equations + [(equation, path)])
 
+    def inverse_equations(self) -> UnificationResult:
+        return UnificationResult(self.substitution, [(eqn.get_inverse(), path) for eqn, path in self.applied_equations])
+
     def __str__(self) -> str:
         return "sigma = {{ {} }}, T = [ {} ]".format(
             ", ".join([f"{a} = {b}" for a, b in self.substitution.items()]),
@@ -68,8 +71,8 @@ class UnificationResult:
 
 
 class Equation:
-    def __init__(self, env: KoreComposer):
-        self.composer = env
+    def __init__(self, composer: KoreComposer):
+        self.composer = composer
 
     def __str__(self) -> str:
         return type(self).__name__
@@ -90,26 +93,44 @@ class DuplicateConjunction(Equation):
     r"""
     phi /\ phi = phi
     """
+    def __init__(self, composer: KoreComposer, inverse: bool = False):
+        super().__init__(composer)
+        self.inverse = inverse
+
+    def get_inverse(self) -> Equation:
+        return DuplicateConjunction(self.composer, not self.inverse)
+
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
+        assert isinstance(subpattern, kore.Pattern)
+        sort = KoreUtils.infer_sort(subpattern)
 
-        assert (isinstance(subpattern, kore.MLPattern) and subpattern.construct == kore.MLPattern.AND)
-        assert subpattern.arguments[0] == subpattern.arguments[1]
+        if self.inverse:
+            # phi -> phi /\ phi
+            argument = subpattern
+        else:
+            # phi /\ phi -> phi
+            assert (isinstance(subpattern, kore.MLPattern) and subpattern.construct == kore.MLPattern.AND)
+            assert subpattern.arguments[0] == subpattern.arguments[1]
+            argument = subpattern.arguments[0]
 
-        encoded_sort = self.composer.encode_pattern(subpattern.sorts[0])
-        encoded_pattern = self.composer.encode_pattern(subpattern.arguments[0])
+        encoded_sort = self.composer.encode_pattern(sort)
+        encoded_argument = self.composer.encode_pattern(argument)
 
-        equal_gen = EqualityProofGenerator(self.composer)
-        return equal_gen.replace_equal_subpattern(
-            provable,
-            path,
-            subpattern.arguments[0],
-            self.composer.get_theorem("kore-dup-and").apply(
-                x=mm.Metavariable("x"),
-                ph0=encoded_sort,
-                ph1=encoded_pattern,
-            ),
+        proof = self.composer.get_theorem("kore-dup-and").apply(
+            x=mm.Metavariable("x"),
+            ph0=encoded_sort,
+            ph1=encoded_argument,
         )
+
+        if self.inverse:
+            proof = self.composer.get_theorem("kore-equal-symmetry-v1").apply(proof)
+
+        if self.inverse:
+            argument = KoreUtils.construct_and(argument, argument)
+            argument.resolve(self.composer.module)
+
+        return EqualityProofGenerator(self.composer).replace_equal_subpattern(provable, path, argument, proof)
 
 
 class InjectionCombine(Equation):
@@ -190,8 +211,8 @@ class MapAssociativity(Equation):
     mapmerge(mapmerge(M1, M2), M3) <==> mapmerge(M1, mapmerge(M2, M3))
     We use a boolean rotate_right to control the direction.
     """
-    def __init__(self, env: KoreComposer, rotate_right: bool):
-        super().__init__(env)
+    def __init__(self, composer: KoreComposer, rotate_right: bool):
+        super().__init__(composer)
         self.rotate_right: bool = rotate_right
 
     def get_inverse(self) -> MapAssociativity:
@@ -254,12 +275,12 @@ class MapRightUnit(Equation):
     """
     merge(M, .Map) == M
     """
-    def __init__(self, env: KoreComposer, inverse: bool = False):
+    def __init__(self, composer: KoreComposer, inverse: bool = False):
         """
         When inverse is true, apply the equation from left to right:
         M => merge(M, .Map)
         """
-        super().__init__(env)
+        super().__init__(composer)
         self.inverse = inverse
 
     def get_inverse(self) -> MapRightUnit:
@@ -424,6 +445,7 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
             self.unify_ml_patterns,
             self.unify_string_literals,
             self.unify_left_duplicate_conjunction,
+            # self.unify_right_duplicate_conjunction,
             self.unify_right_splittable_inj,
             self.unify_concrete_map_patterns,
             self.unify_additional_equations,
@@ -543,18 +565,46 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         can apply DuplicateConjunction to reduce
         phi /\ phi to phi after substitution
         """
-        if (isinstance(pattern1, kore.MLPattern) and pattern1.construct == kore.MLPattern.AND
-                and isinstance(pattern1.arguments[1], kore.Variable)):
-            result1 = self.unify_patterns(pattern1.arguments[0], pattern2)
-            result2 = self.unify_patterns(pattern1.arguments[1], pattern2)
+        if KoreUtils.is_and(pattern1):
+            left, right = KoreUtils.destruct_and(pattern1)
+
+            result1 = self.unify_patterns(left, pattern2)
+            result2 = self.unify_patterns(right, pattern2)
             if result1 is not None and result2 is not None:
-                merged = result1.prepend_path(0).merge(result2.prepend_path(1))
-                if merged is None:
+                unification = result1.prepend_path(0).merge(result2.prepend_path(1))
+                if unification is None:
                     return None
 
-                return merged.append_equation(DuplicateConjunction(self.composer), [])
+                return unification.append_equation(DuplicateConjunction(self.composer), [])
 
         return None
+
+    # def unify_right_duplicate_conjunction(self, pattern1: kore.Pattern,
+    #                                       pattern2: kore.Pattern) -> Optional[UnificationResult]:
+    #     """
+    #     Similar to unify_left_duplicate_conjunction
+    #     but in the case where pattern2 is a conjunction
+    #     """
+    #     if KoreUtils.is_and(pattern2):
+    #         left, right = KoreUtils.destruct_and(pattern2)
+
+    #         result1 = self.unify_patterns(pattern1, left)
+    #         result2 = self.unify_patterns(pattern1, right)
+
+    #         if result1 is not None and result2 is not None:
+    #             unification = UnificationResult(applied_equations=[ (DuplicateConjunction(self.composer, inverse=True), []) ])
+
+    #             unification = unification.merge(result1.prepend_path(0))
+    #             if unification is None:
+    #                 return None
+
+    #             unification = unification.merge(result2.prepend_path(1))
+    #             if unification is None:
+    #                 return None
+
+    #             return unification
+
+    #     return None
 
     def unify_right_splittable_inj(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
         """
