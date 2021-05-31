@@ -60,7 +60,7 @@ class Substitution(WithSchema):
         constraint = KoreUtils.construct_top(sort)
 
         for k, v in items:
-            construct = KoreUtils.construct_and(
+            constraint = KoreUtils.construct_and(
                 KoreUtils.construct_equals(sort, k, v),
                 constraint,
             )

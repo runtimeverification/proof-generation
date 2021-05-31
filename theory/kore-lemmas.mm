@@ -2413,3 +2413,8 @@ ${
     kore-imp-conj-simplify.1 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph3 ( \kore-and ph0 ph1 ph4 ) ) ) $.
     kore-imp-conj-simplify   $p |- ( \kore-valid ph0 ( \kore-implies ph0 ph3 ( \kore-and ph0 ph2 ph4 ) ) ) $= ? $.
 $}
+
+${
+    kore-weakening.0 $e |- ( \kore-valid ph0 ph1 ) $.
+    kore-weakening   $p |- ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph1 ) ) $= ? $.
+$}

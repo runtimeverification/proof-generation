@@ -48,10 +48,10 @@ def prove_rewriting(
     task: RewritingTask,
 ) -> None:
     gen = RewriteProofGenerator(env)
-    # gen.prove_symbolic_rewriting_task(task)
-    final_claim = gen.prove_rewriting_task(task)
-    env.load_comment(f"final goal")
-    env.load_provable_claim_as_theorem("goal", final_claim)
+    gen.prove_symbolic_rewriting_task(task)
+    # final_claim = gen.prove_rewriting_task(task)
+    # env.load_comment(f"final goal")
+    # env.load_provable_claim_as_theorem("goal", final_claim)
 
 
 def set_additional_flags(parser: argparse.ArgumentParser) -> None:

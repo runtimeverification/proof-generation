@@ -445,7 +445,6 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
             self.unify_ml_patterns,
             self.unify_string_literals,
             self.unify_left_duplicate_conjunction,
-            # self.unify_right_duplicate_conjunction,
             self.unify_right_splittable_inj,
             self.unify_concrete_map_patterns,
             self.unify_additional_equations,
@@ -578,33 +577,6 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
                 return unification.append_equation(DuplicateConjunction(self.composer), [])
 
         return None
-
-    # def unify_right_duplicate_conjunction(self, pattern1: kore.Pattern,
-    #                                       pattern2: kore.Pattern) -> Optional[UnificationResult]:
-    #     """
-    #     Similar to unify_left_duplicate_conjunction
-    #     but in the case where pattern2 is a conjunction
-    #     """
-    #     if KoreUtils.is_and(pattern2):
-    #         left, right = KoreUtils.destruct_and(pattern2)
-
-    #         result1 = self.unify_patterns(pattern1, left)
-    #         result2 = self.unify_patterns(pattern1, right)
-
-    #         if result1 is not None and result2 is not None:
-    #             unification = UnificationResult(applied_equations=[ (DuplicateConjunction(self.composer, inverse=True), []) ])
-
-    #             unification = unification.merge(result1.prepend_path(0))
-    #             if unification is None:
-    #                 return None
-
-    #             unification = unification.merge(result2.prepend_path(1))
-    #             if unification is None:
-    #                 return None
-
-    #             return unification
-
-    #     return None
 
     def unify_right_splittable_inj(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
         """
