@@ -375,7 +375,12 @@ class RewriteProofGenerator(ProofGenerator):
             # check that the constraint of pattern1
             # implies the constraint the pattern2,
             # if they are not the same
-            constraint_impl = self.check_smt_implication(pattern1_constraint, pattern2_constraint)
+
+            # TODO: should probably change the name prove_requires_clause
+            pattern2_constraint_validity = self.prove_requires_clause(pattern2_constraint)
+            if pattern2_constraint_validity is None:
+                return None
+
             claim = self.composer.construct_provable_claim(
                 pattern=KoreUtils.construct_implies(
                     ConstrainedPattern(
@@ -390,7 +395,10 @@ class RewriteProofGenerator(ProofGenerator):
                     ).as_pattern(),
                 ),
                 proof=self.composer.get_theorem("kore-imp-conj-simplify").apply(
-                    constraint_impl.proof,
+                    self.composer.get_theorem("kore-weakening").apply(
+                        pattern2_constraint_validity,
+                        ph2=self.composer.encode_pattern(pattern1_constraint),
+                    ),
                     claim.proof,
                 ),
             )
