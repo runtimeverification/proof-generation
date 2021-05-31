@@ -251,3 +251,27 @@ lemma-imp-floor-imp-floor $p |- ( \imp ( \imp ( \floor ph0 ) ( \floor ph1 ) ) ( 
         apply "lemma-floor-is-predicate"
     $)
     ( floor-is-pattern lemma-floor-is-predicate imp-is-pattern rule-predicate-intro-imp lemma-predicate-floor ) ACBCEACBCADBDFG $.
+
+lemma-ceil-is-predicate $p |- ( \is-predicate ( \ceil ph0 ) ) $=
+    $(
+        claim "|- ( \iff ( \ceil ph0 ) ( \not ( \floor ( \not ph0 ) ) ) )"
+        desugar "\floor"
+        apply "rule-iff-transitivity"
+        apply "rule-iff-intro"
+        apply "dn-intro-sugar"
+        apply "dn-elim-sugar"
+        apply "rule-iff-compat-in-not"
+        apply "rule-iff-compat-in-not"
+        apply "rule-iff-compat-in-ceil"
+        apply "rule-iff-intro"
+        apply "dn-intro-sugar"
+        apply "dn-elim-sugar"
+        apply "proof-rule-mp"
+        apply "rule-iff-elim-right"
+        apply "rule-iff-compat-in-predicate"
+        apply "claim-0"
+        apply "proof-rule-mp"
+        apply "predicate-intro-not"
+        apply "lemma-floor-is-predicate"
+    $)
+    ( not-is-pattern ceil-is-pattern floor-is-pattern is-predicate-is-pattern iff-is-pattern dn-intro-sugar dn-elim-sugar rule-iff-intro rule-iff-compat-in-not notation-reflexivity proof-rule-mp rule-iff-compat-in-ceil rule-iff-transitivity floor-is-sugar notation-symmetry notation-transitivity notation-not notation-iff notation-proof rule-iff-compat-in-predicate rule-iff-elim-right predicate-intro-not lemma-floor-is-predicate ) ABDBEACEACEABDBEACABDBACABBCBBFACABDBFACACBBABBCBBACACBBACGACHIACBABBCBACABBCAABBAABBAGAHIMJJNACABDBACABBCBBACKABDABBCBABDABBCBABBCBABOABBCBABBCBABBCBKPQRSTUAUBABDEABDBEABDUCABUDLL $.

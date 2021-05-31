@@ -3,6 +3,7 @@ $[ theory/kore-substitution.mm $]
 $[ theory/kore-propositional.mm $]
 $[ theory/kore-sorting.mm $]
 $[ theory/kore-notation.mm $]
+$[ theory/kore-predicate.mm $]
 $[ theory/matching-logic-membership.mm $]
 $[ theory/matching-logic-disjointness.mm $]
 
@@ -2362,21 +2363,38 @@ ${
 $}
 
 ${
-    kore-rewrites-ignore-ensures.2 $e |- ( \in-sort ph3 ph0 ) $.
-    kore-rewrites-ignore-ensures.3 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ( \kore-and ph0 ph2 ph3 ) ) ) $.
-    kore-rewrites-ignore-ensures $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) $= ? $.
+    kore-rewrites-ignore-ensures.0 $e |- ( \in-sort ph3 ph0 ) $.
+    kore-rewrites-ignore-ensures.1 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ( \kore-and ph0 ph2 ph3 ) ) ) $.
+    kore-rewrites-ignore-ensures   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) $= ? $.
 $}
 
 ${
     kore-rewrites-subsumption-lhs.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
     kore-rewrites-subsumption-lhs.1 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph2 ph3 ) ) $.
-    kore-rewrites-subsumption-lhs   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) $= ? $.
+    kore-rewrites-subsumption-lhs   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) $=
+        $(
+            apply "rule-kore-implies-transitivity"
+            apply "kore-rewrites-subsumption-lhs.0"
+            apply "kore-rewrites-subsumption-lhs.1"
+        $)
+        ( kore-next-is-pattern kore-implies-is-pattern kore-rewrites-is-pattern kore-valid-is-pattern notation-reflexivity kore-not-is-pattern kore-or-is-pattern notation-transitivity kore-implies-is-sugar kore-rewrites-is-sugar notation-symmetry notation-kore-valid notation-proof rule-kore-implies-transitivity ) AABADGHJAABDIJABCADGEAACDIJAACADGHJFAACADGHAACDIAKACADGHAACLADGMACDIACADGOACDIAACLADGMACDIACADGHAACLADGMACDPACADGONQNRSTAABDIAABADGHAKABDIABADGHABADGHABDPABADGHABADGHABADGHKQNRS $.
 $}
 
 ${
-    kore-rewrites-subsumption-rhs.0 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph2 ) ) $.
-    kore-rewrites-subsumption-rhs.1 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph3 ) ) $.
-    kore-rewrites-subsumption-rhs   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) $= ? $.
+    kore-rewrites-subsumption-rhs.0 $e |- ( \in-sort ph2 ph0 ) $.
+    kore-rewrites-subsumption-rhs.1 $e |- ( \in-sort ph3 ph0 ) $.
+    kore-rewrites-subsumption-rhs.2 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph2 ) ) $.
+    kore-rewrites-subsumption-rhs.3 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph3 ) ) $.
+    kore-rewrites-subsumption-rhs   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) $=
+        $(
+            apply "rule-kore-implies-transitivity"
+            apply "kore-rewrites-subsumption-rhs.2"
+            apply "kore-implies-compat-in-kore-next"
+            apply "kore-rewrites-subsumption-rhs.0"
+            apply "kore-rewrites-subsumption-rhs.1"
+            apply "kore-rewrites-subsumption-rhs.3"
+        $)
+        ( kore-next-is-pattern kore-implies-is-pattern kore-rewrites-is-pattern kore-valid-is-pattern notation-reflexivity kore-not-is-pattern kore-or-is-pattern notation-transitivity kore-implies-is-sugar kore-rewrites-is-sugar notation-symmetry notation-kore-valid notation-proof kore-implies-compat-in-kore-next rule-kore-implies-transitivity ) AABADIJLAABDKLABACIADIAABCKLAABACIJLGAABACIJAABCKAMABACIJAABNACIOABCKABACIQABCKAABNACIOABCKABACIJAABNACIOABCRABACIQPSPTUAACDEFHUBUCAABDKAABADIJAMABDKABADIJABADIJABDRABADIJABADIJABADIJMSPTUA $.
 $}
 
 ${
@@ -2384,10 +2402,6 @@ ${
     kore-rewrites-constraint-lemma.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
     kore-rewrites-constraint-lemma.1 $e |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) $.
     kore-rewrites-constraint-lemma   $p |- ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) $= ? $.
-$}
-
-${
-    kore-and-top-alt $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ( \kore-and ph0 ph1 ( \kore-top ph0 ) ) ph2 ) ( \kore-and ph0 ph1 ph2 ) ) ) $= ? $.
 $}
 
 ${
@@ -2404,17 +2418,4 @@ $}
 ${
     kore-rewrites-star-constraint-simplification.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
     kore-rewrites-star-constraint-simplification   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ( \kore-and ph0 ph1 ph3 ) ( \kore-and ph0 ph2 ph3 ) ) ) $= ? $.
-$}
-
-${
-    $( TODO: put this to kore-propositional $)
-
-    kore-imp-conj-simplify.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
-    kore-imp-conj-simplify.1 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph3 ( \kore-and ph0 ph1 ph4 ) ) ) $.
-    kore-imp-conj-simplify   $p |- ( \kore-valid ph0 ( \kore-implies ph0 ph3 ( \kore-and ph0 ph2 ph4 ) ) ) $= ? $.
-$}
-
-${
-    kore-weakening.0 $e |- ( \kore-valid ph0 ph1 ) $.
-    kore-weakening   $p |- ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph1 ) ) $= ? $.
 $}

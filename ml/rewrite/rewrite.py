@@ -596,6 +596,8 @@ class RewriteProofGenerator(ProofGenerator):
             simplification1.proof,
             self.composer.get_theorem("kore-rewrites-subsumption-lhs").apply(
                 self.composer.get_theorem("kore-and-top-alt").apply(
+                    SortingProver.auto,
+                    SortingProver.auto,
                     ph0=self.composer.encode_pattern(KoreUtils.infer_sort(lhs)),
                     ph1=self.composer.encode_pattern(requires),
                     ph2=self.composer.encode_pattern(lhs),
@@ -616,6 +618,8 @@ class RewriteProofGenerator(ProofGenerator):
         # ----------------------------------------------------------- (by simplification2)
         # final_constraint /\ initial_term -> final_constraint /\ final_term
         proof = self.composer.get_theorem("kore-rewrites-subsumption-rhs").apply(
+            SortingProver.auto,
+            SortingProver.auto,
             proof,
             simplification2.proof,
         )
