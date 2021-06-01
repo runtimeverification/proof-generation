@@ -317,11 +317,11 @@ class SortingProver:
                 SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion.subterms[0]),
                 SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion.subterms[1]),
             )
-            # proof = composer.cache_proof("sorting-cache", proof)
+            proof = composer.cache_proof("sorting-cache", proof)
             return proof
 
         proof = SortingProver.prove_single_sorting_judgement(composer, hypothesis, conclusion)
-        # proof = composer.cache_proof("sorting-cache", proof)
+        proof = composer.cache_proof("sorting-cache", proof)
         return proof
 
     @staticmethod

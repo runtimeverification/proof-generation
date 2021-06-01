@@ -86,3 +86,20 @@ class ConjunctionVisitor(Visitor[TreeT, bool]):
                     result = result and subarg
 
         return result
+
+
+class DisjunctionVisitor(Visitor[TreeT, bool]):
+    """
+    Tests if there exists a subnode that satisfy certain condition
+    """
+    def postvisit_default(self, x: TreeT, *args: ChildrenResultT[bool]) -> bool:
+        result = False
+
+        for arg in args:
+            if isinstance(arg, bool):
+                result = result or arg
+            elif isinstance(arg, list):
+                for subarg in arg:
+                    result = result or subarg
+
+        return result

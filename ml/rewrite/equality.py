@@ -114,7 +114,7 @@ class EqualityProofGenerator(ProofGenerator):
             SortingProver.auto,
         )
 
-        # final_proof = self.composer.cache_proof("equality-cache", final_proof)
+        final_proof = self.composer.cache_proof("equality-cache", final_proof)
 
         return ProvableClaim(final_claim, final_proof)
 

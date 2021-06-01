@@ -6,7 +6,7 @@ import re
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
-from ml.kore.visitors import FreePatternVariableVisitor
+from ml.kore.visitors import FreePatternVariableVisitor, ApplicationSubpatternTester
 
 from ml.metamath import ast as mm
 from ml.metamath.composer import Composer, Theorem, Context, Proof
@@ -156,6 +156,59 @@ class KoreComposer(Composer):
 
         self.string_literals: Set[kore.StringLiteral] = set()
         self.domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]] = set()
+
+        # a free variable is said to be concretized if it's
+        # been replaced by an unconstrained constant
+        self.concretized_variables: Dict[kore.Variable, kore.Application] = {}
+
+    def get_concretized_variable(self, variable: kore.Variable) -> Optional[kore.Application]:
+        return self.concretized_variables.get(variable)
+
+    def has_concretized_variable(self, pattern: kore.Pattern) -> bool:
+        """
+        Test if a concretized variable is present in pattern
+        """
+        return ApplicationSubpatternTester(tuple(self.concretized_variables.values())).visit(pattern)
+
+    def add_concretized_variable(self, variable: kore.Variable) -> kore.Application:
+        """
+        Record that a variable is concretized as a constant
+        """
+
+        with self.in_segment("concretization"):
+            assert variable not in self.concretized_variables, \
+                f"duplicated concretized variable {variable}"
+
+            symbol_name = f"concretized-variable-{self.sanitize_label_name(variable.name)}"
+
+            symbol_definition = kore.SymbolDefinition(symbol_name, [], [], variable.sort, ())
+            symbol_definition.resolve(self.module)
+            self.module.add_sentence(symbol_definition)
+
+            symbol_instance = kore.SymbolInstance(symbol_definition, [])
+            application = kore.Application(symbol_instance, [])
+
+            self.concretized_variables[variable] = application
+
+            encoded_name = KorePatternEncoder.encode_symbol(symbol_name)
+
+            self.load_constant(encoded_name, 0, symbol_name)
+            self.load_symbol_sorting_lemma(symbol_definition, symbol_name)
+
+            # generate functional axiom
+            var = kore.Variable("x", variable.sort)
+            sort_var = kore.SortVariable("R")
+
+            axiom = kore.Axiom(
+                [sort_var], KoreUtils.construct_exists(var, KoreUtils.construct_equals(sort_var, var, application))
+            )
+            axiom.resolve(self.module)
+            self.module.add_sentence(axiom)
+
+            theorem = self.load_axiom(axiom, f"{symbol_name}-functional-axiom")
+            self.functional_axioms[symbol_instance] = ProvableClaim(axiom, theorem.as_proof())
+
+            return application
 
     def load_module(self, module: kore.Module) -> None:
         self.module = module

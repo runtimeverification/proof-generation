@@ -370,8 +370,8 @@ class RewriteProofGenerator(ProofGenerator):
 
         claim = PropositionalProofGenerator(self.composer).apply_implies_reflexivity(pattern1.as_pattern())
 
-        pattern1_constraint = pattern1.get_constraint_as_pattern()
-        pattern2_constraint = pattern2.get_constraint_as_pattern()
+        pattern1_constraint = pattern1.get_constraint()
+        pattern2_constraint = pattern2.get_constraint()
 
         if pattern1_constraint != pattern2_constraint:
             # check that the constraint of pattern1
@@ -387,7 +387,6 @@ class RewriteProofGenerator(ProofGenerator):
                     ConstrainedPattern(
                         pattern1.pattern,
                         pattern2.constraint,
-                        pattern2.substitution,
                     ).as_pattern(),
                 ),
                 proof=self.composer.get_theorem("kore-imp-conj-simplify").apply(
@@ -516,8 +515,8 @@ class RewriteProofGenerator(ProofGenerator):
         Show that a constrained pattern imply another
         """
 
-        pattern1_constraint = pattern1.get_constraint_as_pattern()
-        pattern2_constraint = pattern2.get_constraint_as_pattern()
+        pattern1_constraint = pattern1.get_constraint()
+        pattern2_constraint = pattern2.get_constraint()
 
         constraint_equalities = self.get_equalities_in_constraint(pattern1_constraint)
 
@@ -595,7 +594,7 @@ class RewriteProofGenerator(ProofGenerator):
         Prove that a constraint is a kore prediate (\kore-is-predicate)
         """
 
-        constraint = constrained_pattern.get_constraint_as_pattern()
+        constraint = constrained_pattern.get_constraint()
         sort = KoreUtils.infer_sort(constraint)
 
         encoded_constraint = self.composer.encode_pattern(constraint)
@@ -695,13 +694,15 @@ class RewriteProofGenerator(ProofGenerator):
 
         # prove final_constraint /\ initial_term -> (requires /\ top) /\ lhs
         simplification1 = self.prove_constrained_pattern_subsumption(
-            ConstrainedPattern(initial.pattern, final.constraint, final.substitution),
-            ConstrainedPattern(lhs, requires, Substitution()),
+            ConstrainedPattern(initial.pattern, final.constraint),
+            ConstrainedPattern(
+                lhs, KoreUtils.construct_and(requires, KoreUtils.construct_top(KoreUtils.infer_sort(requires)))
+            ),
         )
 
         # prove final_constraint /\ rhs -> final_constraint /\ final_term
         simplification2 = self.prove_constrained_pattern_subsumption(
-            ConstrainedPattern(rhs, final.constraint, final.substitution),
+            ConstrainedPattern(rhs, final.constraint),
             final,
         )
 
@@ -742,33 +743,33 @@ class RewriteProofGenerator(ProofGenerator):
 
         return self.composer.construct_provable_claim(
             pattern=KoreUtils.construct_rewrites(
-                ConstrainedPattern(initial.pattern, final.constraint, final.substitution).as_pattern(),
+                ConstrainedPattern(initial.pattern, final.constraint).as_pattern(),
                 final.as_pattern(),
             ),
             proof=proof,
         )
 
-    def add_free_variable_sorting_hypotheses(
-        self,
-        pattern: kore.Pattern,
-    ) -> None:
-        """
-        Add the sorting hypotheses of all free variables in the given constrained pattern
-        """
-        free_variables = KoreUtils.get_free_variables(pattern)
+    # def add_free_variable_sorting_hypotheses(
+    #     self,
+    #     pattern: kore.Pattern,
+    # ) -> None:
+    #     """
+    #     Add the sorting hypotheses of all free variables in the given constrained pattern
+    #     """
+    #     free_variables = KoreUtils.get_free_variables(pattern)
 
-        counter = self.sorting_hypotheses_counter
-        self.sorting_hypotheses_counter += 1
+    #     counter = self.sorting_hypotheses_counter
+    #     self.sorting_hypotheses_counter += 1
 
-        for i, free_var in enumerate(free_variables):
-            encoded_free_var = self.composer.encode_pattern(free_var)
-            encoded_free_var_sort = self.composer.encode_pattern(free_var.sort)
+    #     for i, free_var in enumerate(free_variables):
+    #         encoded_free_var = self.composer.encode_pattern(free_var)
+    #         encoded_free_var_sort = self.composer.encode_pattern(free_var.sort)
 
-            sorting_statement = mm.EssentialStatement(
-                f"symbolic-sorting-{counter}-{i}",
-                (mm.Application("|-"), mm.Application("\\in-sort", (encoded_free_var, encoded_free_var_sort))),
-            )
-            self.composer.load(sorting_statement)
+    #         sorting_statement = mm.EssentialStatement(
+    #             f"symbolic-sorting-{counter}-{i}",
+    #             (mm.Application("|-"), mm.Application("\\in-sort", (encoded_free_var, encoded_free_var_sort))),
+    #         )
+    #         self.composer.load(sorting_statement)
 
     def combine_branches(
         self,
@@ -815,52 +816,50 @@ class RewriteProofGenerator(ProofGenerator):
 
         initial_pattern = step.get_initial_pattern()
 
-        with self.composer.new_context():
-            # TODO: maybe we need to change the free variable name to avoid conflict
-            self.add_free_variable_sorting_hypotheses(initial_pattern.as_pattern())
+        # with self.composer.new_context():
+        # TODO: maybe we need to change the free variable name to avoid conflict
+        # self.add_free_variable_sorting_hypotheses(initial_pattern.as_pattern())
 
-            assert len(step.applied_rules) != 0
-            branches = [
-                self.prove_symbolic_branch(initial_pattern, applied_rule) for applied_rule in step.applied_rules
-            ]
+        assert len(step.applied_rules) != 0
+        branches = [self.prove_symbolic_branch(initial_pattern, applied_rule) for applied_rule in step.applied_rules]
 
-            # TODO: prune branches with unsatisfiable constraints
+        # TODO: prune branches with unsatisfiable constraints
 
-            # no changes to the remainder
-            for remainder in step.remainders:
-                branches.append(self.apply_rewrites_star_reflexivity(remainder.as_pattern()))
+        # no changes to the remainder
+        for remainder in step.remainders:
+            branches.append(self.apply_rewrites_star_reflexivity(remainder.as_pattern()))
 
-            step_claim = self.apply_rewrites_star_intro(branches[-1])
-            for branch in branches[:-1][::-1]:
-                step_claim = self.combine_branches(self.apply_rewrites_star_intro(branch), step_claim)
+        step_claim = self.apply_rewrites_star_intro(branches[-1])
+        for branch in branches[:-1][::-1]:
+            step_claim = self.combine_branches(self.apply_rewrites_star_intro(branch), step_claim)
 
-            # prove that the initial constraint
-            # implies the disjunction of all cases
-            lhs, _, _, _ = self.destruct_rewrite_axiom(step_claim, separate_lhs=False)
-            lhs_constraint, lhs_term = KoreUtils.destruct_and(lhs)
+        # prove that the initial constraint
+        # implies the disjunction of all cases
+        lhs, _, _, _ = self.destruct_rewrite_axiom(step_claim, separate_lhs=False)
+        lhs_constraint, lhs_term = KoreUtils.destruct_and(lhs)
 
-            assert lhs_term == initial_pattern.pattern
+        assert lhs_term == initial_pattern.pattern
 
-            # prove that the union of all branch conditions cover the initial constraint
-            constraint_splitting = self.check_smt_implication(
-                initial_pattern.get_constraint_as_pattern(),
-                lhs_constraint,
-            )
+        # prove that the union of all branch conditions cover the initial constraint
+        constraint_splitting = self.check_smt_implication(
+            initial_pattern.get_constraint(),
+            lhs_constraint,
+        )
 
-            simplification_claim = self.composer.construct_provable_claim(
-                pattern=KoreUtils.construct_rewrites_star(initial_pattern.as_pattern(), lhs),
-                proof=self.composer.get_theorem("kore-rewrites-star-constraint-simplification").apply(
-                    constraint_splitting.proof,
-                    ph3=self.composer.encode_pattern(lhs_term),
-                ),
-            )
+        simplification_claim = self.composer.construct_provable_claim(
+            pattern=KoreUtils.construct_rewrites_star(initial_pattern.as_pattern(), lhs),
+            proof=self.composer.get_theorem("kore-rewrites-star-constraint-simplification").apply(
+                constraint_splitting.proof,
+                ph3=self.composer.encode_pattern(lhs_term),
+            ),
+        )
 
-            theorem_name = f"symbolic-step-{step_index}"
+        theorem_name = f"symbolic-step-{step_index}"
 
-            final_claim = self.apply_rewrites_star_transitivity(simplification_claim, step_claim)
-            final_claim = self.composer.load_provable_claim_as_theorem(theorem_name, final_claim)
+        final_claim = self.apply_rewrites_star_transitivity(simplification_claim, step_claim)
+        final_claim = self.composer.load_provable_claim_as_theorem(theorem_name, final_claim)
 
-            return final_claim, self.composer.get_theorem(theorem_name)
+        return final_claim, self.composer.get_theorem(theorem_name)
 
     def connect_symbolic_steps(self, step1: ProvableClaim, step2: ProvableClaim) -> ProvableClaim:
         r"""
@@ -933,12 +932,20 @@ class RewriteProofGenerator(ProofGenerator):
 
     def preprocess_task(self, task: RewritingTask) -> None:
         """
-        Sometimes the final results of each step is not simplified
-        This method tries to simplify each final result in the task
-
-        TODO: perhaps figure out a better way to this. We can generate
-        better hints
+        Does two things:
+        - simplify the final results for each step
+        - Replace all free variables with a constant. We would
+          end up proving an equivalent thing but it's easier to
+          do this way.
         """
+
+        free_variables = KoreUtils.get_free_variables(task.initial.as_pattern())
+        concretization_substitution = {}
+
+        for free_var in free_variables:
+            concretization_substitution[free_var] = self.composer.add_concretized_variable(free_var)
+
+        task.concretize(concretization_substitution)
 
         for step in task.steps:
             for applied_rule in step.applied_rules:
@@ -961,7 +968,7 @@ class RewriteProofGenerator(ProofGenerator):
             for final in task.finals:
                 unification_result = unification_gen.unify_patterns(branch_term, final.pattern)
 
-                if branch_constraint == final.get_constraint_as_pattern() and \
+                if branch_constraint == final.get_constraint() and \
                    unification_result is not None and \
                    len(unification_result.substitution) == 0:
                     # TODO: apply the equations to rhs
@@ -1008,7 +1015,7 @@ class RewriteProofGenerator(ProofGenerator):
         from the given hints
         """
 
-        print("simplifying final patterns in the hints")
+        print("preprocess rewriting task")
         self.preprocess_task(task)
 
         step_claims = []
@@ -1023,30 +1030,28 @@ class RewriteProofGenerator(ProofGenerator):
         # TODO: not using task.initial and task.final yet
 
         # connect all steps together
-        with self.composer.new_context():
-            initial_pattern = task.get_initial_pattern().as_pattern()
+        # with self.composer.new_context():
+        initial_pattern = task.get_initial_pattern().as_pattern()
 
-            # assuming that the set of free variables will not increase
-            self.add_free_variable_sorting_hypotheses(initial_pattern)
+        # assuming that the set of free variables will not increase
+        # self.add_free_variable_sorting_hypotheses(initial_pattern)
 
-            # simplify initial pattern
-            print("######## simplifying initial claim ########")
-            final_claim = self.apply_rewrites_star_reflexivity(initial_pattern)
-            final_claim = self.simplify_pattern(final_claim, [0, 1])
+        # simplify initial pattern
+        print("######## simplifying initial claim ########")
+        final_claim = self.apply_rewrites_star_reflexivity(initial_pattern)
+        final_claim = self.simplify_pattern(final_claim, [0, 1])
 
-            # we need to replace the sorting essentials with the new ones present in the current context
-            claims = [
-                ProvableClaim(claim.claim, theorem.as_proof()) for claim, theorem in zip(step_claims, step_theorems)
-            ]
+        # we need to replace the sorting essentials with the new ones present in the current context
+        claims = [ProvableClaim(claim.claim, theorem.as_proof()) for claim, theorem in zip(step_claims, step_theorems)]
 
-            for i, claim in enumerate(claims):
-                print(f"######## connecting symbolic step {i} ########")
-                final_claim = self.connect_symbolic_steps(final_claim, claim)
+        for i, claim in enumerate(claims):
+            print(f"######## connecting symbolic step {i} ########")
+            final_claim = self.connect_symbolic_steps(final_claim, claim)
 
-            final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
+        final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
 
-            print(f"######## pruning unsatisfiable branch(es) ########")
-            final_claim = self.match_with_final_results(task, final_claim)
+        print(f"######## pruning unsatisfiable branch(es) ########")
+        final_claim = self.match_with_final_results(task, final_claim)
 
         print("final claim:")
         KoreUtils.pretty_print(final_claim.claim)
@@ -1408,7 +1413,7 @@ class RewriteProofGenerator(ProofGenerator):
         if nested_inj_path is not None:
             return True
 
-        function_path = InnermostFunctionPathVisitor().visit(pattern)
+        function_path = InnermostFunctionPathVisitor(self.composer).visit(pattern)
         if function_path is not None:
             return True
 
@@ -1418,12 +1423,12 @@ class RewriteProofGenerator(ProofGenerator):
         """
         Simplify a pattern without proof
         """
-        with self.composer.new_context():
-            self.add_free_variable_sorting_hypotheses(pattern)
-            dummy_claim = PropositionalProofGenerator(self.composer).apply_implies_reflexivity(pattern)
-            simplified_claim = self.simplify_pattern(dummy_claim, [0, 0])
-            simplified_pattern, _ = KoreUtils.destruct_implies(simplified_claim.claim.pattern)
-            return simplified_pattern
+        # with self.composer.new_context():
+        # self.add_free_variable_sorting_hypotheses(pattern)
+        dummy_claim = PropositionalProofGenerator(self.composer).apply_implies_reflexivity(pattern)
+        simplified_claim = self.simplify_pattern(dummy_claim, [0, 0])
+        simplified_pattern, _ = KoreUtils.destruct_implies(simplified_claim.claim.pattern)
+        return simplified_pattern
 
     def simplify_pattern(self, provable: ProvableClaim, path: PatternPath, bound: int = -1) -> ProvableClaim:
         """
@@ -1448,7 +1453,7 @@ class RewriteProofGenerator(ProofGenerator):
                 continue
 
             # resolve unresolved functions
-            function_path = InnermostFunctionPathVisitor().visit(subpattern)
+            function_path = InnermostFunctionPathVisitor(self.composer).visit(subpattern)
             if function_path is not None:
                 function_subpattern = KoreUtils.get_subpattern_by_path(subpattern, function_path)
                 assert isinstance(function_subpattern, kore.Application)
@@ -1543,6 +1548,10 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
         "LblMap'Coln'lookup",
     }
 
+    def __init__(self, composer: KoreComposer):
+        super().__init__()
+        self.composer = composer
+
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
         return None
 
@@ -1567,8 +1576,12 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
             # do not find symbolic instances of concrete functions
             # (unless it's an initializer)
             # TODO: slightly hacky
+
+            is_symbolic = len(KoreUtils.get_free_variables(application)) != 0 or \
+                          self.composer.has_concretized_variable(application)
+
             if symbol_name not in InnermostFunctionPathVisitor.SYMBOLIC_FUNCTIONS and \
-               len(KoreUtils.get_free_variables(application)) != 0 and \
+               is_symbolic and \
                application.symbol.definition.get_attribute_by_symbol("initializer") is None:
                 return None
 
