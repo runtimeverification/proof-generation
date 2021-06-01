@@ -2430,3 +2430,17 @@ ${
             ( \kore-and ph0 ( \kore-and ph0 ph8 ( \kore-equals ph2 ph0 ph3 ph4 ) ) ph6 )
             ( \kore-and ph0 ( \kore-and ph0 ph8 ( \kore-equals ph2 ph0 ph3 ph4 ) ) ph7 ) ) ) $= ? $.
 $}
+
+${
+    kore-rewrites-star-subsumption-rhs.0 $e |- ( \in-sort ph2 ph0 ) $.
+    kore-rewrites-star-subsumption-rhs.1 $e |- ( \in-sort ph3 ph0 ) $.
+    kore-rewrites-star-subsumption-rhs.2 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph2 ) ) $.
+    kore-rewrites-star-subsumption-rhs.3 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph3 ) ) $.
+    kore-rewrites-star-subsumption-rhs   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph3 ) ) $= ? $.
+$}
+
+${
+    kore-rewrites-star-branch.0 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ( \kore-or ph0 ph2 ph3 ) ) ) $.
+    kore-rewrites-star-branch.1 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph2 ph4 ) ) $.
+    kore-rewrites-star-branch   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ( \kore-or ph0 ph4 ph3 ) ) ) $= ? $.
+$}

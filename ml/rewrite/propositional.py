@@ -282,11 +282,11 @@ class PropositionalProofGenerator(ProofGenerator):
         Return a proof of pattern <-> shuffled pattern
         """
 
-        if not KoreUtils.is_and(pattern):
+        if not (isinstance(pattern, kore.MLPattern) and pattern.construct == construct):
             assert n == 0, f"{n}^th conjunct does not exist in {pattern}"
             return self.apply_iff_reflexivity(pattern)
 
-        left, right = KoreUtils.destruct_and(pattern)
+        left, right = KoreUtils.destruct_ml_pattern(construct, pattern)
         # len(left), len(right) >= 1
 
         left_conjuncts = KoreUtils.destruct_nested_ml_pattern(construct, left)

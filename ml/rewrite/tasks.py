@@ -75,11 +75,15 @@ class Substitution(WithSchema):
         if predicate.construct == kore.MLPattern.AND:
             left, right = predicate.arguments
             return Substitution.from_predicate(left).merge(Substitution.from_predicate(right))
-        else:
+        elif KoreUtils.is_equals(predicate):
             left, right = KoreUtils.destruct_equals(predicate)
             assert isinstance(left, kore.Variable), \
                    f"{predicate} is not a substitution constraint"
             return Substitution({left: right})
+        elif KoreUtils.is_top(predicate):
+            return Substitution({})
+        else:
+            assert False, f"unexpected predicate {predicate}"
 
     def merge(self, other: Substitution) -> Substitution:
         return Substitution({**self.substitution, **other.substitution})
