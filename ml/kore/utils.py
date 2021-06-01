@@ -184,6 +184,11 @@ class KoreUtils:
         return KoreUtils.replace_path_by_pattern_in_axiom(copied, path, replacement)
 
     @staticmethod
+    def copy_and_replace_path_by_pattern_in_pattern(ast: Pattern, path: PatternPath, replacement: Pattern) -> Pattern:
+        copied = KoreUtils.copy_ast(ast.get_parent(), ast)
+        return KoreUtils.replace_path_by_pattern_in_pattern(copied, path, replacement)
+
+    @staticmethod
     def instantiate_all_alias_uses(module: Module) -> None:
         """
         Replace all alias uses with their definition
@@ -400,6 +405,10 @@ class KoreUtils:
         return KoreUtils.construct_binary_ml_pattern(MLPattern.IMPLIES, left, right)
 
     @staticmethod
+    def construct_iff(left: Pattern, right: Pattern) -> MLPattern:
+        return KoreUtils.construct_binary_ml_pattern(MLPattern.IFF, left, right)
+
+    @staticmethod
     def construct_equals(output_sort: Sort, left: Pattern, right: Pattern) -> MLPattern:
         left_sort = KoreUtils.infer_sort(left)
         right_sort = KoreUtils.infer_sort(right)
@@ -440,6 +449,10 @@ class KoreUtils:
         return KoreUtils.destruct_ml_pattern(MLPattern.IMPLIES, pattern)
 
     @staticmethod
+    def destruct_iff(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.IFF, pattern)
+
+    @staticmethod
     def destruct_ceil(pattern: Pattern) -> List[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.CEIL, pattern)
 
@@ -470,3 +483,20 @@ class KoreUtils:
     @staticmethod
     def is_rewrites_star(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.REWRITES_STAR
+
+    @staticmethod
+    def destruct_nested_ml_pattern(construct: str, pattern: Pattern) -> Tuple[Pattern, ...]:
+        if KoreUtils.is_and(pattern):
+            left, right = KoreUtils.destruct_ml_pattern(construct, pattern)
+            return KoreUtils.destruct_nested_ml_pattern(construct, left) + \
+                   KoreUtils.destruct_nested_ml_pattern(construct, right)
+        else:
+            return pattern,
+
+    @staticmethod
+    def destruct_nested_and(pattern: Pattern) -> Tuple[Pattern, ...]:
+        return KoreUtils.destruct_nested_ml_pattern(MLPattern.AND, pattern)
+
+    @staticmethod
+    def destruct_nested_or(pattern: Pattern) -> Tuple[Pattern, ...]:
+        return KoreUtils.destruct_nested_ml_pattern(MLPattern.OR, pattern)

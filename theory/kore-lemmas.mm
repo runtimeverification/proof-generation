@@ -2419,3 +2419,14 @@ ${
     kore-rewrites-star-constraint-simplification.0 $e |- ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) $.
     kore-rewrites-star-constraint-simplification   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ( \kore-and ph0 ph1 ph3 ) ( \kore-and ph0 ph2 ph3 ) ) ) $= ? $.
 $}
+
+kore-equals-symmetry $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-equals ph1 ph0 ph2 ph3 ) ( \kore-equals ph1 ph0 ph3 ph2 ) ) ) $= ? $.
+
+${
+    kore-equality-in-constraint.0 $e #Substitution ph6 ph5 ph3 x $.
+    kore-equality-in-constraint.1 $e #Substitution ph7 ph5 ph4 x $.
+    kore-equality-in-constraint   $p
+        |- ( \kore-valid ph0 ( \kore-iff ph0
+            ( \kore-and ph0 ( \kore-and ph0 ph8 ( \kore-equals ph2 ph0 ph3 ph4 ) ) ph6 )
+            ( \kore-and ph0 ( \kore-and ph0 ph8 ( \kore-equals ph2 ph0 ph3 ph4 ) ) ph7 ) ) ) $= ? $.
+$}
