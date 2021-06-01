@@ -310,7 +310,7 @@ class PropositionalProofGenerator(ProofGenerator):
             return shuffle
 
         right_conjuncts = KoreUtils.destruct_nested_ml_pattern(construct, right)
-        if n < len(right_conjuncts):
+        if n - len(left_conjuncts) < len(right_conjuncts):
             right_shuffle = self.shuffle_nested(construct, right, n - len(left_conjuncts))
             _, right_rhs = PropositionalProofGenerator.destruct_iff_claim(right_shuffle)
 

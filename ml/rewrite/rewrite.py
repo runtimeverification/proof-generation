@@ -297,6 +297,20 @@ class RewriteProofGenerator(ProofGenerator):
 
         return final_claim
 
+    def check_smt_unsat(
+        self,
+        pattern: kore.Pattern,
+    ) -> ProvableClaim:
+        claim = self.composer.construct_claim(KoreUtils.construct_not(pattern))
+
+        print("SMT unsat obligation:")
+        KoreUtils.pretty_print(claim)
+
+        counter = self.smt_obligation_counter
+        self.smt_obligation_counter += 1
+
+        return self.composer.load_claim_without_proof(f"smt-obligation-counter-{counter}", claim)
+
     def check_smt_implication(
         self,
         premise: kore.Pattern,
@@ -934,6 +948,60 @@ class RewriteProofGenerator(ProofGenerator):
                     simplified_results.append(ConstrainedPattern.from_pattern(simplified))
                 applied_rule.results = tuple(simplified_results)
 
+    def match_with_final_results(self, task: RewritingTask, claim: ProvableClaim, start_from: int = 0) -> ProvableClaim:
+        lhs, rhs = KoreUtils.destruct_rewrites_star(claim.claim.pattern)
+        branches = KoreUtils.destruct_nested_or(rhs)
+
+        unification_gen = UnificationProofGenerator(self.composer)
+        prop_gen = PropositionalProofGenerator(self.composer)
+
+        for i, branch in enumerate(branches[start_from:], start_from):
+            branch_constraint, branch_term = KoreUtils.destruct_and(branch)
+
+            for final in task.finals:
+                unification_result = unification_gen.unify_patterns(branch_term, final.pattern)
+
+                if branch_constraint == final.get_constraint_as_pattern() and \
+                   unification_result is not None and \
+                   len(unification_result.substitution) == 0:
+                    # TODO: apply the equations to rhs
+                    break
+            else:
+                # cannot find a final pattern that matches the branch
+                # then we will try to show that the constraint is
+                # unsatifiable and prune this branch
+                assert len(branches) > 1, "pruning the only branch"
+
+                constraint_unsat = self.check_smt_unsat(branch_constraint)
+                rhs_shuffle = prop_gen.apply_iff_elim_left(prop_gen.shuffle_nested(kore.MLPattern.OR, rhs, i))
+                _, shuffled_rhs = KoreUtils.destruct_implies(rhs_shuffle.claim.pattern)
+                _, rest = KoreUtils.destruct_or(shuffled_rhs)
+
+                # connect with the existing claim
+                claim = self.composer.construct_provable_claim(
+                    pattern=KoreUtils.construct_rewrites_star(lhs, shuffled_rhs),
+                    proof=self.composer.get_theorem("kore-rewrites-star-subsumption-rhs").apply(
+                        SortingProver.auto,
+                        SortingProver.auto,
+                        claim.proof,
+                        rhs_shuffle.proof,
+                    ),
+                )
+
+                # prune this branch
+                claim = self.composer.construct_provable_claim(
+                    pattern=KoreUtils.construct_rewrites_star(lhs, rest),
+                    proof=self.composer.get_theorem("kore-rewrites-star-prune").apply(
+                        constraint_unsat.proof,
+                        claim.proof,
+                    ),
+                )
+
+                # recurse to prune the rest
+                return self.match_with_final_results(task, claim, start_from=i)
+
+        return claim
+
     def prove_symbolic_rewriting_task(self, task: RewritingTask) -> ProvableClaim:
         """
         Prove a rewriting task which may contain multiple rewrite steps,
@@ -976,6 +1044,9 @@ class RewriteProofGenerator(ProofGenerator):
                 final_claim = self.connect_symbolic_steps(final_claim, claim)
 
             final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
+
+            print(f"######## pruning unsatisfiable branch(es) ########")
+            final_claim = self.match_with_final_results(task, final_claim)
 
         print("final claim:")
         KoreUtils.pretty_print(final_claim.claim)
@@ -1466,6 +1537,10 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
     """
     SYMBOLIC_FUNCTIONS = {
         "LblisKResult",
+
+        # for top cell initialization
+        "Lblproject'Coln'Pgm",
+        "LblMap'Coln'lookup",
     }
 
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
@@ -1490,9 +1565,11 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
                 return None
 
             # do not find symbolic instances of concrete functions
+            # (unless it's an initializer)
             # TODO: slightly hacky
             if symbol_name not in InnermostFunctionPathVisitor.SYMBOLIC_FUNCTIONS and \
-               len(KoreUtils.get_free_variables(application)) != 0:
+               len(KoreUtils.get_free_variables(application)) != 0 and \
+               application.symbol.definition.get_attribute_by_symbol("initializer") is None:
                 return None
 
             return []

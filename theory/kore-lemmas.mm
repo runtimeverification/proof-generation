@@ -2444,3 +2444,9 @@ ${
     kore-rewrites-star-branch.1 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph2 ph4 ) ) $.
     kore-rewrites-star-branch   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ( \kore-or ph0 ph4 ph3 ) ) ) $= ? $.
 $}
+
+${
+    kore-rewrites-star-prune.0 $e |- ( \kore-valid ph0 ( \kore-not ph0 ph2 ) ) $.
+    kore-rewrites-star-prune.1 $e |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ( \kore-or ph0 ( \kore-and ph0 ph2 ph3 ) ph4 ) ) ) $.
+    kore-rewrites-star-prune   $p |- ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph4 ) ) $= ? $.
+$}
