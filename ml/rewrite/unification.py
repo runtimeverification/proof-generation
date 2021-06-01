@@ -60,6 +60,9 @@ class UnificationResult:
     def append_equation(self, equation: Equation, path: PatternPath) -> UnificationResult:
         return UnificationResult(self.substitution, self.applied_equations + [(equation, path)])
 
+    def prepend_equation(self, equation: Equation, path: PatternPath) -> UnificationResult:
+        return UnificationResult(self.substitution, [(equation, path)] + self.applied_equations)
+
     def inverse_equations(self) -> UnificationResult:
         return UnificationResult(self.substitution, [(eqn.get_inverse(), path) for eqn, path in self.applied_equations])
 
@@ -136,7 +139,7 @@ class DuplicateConjunction(Equation):
 class InjectionCombine(Equation):
     r"""
     If A < B < C
-    inj{B, C}(inj{A, B}(X)) === inj{A, C}(X)
+    inj{B, C}(inj{A, B}(X)) => inj{A, C}(X)
     """
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
@@ -162,15 +165,44 @@ class InjectionCombine(Equation):
             self.composer
         ).prove_forall_elim_single(inj_axiom_instance, subsubpattern.arguments[0])
 
-        assert isinstance(inj_axiom_instance.claim.pattern, kore.MLPattern)
+        return EqualityProofGenerator(self.composer
+                                      ).replace_equal_subpattern_with_equation(provable, path, inj_axiom_instance)
 
-        return EqualityProofGenerator(self.composer).replace_equal_subpattern(
-            provable,
-            path,
-            # RHS of the inj axiom
-            inj_axiom_instance.claim.pattern.arguments[1],
-            inj_axiom_instance.proof,
+
+class InjectionSplit(Equation):
+    r"""
+    If A < B < C
+    inj{A, C}(X) => inj{B, C}(inj{A, B}(X))
+    """
+    def __init__(self, composer: KoreComposer, sort_a: kore.Sort, sort_b: kore.Sort, sort_c: kore.Sort):
+        super().__init__(composer)
+        self.sort_a = sort_a
+        self.sort_b = sort_b
+        self.sort_c = sort_c
+
+    def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
+        subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
+        assert (
+            isinstance(subpattern, kore.Application)
+            and subpattern.symbol.definition == self.composer.sort_injection_symbol
         )
+
+        argument = subpattern.arguments[0]
+
+        sort_a, sort_c = subpattern.symbol.sort_arguments
+        assert sort_a == self.sort_a and sort_c == self.sort_c
+
+        # sort_a < sort_b < sort_c
+        inj_axiom_instance = SortProofGenerator(self.composer).get_inj_instance(self.sort_a, self.sort_b, self.sort_c)
+        inj_axiom_instance = QuantifierProofGenerator(self.composer
+                                                      ).prove_forall_elim_single(inj_axiom_instance, argument)
+
+        eq_proof_gen = EqualityProofGenerator(self.composer)
+
+        # reverse the equation
+        inj_axiom_instance = eq_proof_gen.apply_symmetry(inj_axiom_instance)
+
+        return eq_proof_gen.replace_equal_subpattern_with_equation(provable, path, inj_axiom_instance)
 
 
 class MapCommutativity(Equation):
@@ -418,6 +450,22 @@ class MapUnificationMixin:
         return UnificationResult({}, applied_eqs1 + [(eq.get_inverse(), path) for eq, path in applied_eqs2[::-1]])
 
 
+@dataclass
+class AdditionalEquation(Equation):
+    """
+    This serves as an indicator to the caller
+    of the unification generator where an
+    additional equation (equations in the constraint)
+    is applied during unification
+    """
+    def __init__(self, composer: KoreComposer, equation_index: int, reverse: bool):
+        super().__init__(composer)
+        self.equation_index = equation_index
+        self.reverse = reverse
+        # reverse = False: apply the equation from left to right
+        # reverse = True: apply the equataion from right to left
+
+
 class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
     def __init__(
         self, composer: KoreComposer, additional_equations: Tuple[Tuple[kore.Pattern, kore.Pattern], ...] = ()
@@ -439,16 +487,17 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         """
         Losely following https://github.com/kframework/kore/blob/master/docs/2018-11-12-Unification.md
         """
-        algorithms = [
+        algorithms = (
+            self.unify_additional_equations,
             self.unify_vars,
             self.unify_applications,
             self.unify_ml_patterns,
             self.unify_string_literals,
             self.unify_left_duplicate_conjunction,
-            self.unify_right_splittable_inj,
+            self.unify_right_duplicate_conjunction,
+            self.unify_distinct_inj,
             self.unify_concrete_map_patterns,
-            self.unify_additional_equations,
-        ]
+        )
         for algo in algorithms:
             result = algo(pattern1, pattern2)
             if result is not None:
@@ -457,10 +506,12 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         return None
 
     def unify_additional_equations(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
-        for left, right in self.additional_equations:
-            if (left == pattern1 and right == pattern2) or (left == pattern2 and right == pattern1):
-                # TODO: we may want to record where this happens
-                return UnificationResult()
+        for i, (left, right) in enumerate(self.additional_equations):
+            if left == pattern1 and right == pattern2:
+                return UnificationResult().append_equation(AdditionalEquation(self.composer, i, False), [])
+            elif left == pattern2 and right == pattern1:
+                return UnificationResult().append_equation(AdditionalEquation(self.composer, i, True), [])
+
         return None
 
     def unify_vars(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
@@ -578,12 +629,35 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
 
         return None
 
-    def unify_right_splittable_inj(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+    def unify_right_duplicate_conjunction(self, pattern1: kore.Pattern,
+                                          pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        """
+        Similar to unify_left_duplicate_conjunction
+        but in the case where pattern2 is a conjunction
+        """
+        if KoreUtils.is_and(pattern2):
+            left, right = KoreUtils.destruct_and(pattern2)
+
+            result1 = self.unify_patterns(pattern1, left)
+            result2 = self.unify_patterns(pattern1, right)
+
+            if result1 is not None and result2 is not None:
+                unification = result1.prepend_path(0).merge(result2.prepend_path(1))
+                if unification is None:
+                    return None
+
+                # the equation is prepended: we need to split the term into a conjunction
+                # first before applying rest of the equations
+                return unification.prepend_equation(DuplicateConjunction(self.composer, inverse=True), [])
+
+        return None
+
+    def unify_distinct_inj(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
         """
         If left pattern is inj{A, C}(X) and
         the right pattern is inj{B, C}(X)
-        such that B < A, we can split the
-        right pattern to inj{A, C}(inj{B, A}(X))
+        such that B < A or A < B, we can split the
+        left/right pattern to inj{A, C}(inj{B, A}(X))
         and keep unifying
         """
 
@@ -596,23 +670,57 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
             sort_c1 = pattern1.symbol.sort_arguments[1]
             sort_c2 = pattern2.symbol.sort_arguments[1]
 
-            if (sort_c1 == sort_c2 and sort_a != sort_b and isinstance(sort_a, kore.SortInstance)
-                    and isinstance(sort_b, kore.SortInstance)
-                    and self.composer.subsort_relation.get_subsort_chain(sort_b, sort_a) is not None):
+            # if sort_c1 != sort_c2, the two patterns don't have the same output sort
+            # if sort_a == sort_b, the case should already be resolved by an earlier
+            # unification algorithm
+            if sort_c1 != sort_c2 or \
+               not isinstance(sort_a, kore.SortInstance) or \
+               not isinstance(sort_b, kore.SortInstance) or \
+               sort_a == sort_b:
+                return None
+
+            argument1 = pattern1.arguments[0]
+            argument2 = pattern2.arguments[0]
+
+            # pattern1: A -> C
+            # pattern2: B -> C
+
+            if self.composer.subsort_relation.get_subsort_chain(sort_b, sort_a) is not None:
+                # B < A
+                # split B -> C into B -> A -> C
 
                 split_right_inj = kore.Application(
                     kore.SymbolInstance(
                         self.composer.sort_injection_symbol,
                         [sort_b, sort_a],
                     ),
-                    [pattern2.arguments[0]],
+                    [argument2],
                 )
                 split_right_inj.resolve(self.composer.module)
 
-                result = self.unify_patterns(pattern1.arguments[0], split_right_inj)
+                result = self.unify_patterns(argument1, split_right_inj)
                 if result is None:
                     return None
 
                 return result.prepend_path(0).append_equation(InjectionCombine(self.composer), [])
+
+            elif self.composer.subsort_relation.get_subsort_chain(sort_a, sort_b) is not None:
+                # A < B
+                # split A -> C to A -> B -> C
+
+                split_left_inj = kore.Application(
+                    kore.SymbolInstance(
+                        self.composer.sort_injection_symbol,
+                        [sort_a, sort_b],
+                    ),
+                    [argument1],
+                )
+                split_left_inj.resolve(self.composer.module)
+
+                result = self.unify_patterns(split_left_inj, argument2)
+                if result is None:
+                    return None
+
+                return result.append_equation(InjectionSplit(self.composer, sort_a, sort_b, sort_c1), [])
 
         return None

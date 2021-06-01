@@ -21,6 +21,7 @@ class KorePatternEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
     AND = "\\kore-and"
     OR = "\\kore-or"
     IMPLIES = "\\kore-implies"
+    IFF = "\\kore-iff"
     CEIL = "\\kore-ceil"
     FLOOR = "\\kore-floor"
     EQUALS = "\\kore-equals"
@@ -43,6 +44,7 @@ class KorePatternEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         kore.MLPattern.AND: AND,
         kore.MLPattern.OR: OR,
         kore.MLPattern.IMPLIES: IMPLIES,
+        kore.MLPattern.IFF: IFF,
         kore.MLPattern.CEIL: CEIL,
         kore.MLPattern.FLOOR: FLOOR,
         kore.MLPattern.EQUALS: EQUALS,

@@ -5,6 +5,7 @@ from traceback import print_exc
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils, PatternPath
 from ml.kore.ast import KoreVisitor
+from ml.kore.visitors import PatternVariableVisitor
 
 from ml.metamath import ast as mm
 from ml.metamath.composer import Theorem, Proof
@@ -15,9 +16,11 @@ from .encoder import KorePatternEncoder
 from .env import KoreComposer, ProofGenerator, ProvableClaim
 from .equality import EqualityProofGenerator
 from .quantifier import QuantifierProofGenerator, FunctionalProofGenerator
-from .unification import UnificationProofGenerator, InjectionCombine, UnificationResult
+from .unification import UnificationProofGenerator, InjectionCombine, UnificationResult, AdditionalEquation
 from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
+from .propositional import PropositionalProofGenerator
+from .substitution import SingleSubstitutionProofGenerator
 from .tasks import RewritingStep, RewritingTask, ConstrainedPattern, Substitution, AppliedRule
 
 
@@ -314,6 +317,18 @@ class RewriteProofGenerator(ProofGenerator):
                 )
             )
 
+        # TODO: should probably change the name prove_requires_clause
+        # check if conclusion is trivial
+        conclusion_validity = self.prove_requires_clause(conclusion)
+        if conclusion_validity is not None:
+            return ProvableClaim(
+                claim,
+                self.composer.get_theorem("kore-weakening").apply(
+                    conclusion_validity,
+                    ph2=self.composer.encode_pattern(premise),
+                ),
+            )
+
         # TODO: call SMT solver and check
         print("SMT proof obligation:")
         KoreUtils.pretty_print(claim.pattern)
@@ -322,17 +337,6 @@ class RewriteProofGenerator(ProofGenerator):
         self.smt_obligation_counter += 1
 
         return self.composer.load_claim_without_proof(f"smt-obligation-counter-{counter}", claim)
-
-    def apply_implies_reflexivity(self, pattern: kore.Pattern) -> ProvableClaim:
-        claim = self.composer.construct_claim(KoreUtils.construct_implies(pattern, pattern))
-
-        return ProvableClaim(
-            claim,
-            self.composer.get_theorem("kore-implies-reflexivity").match_and_apply(
-                self.composer.encode_metamath_statement(claim),
-                SortingProver.auto,
-            ),
-        )
 
     def prove_trivial_subsumption(
         self,
@@ -344,29 +348,12 @@ class RewriteProofGenerator(ProofGenerator):
         (the terms are unifiable without using constraints)
         """
 
-        # TODO: the current unification algorithm
-        # is somewhat oriented, so we have to try two directions
-        reverse = False
         unification_result = UnificationProofGenerator(self.composer).unify_patterns(pattern1.pattern, pattern2.pattern)
-
+        # we can not instantiate variables here so the substitution must be empty
         if unification_result is None or len(unification_result.substitution) != 0:
-            reverse = True
-            unification_result = UnificationProofGenerator(self.composer
-                                                           ).unify_patterns(pattern2.pattern, pattern1.pattern)
+            return None
 
-            if unification_result is None or len(unification_result.substitution) != 0:
-                return None
-
-        if reverse:
-            claim = self.apply_implies_reflexivity(
-                ConstrainedPattern(
-                    pattern2.pattern,
-                    pattern1.constraint,
-                    pattern1.substitution,
-                ).as_pattern(),
-            )
-        else:
-            claim = self.apply_implies_reflexivity(pattern1.as_pattern())
+        claim = PropositionalProofGenerator(self.composer).apply_implies_reflexivity(pattern1.as_pattern())
 
         pattern1_constraint = pattern1.get_constraint_as_pattern()
         pattern2_constraint = pattern2.get_constraint_as_pattern()
@@ -377,39 +364,133 @@ class RewriteProofGenerator(ProofGenerator):
             # if they are not the same
 
             # TODO: should probably change the name prove_requires_clause
-            pattern2_constraint_validity = self.prove_requires_clause(pattern2_constraint)
-            if pattern2_constraint_validity is None:
-                return None
+            constraint_imp = self.check_smt_implication(pattern1_constraint, pattern2_constraint).proof
 
             claim = self.composer.construct_provable_claim(
                 pattern=KoreUtils.construct_implies(
+                    pattern1.as_pattern(),
                     ConstrainedPattern(
-                        pattern2.pattern if reverse else pattern1.pattern,
-                        pattern1.constraint,
-                        pattern1.substitution,
-                    ).as_pattern(),
-                    ConstrainedPattern(
-                        pattern2.pattern if reverse else pattern1.pattern,
+                        pattern1.pattern,
                         pattern2.constraint,
                         pattern2.substitution,
                     ).as_pattern(),
                 ),
                 proof=self.composer.get_theorem("kore-imp-conj-simplify").apply(
-                    self.composer.get_theorem("kore-weakening").apply(
-                        pattern2_constraint_validity,
-                        ph2=self.composer.encode_pattern(pattern1_constraint),
-                    ),
+                    constraint_imp,
                     claim.proof,
                 ),
             )
 
         for equation, path in unification_result.applied_equations:
-            if reverse:
-                claim = equation.replace_equal_subpattern(claim, [0, 0, 1] + path)  # lhs
-            else:
-                claim = equation.replace_equal_subpattern(claim, [0, 1, 1] + path)  # rhs
+            claim = equation.replace_equal_subpattern(claim, [0, 1, 1] + path)  # rhs
 
         return claim
+
+    def apply_constraint_equation(
+        self,
+        claim: ProvableClaim,
+        equation: Tuple[kore.Pattern, kore.Pattern],
+        reverse: bool,
+        position: PatternPath,
+    ) -> ProvableClaim:
+        r"""
+        Assume claim has the form
+        lhs -> constraint /\ rhs
+        And the equation E is present as a conjunct in constraint
+
+        We apply E to rhs at <position> and return a proof of
+        lhs -> constraint /\ rhs[E/position]
+        """
+
+        equation_sort = KoreUtils.infer_sort(equation[0])
+
+        # locate the position of the equality in the conjunction
+        _, rhs = KoreUtils.destruct_implies(claim.claim.pattern)
+        constraint, rhs_term = KoreUtils.destruct_and(rhs)
+        constraint_equalities = KoreUtils.destruct_nested_and(constraint)
+
+        for i, equality in enumerate(constraint_equalities):
+            if KoreUtils.is_equals(equality):
+                eq_lhs, eq_rhs = KoreUtils.destruct_equals(equality)
+                if eq_lhs == equation[0] and eq_rhs == equation[1]:
+                    eq_position = i
+                    break
+        else:
+            assert False, f"failed to find equation {equation[0]} = {equation[1]} in the constraint {constraint}"
+
+        prop_gen = PropositionalProofGenerator(self.composer)
+
+        # constraint <-> (rest /\ target_equation)
+        constraint_shuffle = prop_gen.shuffle_nested(kore.MLPattern.AND, constraint, eq_position)
+        constraint_shuffle = prop_gen.apply_iff_transitivity(
+            constraint_shuffle,
+            prop_gen.apply_commutativity(
+                kore.MLPattern.AND,
+                KoreUtils.destruct_iff(constraint_shuffle.claim.pattern)[1]
+            ),
+        )
+        _, shuffled_constraint = KoreUtils.destruct_iff(constraint_shuffle.claim.pattern)
+
+        # constraint /\ rhs_term <-> (rest /\ target_equation) /\ rhs_term
+        shuffle = prop_gen.apply_iff_compatibility(
+            kore.MLPattern.AND,
+            constraint_shuffle,
+            prop_gen.apply_iff_reflexivity(rhs_term),
+        )
+
+        all_metavars = {KorePatternEncoder.encode_variable(var) for var in PatternVariableVisitor().visit(rhs_term)}
+        fresh_var, = self.composer.gen_fresh_metavariables("#ElementVariable", 1, all_metavars)
+
+        var = kore.Variable(fresh_var, equation_sort)
+        var.resolve(self.composer.module)
+        template_rhs_term = KoreUtils.copy_and_replace_path_by_pattern_in_pattern(rhs_term, position, var)
+
+        subst_proof1, new_rhs_term1 = SingleSubstitutionProofGenerator(self.composer, var, equation[0]) \
+            .prove_substitution_with_result(template_rhs_term)
+        subst_proof2, new_rhs_term2 = SingleSubstitutionProofGenerator(self.composer, var, equation[1])\
+            .prove_substitution_with_result(template_rhs_term)
+
+        goal = self.composer.construct_claim(
+            KoreUtils.construct_iff(
+                KoreUtils.construct_and(shuffled_constraint, new_rhs_term1),
+                KoreUtils.construct_and(shuffled_constraint, new_rhs_term2),
+            ),
+        )
+
+        eq_claim = ProvableClaim(
+            goal,
+            self.composer.get_theorem("kore-equality-in-constraint").match_and_apply(
+                self.composer.encode_metamath_statement(goal),
+                subst_proof1,
+                subst_proof2,
+            ),
+        )
+
+        if reverse:
+            eq_claim = prop_gen.apply_iff_symmetry(eq_claim)
+            final_rhs_term = new_rhs_term1
+        else:
+            final_rhs_term = new_rhs_term2
+
+        # shuffle the constraint back to the original form
+        # (rest /\ target_equation) /\ new_rhs_term <-> constraint /\ rhs_term
+        unshuffle = prop_gen.apply_iff_compatibility(
+            kore.MLPattern.AND,
+            prop_gen.apply_iff_symmetry(constraint_shuffle),
+            prop_gen.apply_iff_reflexivity(final_rhs_term),
+        )
+
+        final_claim = prop_gen.apply_iff_multiple_transitivity(
+            shuffle,
+            eq_claim,
+            unshuffle,
+        )
+
+        # now connect with the original implication
+        return prop_gen.apply_implies_transitivity(
+            claim,
+            prop_gen.apply_iff_elim_left(final_claim),
+        )
 
     def prove_constrained_pattern_subsumption(
         self,
@@ -422,32 +503,54 @@ class RewriteProofGenerator(ProofGenerator):
         - phi /\ psi1 = psi2 -> phi[psi1/psi2] /\ psi1 = psi2
         """
 
+        pattern1_constraint = pattern1.get_constraint_as_pattern()
+        pattern2_constraint = pattern2.get_constraint_as_pattern()
+
+        constraint_equalities = self.get_equalities_in_constraint(pattern1_constraint)
+
+        unification_result = \
+            UnificationProofGenerator(self.composer, constraint_equalities)\
+                .unify_patterns(pattern1.pattern, pattern2.pattern)
+
+        # we can not instantiate variables here so the substitution must be empty
+        assert unification_result is not None and len(unification_result.substitution) == 0, \
+               f"failed to prove {pattern1.as_pattern()} is subsumed by {pattern2.as_pattern()}"
+
+        claim = PropositionalProofGenerator(self.composer).apply_implies_reflexivity(pattern1.as_pattern())
+
+        for equation, path in unification_result.applied_equations:
+            if isinstance(equation, AdditionalEquation):
+                claim = self.apply_constraint_equation(
+                    claim, constraint_equalities[equation.equation_index], equation.reverse, path
+                )
+            else:
+                claim = equation.replace_equal_subpattern(claim, [0, 1, 1] + path)  # rhs
+
+        if pattern1_constraint != pattern2_constraint:
+            # check that the constraint of pattern1
+            # implies the constraint the pattern2,
+            # if they are not the same
+            constraint_imp = self.check_smt_implication(pattern1_constraint, pattern2_constraint).proof
+
+            claim = self.composer.construct_provable_claim(
+                pattern=KoreUtils.construct_implies(
+                    pattern1.as_pattern(),
+                    pattern2.as_pattern(),
+                ),
+                proof=self.composer.get_theorem("kore-imp-conj-simplify").apply(
+                    constraint_imp,
+                    claim.proof,
+                ),
+            )
+
+        lhs, rhs = KoreUtils.destruct_implies(claim.claim.pattern)
+        assert lhs == pattern1.as_pattern() and rhs == pattern2.as_pattern(), \
+               f"unexpected result"
+
         counter = self.pattern_subsumption_counter
         self.pattern_subsumption_counter += 1
 
-        provable = self.prove_trivial_subsumption(pattern1, pattern2)
-        if provable is not None:
-            return self.composer.load_provable_claim_as_theorem(f"pattern-subsumption-{counter}", provable)
-
-        # steps:
-        # 1. unify two patterns and obtain a substitution and a proof obligation
-        #    (which terms have to be equal for the unification to hold)
-        # 2. prove that these obligations are implied by the constraint of pattern1 (SMT)
-        # 3. show that the constraint of pattern1 implies the constraint of pattern2
-        # 4. somehow link these witnesses together
-
-        # TODO: prove this
-        claim = self.composer.construct_claim(
-            KoreUtils.construct_implies(
-                pattern1.as_pattern(),
-                pattern2.as_pattern(),
-            )
-        )
-
-        # print("nontrivial subsumption:")
-        # KoreUtils.pretty_print(claim.pattern)
-
-        return self.composer.load_claim_without_proof(f"pattern-subsumption-{counter}", claim)
+        return self.composer.load_provable_claim_as_theorem(f"pattern-subsumption-{counter}", claim)
 
     def remove_ensures(
         self,
