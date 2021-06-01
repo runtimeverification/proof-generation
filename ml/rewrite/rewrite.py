@@ -36,6 +36,7 @@ class RewriteProofGenerator(ProofGenerator):
         self.smt_obligation_counter = 0
         self.pattern_subsumption_counter = 0
         self.kore_is_predicate_counter = 0
+        self.sorting_hypotheses_counter = 0
         self.hooked_symbol_evaluators = {
             "Lbl'UndsPlus'Int'Unds'": IntegerAdditionEvaluator(env),
             "Lbl'Unds'-Int'Unds'": IntegerSubtractionEvaluator(env),
@@ -394,7 +395,7 @@ class RewriteProofGenerator(ProofGenerator):
         position: PatternPath,
     ) -> ProvableClaim:
         r"""
-        Assume claim has the form
+        Assume the claim has the form
         lhs -> constraint /\ rhs
         And the equation E is present as a conjunct in constraint
 
@@ -498,9 +499,7 @@ class RewriteProofGenerator(ProofGenerator):
         pattern2: ConstrainedPattern,
     ) -> ProvableClaim:
         r"""
-        Some examples of transformations:
-        - phi /\ x = psi -> phi[psi/x] /\ x = psi
-        - phi /\ psi1 = psi2 -> phi[psi1/psi2] /\ psi1 = psi2
+        Show that a constrained pattern imply another
         """
 
         pattern1_constraint = pattern1.get_constraint_as_pattern()
@@ -737,19 +736,22 @@ class RewriteProofGenerator(ProofGenerator):
 
     def add_free_variable_sorting_hypotheses(
         self,
-        step_index: int,
-        pattern: ConstrainedPattern,
+        pattern: kore.Pattern,
     ) -> None:
         """
         Add the sorting hypotheses of all free variables in the given constrained pattern
         """
-        free_variables = pattern.get_free_variables()
+        free_variables = KoreUtils.get_free_variables(pattern)
+
+        counter = self.sorting_hypotheses_counter
+        self.sorting_hypotheses_counter += 1
+
         for i, free_var in enumerate(free_variables):
             encoded_free_var = self.composer.encode_pattern(free_var)
             encoded_free_var_sort = self.composer.encode_pattern(free_var.sort)
 
             sorting_statement = mm.EssentialStatement(
-                f"symbolic-sorting-{step_index}-{i}",
+                f"symbolic-sorting-{counter}-{i}",
                 (mm.Application("|-"), mm.Application("\\in-sort", (encoded_free_var, encoded_free_var_sort))),
             )
             self.composer.load(sorting_statement)
@@ -791,7 +793,7 @@ class RewriteProofGenerator(ProofGenerator):
         self,
         step_index: int,
         step: RewritingStep,
-    ) -> ProvableClaim:
+    ) -> Tuple[ProvableClaim, Theorem]:
         """
         Prove that the initial pattern in the step
         rewrites to the union of all final patterns
@@ -801,12 +803,14 @@ class RewriteProofGenerator(ProofGenerator):
 
         with self.composer.new_context():
             # TODO: maybe we need to change the free variable name to avoid conflict
-            self.add_free_variable_sorting_hypotheses(step_index, initial_pattern)
+            self.add_free_variable_sorting_hypotheses(initial_pattern.as_pattern())
 
             assert len(step.applied_rules) != 0
             branches = [
                 self.prove_symbolic_branch(initial_pattern, applied_rule) for applied_rule in step.applied_rules
             ]
+
+            # TODO: prune branches with unsatisfiable constraints
 
             # no changes to the remainder
             for remainder in step.remainders:
@@ -837,22 +841,146 @@ class RewriteProofGenerator(ProofGenerator):
                 ),
             )
 
+            theorem_name = f"symbolic-step-{step_index}"
+
             final_claim = self.apply_rewrites_star_transitivity(simplification_claim, step_claim)
-            final_claim = self.composer.load_provable_claim_as_theorem(f"symbolic-step-{step_index}", final_claim)
+            final_claim = self.composer.load_provable_claim_as_theorem(theorem_name, final_claim)
 
-            return final_claim
+            return final_claim, self.composer.get_theorem(theorem_name)
 
-    def prove_symbolic_rewriting_task(  # type: ignore
-        self,
-        task: RewritingTask,
-    ) -> ProvableClaim:
+    def connect_symbolic_steps(self, step1: ProvableClaim, step2: ProvableClaim) -> ProvableClaim:
+        r"""
+        step1 = |- phi_0 =>* phi_1 \/ ... \/ phi_n
+        step2 = |- phi_i =>* psi_1 \/ ... \/ psi_m, where i in { 1, ..., n }
+        ------------------------------------------------------------------
+        phi_0 =>* phi_1 \/ ... \/ (psi_1 \/ ... \/ psi_m) \/ ... phi_n
+    
+        (order of disjunctions may not be exactly like this)
+        """
+
+        lhs1, rhs1 = KoreUtils.destruct_rewrites_star(step1.claim.pattern)
+        lhs2, rhs2 = KoreUtils.destruct_rewrites_star(step2.claim.pattern)
+        lhs2_constraint, lhs2_term = KoreUtils.destruct_and(lhs2)
+
+        branches1 = KoreUtils.destruct_nested_or(rhs1)
+
+        # unify lhs2 with any of the branches
+        unification_gen = UnificationProofGenerator(self.composer)
+        for i, branch in enumerate(branches1):
+            branch_constraint, branch_term = KoreUtils.destruct_and(branch)
+            unification_result = unification_gen.unify_patterns(lhs2_term, branch_term)
+
+            if lhs2_constraint == branch_constraint and \
+               unification_result is not None and \
+               len(unification_result.substitution) == 0:
+
+                lhs2_index = i
+
+                for eqn, path in unification_result.applied_equations:
+                    step2 = eqn.replace_equal_subpattern(step2, [0, 0, 1] + path)
+
+                break
+        else:
+            assert False, f"unable to unify {lhs2} with any of the branches in {rhs1}"
+
+        if len(branches1) == 1:
+            return self.apply_rewrites_star_transitivity(step1, step2)
+
+        # now we assume there are at least 2 branches in step1
+
+        prop_gen = PropositionalProofGenerator(self.composer)
+
+        rhs1_shuffle = prop_gen.apply_iff_elim_left(prop_gen.shuffle_nested(kore.MLPattern.OR, rhs1, lhs2_index))
+        _, shuffled_rhs1 = KoreUtils.destruct_implies(rhs1_shuffle.claim.pattern)
+
+        step1 = self.composer.construct_provable_claim(
+            pattern=KoreUtils.construct_rewrites_star(lhs1, shuffled_rhs1),
+            proof=self.composer.get_theorem("kore-rewrites-star-subsumption-rhs").apply(
+                SortingProver.auto,
+                SortingProver.auto,
+                step1.proof,
+                rhs1_shuffle.proof,
+            ),
+        )
+
+        # since we assumed we have at least 2 branches
+        _, other_branches = KoreUtils.destruct_or(shuffled_rhs1)
+
+        return self.composer.construct_provable_claim(
+            pattern=KoreUtils.construct_rewrites_star(
+                lhs1,
+                KoreUtils.construct_or(rhs2, other_branches),
+            ),
+            proof=self.composer.get_theorem("kore-rewrites-star-branch").apply(
+                step1.proof,
+                step2.proof,
+            ),
+        )
+
+    def preprocess_task(self, task: RewritingTask) -> None:
+        """
+        Sometimes the final results of each step is not simplified
+        This method tries to simplify each final result in the task
+
+        TODO: perhaps figure out a better way to this. We can generate
+        better hints
+        """
+
+        for step in task.steps:
+            for applied_rule in step.applied_rules:
+                simplified_results = []
+                for result in applied_rule.results:
+                    simplified = self.simplify_without_proof(result.as_pattern())
+                    simplified_results.append(ConstrainedPattern.from_pattern(simplified))
+                applied_rule.results = tuple(simplified_results)
+
+    def prove_symbolic_rewriting_task(self, task: RewritingTask) -> ProvableClaim:
         """
         Prove a rewriting task which may contain multiple rewrite steps,
         from the given hints
         """
+
+        print("simplifying final patterns in the hints")
+        self.preprocess_task(task)
+
+        step_claims = []
+        step_theorems = []
+
         for i, step in enumerate(task.steps):
             print(f"######## symbolic step {i} ########")
-            self.prove_symbolic_step(i, step)
+            claim, theorem = self.prove_symbolic_step(i, step)
+            step_claims.append(claim)
+            step_theorems.append(theorem)
+
+        # TODO: not using task.initial and task.final yet
+
+        # connect all steps together
+        with self.composer.new_context():
+            initial_pattern = task.get_initial_pattern().as_pattern()
+
+            # assuming that the set of free variables will not increase
+            self.add_free_variable_sorting_hypotheses(initial_pattern)
+
+            # simplify initial pattern
+            print("######## simplifying initial claim ########")
+            final_claim = self.apply_rewrites_star_reflexivity(initial_pattern)
+            final_claim = self.simplify_pattern(final_claim, [0, 1])
+
+            # we need to replace the sorting essentials with the new ones present in the current context
+            claims = [
+                ProvableClaim(claim.claim, theorem.as_proof()) for claim, theorem in zip(step_claims, step_theorems)
+            ]
+
+            for i, claim in enumerate(claims):
+                print(f"######## connecting symbolic step {i} ########")
+                final_claim = self.connect_symbolic_steps(final_claim, claim)
+
+            final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
+
+        print("final claim:")
+        KoreUtils.pretty_print(final_claim.claim)
+
+        return final_claim
 
     def apply_rewrites_star_intro(self, step: ProvableClaim) -> ProvableClaim:
         """
@@ -1214,6 +1342,17 @@ class RewriteProofGenerator(ProofGenerator):
             return True
 
         return False
+
+    def simplify_without_proof(self, pattern: kore.Pattern) -> kore.Pattern:
+        """
+        Simplify a pattern without proof
+        """
+        with self.composer.new_context():
+            self.add_free_variable_sorting_hypotheses(pattern)
+            dummy_claim = PropositionalProofGenerator(self.composer).apply_implies_reflexivity(pattern)
+            simplified_claim = self.simplify_pattern(dummy_claim, [0, 0])
+            simplified_pattern, _ = KoreUtils.destruct_implies(simplified_claim.claim.pattern)
+            return simplified_pattern
 
     def simplify_pattern(self, provable: ProvableClaim, path: PatternPath, bound: int = -1) -> ProvableClaim:
         """

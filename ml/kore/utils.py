@@ -486,7 +486,7 @@ class KoreUtils:
 
     @staticmethod
     def destruct_nested_ml_pattern(construct: str, pattern: Pattern) -> Tuple[Pattern, ...]:
-        if KoreUtils.is_and(pattern):
+        if isinstance(pattern, MLPattern) and pattern.construct == construct:
             left, right = KoreUtils.destruct_ml_pattern(construct, pattern)
             return KoreUtils.destruct_nested_ml_pattern(construct, left) + \
                    KoreUtils.destruct_nested_ml_pattern(construct, right)
