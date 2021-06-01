@@ -109,7 +109,7 @@ class QuantifierProofGenerator(ProofGenerator):
                 SortingProver.auto,
             )
 
-            # current_proof = self.composer.cache_proof("quant-forall-elim-cache", current_proof)
+            current_proof = self.composer.cache_proof("quant-forall-elim-cache", current_proof)
 
         return ProvableClaim(final_claim, current_proof)
 

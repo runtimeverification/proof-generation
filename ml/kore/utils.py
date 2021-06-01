@@ -417,6 +417,16 @@ class KoreUtils:
         return MLPattern(MLPattern.EQUALS, [left_sort, output_sort], [left, right])
 
     @staticmethod
+    def construct_exists(var: Variable, pattern: Pattern) -> MLPattern:
+        sort = KoreUtils.infer_sort(pattern)
+        return MLPattern(MLPattern.EXISTS, [sort], [var, pattern])
+
+    @staticmethod
+    def construct_forall(var: Variable, pattern: Pattern) -> MLPattern:
+        sort = KoreUtils.infer_sort(pattern)
+        return MLPattern(MLPattern.FORALL, [sort], [var, pattern])
+
+    @staticmethod
     def destruct_ml_pattern(construct: str, pattern: Pattern) -> List[Pattern]:
         assert isinstance(pattern, MLPattern) and \
                pattern.construct == construct and \

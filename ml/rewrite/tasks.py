@@ -67,6 +67,21 @@ class Substitution(WithSchema):
 
         return constraint
 
+    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
+        new_substitution = {}
+
+        for k, v in self.substitution.items():
+            new_value = KoreUtils.copy_and_substitute_pattern(v, concretization)
+            if k in concretization:
+                assert isinstance(new_value, kore.Variable), \
+                       f"unable to concretize {k} |-> {v}"
+                new_key, new_value = new_value, concretization[k]
+            else:
+                new_key = k
+            new_substitution[new_key] = new_value
+
+        self.substitution = new_substitution
+
     @staticmethod
     def from_predicate(predicate: kore.Pattern) -> Substitution:
         assert isinstance(predicate, kore.MLPattern), \
@@ -150,43 +165,39 @@ class Substitution(WithSchema):
 class ConstrainedPattern(WithSchema):
     pattern: kore.Pattern
     constraint: kore.Pattern
-    substitution: Substitution
 
     def get_free_variables(self) -> Set[kore.Variable]:
         return KoreUtils.get_free_variables(self.pattern)
 
     def assume_unconstrained(self) -> kore.Pattern:
-        assert isinstance(self.constraint, kore.MLPattern) and \
-               self.constraint.construct == kore.MLPattern.TOP and \
-               self.substitution.is_empty()
+        left, right = KoreUtils.destruct_and(self.constraint)
+        assert KoreUtils.is_top(left) and KoreUtils.is_top(right)
         return self.pattern
 
-    def get_substitution(self) -> Mapping[kore.Variable, kore.Pattern]:
-        return self.substitution.substitution if self.substitution is not None else {}
-
-    def get_constraint_as_pattern(self) -> kore.Pattern:
+    def get_constraint(self) -> kore.Pattern:
         """
         Encode the constraint and substitution as a kore pattern
         """
-        sort = KoreUtils.infer_sort(self.pattern)
-        return KoreUtils.construct_and(self.constraint, self.substitution.as_predicate(sort))
+        return self.constraint
 
     def resolve(self, module: kore.Module) -> None:
         self.pattern.resolve(module)
         self.constraint.resolve(module)
-        self.substitution.resolve(module)
 
     def as_pattern(self) -> kore.Pattern:
         """
         Encode as a kore pattern
         """
-        return KoreUtils.construct_and(self.get_constraint_as_pattern(), self.pattern)
+        return KoreUtils.construct_and(self.get_constraint(), self.pattern)
+
+    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
+        self.pattern = KoreUtils.copy_and_substitute_pattern(self.pattern, concretization)
+        self.constraint = KoreUtils.copy_and_substitute_pattern(self.constraint, concretization)
 
     @staticmethod
     def from_pattern(pattern: kore.Pattern) -> ConstrainedPattern:
         constraint, term = KoreUtils.destruct_and(pattern)
-        constraint_left, constraint_right = KoreUtils.destruct_and(constraint)
-        return ConstrainedPattern(term, constraint_left, Substitution.from_predicate(constraint_right))
+        return ConstrainedPattern(term, constraint)
 
     @staticmethod
     def get_raw_schema() -> Any:
@@ -205,14 +216,22 @@ class ConstrainedPattern(WithSchema):
 
     @staticmethod
     def parse_from_object(obj: Any) -> ConstrainedPattern:
+        sort = kore.SortInstance("SortGeneratedTopCell", [])
+
         if isinstance(obj, kore.Pattern):
-            return ConstrainedPattern(obj, parse_pattern("\\top{SortGeneratedTopCell{}}()"), Substitution())
+            return ConstrainedPattern(
+                obj,
+                KoreUtils.construct_and(KoreUtils.construct_top(sort), KoreUtils.construct_top(sort)),
+            )
 
         assert isinstance(obj, dict)
         assert "term" in obj and isinstance(obj["term"], kore.Pattern)
         assert "constraint" in obj and isinstance(obj["constraint"], kore.Pattern)
         assert "substitution" in obj and isinstance(obj["substitution"], Substitution)
-        return ConstrainedPattern(obj["term"], obj["constraint"], obj["substitution"])
+
+        return ConstrainedPattern(
+            obj["term"], KoreUtils.construct_and(obj["constraint"], obj["substitution"].as_predicate(sort))
+        )
 
 
 @dataclass
@@ -230,6 +249,13 @@ class AppliedRule(WithSchema):
 
         if self.substitution is not None:
             self.substitution.resolve(module)
+
+    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
+        for result in self.results:
+            result.concretize(concretization)
+
+        if self.substitution is not None:
+            self.substitution.concretize(concretization)
 
     @staticmethod
     def get_raw_schema() -> Any:
@@ -283,6 +309,15 @@ class RewritingStep(WithSchema):
         for remainder in self.remainders:
             remainder.resolve(module)
 
+    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
+        self.initial.concretize(concretization)
+
+        for rule in self.applied_rules:
+            rule.concretize(concretization)
+
+        for remainder in self.remainders:
+            remainder.concretize(concretization)
+
     @staticmethod
     def get_raw_schema() -> Any:
         return {
@@ -317,6 +352,15 @@ class RewritingTask(WithSchema):
 
     def get_final_patterns(self) -> Tuple[ConstrainedPattern, ...]:
         return self.finals
+
+    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
+        self.initial.concretize(concretization)
+
+        for final in self.finals:
+            final.concretize(concretization)
+
+        for step in self.steps:
+            step.concretize(concretization)
 
     def resolve(self, module: kore.Module) -> None:
         """

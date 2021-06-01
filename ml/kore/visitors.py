@@ -3,7 +3,7 @@ from typing import Set, List, Dict, Tuple, Mapping, TextIO, Any, Generic, TypeVa
 import re
 
 from ml.utils.ansi import ANSI
-from ml.utils.visitor import TreeT, ResultT, ChildrenResultT, UnionVisitor, ConjunctionVisitor
+from ml.utils.visitor import TreeT, ResultT, ChildrenResultT, UnionVisitor, ConjunctionVisitor, DisjunctionVisitor
 
 from .ast import *
 
@@ -267,6 +267,7 @@ class OrderedPatternVariableVisitor(KoreUnionVisitor[Tuple[int, Variable]],
 
 
 KoreConjunctionVisitor = ConjunctionVisitor[BaseAST[Any]]
+KoreDisjunctionVisitor = DisjunctionVisitor[BaseAST[Any]]
 
 
 class QuantifierTester(KoreConjunctionVisitor, PatternOnlyVisitorStructure[BaseAST[Any], bool]):
@@ -280,6 +281,26 @@ class QuantifierTester(KoreConjunctionVisitor, PatternOnlyVisitorStructure[BaseA
             for arg in arguments:
                 if not arg: return False
             return True
+
+
+class ApplicationSubpatternTester(KoreDisjunctionVisitor, PatternOnlyVisitorStructure[BaseAST[Any], bool]):
+    """
+    Tests if a given set of application subpatterns is present
+    """
+    def __init__(self, subpatterns: Tuple[Application, ...]):
+        super().__init__()
+        self.subpatterns = subpatterns
+
+    def postvisit_application(self, pattern: Application, arguments: List[bool]) -> bool:
+        for subpattern in self.subpatterns:
+            if pattern == subpattern:
+                return True
+
+        for arg in arguments:
+            if arg:
+                return True
+
+        return False
 
 
 class PatternSubstitutionVisitor(KoreVisitor[BaseASTT, BaseASTT], PatternOnlyVisitorStructure[BaseASTT, BaseASTT]):
