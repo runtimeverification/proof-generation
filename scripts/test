@@ -3,4 +3,4 @@
 set -euo pipefail
 
 mypy --strict --no-incremental ml scripts tests
-pytest "$@"
+pytest "$@" --ignore=deps
