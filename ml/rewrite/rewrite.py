@@ -1222,18 +1222,26 @@ class SetInEvaluator(BuiltinFunctionEvaluator):
 
         return False
 
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+            key, set_pattern = application.arguments
+
+            assert isinstance(set_pattern, kore.Application)
+            return self.build_arithmetic_equation(application, self.is_element(set_pattern, key))
+
+
+
 
 class MapKeysEvaluator(BuiltinFunctionEvaluator):
     def get_keys(self, app: kore.Application) -> kore.Pattern:
         if KoreTemplates.is_map_unit_pattern(app):
-            unit_symbol = self.env.module.get_symbol_by_name("Lbl'Stop'Set")
+            unit_symbol = self.composer.module.get_symbol_by_name("Lbl'Stop'Set")
             assert unit_symbol is not None
             unit_symbol_instance = kore.SymbolInstance(unit_symbol, [])
             return kore.Application(unit_symbol_instance, [])
         elif KoreTemplates.is_map_merge_pattern(app):
 
             left, right = app.arguments
-            merge_symbol = self.env.module.get_symbol_by_name("Lbl'Unds'Set'Unds")
+            merge_symbol = self.composer.module.get_symbol_by_name("Lbl'Unds'Set'Unds")
             assert isinstance(left, kore.Application)
             assert isinstance(right, kore.Application)
             assert merge_symbol is not None
@@ -1247,7 +1255,7 @@ class MapKeysEvaluator(BuiltinFunctionEvaluator):
             assert KoreTemplates.is_map_mapsto_pattern(app)
             key, value = app.arguments
 
-            singleton_symbol = self.env.module.get_symbol_by_name("LblSetItem")
+            singleton_symbol = self.composer.module.get_symbol_by_name("LblSetItem")
             assert singleton_symbol is not None
             singleton_symbol_instance = kore.SymbolInstance(singleton_symbol, [])
             return kore.Application(singleton_symbol_instance, [key])
