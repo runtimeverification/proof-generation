@@ -12,7 +12,7 @@ from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.sorting import SortingProver
 
 from .env import ProofGenerator
-from .encoder import KorePatternEncoder
+from .encoder import KoreEncoder
 
 
 class DisjointnessProofGenerator(ProofGenerator):
@@ -303,7 +303,7 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
         # now we can apply no confusion
-        encoded_symbol = KorePatternEncoder.encode_symbol(left.symbol)
+        encoded_symbol = KoreEncoder.encode_symbol(left.symbol)
         assert (
             encoded_symbol in self.composer.no_confusion_same_constructor
         ), f"cannot find no confusion axiom for symbol {encoded_symbol}"
@@ -351,8 +351,8 @@ class DisjointnessProofGenerator(ProofGenerator):
     """
 
     def prove_diff_constructor_disjointness(self, left: kore.Application, right: kore.Application) -> Proof:
-        encoded_left_symbol = KorePatternEncoder.encode_symbol(left.symbol)
-        encoded_right_symbol = KorePatternEncoder.encode_symbol(right.symbol)
+        encoded_left_symbol = KoreEncoder.encode_symbol(left.symbol)
+        encoded_right_symbol = KoreEncoder.encode_symbol(right.symbol)
 
         # symmetry
         if (
@@ -513,8 +513,8 @@ class DisjointnessProofGenerator(ProofGenerator):
         assert isinstance(right_sort, kore.SortInstance) and \
                len(right_sort.arguments) == 0, f"parametric sort {right_sort} not supported"
 
-        dv_sort_encoded_id = KorePatternEncoder.encode_sort(dv_sort.get_sort_id())
-        right_sort_encoded_id = KorePatternEncoder.encode_sort(right_sort.get_sort_id())
+        dv_sort_encoded_id = KoreEncoder.encode_sort(dv_sort.get_sort_id())
+        right_sort_encoded_id = KoreEncoder.encode_sort(right_sort.get_sort_id())
 
         # look up disjointness axiom
         if (dv_sort_encoded_id, right_sort_encoded_id) in self.composer.hooked_sort_disjoint_axioms:
@@ -529,7 +529,7 @@ class DisjointnessProofGenerator(ProofGenerator):
         else:
             assert False, f"unable to find axiom to show the disjointness of sorts {dv_sort} and {right_sort}"
 
-        right_var_encoded = KorePatternEncoder.encode_variable(right)
+        right_var_encoded = KoreEncoder.encode_variable(right)
         dv_encoded = self.composer.encode_pattern(left)
 
         return self.composer.get_theorem("disjointness-in-sort").apply(

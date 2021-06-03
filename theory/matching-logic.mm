@@ -7,6 +7,7 @@ $c #Variable $.
 $c #Symbol $.
 
 $v ph0 ph1 ph2 ph3 ph4 ph5 ph6 ph7 ph8 $.
+$v th0 th1 th2 th3 th4 th5 th6 th7 th8 $.
 $v x y z w $.
 $v X Y Z W $.
 $v xX yY $.
@@ -21,6 +22,16 @@ ph5-is-pattern $f #Pattern ph5 $.
 ph6-is-pattern $f #Pattern ph6 $.
 ph7-is-pattern $f #Pattern ph7 $.
 ph8-is-pattern $f #Pattern ph8 $.
+
+th0-is-pattern $f #Pattern th0 $.
+th1-is-pattern $f #Pattern th1 $.
+th2-is-pattern $f #Pattern th2 $.
+th3-is-pattern $f #Pattern th3 $.
+th4-is-pattern $f #Pattern th4 $.
+th5-is-pattern $f #Pattern th5 $.
+th6-is-pattern $f #Pattern th6 $.
+th7-is-pattern $f #Pattern th7 $.
+th8-is-pattern $f #Pattern th8 $.
 
 x-is-element-var $f #ElementVariable x $.
 y-is-element-var $f #ElementVariable y $.

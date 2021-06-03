@@ -1,19 +1,23 @@
 from __future__ import annotations
 
-from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO, Dict, Type, Any
+from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO, Dict, Type, Any, Iterable, Generator
 
 import re
+
+from contextlib import contextmanager
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
 from ml.kore.visitors import FreePatternVariableVisitor, ApplicationSubpatternTester
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Composer, Theorem, Context, Proof
+from ml.metamath.composer import Composer, Theorem, Context, Proof, AutoProof
+from ml.metamath.utils import MetamathUtils
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.context import ApplicationContextProver
+from ml.metamath.auto.sorting import SortingProver
 
-from .encoder import KorePatternEncoder
+from .encoder import KoreEncoder, KoreDecoder
 from .templates import KoreTemplates
 
 
@@ -29,13 +33,20 @@ class ProvableClaim:
     reuse some operations and information on the Kore ast
     """
     def __init__(self, claim: kore.Claim, proof: Proof):
-        encoded_claim = KorePatternEncoder().visit(claim)
+        encoded_claim = KoreEncoder().visit(claim)
         assert isinstance(proof, Proof)
         assert (
             encoded_claim == proof.conclusion[1]
         ), f"provable claim invariant failed: {encoded_claim} != {proof.conclusion[1]}"
         self.claim = claim
         self.proof = proof
+
+    """
+    Three basic things we need to prove:
+    - substitution (use the metamath one)
+    - equality elimination
+    - functional substitution (on any free variable)
+    """
 
 
 class SubsortRelation:
@@ -161,6 +172,23 @@ class KoreComposer(Composer):
         # been replaced by an unconstrained constant
         self.concretized_variables: Dict[kore.Variable, kore.Application] = {}
 
+        # additional common premise used in apply_kore_lemmas
+        self.default_common_premise: mm.Term = MetamathUtils.construct_top()
+
+        self.fresh_label_counter = 0
+
+    def get_fresh_label(self, prefix: str) -> str:
+        counter = self.fresh_label_counter
+        self.fresh_label_counter += 1
+        return f"{prefix}-{counter}"
+
+    def load_fresh_claim_placeholder(self, label_prefix: str, claim: Union[kore.Claim, kore.Pattern]) -> ProvableClaim:
+        if isinstance(claim, kore.Claim):
+            return self.load_claim_without_proof(self.get_fresh_label(label_prefix), claim)
+        else:
+            assert isinstance(claim, kore.Pattern)
+            return self.load_claim_without_proof(self.get_fresh_label(label_prefix), self.construct_claim(claim))
+
     def get_concretized_variable(self, variable: kore.Variable) -> Optional[kore.Application]:
         return self.concretized_variables.get(variable)
 
@@ -190,7 +218,7 @@ class KoreComposer(Composer):
 
             self.concretized_variables[variable] = application
 
-            encoded_name = KorePatternEncoder.encode_symbol(symbol_name)
+            encoded_name = KoreEncoder.encode_symbol(symbol_name)
 
             self.load_constant(encoded_name, 0, symbol_name)
             self.load_symbol_sorting_lemma(symbol_definition, symbol_name)
@@ -286,11 +314,15 @@ class KoreComposer(Composer):
                     self.load(disjoint_stmt, top_level=True)
 
     def encode_pattern(self, pattern: Union[kore.Axiom, kore.Pattern, kore.Sort]) -> mm.Term:
-        encoder = KorePatternEncoder()
+        encoder = KoreEncoder()
         term = encoder.visit(pattern)
         self.load_metavariables(encoder.metavariables)
         self.load_domain_values(encoder.domain_values)
         return term
+
+    def encode_axiom_premise(self, axiom: kore.Axiom) -> mm.Term:
+        premise, _ = MetamathUtils.destruct_imp(self.encode_pattern(axiom))
+        return premise
 
     def encode_metamath_statement(
         self, axiom: kore.Axiom, cons: Type[mm.StructuredStatement] = mm.StructuredStatement
@@ -307,6 +339,59 @@ class KoreComposer(Composer):
         claim.resolve(self.module)
         return claim
 
+    def rearrange_sorting_premise(self, target_premise: Optional[mm.Term], proof: Proof) -> Proof:
+        r"""
+        Rearrange the premise of the conclusion of the proof
+
+        If target_premise is not None,
+        - if proof is of the form |- ( \imp <old premise> ... ),
+          we return a new proof of the form |- ( \imp <target_premise> ... )
+        - if the proof is not an implication, we weakens it by adding the target premise
+
+        If target_premise is None,
+        - if the proof is of the form |- ( \imp <old premise> ... ),
+          we try to prove <old premise> directly and removes it
+        - otherwise we are done
+        """
+        conclusion = MetamathUtils.destruct_provable(proof.conclusion)
+
+        if target_premise is None:
+            if MetamathUtils.is_imp(conclusion):
+                conclusion_premise, _ = MetamathUtils.destruct_imp(conclusion)
+                premise_proof = SortingProver.prove_sorting_statement(
+                    self,
+                    mm.StructuredStatement(
+                        "",
+                        MetamathUtils.construct_provable(conclusion_premise),
+                    ),
+                )
+                return self.get_theorem("proof-rule-mp").apply(proof, premise_proof)
+            else:
+                return proof
+        else:
+            if MetamathUtils.is_imp(conclusion):
+                conclusion_premise, _ = MetamathUtils.destruct_imp(conclusion)
+
+                if conclusion_premise == target_premise:
+                    return proof
+
+                premise_imp = SortingProver.prove_sorting_statement(
+                    self,
+                    mm.StructuredStatement(
+                        "",
+                        MetamathUtils.construct_provable(
+                            MetamathUtils.construct_imp(target_premise, conclusion_premise),
+                        ),
+                    ),
+                )
+
+                return self.get_theorem("rule-imp-transitivity").apply(premise_imp, proof)
+            else:
+                return self.get_theorem("rule-weakening").apply(
+                    proof,
+                    ph0=target_premise,
+                )
+
     def construct_provable_claim(
         self,
         pattern: kore.Pattern,
@@ -314,7 +399,8 @@ class KoreComposer(Composer):
         sort_variables: Optional[List[kore.SortVariable]] = None
     ) -> ProvableClaim:
         claim = self.construct_claim(pattern, sort_variables)
-        return ProvableClaim(claim, proof)
+        sorting_premise, _ = MetamathUtils.destruct_imp(self.encode_pattern(claim))
+        return ProvableClaim(claim, self.rearrange_sorting_premise(sorting_premise, proof))
 
     def load_comment(self, comment: str, **kwargs: Any) -> None:
         self.load(mm.Comment(comment), **kwargs)
@@ -363,7 +449,7 @@ class KoreComposer(Composer):
         return self.load(stmt, **kwargs)
 
     def load_symbol_sorting_lemma(self, symbol_definition: kore.SymbolDefinition, label: str) -> None:
-        encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
+        encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
         arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
 
         pattern_vars = [mm.Metavariable(v) for v in self.gen_metavariables("#Pattern", arity)]
@@ -374,7 +460,7 @@ class KoreComposer(Composer):
         # for simplicity, we replace all sort variables (which are #ElementVariable's)
         # by pattern variables since \\kore-is-sort implies they are singletons
         sort_var_subst = {
-            KorePatternEncoder.encode_sort_variable(element_var): pattern_var
+            KoreEncoder.encode_sort_variable(element_var): pattern_var
             for element_var, pattern_var in zip(symbol_definition.sort_variables, sort_pattern_vars)
         }
 
@@ -432,7 +518,7 @@ class KoreComposer(Composer):
         if symbol_definition.get_attribute_by_symbol("constructor") is None:
             return
 
-        encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
+        encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
         num_sort_vars = len(symbol_definition.sort_variables)
         num_arguments = len(symbol_definition.input_sorts)
 
@@ -487,7 +573,7 @@ class KoreComposer(Composer):
 
         # generate no confusion axioms for different symbols
         for other_constructor in self.constructors:
-            other_encoded_symbol = KorePatternEncoder.encode_symbol(other_constructor.symbol)
+            other_encoded_symbol = KoreEncoder.encode_symbol(other_constructor.symbol)
             other_num_sort_vars = len(other_constructor.sort_variables)
             other_num_arguments = len(other_constructor.input_sorts)
 
@@ -526,7 +612,7 @@ class KoreComposer(Composer):
             self.sort_to_constructors[symbol_definition.output_sort].append(symbol_definition)
 
     def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition, label: str) -> None:
-        encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
+        encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
         arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
 
         self.load_comment(str(symbol_definition))
@@ -536,7 +622,7 @@ class KoreComposer(Composer):
         self.load_symbol_constructor_axioms(symbol_definition, label)
 
     def load_sort_definition(self, sort_definition: kore.SortDefinition, label: str) -> None:
-        encoded_sort = KorePatternEncoder.encode_sort(sort_definition.sort_id)
+        encoded_sort = KoreEncoder.encode_sort(sort_definition.sort_id)
         arity = len(sort_definition.sort_variables)
 
         assert arity == 0, "parametric sort not supported"
@@ -549,7 +635,7 @@ class KoreComposer(Composer):
                 f"{label}-sort",
                 (
                     mm.Application("|-"),
-                    mm.Application(KorePatternEncoder.IS_SORT, (mm.Application(encoded_sort), )),
+                    mm.Application(KoreEncoder.IS_SORT, (mm.Application(encoded_sort), )),
                 ),
             )
         )
@@ -561,7 +647,7 @@ class KoreComposer(Composer):
            and len(sort_definition.sort_variables) == 0:
             # TODO: could there be hooked sorts with sort variables?
             for other_hooked_sort in self.hooked_sorts:
-                encoded_other_sort = KorePatternEncoder.encode_sort(other_hooked_sort.sort_id)
+                encoded_other_sort = KoreEncoder.encode_sort(other_hooked_sort.sort_id)
                 self.hooked_sort_disjoint_axioms[encoded_sort, encoded_other_sort] = \
                     self.load(
                         mm.AxiomaticStatement(
@@ -595,7 +681,7 @@ class KoreComposer(Composer):
                     self.load_comment(f"string literal {literal}", top_level=True)
 
                     self.load_constant(
-                        KorePatternEncoder.encode_string_literal(literal),
+                        KoreEncoder.encode_string_literal(literal),
                         0,
                         f"string-literal-{index}",
                     )
@@ -929,7 +1015,7 @@ class KoreComposer(Composer):
                     num_sort_vars = len(symbol_definition.sort_variables)
                     num_arguments = len(symbol_definition.input_sorts)
 
-                    encoded_symbol = KorePatternEncoder.encode_symbol(symbol_definition.symbol)
+                    encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
 
                     pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments)
                     pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
@@ -1021,3 +1107,251 @@ class KoreComposer(Composer):
                 if subsort_tuple is not None:
                     sort1, sort2 = subsort_tuple
                     self.subsort_relation.add_subsort(sort1, sort2, theorem)
+
+    def destruct_premise(
+        self,
+        statement: Union[mm.StructuredStatement, mm.Terms],
+    ) -> Tuple[Optional[mm.Term], mm.Term]:
+        if isinstance(statement, mm.StructuredStatement):
+            statement = statement.terms
+
+        body = MetamathUtils.destruct_provable(statement)
+
+        if MetamathUtils.is_imp(body):
+            premise, conclusion = MetamathUtils.destruct_imp(body)
+            return premise, conclusion
+        else:
+            return None, body
+
+    def infer_premise_metavar(self, theorem: Theorem) -> Optional[mm.Metavariable]:
+        """
+        Given a kore lemma, infer the metavariable for premise
+        """
+
+        conclusion_premise, _ = self.destruct_premise(theorem.statement)
+
+        premise: Optional[mm.Term] = conclusion_premise
+
+        for essential in theorem.context.essentials:
+            if not MetamathUtils.is_provable(essential.terms):
+                continue
+
+            essential_premise, essential_conclusion = self.destruct_premise(essential)
+            if not MetamathUtils.is_kore_valid(essential_conclusion):
+                continue
+
+            if premise is not None and essential_premise is not None:
+                assert premise == essential_premise, \
+                       f"distinct premises appearing in the theorem: {premise} and {essential_premise}"
+            premise = premise or essential_premise
+
+        if premise is not None:
+            assert isinstance(premise, mm.Metavariable), \
+                   f"premise should be a metavariable, {premise} appears instead"
+
+        return premise
+
+    def infer_weakest_common_premise(
+        self,
+        provable_claims: Tuple[ProvableClaim, ...],
+    ) -> mm.Term:
+        """
+        Infer the weakest common premise used in all the proofs given
+        We are basically taking the conjunction of all premises
+        """
+        common_premise = self.default_common_premise
+
+        for provable_claim in provable_claims:
+            premise = self.encode_axiom_premise(provable_claim.claim)
+
+            if premise is not None and not MetamathUtils.is_top(premise):
+                common_premise = MetamathUtils.construct_and(premise, common_premise)
+
+        return common_premise
+
+    # @contextmanager
+    # def additional_common_premise(self, premise: mm.Term) -> Generator[None, None, None]:
+    #     old_premise = self.default_common_premise
+    #     self.default_common_premise = MetamathUtils.construct_and(premise, self.default_common_premise)
+    #     try:
+    #         yield
+    #     finally:
+    #         self.default_common_premise = old_premise
+
+    # def additional_free_variable(self, variables: Iterable[Union[kore.SortVariable, kore.Variable]]) -> Generator[None, None, None]:
+    #     """
+    #     Add additional free (sort or pattern) variables to all common premises of kore lemmas
+    #     """
+    #     premise = MetamathUtils.construct_top()
+
+    #     for variable in variables:
+    #         if isinstance(variable, kore.SortVariable):
+    #             premise = MetamathUtils.construct_and(
+    #                 MetamathUtils.construct_kore_is_sort(self.encode_pattern(variable)),
+    #                 premise,
+    #             )
+    #         elif isinstance(variable, kore.Variable):
+    #             premise = MetamathUtils.construct_and(
+    #                 MetamathUtils.construct_in_sort(
+    #                     self.encode_pattern(variable),
+    #                     self.encode_pattern(variable.sort),
+    #                 ),
+    #                 premise,
+    #             )
+
+    #     return self.additional_common_premise(premise)
+
+    def infer_essential_proofs(
+        self,
+        theorem: Theorem,
+        common_premise: mm.Term,
+        essential_provable_claims: Tuple[ProvableClaim, ...],
+    ) -> List[Union[Proof, AutoProof]]:
+        essential_claim_index = 0
+        essential_proofs: List[Union[Proof, AutoProof]] = []
+
+        for essential in theorem.context.essentials:
+            if MetamathUtils.is_substitution(essential.terms):
+                essential_proofs.append(SubstitutionProver.auto)
+
+            elif MetamathUtils.is_provable(essential.terms):
+                premise, conclusion = self.destruct_premise(essential)
+
+                if MetamathUtils.is_kore_valid(conclusion):
+                    # take from the given essential proofs
+                    assert essential_claim_index < len(essential_provable_claims), \
+                           f"not enough essential proofs are given"
+                    essential_provable_claim = essential_provable_claims[essential_claim_index]
+                    essential_claim_index += 1
+
+                    # rearrange the premises of essential proofs to match the required form
+                    essential_proof = self.rearrange_sorting_premise(
+                        None if premise is None else common_premise, essential_provable_claim.proof
+                    )
+                    essential_proofs.append(essential_proof)
+                else:
+                    # try to automatically resolve
+                    # TODO: this might be too much
+                    essential_proofs.append(SortingProver.auto)
+            else:
+                assert False, f"cannot infer which proof to assign for hypothesis {essential}"
+
+        assert essential_claim_index == len(essential_provable_claims), \
+               f"too many essential proofs given"
+
+        return essential_proofs
+
+    def apply_kore_lemma(
+        self,
+        theorem_name: str,
+        *essential_provable_claims: ProvableClaim,
+        goal: Optional[kore.Claim] = None,
+        **substitution: Union[mm.Term, kore.Pattern, kore.Sort],
+    ) -> ProvableClaim:
+        r"""
+        This is an abstraction over the lower level Theorem.apply or Theorem.match_and_apply
+
+        A "kore lemma" refers to a specific form of theorems in the database
+        in which:
+        
+        1. The conclusion is of the form
+            |- ( \kore-valid ... )
+            or
+            |- ( \imp th0 ( \kore-valid ... ) )
+        2. Any hypothesis is either of the same form as above or automatically resolvable (e.g. sorting, substitution)
+        3. We can figure out all the assignment to any metavariable just by looking at non-trivial hypotheses
+           and/or the conclusion
+        4. If any of the hypotheses/conclusion has a premise (th0), it should be the same metavariable.
+
+        In this case, we:
+        1. check that the conclusion of the theorem is of the expected form
+        and find all hypotheses of this form
+        2. check that enough essential statements are given
+        3. check that we can determine all metavariable assignment given the current info
+        4. find a most general premise th0 (take the conjunction of all premises given in the essential proofs)
+        5. apply the theorem
+        6. weaken the hypotheses in the conclusion to the expected form
+        """
+
+        theorem = self.get_theorem(theorem_name)
+        premise_metavar = self.infer_premise_metavar(theorem)
+        common_premise = self.infer_weakest_common_premise(essential_provable_claims)
+
+        # preprocess metavar substitution
+        metavar_substitution: Dict[str, mm.Term] = {}
+        for key, value in substitution.items():
+            if isinstance(value, kore.Pattern) or isinstance(value, kore.SortVariable) or isinstance(value,
+                                                                                                     kore.SortInstance):
+                metavar_substitution[key] = self.encode_pattern(value)
+            else:
+                metavar_substitution[key] = value
+
+        # construct a temporary list of essential claims
+        # and infer the final claim so that we can add
+        # necessary premises
+        essential_proofs = self.infer_essential_proofs(theorem, common_premise, essential_provable_claims)
+
+        if goal is not None:
+            encoded_goal = self.encode_pattern(goal)
+            _, goal_body = self.destruct_premise(MetamathUtils.construct_provable(encoded_goal))
+            conclusion_premise, _ = self.destruct_premise(theorem.statement)
+            if conclusion_premise is not None:
+                goal_pattern: Optional[mm.StructuredStatement] = mm.StructuredStatement(
+                    "",
+                    MetamathUtils.construct_provable(MetamathUtils.construct_imp(common_premise, goal_body), ),
+                )
+            else:
+                goal_pattern = mm.StructuredStatement(
+                    "",
+                    MetamathUtils.construct_provable(goal_body),
+                )
+        else:
+            goal_pattern = None
+
+        tmp_substitution = theorem.infer_metavariable_substitution(
+            goal_pattern, tuple(essential_proofs), metavar_substitution
+        )
+
+        final_claim = KoreDecoder(self.module).decode_claim(theorem.get_conclusion_instance(tmp_substitution))
+        common_premise = MetamathUtils.construct_and(self.encode_axiom_premise(final_claim), common_premise)
+
+        # construct the final essential proofs
+        essential_proofs = self.infer_essential_proofs(theorem, common_premise, essential_provable_claims)
+
+        if premise_metavar is not None:
+            metavar_substitution = metavar_substitution.copy()
+            metavar_substitution[premise_metavar.name] = common_premise
+
+        if goal is not None:
+            encoded_goal = self.encode_pattern(goal)
+            goal_premise, goal_body = self.destruct_premise(MetamathUtils.construct_provable(encoded_goal))
+            conclusion_premise, _ = self.destruct_premise(theorem.statement)
+
+            # arrange the goal into the expected form
+            if conclusion_premise is not None:
+                target = mm.StructuredStatement(
+                    "",
+                    MetamathUtils.construct_provable(MetamathUtils.construct_imp(common_premise, goal_body), ),
+                )
+            else:
+                target = mm.StructuredStatement("", MetamathUtils.construct_provable(goal_body))
+
+            proof = theorem.match_and_apply(target, *essential_proofs, **metavar_substitution)
+
+            # now we need massage the proof to the expected form of the goal
+            proof = self.rearrange_sorting_premise(goal_premise, proof)
+
+            # if the goal is given, we can construct a ProvableClaim
+            return ProvableClaim(goal, proof)
+        else:
+            proof = theorem.apply(*essential_proofs, **metavar_substitution)
+
+            # decode a kore claim from the metamath proof
+            body = MetamathUtils.destruct_provable(proof.conclusion)
+
+            claim = KoreDecoder(self.module).decode_claim(body)
+            claim_premise = self.encode_axiom_premise(claim)
+
+            proof = self.rearrange_sorting_premise(claim_premise, proof)
+
+            return ProvableClaim(claim, proof)

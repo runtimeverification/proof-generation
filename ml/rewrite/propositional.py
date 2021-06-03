@@ -35,21 +35,23 @@ class PropositionalProofGenerator(ProofGenerator):
 
     def apply_implies_reflexivity(self, pattern: kore.Pattern) -> ProvableClaim:
         claim = self.composer.construct_claim(KoreUtils.construct_implies(pattern, pattern))
-        return ProvableClaim(
-            claim,
-            self.composer.get_theorem("kore-implies-reflexivity").match_and_apply(
-                self.composer.encode_metamath_statement(claim),
-                SortingProver.auto,
-            ),
-        )
+        # return ProvableClaim(
+        #     claim,
+        #     self.composer.get_theorem("kore-implies-reflexivity").match_and_apply(
+        #         self.composer.encode_metamath_statement(claim),
+        #         SortingProver.auto,
+        #     ),
+        # )
+        return self.composer.load_fresh_claim_placeholder("propositional", claim)
 
     def apply_iff_reflexivity(self, pattern: kore.Pattern) -> ProvableClaim:
         claim = self.composer.construct_claim(KoreUtils.construct_iff(pattern, pattern))
-        return ProvableClaim(
-            claim,
-            self.composer.get_theorem("kore-iff-reflexivity"
-                                      ).match_and_apply(self.composer.encode_metamath_statement(claim), ),
-        )
+        # return ProvableClaim(
+        #     claim,
+        #     self.composer.get_theorem("kore-iff-reflexivity"
+        #                               ).match_and_apply(self.composer.encode_metamath_statement(claim), ),
+        # )
+        return self.composer.load_fresh_claim_placeholder("propositional", claim)
 
     @staticmethod
     def destruct_implies_claim(claim: ProvableClaim) -> Tuple[kore.Pattern, kore.Pattern]:
@@ -66,26 +68,28 @@ class PropositionalProofGenerator(ProofGenerator):
         left2, right2 = PropositionalProofGenerator.destruct_implies_claim(claim2)
         assert right1 == left2, f"cannot connect {claim1.claim} and {claim2.claim}"
 
-        return self.composer.construct_provable_claim(
-            pattern=KoreUtils.construct_implies(left1, right2),
-            proof=self.composer.get_theorem("rule-kore-implies-transitivity").apply(
-                claim1.proof,
-                claim2.proof,
-            ),
-        )
+        # return self.composer.construct_provable_claim(
+        #     pattern=KoreUtils.construct_implies(left1, right2),
+        #     proof=self.composer.get_theorem("rule-kore-implies-transitivity").apply(
+        #         claim1.proof,
+        #         claim2.proof,
+        #     ),
+        # )
+        return self.composer.load_fresh_claim_placeholder("propositional", KoreUtils.construct_implies(left1, right2))
 
     def apply_iff_transitivity(self, claim1: ProvableClaim, claim2: ProvableClaim) -> ProvableClaim:
         left1, right1 = PropositionalProofGenerator.destruct_iff_claim(claim1)
         left2, right2 = PropositionalProofGenerator.destruct_iff_claim(claim2)
         assert right1 == left2, f"cannot connect {claim1.claim} and {claim2.claim}"
 
-        return self.composer.construct_provable_claim(
-            pattern=KoreUtils.construct_iff(left1, right2),
-            proof=self.composer.get_theorem("rule-kore-iff-transitivity").apply(
-                claim1.proof,
-                claim2.proof,
-            ),
-        )
+        # return self.composer.construct_provable_claim(
+        #     pattern=KoreUtils.construct_iff(left1, right2),
+        #     proof=self.composer.get_theorem("rule-kore-iff-transitivity").apply(
+        #         claim1.proof,
+        #         claim2.proof,
+        #     ),
+        # )
+        return self.composer.load_fresh_claim_placeholder("propositional", KoreUtils.construct_iff(left1, right2))
 
     def apply_implies_multiple_transitivity(self, *claims: ProvableClaim) -> ProvableClaim:
         assert len(claims) > 0
@@ -116,10 +120,11 @@ class PropositionalProofGenerator(ProofGenerator):
         phi2 <-> phi1
         """
         left, right = PropositionalProofGenerator.destruct_iff_claim(claim)
-        return self.composer.construct_provable_claim(
-            pattern=KoreUtils.construct_iff(right, left),
-            proof=self.composer.get_theorem("rule-kore-iff-symmetry").apply(claim.proof),
-        )
+        # return self.composer.construct_provable_claim(
+        #     pattern=KoreUtils.construct_iff(right, left),
+        #     proof=self.composer.get_theorem("rule-kore-iff-symmetry").apply(claim.proof),
+        # )
+        return self.composer.load_fresh_claim_placeholder("propositional", KoreUtils.construct_iff(right, left))
 
     def apply_iff_elim_left(self, claim: ProvableClaim) -> ProvableClaim:
         """
@@ -128,10 +133,11 @@ class PropositionalProofGenerator(ProofGenerator):
         phi1 -> phi2
         """
         left, right = PropositionalProofGenerator.destruct_iff_claim(claim)
-        return self.composer.construct_provable_claim(
-            pattern=KoreUtils.construct_implies(left, right),
-            proof=self.composer.get_theorem("rule-kore-iff-elim-left").apply(claim.proof),
-        )
+        # return self.composer.construct_provable_claim(
+        #     pattern=KoreUtils.construct_implies(left, right),
+        #     proof=self.composer.get_theorem("rule-kore-iff-elim-left").apply(claim.proof),
+        # )
+        return self.composer.load_fresh_claim_placeholder("propositional", KoreUtils.construct_implies(left, right))
 
     def apply_iff_elim_right(self, claim: ProvableClaim) -> ProvableClaim:
         """
@@ -140,10 +146,11 @@ class PropositionalProofGenerator(ProofGenerator):
         phi2 -> phi1
         """
         left, right = PropositionalProofGenerator.destruct_iff_claim(claim)
-        return self.composer.construct_provable_claim(
-            pattern=KoreUtils.construct_implies(right, left),
-            proof=self.composer.get_theorem("rule-kore-iff-elim-right").apply(claim.proof),
-        )
+        # return self.composer.construct_provable_claim(
+        #     pattern=KoreUtils.construct_implies(right, left),
+        #     proof=self.composer.get_theorem("rule-kore-iff-elim-right").apply(claim.proof),
+        # )
+        return self.composer.load_fresh_claim_placeholder("propositional", KoreUtils.construct_implies(right, left))
 
     def apply_commutativity(self, construct: str, pattern: kore.Pattern) -> ProvableClaim:
         """
@@ -160,10 +167,11 @@ class PropositionalProofGenerator(ProofGenerator):
             ),
         )
 
-        theorem_name = PropositionalProofGenerator.COMMUTATIVITY[construct]
-        proof = self.composer.get_theorem(theorem_name).match_and_apply(self.composer.encode_metamath_statement(goal), )
+        # theorem_name = PropositionalProofGenerator.COMMUTATIVITY[construct]
+        # proof = self.composer.get_theorem(theorem_name).match_and_apply(self.composer.encode_metamath_statement(goal), )
 
-        return ProvableClaim(goal, proof)
+        # return ProvableClaim(goal, proof)
+        return self.composer.load_fresh_claim_placeholder("propositional", goal)
 
     def apply_left_associativity(self, construct: str, pattern: kore.Pattern) -> ProvableClaim:
         """
@@ -185,10 +193,11 @@ class PropositionalProofGenerator(ProofGenerator):
             ),
         )
 
-        theorem_name = PropositionalProofGenerator.ASSOCIATIVITY[construct]
-        proof = self.composer.get_theorem(theorem_name).match_and_apply(self.composer.encode_metamath_statement(goal), )
+        # theorem_name = PropositionalProofGenerator.ASSOCIATIVITY[construct]
+        # proof = self.composer.get_theorem(theorem_name).match_and_apply(self.composer.encode_metamath_statement(goal), )
 
-        return ProvableClaim(goal, proof)
+        # return ProvableClaim(goal, proof)
+        return self.composer.load_fresh_claim_placeholder("propositional", goal)
 
     def apply_right_associativity(self, construct: str, pattern: kore.Pattern) -> ProvableClaim:
         """
@@ -232,14 +241,15 @@ class PropositionalProofGenerator(ProofGenerator):
             ),
         )
 
-        theorem_name = PropositionalProofGenerator.IMPLIES_COMPAT[construct]
-        proof = self.composer.get_theorem(theorem_name).match_and_apply(
-            self.composer.encode_metamath_statement(goal),
-            claim1.proof,
-            claim2.proof,
-        )
+        # theorem_name = PropositionalProofGenerator.IMPLIES_COMPAT[construct]
+        # proof = self.composer.get_theorem(theorem_name).match_and_apply(
+        #     self.composer.encode_metamath_statement(goal),
+        #     claim1.proof,
+        #     claim2.proof,
+        # )
 
-        return ProvableClaim(goal, proof)
+        # return ProvableClaim(goal, proof)
+        return self.composer.load_fresh_claim_placeholder("propositional", goal)
 
     def apply_iff_compatibility(self, construct: str, claim1: ProvableClaim, claim2: ProvableClaim) -> ProvableClaim:
         """
@@ -263,14 +273,15 @@ class PropositionalProofGenerator(ProofGenerator):
             ),
         )
 
-        theorem_name = PropositionalProofGenerator.IFF_COMPAT[construct]
-        proof = self.composer.get_theorem(theorem_name).match_and_apply(
-            self.composer.encode_metamath_statement(goal),
-            claim1.proof,
-            claim2.proof,
-        )
+        # theorem_name = PropositionalProofGenerator.IFF_COMPAT[construct]
+        # proof = self.composer.get_theorem(theorem_name).match_and_apply(
+        #     self.composer.encode_metamath_statement(goal),
+        #     claim1.proof,
+        #     claim2.proof,
+        # )
 
-        return ProvableClaim(goal, proof)
+        # return ProvableClaim(goal, proof)
+        return self.composer.load_fresh_claim_placeholder("propositional", goal)
 
     def shuffle_nested(self, construct: str, pattern: kore.Pattern, n: int) -> ProvableClaim:
         """

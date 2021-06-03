@@ -382,7 +382,18 @@ class SortSubstitutionVisitor(KoreVisitor[BaseASTT, BaseASTT], PatternAndSortVis
         self.substitution = substitution
 
     def postvisit_axiom(self, axiom: Axiom, *args: Any) -> Axiom:
-        # an axiom is assumed to have no free sort variables
+        new_sort_variables = []
+
+        for sort_var in axiom.sort_variables:
+            if sort_var not in self.substitution:
+                new_sort_variables.append(sort_var)
+
+        for substitute in self.substitution.values():
+            for free_sort_var in SortVariableVisitor().visit(substitute):
+                assert free_sort_var in new_sort_variables, \
+                       f"free sort variable {free_sort_var} after substitution"
+
+        axiom.sort_variables = new_sort_variables
         return axiom
 
     def postvisit_sort_instance(self, sort_instance: SortInstance, arguments: List[Sort]) -> SortInstance:
