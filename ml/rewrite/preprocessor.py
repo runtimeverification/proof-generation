@@ -33,7 +33,7 @@ class KorePreprocessor:
         self.add_missing_subsort_axioms(definition)
         for module in definition.module_map.values():
             KoreUtils.instantiate_all_alias_uses(module)
-            KoreUtils.quantify_all_free_variables(module)
+            # KoreUtils.quantify_all_free_variables(module)
 
     def add_missing_functional_axioms(self, definition: kore.Definition) -> None:
         # modules in which MISSING_FUNCTIONAL_AXIOMS

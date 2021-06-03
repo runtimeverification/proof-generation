@@ -117,16 +117,20 @@ class KoreUtils:
         return KoreUtils.copy_ast(pattern.get_parent(), pattern)
 
     @staticmethod
-    def copy_and_substitute_pattern(ast: PAS, substitution: Mapping[Variable, Pattern]) -> PAS:
-        copied = KoreUtils.copy_ast(ast.get_parent(), ast)
+    def copy_and_substitute_pattern(
+        ast: PAS, substitution: Mapping[Variable, Pattern], module: Optional[Module] = None
+    ) -> PAS:
+        copied = KoreUtils.copy_ast(module or ast.get_parent(), ast)
         return PatternSubstitutionVisitor(substitution).visit(copied)  # type: ignore
 
     @staticmethod
-    def copy_and_substitute_sort(ast: PAS, substitution: Mapping[SortVariable, Sort]) -> PAS:
+    def copy_and_substitute_sort(
+        ast: PAS, substitution: Mapping[SortVariable, Sort], module: Optional[Module] = None
+    ) -> PAS:
         """
         Note that the substitution should be sort variable -> sort
         """
-        copied = KoreUtils.copy_ast(ast.get_parent(), ast)
+        copied = KoreUtils.copy_ast(module or ast.get_parent(), ast)
         return SortSubstitutionVisitor(substitution).visit(copied)  # type: ignore
 
     @staticmethod
@@ -204,6 +208,10 @@ class KoreUtils:
     @staticmethod
     def get_free_variables(ast: BaseAST[Any]) -> Set[Variable]:
         return FreePatternVariableVisitor().visit(ast)
+
+    @staticmethod
+    def get_free_sort_variables(ast: BaseAST[Any]) -> Set[SortVariable]:
+        return SortVariableVisitor().visit(ast)
 
     @staticmethod
     def quantify_all_free_variables_in_axiom(axiom: Axiom) -> None:

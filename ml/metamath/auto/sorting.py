@@ -2,6 +2,7 @@ from typing import Mapping, Optional, Tuple, List, Dict
 
 from ..ast import Metavariable, Term, Application, Statement, StructuredStatement, ProvableStatement
 from ..composer import Composer, Theorem, MethodAutoProof, ProofCache, Proof
+from ..utils import MetamathUtils
 
 from .unification import Unification
 
@@ -183,7 +184,7 @@ class SortingProver:
             if proof.is_proof_of(statement):
                 break
         else:
-            assert proof.is_proof_of(statement), f"unable to prove {statement}"
+            assert False, f"unable to prove {statement}"
 
         return proof
 
@@ -194,25 +195,11 @@ class SortingProver:
         """
         left_conjuncts = SortingProver.get_conjuncts(hypothesis)
 
-        # if the conclusion is a \kore-is-sort claims
-        # currently we are assuming that it's directly provable
-        # without any hypothesis
-        if (isinstance(conclusion, Application) and conclusion.symbol == "\\kore-is-sort"):
-            return composer.get_theorem("proof-rule-mp").apply(
-                composer.get_theorem("proof-rule-prop-1").apply(ph0=conclusion, ph1=hypothesis),
-                SortingProver.prove_kore_is_sort(
-                    composer,
-                    ProvableStatement(
-                        "",
-                        (
-                            Application("|-"),
-                            conclusion,
-                        ),
-                    ),
-                ),
+        if MetamathUtils.is_top(conclusion):
+            return composer.get_theorem("rule-weakening").apply(
+                composer.get_theorem("top-intro").apply(),
+                ph0=hypothesis,
             )
-
-        conclusion_term, _ = SortingProver.get_in_sort_pair_force(conclusion)
 
         # if the conclusion in one of the essentials
         for essential in composer.get_all_essentials():
@@ -250,6 +237,26 @@ class SortingProver:
                         conclusion,
                     ),
                 )
+
+        # if the conclusion is a \kore-is-sort claims
+        # currently we are assuming that it's directly provable
+        # without any hypothesis
+        if (isinstance(conclusion, Application) and conclusion.symbol == "\\kore-is-sort"):
+            return composer.get_theorem("proof-rule-mp").apply(
+                composer.get_theorem("proof-rule-prop-1").apply(ph0=conclusion, ph1=hypothesis),
+                SortingProver.prove_kore_is_sort(
+                    composer,
+                    ProvableStatement(
+                        "",
+                        (
+                            Application("|-"),
+                            conclusion,
+                        ),
+                    ),
+                ),
+            )
+
+        conclusion_term, _ = SortingProver.get_in_sort_pair_force(conclusion)
 
         assert isinstance(
             conclusion_term, Application

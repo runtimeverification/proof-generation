@@ -324,21 +324,60 @@ class Theorem:
 
         return self.apply(*args, **kwargs)
 
-    def infer_hypotheses(self, *essential_proofs: Union[Proof, AutoProof],
-                         **metavar_substitution: Union[Proof, Term]) -> Tuple[List[Proof], Mapping[str, Term]]:
+    @overload
+    def infer_metavariable_substitution(
+        self,
+        target: Optional[StructuredStatement],
+        essential_proofs: Tuple[Union[Proof, AutoProof], ...],
+        metavar_substitution: Mapping[str, Term],
+    ) -> Mapping[str, Term]:
+        ...
+
+    @overload
+    def infer_metavariable_substitution(
+        self,
+        target: Optional[StructuredStatement],
+        essential_proofs: Tuple[Union[Proof, AutoProof], ...],
+        metavar_substitution: Mapping[str, Union[Proof, Term]],
+    ) -> Mapping[str, Union[Proof, Term]]:
+        ...
+
+    def infer_metavariable_substitution(
+        self,
+        target: Optional[StructuredStatement],
+        essential_proofs: Tuple[Union[Proof, AutoProof], ...],
+        metavar_substitution: Mapping[str, Union[Proof, Term]],
+    ) -> Mapping[str, Union[Proof, Term]]:
         """
-        Infer a list of subproofs for the hypotheses from the information given
+        Infer the metavariable substitution using the given information
         """
-        substitution = {}
-        floating_proofs = []
+        substitution: Dict[str, Union[Proof, Term]] = dict(metavar_substitution)
 
         assert len(essential_proofs) == len(self.context.essentials), (
             "unmatched number of subproofs for "
             "essential statements, expecting {}, {} given".format(len(self.context.essentials), len(essential_proofs))
         )
 
+        if target is not None:
+            match_substitution = Unification.match_statements(self.statement, target)
+            assert match_substitution is not None, \
+                   f"failed to unify the target statement `{target}` and the theorem `{self.statement}`"
+
+            for lhs, rhs in match_substitution:
+                if not isinstance(lhs, Metavariable):
+                    continue
+
+                var = lhs.name
+
+                if var in substitution:
+                    assert self.is_meta_substitution_consistent(substitution[var], rhs), \
+                           f"metavariable assignment to {var} is not consistent: " \
+                           f"`{substitution[var]}` and `{rhs}` are both assigned to it"
+                else:
+                    substitution[var] = rhs
+
         # TODO: check proofs for essential statements
-        for i, (essential, essential_proof) in enumerate(zip(self.context.essentials, essential_proofs)):
+        for essential, essential_proof in zip(self.context.essentials, essential_proofs):
             # auto proofs will be resolved later
             if isinstance(essential_proof, AutoProof):
                 continue
@@ -346,25 +385,39 @@ class Theorem:
             assert isinstance(essential_proof, Proof), f"wrong proof {essential_proof} of {essential}"
 
             solution = Unification.match_lists_of_terms_as_instance(essential.terms, essential_proof.conclusion)
-            assert solution is not None, "`{}` is not an instance of `{}`".format(essential_proof, essential)
+            assert solution is not None, f"`{essential_proof}` is not an instance of `{essential}`"
 
             # check that the unification solution is consistent with
             # the metavariable assignment
             for var, term in solution.items():
-                if var in metavar_substitution:
-                    assert self.is_meta_substitution_consistent(metavar_substitution[var], term), (
-                        "metavariable assignment to {} is not consistent: "
-                        "`{}` and `{}` are both assigned to it".format(var, metavar_substitution[var], term)
-                    )
+                if var in substitution:
+                    assert self.is_meta_substitution_consistent(substitution[var], term), \
+                           f"metavariable assignment to {var} is not consistent: " \
+                           f"`{substitution[var]}` and `{term}` are both assigned to it"
+
                 else:
                     # update metavar_substitution to reflect this assignment
-                    metavar_substitution[var] = term
+                    substitution[var] = term
+
+        return substitution
+
+    def infer_hypothesis_proofs(
+        self,
+        essential_proofs: Tuple[Union[Proof, AutoProof], ...],
+        metavar_substitution: Mapping[str, Union[Proof, Term]],
+    ) -> Tuple[List[Proof], Mapping[str, Term]]:
+        """
+        Infer a list of subproofs for the hypotheses from the information given
+        """
+        metavar_substitution = self.infer_metavariable_substitution(None, essential_proofs, metavar_substitution)
+        substitution: Dict[str, Term] = {}
+        floating_proofs = []
 
         for floating in self.context.floatings:
             typecode = floating.typecode
             var = floating.metavariable
 
-            assert (var in metavar_substitution), "assignment to metavariable `{}` cannot be inferred".format(var)
+            assert var in metavar_substitution, f"assignment to metavariable `{var}` cannot be inferred"
 
             # this can either be a direct proof,
             # or a term, in which case we will try to
@@ -374,30 +427,28 @@ class Theorem:
             if isinstance(metavar_substituted, Term):
                 typecode_proof = TypecodeProver.prove_typecode(self.composer, typecode, metavar_substituted)
 
-                assert typecode_proof is not None, (
-                    "a term `{}` is given for metavariable `{}`, "
-                    "but we couldn't prove that `{} {}`".format(
-                        metavar_substituted, var, typecode, metavar_substituted
-                    )
-                )
+                assert typecode_proof is not None, \
+                       f"a term `{metavar_substituted}` is given for metavariable `{var}`, " \
+                       f"but we couldn't prove that `{typecode} {metavar_substituted}`"
             else:
                 # should be a proof
                 assert isinstance(metavar_substituted, Proof), f"{metavar_substituted} is not a proof"
                 typecode_proof = metavar_substituted
 
             # check that the proof is in the right form (for floating statements)
-            assert (len(typecode_proof.conclusion
-                        ) == 2), "wrong proof for `{} {}`, got {}".format(typecode, var, typecode_proof)
+            assert len(typecode_proof.conclusion) == 2, \
+                   f"wrong proof for `{typecode} {var}`, got {typecode_proof}"
 
             proved_typecode, proved_term = typecode_proof.conclusion
 
-            assert (isinstance(proved_typecode, Application) and proved_typecode.symbol
-                    == typecode), "wrong proof for `{} {}`, got {}".format(typecode, var, typecode_proof)
+            assert isinstance(proved_typecode, Application) and \
+                   proved_typecode.symbol == typecode, \
+                   f"wrong proof for `{typecode} {var}`, got {typecode_proof}"
 
             substitution[var] = proved_term
             floating_proofs.append(typecode_proof)
 
-        # resolve auto proofs
+        # resolve all auto proof
         final_essential_proofs: List[Proof] = []
 
         for i, proof in enumerate(essential_proofs):
@@ -421,7 +472,7 @@ class Theorem:
         - a map from metavariable name -> proof or term (in the latter case we
             will try to prove the typecode automatically)
         """
-        subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
+        subproofs, substitution = self.infer_hypothesis_proofs(essential_proofs, metavar_substitution)
         instance = self.get_conclusion_instance(substitution)
 
         return Proof.from_application(instance, self.statement.label, subproofs)
@@ -435,7 +486,7 @@ class Theorem:
         we can inline the proof in some other proof to remove
         the dependency. However, the proof script will be longer
         """
-        subproofs, substitution = self.infer_hypotheses(*essential_proofs, **metavar_substitution)
+        subproofs, substitution = self.infer_hypothesis_proofs(essential_proofs, metavar_substitution)
 
         hyp_labels = self.context.get_all_mandatory_labels()
         assert len(subproofs) == len(hyp_labels)

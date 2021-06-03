@@ -660,30 +660,41 @@ class MLPattern(Pattern):
     DV = "\\dv"
 
     NUM_ARGUMENTS = {
-        TOP: 0,
-        BOTTOM: 0,
-        NOT: 1,
-        AND: 2,
-        OR: 2,
-        IMPLIES: 2,
-        IFF: 2,
-        EXISTS: 2,
-        FORALL: 2,
-        MU: 2,
-        NU: 2,
-        CEIL: 1,
-        FLOOR: 1,
-        EQUALS: 2,
-        IN: 2,
-        NEXT: 1,
-        REWRITES: 2,
-        REWRITES_STAR: 2,
-        DV: 1,
+        TOP: (1, 0),
+        BOTTOM: (1, 0),
+        NOT: (1, 1),
+        AND: (1, 2),
+        OR: (1, 2),
+        IMPLIES: (1, 2),
+        IFF: (1, 2),
+        EXISTS: (1, 2),
+        FORALL: (1, 2),
+        MU: (1, 2),
+        NU: (1, 2),
+        CEIL: (2, 1),
+        FLOOR: (2, 1),
+        EQUALS: (2, 2),
+        IN: (2, 2),
+        NEXT: (1, 1),
+        REWRITES: (1, 2),
+        REWRITES_STAR: (1, 2),
+        DV: (1, 1),
     }
 
     @staticmethod
+    def get_number_of_sort_arguments_for_construct(construct: str) -> int:
+        return MLPattern.NUM_ARGUMENTS[construct][0]
+
+    @staticmethod
     def get_number_of_arguments_for_construct(construct: str) -> int:
-        return MLPattern.NUM_ARGUMENTS[construct]
+        return MLPattern.NUM_ARGUMENTS[construct][1]
+
+    @staticmethod
+    def is_binder_construct(construct: str) -> bool:
+        return construct == MLPattern.FORALL or \
+               construct == MLPattern.EXISTS or \
+               construct == MLPattern.MU or \
+               construct == MLPattern.NU
 
     def __init__(self, construct: str, sorts: List[Sort], arguments: List[Pattern]):
         super().__init__()
@@ -701,10 +712,7 @@ class MLPattern(Pattern):
             arg.resolve(parent)
 
     def is_binder(self) -> bool:
-        return self.construct == MLPattern.FORALL or \
-               self.construct == MLPattern.EXISTS or \
-               self.construct == MLPattern.MU or \
-               self.construct == MLPattern.NU
+        return MLPattern.is_binder_construct(self.construct)
 
     def get_binding_variable(self) -> Optional[Variable]:
         if self.is_binder():
