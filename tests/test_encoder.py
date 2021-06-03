@@ -5,12 +5,12 @@ import unittest
 import ml.kore.ast as kore
 from ml.kore.utils import KoreUtils
 from ml.kore.parser import parse_pattern, parse_axiom, parse_module
-from ml.rewrite.encoder import KorePatternEncoder
+from ml.rewrite.encoder import KoreEncoder
 
 
-class TestKorePatternEncoder(unittest.TestCase):
+class TestKoreEncoder(unittest.TestCase):
     def setUp(self) -> None:
-        self.encoder = KorePatternEncoder()
+        self.encoder = KoreEncoder()
 
         self.sort_bool_definition = kore.SortDefinition("Bool", [])
         self.sort_list_definition = kore.SortDefinition("List", [kore.SortVariable("S")])
@@ -37,7 +37,7 @@ class TestKorePatternEncoder(unittest.TestCase):
         axiom = parse_axiom(kore_text)
         axiom.resolve(module)
         axiom.set_parent(module)
-        KoreUtils.quantify_all_free_variables_in_axiom(axiom)
+        # KoreUtils.quantify_all_free_variables_in_axiom(axiom)
         self.assertEncodingEqual(axiom, encoding)
 
     def test_element_var_encoding(self) -> None:
@@ -113,23 +113,23 @@ class TestKorePatternEncoder(unittest.TestCase):
         self.assertAxiomEncodingEqual(
             module,
             r"axiom{} \top{Int{}}() []",
-            r"( \kore-valid \kore-sort-Int ( \kore-top \kore-sort-Int ) )",
+            r"( \imp \top ( \kore-valid \kore-sort-Int ( \kore-top \kore-sort-Int ) ) )",
         )
         self.assertAxiomEncodingEqual(
             module,
             r"axiom{S} \top{S}() []",
-            r"( \kore-forall-sort kore-sort-var-S ( \kore-valid kore-sort-var-S ( \kore-top kore-sort-var-S ) ) )",
+            r"( \imp ( \and ( \kore-is-sort kore-sort-var-S ) \top ) ( \kore-valid kore-sort-var-S ( \kore-top kore-sort-var-S ) ) )",
         )
 
         self.assertAxiomEncodingEqual(
             module,
             r"axiom{} X:Int{} []",
-            r"( \kore-valid \kore-sort-Int ( \kore-forall \kore-sort-Int \kore-sort-Int kore-element-var-X kore-element-var-X ) )",
+            r"( \imp ( \and ( \in-sort kore-element-var-X \kore-sort-Int ) \top ) ( \kore-valid \kore-sort-Int kore-element-var-X ) )",
         )
         self.assertAxiomEncodingEqual(
             module,
             r"axiom{S} X:S []",
-            r"( \kore-forall-sort kore-sort-var-S ( \kore-valid kore-sort-var-S ( \kore-forall kore-sort-var-S kore-sort-var-S kore-element-var-X kore-element-var-X ) ) )",
+            r"( \imp ( \and ( \kore-is-sort kore-sort-var-S ) ( \and ( \in-sort kore-element-var-X kore-sort-var-S ) \top ) ) ( \kore-valid kore-sort-var-S kore-element-var-X ) )",
         )
 
     def test_application_encoding(self) -> None:

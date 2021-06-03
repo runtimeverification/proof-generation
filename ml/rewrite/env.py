@@ -172,22 +172,12 @@ class KoreComposer(Composer):
         # been replaced by an unconstrained constant
         self.concretized_variables: Dict[kore.Variable, kore.Application] = {}
 
-        # additional common premise used in apply_kore_lemmas
-        self.default_common_premise: mm.Term = MetamathUtils.construct_top()
-
         self.fresh_label_counter = 0
 
     def get_fresh_label(self, prefix: str) -> str:
         counter = self.fresh_label_counter
         self.fresh_label_counter += 1
         return f"{prefix}-{counter}"
-
-    def load_fresh_claim_placeholder(self, label_prefix: str, claim: Union[kore.Claim, kore.Pattern]) -> ProvableClaim:
-        if isinstance(claim, kore.Claim):
-            return self.load_claim_without_proof(self.get_fresh_label(label_prefix), claim)
-        else:
-            assert isinstance(claim, kore.Pattern)
-            return self.load_claim_without_proof(self.get_fresh_label(label_prefix), self.construct_claim(claim))
 
     def get_concretized_variable(self, variable: kore.Variable) -> Optional[kore.Application]:
         return self.concretized_variables.get(variable)
@@ -412,21 +402,20 @@ class KoreComposer(Composer):
         new_proof = self.load_proof_as_statement(label, provable.proof).as_proof()
         return ProvableClaim(provable.claim, new_proof)
 
-    def load_claim_without_proof(self, label: str, claim: kore.Claim) -> ProvableClaim:
+    def load_fresh_claim_placeholder(self, label_prefix: str, claim: Union[kore.Claim, kore.Pattern]) -> ProvableClaim:
         """
-        Load a claim without proof in the current context
+        Load a claim without proof in the current context, using a fresh label
         """
+        label = self.get_fresh_label(label_prefix)
+
+        if isinstance(claim, kore.Pattern):
+            claim = self.construct_claim(claim)
+
         mm_pattern = self.encode_pattern(claim)
-        proof = Proof.from_script(mm.StructuredStatement("", (mm.Application("|-"), mm_pattern)), "?")
+        proof = Proof.from_script(mm.StructuredStatement("", MetamathUtils.construct_provable(mm_pattern)), "?")
         theorem = self.load_proof_as_statement(label, proof)
 
-        # we need to apply all essentials
-        theorem.as_proof()
-
-        return ProvableClaim(
-            claim,
-            theorem.as_proof(),
-        )
+        return ProvableClaim(claim, theorem.as_proof())
 
     def load_axiom(
         self, axiom: kore.Axiom, label: str, comment: bool = True, provable: bool = False, **kwargs: Any
@@ -1159,7 +1148,7 @@ class KoreComposer(Composer):
         Infer the weakest common premise used in all the proofs given
         We are basically taking the conjunction of all premises
         """
-        common_premise = self.default_common_premise
+        common_premise = MetamathUtils.construct_top()
 
         for provable_claim in provable_claims:
             premise = self.encode_axiom_premise(provable_claim.claim)
@@ -1168,38 +1157,6 @@ class KoreComposer(Composer):
                 common_premise = MetamathUtils.construct_and(premise, common_premise)
 
         return common_premise
-
-    # @contextmanager
-    # def additional_common_premise(self, premise: mm.Term) -> Generator[None, None, None]:
-    #     old_premise = self.default_common_premise
-    #     self.default_common_premise = MetamathUtils.construct_and(premise, self.default_common_premise)
-    #     try:
-    #         yield
-    #     finally:
-    #         self.default_common_premise = old_premise
-
-    # def additional_free_variable(self, variables: Iterable[Union[kore.SortVariable, kore.Variable]]) -> Generator[None, None, None]:
-    #     """
-    #     Add additional free (sort or pattern) variables to all common premises of kore lemmas
-    #     """
-    #     premise = MetamathUtils.construct_top()
-
-    #     for variable in variables:
-    #         if isinstance(variable, kore.SortVariable):
-    #             premise = MetamathUtils.construct_and(
-    #                 MetamathUtils.construct_kore_is_sort(self.encode_pattern(variable)),
-    #                 premise,
-    #             )
-    #         elif isinstance(variable, kore.Variable):
-    #             premise = MetamathUtils.construct_and(
-    #                 MetamathUtils.construct_in_sort(
-    #                     self.encode_pattern(variable),
-    #                     self.encode_pattern(variable.sort),
-    #                 ),
-    #                 premise,
-    #             )
-
-    #     return self.additional_common_premise(premise)
 
     def infer_essential_proofs(
         self,
@@ -1262,15 +1219,6 @@ class KoreComposer(Composer):
         3. We can figure out all the assignment to any metavariable just by looking at non-trivial hypotheses
            and/or the conclusion
         4. If any of the hypotheses/conclusion has a premise (th0), it should be the same metavariable.
-
-        In this case, we:
-        1. check that the conclusion of the theorem is of the expected form
-        and find all hypotheses of this form
-        2. check that enough essential statements are given
-        3. check that we can determine all metavariable assignment given the current info
-        4. find a most general premise th0 (take the conjunction of all premises given in the essential proofs)
-        5. apply the theorem
-        6. weaken the hypotheses in the conclusion to the expected form
         """
 
         theorem = self.get_theorem(theorem_name)
