@@ -7,20 +7,6 @@ $[ theory/kore-predicate.mm $]
 $[ theory/matching-logic-membership.mm $]
 $[ theory/matching-logic-disjointness.mm $]
 
-$( ${
-    $e |- ( \imp th0 ph0 ) $.
-
-    $e |- ( \imp th0 th1 ) $.
-
-    ph3 is a functional pattern in sort ph2
-    $e |- ( \imp th1 ( \kore-valid ph1 ( \kore-exists ph2 ph1 x ( \kore-equals ph2 ph1 x ph3 ) ) ) ) $.
-
-    $e #Substitution ph4 ( \imp th0 ph0 ) ph3 y $.
-
-    $p |- ph4 $.
-$} $)
-
-
 kore-dup-and $p |- ( \imp ( \kore-is-sort x ) ( \kore-valid x ( \kore-equals ph0 x ( \kore-and ph0 ph1 ph1 ) ph1 ) ) ) $= ? $.
 
 ${
@@ -160,50 +146,3 @@ ${
     kore-rewrites-star-branch.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph2 ph4 ) ) ) $.
     kore-rewrites-star-branch   $p |- ( \imp th0  ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ( \kore-or ph0 ph4 ph3 ) ) ) ) $= ? $.
 $}
-
-$( ${
-    $d z ph0 $.
-    $d z ph1 $.
-    $d z ph2 $.
-    $d z ph3 $.
-    $d z ph5 $.
-    $d z x $.
-    kore-equality-h1.0 $e |- ( \imp th0 ( \kore-forall-sort z ( \kore-valid z ( \kore-equals ph0 z ph1 ph2 ) ) ) ) $.
-    kore-equality-h1.1 $e |- ph3 $.
-    kore-equality-h1.2 $e #Substitution ph3 ph4 ph1 x $.
-    kore-equality-h1.3 $e #Substitution ph5 ph4 ph2 x $.
-    kore-equality-h1.4 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
-    kore-equality-h1.5 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
-    kore-equality-h1.6 $e |- ( \kore-is-sort ph0 ) $.
-    kore-equality-h1 $p |- ph5 $= ? $.
-$}
-
-${
-    kore-forall-elim-h1.0 $e |- ( \imp th0 ( \kore-valid ph1 ph2 ) ) $.
-    kore-forall-elim-h1.1 $e |- ( \imp th0 ( \kore-valid ph3 ( \kore-exists ph0 ph3 y ( \kore-equals ph0 ph3 y ph4 ) ) ) ) $.
-    kore-forall-elim-h1.2 $e #Substitution ph5 ph2 ph3 x $.
-    kore-forall-elim-h1.3 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
-    kore-forall-elim-h1.4 $e |- ( \imp th0 ( \in-sort ph4 ph1 ) ) $.
-    kore-forall-elim-h1   $p |- ( \imp th0 ( \kore-valid ph1 ph4 ) ) $= ? $.
-$}
-
-${
-    kore-implies-reflexivity-h1.1 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
-    kore-implies-reflexivity-h1   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph1 ) ) ) $= ? $.
-$}
-
-${
-    $d x ph1 $.
-    
-    $d y ph1 $.
-    $d y x $.
-
-    kore-forall-sort-elim-h1.0 $e |- ( \imp th0 ( \kore-is-sort x ) ) $.
-    kore-forall-sort-elim-h1.1 $e |- ( \imp th3 th2 ) $.
-
-    kore-forall-sort-elim-h1.2 $e |- ( \imp th0 ph0 ) $.
-    kore-forall-sort-elim-h1.3 $e |- ( \kore-is-sort ph1 ) $.
-    kore-forall-sort-elim-h1.4 $e #Substitution ( \imp th2 ph2 ) ( \imp th1 ph0 ) ph1 x $.
-
-    kore-forall-sort-elim-h1 $p |- ( \imp th3 ph2 ) $= ? $.
-$} $)

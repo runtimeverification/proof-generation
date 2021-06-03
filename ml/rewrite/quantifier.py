@@ -24,9 +24,7 @@ class QuantifierProofGenerator(ProofGenerator):
         """
         # TODO: prove this
         substituted_claim = KoreUtils.copy_and_substitute_pattern(provable.claim, substitution, self.composer.module)
-        return self.composer.load_claim_without_proof(
-            self.composer.get_fresh_label("functional-substitution"), substituted_claim
-        )
+        return self.composer.load_fresh_claim_placeholder("functional-substitution", substituted_claim)
 
     def prove_sort_substitution(
         self, provable: ProvableClaim, substitution: Dict[kore.SortVariable, kore.Sort]
@@ -37,9 +35,7 @@ class QuantifierProofGenerator(ProofGenerator):
         """
         # TODO: prove this
         substituted_claim = KoreUtils.copy_and_substitute_sort(provable.claim, substitution, self.composer.module)
-        return self.composer.load_claim_without_proof(
-            self.composer.get_fresh_label("functional-substitution"), substituted_claim
-        )
+        return self.composer.load_fresh_claim_placeholder("functional-substitution", substituted_claim)
 
     # def prove_functional(self, pattern: kore.Pattern) -> ProvableClaim:
     #     ...

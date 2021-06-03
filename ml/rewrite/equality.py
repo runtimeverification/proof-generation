@@ -25,7 +25,7 @@ class EqualityProofGenerator(ProofGenerator):
             sort_variables=list(equation.claim.sort_variables),
         )
 
-        return self.composer.load_claim_without_proof(self.composer.get_fresh_label("symmetry"), new_claim)
+        return self.composer.load_fresh_claim_placeholder("symmetry", new_claim)
 
     def replace_equal_subpattern(
         self,
@@ -47,4 +47,4 @@ class EqualityProofGenerator(ProofGenerator):
 
         new_claim = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, rhs)
 
-        return self.composer.load_claim_without_proof(self.composer.get_fresh_label("equality"), new_claim)
+        return self.composer.load_fresh_claim_placeholder("equality", new_claim)

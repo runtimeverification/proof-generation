@@ -33,7 +33,6 @@ class RewriteProofGenerator(ProofGenerator):
         self.owise_assumption_counter = 0
         self.rewrite_claim_counter = 0
         self.simplification_counter = 0
-        self.smt_obligation_counter = 0
         self.pattern_subsumption_counter = 0
         self.kore_is_predicate_counter = 0
         self.sorting_hypotheses_counter = 0
@@ -92,112 +91,6 @@ class RewriteProofGenerator(ProofGenerator):
 
         return lhs_body, lhs_requires, rhs_body, rhs_ensures
 
-    def rewrite_from_pattern(
-        self,
-        pattern: kore.Pattern,
-        rule_hint: Optional[str] = None,
-        substitution_hints: Optional[Mapping[kore.Variable, kore.Pattern]] = None,
-    ) -> ProvableClaim:
-        """
-        Find and instantiate a rewrite axiom for the given pattern,
-        and then resolve all the functions in the RHS
-        """
-        unification_gen = UnificationProofGenerator(self.composer)
-
-        if rule_hint is not None:
-            assert rule_hint in self.composer.rewrite_axioms, \
-                   f"unable to find axiom with id {rule_hint} in the hint"
-            axioms = [self.composer.rewrite_axioms[rule_hint]]
-        else:
-            axioms = list(self.composer.rewrite_axioms.values())
-
-        for rewrite_axiom in axioms:
-            print(f"> trying axiom {KoreTemplates.get_axiom_unique_id(rewrite_axiom.claim)}")
-            lhs, _, _, _ = self.destruct_rewrite_axiom(rewrite_axiom)
-
-            # apply the substitution hint
-            if substitution_hints is not None:
-                lhs = KoreUtils.copy_and_substitute_pattern(lhs, substitution_hints)
-
-            unification_result = unification_gen.unify_patterns(lhs, pattern)
-            if unification_result is None:
-                continue
-
-            # eliminate all universal quantifiers
-            substitution = unification_result.substitution
-
-            if substitution_hints is not None:
-                substitution = {**substitution, **substitution_hints}
-
-            instantiated_axiom = QuantifierProofGenerator(self.composer).prove_functional_pattern_substitution(
-                rewrite_axiom,
-                substitution,
-            )
-
-            lhs, requires, rhs, ensures = self.destruct_rewrite_axiom(instantiated_axiom)
-            assert requires is not None and ensures is not None
-
-            if not KoreUtils.is_top(ensures):
-                print(f"> warning: non-top ensures clause ignored: {ensures}")
-
-            # trying to prove the requires clause
-            # if failed, continue searching for an axiom
-            requires_proof = self.prove_requires_clause(requires)
-            if requires_proof is None:
-                print(f"failed to prove {requires}")
-                continue
-
-            concrete_rewrite_claim = self.composer.apply_kore_lemma(
-                "kore-rewrites-conditional-concrete",
-                instantiated_axiom,
-                requires_proof,
-            )
-
-            # reconstruct the rewrite pattern in kore
-            # concrete_rewrite = kore.Axiom([], KoreUtils.construct_rewrites(lhs, rhs))
-            # concrete_rewrite.resolve(self.composer.module)
-
-            # concrete_rewrite_claim = ProvableClaim(concrete_rewrite, concrete_rewrite_proof)
-
-            # during unification, we applied some equations
-            # here we resolve these equations so that we would
-            # get a correct left hand side
-            for equation, path in unification_result.applied_equations:
-                print("> applying unification equation", equation)
-                concrete_rewrite_claim = equation.replace_equal_subpattern(concrete_rewrite_claim, [0, 0] + path)
-
-            concrete_rewrite_claim = self.apply_rewrites_star_intro(concrete_rewrite_claim)
-
-            # apply simplification to the rhs of the rewriting claim
-            concrete_rewrite_claim = self.simplify_pattern(concrete_rewrite_claim, [0, 1])
-
-            return concrete_rewrite_claim
-
-        assert False, "unable to find axiom to rewrite `{}`".format(pattern)
-
-    def prove_rewriting_step(
-        self,
-        rewriting_step: RewritingStep,
-    ) -> ProvableClaim:
-        """
-        Prove a single rewriting step
-        """
-        # TODO: this is a hack to load all domain values
-        initial_pattern = rewriting_step.initial.assume_unconstrained()
-
-        self.composer.encode_pattern(initial_pattern)
-
-        assert len(rewriting_step.applied_rules) == 1 and len(rewriting_step.remainders) == 0, \
-               "non-determinism not supported"
-
-        rule = rewriting_step.applied_rules[0]
-
-        return self.rewrite_from_pattern(
-            initial_pattern,
-            rule.rule_id,
-            rule.get_substitution(),
-        )
-
     def check_equal_or_unify(self, given: kore.Pattern, expected: kore.Pattern) -> Optional[ProvableClaim]:
         """
         Check if <given> === <expected> syntactically
@@ -230,71 +123,6 @@ class RewriteProofGenerator(ProofGenerator):
 
         return simplification_claim
 
-    def prove_rewriting_task(
-        self,
-        task: RewritingTask,
-    ) -> ProvableClaim:
-        """
-        Prove a rewriting task which may contain multiple rewrite steps,
-        from the given hints
-        """
-        initial_pattern = task.get_initial_pattern().assume_unconstrained()
-        final_patterns = task.get_final_patterns()
-
-        assert len(final_patterns) == 1, "non-determinism not supported"
-        final_pattern = final_patterns[0].assume_unconstrained()
-
-        # simplify before rewriting
-        print("==================")
-        print("simplifying initial pattern")
-        simplification_claim = self.apply_rewrites_star_reflexivity(initial_pattern)
-        simplification_claim = self.simplify_pattern(simplification_claim, [0, 1])
-        _, _, current_pattern, _ = self.destruct_rewrite_axiom(simplification_claim)
-
-        # if the RHS is already the same as to_pattern, no need to do more
-        if current_pattern == final_pattern:
-            return simplification_claim
-
-        step_claims = [simplification_claim]
-
-        for i, step in enumerate(task.get_all_steps()):
-            print("==================")
-            print("proving rewriting step {}".format(i))
-
-            step_initial = step.initial.assume_unconstrained()
-
-            unification_claim = self.check_equal_or_unify(current_pattern, step_initial)
-            if unification_claim is not None:
-                step_claims.append(unification_claim)
-                _, _, current_pattern, _ = self.destruct_rewrite_axiom(unification_claim)
-
-            step_claim = self.prove_rewriting_step(step)
-            lhs, _, rhs, _ = self.destruct_rewrite_axiom(step_claim)
-
-            assert step_initial == lhs, \
-                   f"unexpected rewriting claim, expected to rewrite from {step_initial}, but got {lhs}"
-
-            self.composer.load_comment(f"\nrewriting step:\n{lhs}\n=>\n{rhs}\n")
-            step_claim = self.composer.load_provable_claim_as_theorem(
-                f"rewrite-step-{self.rewrite_claim_counter}", step_claim
-            )
-            self.rewrite_claim_counter += 1
-
-            step_claims.append(step_claim)
-            current_pattern = rhs
-
-        # unify with the final expected pattern
-        unification_claim = self.check_equal_or_unify(current_pattern, final_pattern)
-        if unification_claim is not None:
-            step_claims.append(unification_claim)
-
-        final_claim = step_claims[0]
-
-        for claim in step_claims[1:]:
-            final_claim = self.apply_rewrites_star_transitivity(final_claim, claim)
-
-        return final_claim
-
     def check_smt_unsat(
         self,
         pattern: kore.Pattern,
@@ -304,10 +132,7 @@ class RewriteProofGenerator(ProofGenerator):
         print("SMT unsat obligation:")
         KoreUtils.pretty_print(claim)
 
-        counter = self.smt_obligation_counter
-        self.smt_obligation_counter += 1
-
-        return self.composer.load_claim_without_proof(f"smt-obligation-counter-{counter}", claim)
+        return self.composer.load_fresh_claim_placeholder("smt-obligation-counter", claim)
 
     def check_smt_implication(
         self,
@@ -338,10 +163,7 @@ class RewriteProofGenerator(ProofGenerator):
         print("SMT proof obligation:")
         KoreUtils.pretty_print(claim.pattern)
 
-        counter = self.smt_obligation_counter
-        self.smt_obligation_counter += 1
-
-        return self.composer.load_claim_without_proof(f"smt-obligation-counter-{counter}", claim)
+        return self.composer.load_fresh_claim_placeholder("smt-obligation-counter", claim)
 
     def prove_trivial_subsumption(
         self,
@@ -435,11 +257,6 @@ class RewriteProofGenerator(ProofGenerator):
         var = kore.Variable(fresh_var, equation_sort)
         var.resolve(self.composer.module)
         template_rhs_term = KoreUtils.copy_and_replace_path_by_pattern_in_pattern(rhs_term, position, var)
-
-        # subst_proof1, new_rhs_term1 = SingleSubstitutionProofGenerator(self.composer, var, equation[0]) \
-        #     .prove_substitution_with_result(template_rhs_term)
-        # subst_proof2, new_rhs_term2 = SingleSubstitutionProofGenerator(self.composer, var, equation[1])\
-        #     .prove_substitution_with_result(template_rhs_term)
 
         new_rhs_term1 = KoreUtils.copy_and_substitute_pattern(template_rhs_term, {var: equation[0]})
         new_rhs_term2 = KoreUtils.copy_and_substitute_pattern(template_rhs_term, {var: equation[1]})
@@ -539,7 +356,7 @@ class RewriteProofGenerator(ProofGenerator):
         """
         Removes the ensure clause from a rewrite claim
         """
-        lhs, _, rhs, ensures = self.destruct_rewrite_axiom(rewrite_claim, separate_lhs=False)
+        _, _, _, ensures = self.destruct_rewrite_axiom(rewrite_claim, separate_lhs=False)
         assert ensures is not None
 
         if not KoreUtils.is_top(ensures):
@@ -691,45 +508,7 @@ class RewriteProofGenerator(ProofGenerator):
             simplification2,
         )
 
-        # print(claim.claim)
-        # print(ConstrainedPattern(initial.pattern, final.constraint).as_pattern())
-        # print(final.as_pattern())
-
-        # assert claim.claim.pattern == self.composer.construct_claim(KoreUtils.construct_rewrites(
-        #     ConstrainedPattern(initial.pattern, final.constraint).as_pattern(),
-        #     final.as_pattern(),
-        # )).pattern
-
         return claim
-        # return self.composer.construct_provable_claim(
-        #     pattern=KoreUtils.construct_rewrites(
-        #         ConstrainedPattern(initial.pattern, final.constraint).as_pattern(),
-        #         final.as_pattern(),
-        #     ),
-        #     proof=proof,
-        # )
-
-    # def add_free_variable_sorting_hypotheses(
-    #     self,
-    #     pattern: kore.Pattern,
-    # ) -> None:
-    #     """
-    #     Add the sorting hypotheses of all free variables in the given constrained pattern
-    #     """
-    #     free_variables = KoreUtils.get_free_variables(pattern)
-
-    #     counter = self.sorting_hypotheses_counter
-    #     self.sorting_hypotheses_counter += 1
-
-    #     for i, free_var in enumerate(free_variables):
-    #         encoded_free_var = self.composer.encode_pattern(free_var)
-    #         encoded_free_var_sort = self.composer.encode_pattern(free_var.sort)
-
-    #         sorting_statement = mm.EssentialStatement(
-    #             f"symbolic-sorting-{counter}-{i}",
-    #             (mm.Application("|-"), mm.Application("\\in-sort", (encoded_free_var, encoded_free_var_sort))),
-    #         )
-    #         self.composer.load(sorting_statement)
 
     def combine_branches(
         self,
@@ -768,11 +547,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         initial_pattern = step.get_initial_pattern()
 
-        # with self.composer.new_context():
         # TODO: maybe we need to change the free variable name to avoid conflict
-        # self.add_free_variable_sorting_hypotheses(initial_pattern.as_pattern())
-
-        # with self.composer.additional_free_variable(KoreUtils.get_free_variables(initial_pattern.as_pattern())):
 
         assert len(step.applied_rules) != 0
         branches = [self.prove_symbolic_branch(initial_pattern, applied_rule) for applied_rule in step.applied_rules]
@@ -826,8 +601,8 @@ class RewriteProofGenerator(ProofGenerator):
         (order of disjunctions may not be exactly like this)
         """
 
-        lhs1, rhs1 = KoreUtils.destruct_rewrites_star(step1.claim.pattern)
-        lhs2, rhs2 = KoreUtils.destruct_rewrites_star(step2.claim.pattern)
+        _, rhs1 = KoreUtils.destruct_rewrites_star(step1.claim.pattern)
+        lhs2, _ = KoreUtils.destruct_rewrites_star(step2.claim.pattern)
         lhs2_constraint, lhs2_term = KoreUtils.destruct_and(lhs2)
 
         branches1 = KoreUtils.destruct_nested_or(rhs1)
@@ -859,7 +634,6 @@ class RewriteProofGenerator(ProofGenerator):
         prop_gen = PropositionalProofGenerator(self.composer)
 
         rhs1_shuffle = prop_gen.apply_iff_elim_left(prop_gen.shuffle_nested(kore.MLPattern.OR, rhs1, lhs2_index))
-        _, shuffled_rhs1 = KoreUtils.destruct_implies(rhs1_shuffle.claim.pattern)
 
         step1 = self.composer.apply_kore_lemma(
             "kore-rewrites-star-subsumption-rhs",
@@ -898,7 +672,7 @@ class RewriteProofGenerator(ProofGenerator):
                 applied_rule.results = tuple(simplified_results)
 
     def match_with_final_results(self, task: RewritingTask, claim: ProvableClaim, start_from: int = 0) -> ProvableClaim:
-        lhs, rhs = KoreUtils.destruct_rewrites_star(claim.claim.pattern)
+        _, rhs = KoreUtils.destruct_rewrites_star(claim.claim.pattern)
         branches = KoreUtils.destruct_nested_or(rhs)
 
         unification_gen = UnificationProofGenerator(self.composer)
@@ -923,8 +697,6 @@ class RewriteProofGenerator(ProofGenerator):
 
                 constraint_unsat = self.check_smt_unsat(branch_constraint)
                 rhs_shuffle = prop_gen.apply_iff_elim_left(prop_gen.shuffle_nested(kore.MLPattern.OR, rhs, i))
-                _, shuffled_rhs = KoreUtils.destruct_implies(rhs_shuffle.claim.pattern)
-                _, rest = KoreUtils.destruct_or(shuffled_rhs)
 
                 # connect with the existing claim
                 claim = self.composer.apply_kore_lemma(
@@ -1003,16 +775,7 @@ class RewriteProofGenerator(ProofGenerator):
         """
         Connect two rewrite-star claims
         """
-        # lhs1, rhs1 = KoreUtils.destruct_rewrites_star(step1.claim.pattern)
-        # lhs2, rhs2 = KoreUtils.destruct_rewrites_star(step2.claim.pattern)
-        # assert rhs1 == lhs2, "unable to apply transitivity"
-
         return self.composer.apply_kore_lemma("kore-rewrites-star-transitivity", step1, step2)
-
-        # return self.composer.construct_provable_claim(
-        #     pattern=KoreUtils.construct_rewrites_star(lhs1, rhs2),
-        #     proof=self.composer.apply_kore_lemma("kore-rewrites-star-transitivity", step1, step2),
-        # )
 
     def destruct_anywhere_axiom(
         self,
@@ -1257,24 +1020,12 @@ class RewriteProofGenerator(ProofGenerator):
             requires_proof,
             instantiated_axiom,
         )
-        # assert isinstance(instantiated_axiom.claim.pattern, kore.MLPattern)
-        # instantiated_axiom = self.composer.construct_provable_claim(
-        #     sort_variables=instantiated_axiom.claim.sort_variables,
-        #     pattern=instantiated_axiom.claim.pattern.arguments[1],
-        #     proof=removed_requires,
-        # )
 
         # now we have a conjunction and{R}(<equation>, <ensures>)
         # since we assumed ensures is top, we can remove it as well
         # that is, from \and{R}(<equation>, top)
         # we can get <equation>
         instantiated_axiom = self.composer.apply_kore_lemma("kore-anp-top", instantiated_axiom)
-        # assert isinstance(instantiated_axiom.claim.pattern, kore.MLPattern)
-        # instantiated_axiom = self.composer.construct_provable_claim(
-        #     sort_variables=instantiated_axiom.claim.sort_variables,
-        #     pattern=instantiated_axiom.claim.pattern.arguments[0],
-        #     proof=and_eliminated,
-        # )
 
         return instantiated_axiom
 
