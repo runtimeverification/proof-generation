@@ -2,15 +2,64 @@ from typing import List, Optional, Tuple
 
 from ..ast import Metavariable, Term, Application, StructuredStatement, ProvableStatement
 from ..composer import Composer, Theorem, MethodAutoProof, TypecodeProver, Proof
+from ..utils import MetamathUtils
 
 from .notation import NotationProver
 from .unification import Unification
 
 
 class SubstitutionProver:
-    """
-    TODO: subsitution of patterns with \\exists and \\mu is not supported yet
-    """
+    # @staticmethod
+    # def substitute_expanded(
+    #     composer: Composer,
+    #     before_pattern: Term,
+    #     subst_pattern: Term,
+    #     subst_var: Metavariable,
+    # ) -> Term:
+    #     if isinstance(before_pattern, Metavariable):
+    #         if subst_var == before_pattern:
+    #             return subst_pattern
+    #         else:
+    #             return before_pattern
+
+    #     assert isinstance(before_pattern, Application)
+
+    #     if MetamathUtils.is_exists(before_pattern):
+    #         var, body = MetamathUtils.destruct_exists(before_pattern)
+    #         if var == subst_var:
+    #             return before_pattern
+    #         else:
+    #             substituted_body = SubstitutionProver.substitute_expanded(composer, body, subst_pattern, subst_var)
+    #             return MetamathUtils.construct_exists(var, substituted_body)
+
+    #     elif MetamathUtils.is_mu(before_pattern):
+    #         var, body = MetamathUtils.destruct_mu(before_pattern)
+    #         if var == subst_var:
+    #             return before_pattern
+    #         else:
+    #             substituted_body = SubstitutionProver.substitute_expanded(composer, body, subst_pattern, subst_var)
+    #             return MetamathUtils.construct_mu(var, substituted_body)
+
+    #     else:
+    #         substituted_subterms = []
+    #         for subterm in before_pattern.subterms:
+    #             substituted_subterms.append(SubstitutionProver.substitute_expanded(composer, subterm, subst_pattern, subst_var))
+
+    #         return Application(before_pattern.symbol, tuple(substituted_subterms))
+
+    # @staticmethod
+    # def substitute(
+    #     composer: Composer,
+    #     before_pattern: Term,
+    #     subst_pattern: Term,
+    #     subst_var: Metavariable,
+    # ) -> Term:
+    #     """
+    #     Compute the result of substitution
+    #     """
+    #     expanded_before_pattern = NotationProver.expand_sugar(composer, before_pattern)
+    #     return SubstitutionProver.substitute_expanded(composer, expanded_before_pattern, subst_pattern, subst_var)
+
     @staticmethod
     def get_target(
         after_pattern: Term,
@@ -112,7 +161,7 @@ class SubstitutionProver:
                 if binding_var == subst_var and after_pattern == before_pattern:
                     return composer.get_theorem(shadowed_axiom).match_and_apply(target)
 
-                elif binding_var != subst_var and composer.are_terms_disjoint(binding_var, subst_var):
+                elif binding_var != subst_var:  # and composer.are_terms_disjoint(binding_var, subst_var):
                     body_subst = SubstitutionProver.prove_desugared_substitution(
                         composer,
                         after_pattern.subterms[1],
@@ -135,20 +184,16 @@ class SubstitutionProver:
         assert (False), f"unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}"
 
     @staticmethod
-    def prove_substitution(
+    def prove_substitution_using_lemmas(
         composer: Composer,
         after_pattern: Term,
         before_pattern: Term,
         subst_pattern: Term,
         subst_var: Metavariable,
         hypotheses: List[Theorem] = [],
-    ) -> Proof:
+    ) -> Optional[Proof]:
         """
-        Prove statement of the form
-        #Substitution ph0 ph1 ph2 xX
-        where ph0 is the result of substituting ph2 for xX in ph1
-
-        Notations are also considered
+        Try to prove the substitution using an existing lemma
         """
 
         # if the heads are the same and there exists a substitution for the head symbol
@@ -166,7 +211,7 @@ class SubstitutionProver:
                 if instantiation is None:
                     continue
 
-                failed = True
+                failed = False
                 subgoals: List[Tuple[Term, Term, Term, Metavariable]
                                ] = ([])  # list of tuples (after_pattern, before_pattern, subst_pattern, subst_var)
 
@@ -198,7 +243,7 @@ class SubstitutionProver:
                             )
                             continue
 
-                    failed = False
+                    failed = True
                     break
 
                 if failed:
@@ -218,6 +263,36 @@ class SubstitutionProver:
                     continue
 
                 return theorem.match_and_apply(target, *subproofs)
+
+        return None
+
+    @staticmethod
+    def prove_substitution(
+        composer: Composer,
+        after_pattern: Term,
+        before_pattern: Term,
+        subst_pattern: Term,
+        subst_var: Metavariable,
+        hypotheses: List[Theorem] = [],
+    ) -> Proof:
+        """
+        Prove statement of the form
+        #Substitution ph0 ph1 ph2 xX
+        where ph0 is the result of substituting ph2 for xX in ph1
+
+        Notations are also considered
+        """
+
+        proof = SubstitutionProver.prove_substitution_using_lemmas(
+            composer,
+            after_pattern,
+            before_pattern,
+            subst_pattern,
+            subst_var,
+            hypotheses,
+        )
+        if proof is not None:
+            return proof
 
         # otherwise fall back to the default prover
 

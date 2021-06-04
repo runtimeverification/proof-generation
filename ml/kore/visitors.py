@@ -390,8 +390,10 @@ class SortSubstitutionVisitor(KoreVisitor[BaseASTT, BaseASTT], PatternAndSortVis
 
         for substitute in self.substitution.values():
             for free_sort_var in SortVariableVisitor().visit(substitute):
-                assert free_sort_var in new_sort_variables, \
-                       f"free sort variable {free_sort_var} after substitution"
+                # assert free_sort_var in new_sort_variables, \
+                #        f"free sort variable {free_sort_var} after substitution"
+                if free_sort_var not in new_sort_variables:
+                    new_sort_variables.append(free_sort_var)
 
         axiom.sort_variables = new_sort_variables
         return axiom

@@ -119,8 +119,10 @@ class DuplicateConjunction(Equation):
             sort_variables=[sort_var],
         )
 
-        # TODO: prove this
-        provable_equality = self.composer.load_fresh_claim_placeholder("dup-and", equality)
+        provable_equality = self.composer.apply_kore_lemma(
+            "kore-dup-and",
+            goal=equality,
+        )
 
         eq_proof_gen = EqualityProofGenerator(self.composer)
 

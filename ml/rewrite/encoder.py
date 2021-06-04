@@ -79,6 +79,9 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         else:
             sort_id = sort.get_sort_id()
 
+        if sort_id == "Unit":
+            return "\\unit-sort"
+
         return "\\kore-sort-" + sort_id
 
     @staticmethod
@@ -102,11 +105,14 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         self.constant_symbols: Dict[str, int] = {}  # symbol -> arity
         self.domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]] = set()  # set of (sort, string literal)
 
-    def encode_axiom_premise(self, axiom: kore.Axiom) -> mm.Term:
+    def encode_free_variable_premise(self, ast: Union[kore.Axiom, kore.Pattern]) -> mm.Term:
         premise = MetamathUtils.construct_top()
 
-        free_vars = list(KoreUtils.get_free_variables(axiom))
+        free_vars = list(KoreUtils.get_free_variables(ast))
         free_vars.sort(key=lambda var: var.name, reverse=True)
+
+        free_sort_vars = list(KoreUtils.get_free_sort_variables(ast))
+        free_sort_vars.sort(key=lambda var: var.name, reverse=True)
 
         # add sorting hypotheses for all free variables
         for var in free_vars:
@@ -118,7 +124,7 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
             )
 
         # add sorting hypotheses for all sort variables
-        for sort_var in axiom.sort_variables[::-1]:
+        for sort_var in free_sort_vars:
             encoded_sort_var = self.visit(sort_var)
             premise = MetamathUtils.construct_and(
                 MetamathUtils.construct_kore_is_sort(encoded_sort_var),
@@ -133,7 +139,7 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         encoded_sort = self.visit(sort)
 
         body = mm.Application(KoreEncoder.VALID, (encoded_sort, body))
-        premise = self.encode_axiom_premise(axiom)
+        premise = self.encode_free_variable_premise(axiom)
 
         return MetamathUtils.construct_imp(premise, body)
 
@@ -326,10 +332,14 @@ class KoreDecoder:
                    f"unable to decode {term} as a sort"
             return kore.SortVariable(term.name[len("kore-sort-var-"):])
 
-        assert isinstance(term, mm.Application), f"what {type(term)}"
-        assert term.symbol.startswith("\\kore-sort-"), \
-                f"unable to decode {term} as a sort"
-        sort_id = term.symbol[len("\\kore-sort-"):]
+        assert isinstance(term, mm.Application)
+
+        if term.symbol == "\\unit-sort":
+            sort_id = "Unit"
+        else:
+            assert term.symbol.startswith("\\kore-sort-"), \
+                    f"unable to decode {term} as a sort"
+            sort_id = term.symbol[len("\\kore-sort-"):]
 
         sort_definition = self.module.get_sort_by_id(sort_id)
         assert sort_definition is not None, \

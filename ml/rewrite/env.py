@@ -168,65 +168,12 @@ class KoreComposer(Composer):
         self.string_literals: Set[kore.StringLiteral] = set()
         self.domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]] = set()
 
-        # a free variable is said to be concretized if it's
-        # been replaced by an unconstrained constant
-        self.concretized_variables: Dict[kore.Variable, kore.Application] = {}
-
         self.fresh_label_counter = 0
 
     def get_fresh_label(self, prefix: str) -> str:
         counter = self.fresh_label_counter
         self.fresh_label_counter += 1
         return f"{prefix}-{counter}"
-
-    def get_concretized_variable(self, variable: kore.Variable) -> Optional[kore.Application]:
-        return self.concretized_variables.get(variable)
-
-    def has_concretized_variable(self, pattern: kore.Pattern) -> bool:
-        """
-        Test if a concretized variable is present in pattern
-        """
-        return ApplicationSubpatternTester(tuple(self.concretized_variables.values())).visit(pattern)
-
-    def add_concretized_variable(self, variable: kore.Variable) -> kore.Application:
-        """
-        Record that a variable is concretized as a constant
-        """
-
-        with self.in_segment("concretization"):
-            assert variable not in self.concretized_variables, \
-                f"duplicated concretized variable {variable}"
-
-            symbol_name = f"concretized-variable-{self.sanitize_label_name(variable.name)}"
-
-            symbol_definition = kore.SymbolDefinition(symbol_name, [], [], variable.sort, ())
-            symbol_definition.resolve(self.module)
-            self.module.add_sentence(symbol_definition)
-
-            symbol_instance = kore.SymbolInstance(symbol_definition, [])
-            application = kore.Application(symbol_instance, [])
-
-            self.concretized_variables[variable] = application
-
-            encoded_name = KoreEncoder.encode_symbol(symbol_name)
-
-            self.load_constant(encoded_name, 0, symbol_name)
-            self.load_symbol_sorting_lemma(symbol_definition, symbol_name)
-
-            # generate functional axiom
-            var = kore.Variable("x", variable.sort)
-            sort_var = kore.SortVariable("R")
-
-            axiom = kore.Axiom(
-                [sort_var], KoreUtils.construct_exists(var, KoreUtils.construct_equals(sort_var, var, application))
-            )
-            axiom.resolve(self.module)
-            self.module.add_sentence(axiom)
-
-            theorem = self.load_axiom(axiom, f"{symbol_name}-functional-axiom")
-            self.functional_axioms[symbol_instance] = ProvableClaim(axiom, theorem.as_proof())
-
-            return application
 
     def load_module(self, module: kore.Module) -> None:
         self.module = module
@@ -235,6 +182,16 @@ class KoreComposer(Composer):
         self.load_module_sentences(module)
         self.load_axioms_for_injection()
         self.load_sort_constructor_axioms()
+        self.load_unit_sort()
+
+    def load_unit_sort(self) -> None:
+        """
+        Add a distinguished sort called "Unit" for later convenience
+        (when instantiating sort parametric axioms)
+        """
+        sort_definition = kore.SortDefinition("Unit", [])
+        self.module.add_sentence(sort_definition)
+        self.unit_sort = kore.SortInstance(sort_definition, [])
 
     def load_axioms_for_injection(self) -> None:
         if "INJ" not in self.loaded_modules:
@@ -384,13 +341,21 @@ class KoreComposer(Composer):
 
     def construct_provable_claim(
         self,
-        pattern: kore.Pattern,
+        claim: Union[kore.Pattern, kore.Claim],
         proof: Proof,
-        sort_variables: Optional[List[kore.SortVariable]] = None
+        sort_variables: Optional[List[kore.SortVariable]] = None,
+        cache_key: Optional[str] = None,
     ) -> ProvableClaim:
-        claim = self.construct_claim(pattern, sort_variables)
+        if isinstance(claim, kore.Pattern):
+            claim = self.construct_claim(claim, sort_variables)
+
         sorting_premise, _ = MetamathUtils.destruct_imp(self.encode_pattern(claim))
-        return ProvableClaim(claim, self.rearrange_sorting_premise(sorting_premise, proof))
+        proof = self.rearrange_sorting_premise(sorting_premise, proof)
+
+        if cache_key is not None:
+            proof = self.cache_proof(cache_key, proof)
+
+        return ProvableClaim(claim, proof)
 
     def load_comment(self, comment: str, **kwargs: Any) -> None:
         self.load(mm.Comment(comment), **kwargs)
@@ -884,7 +849,8 @@ class KoreComposer(Composer):
         """
 
         if typecode == "#ElementVariable":
-            return {0: "x", 1: "y", 2: "z", 3: "w"}.get(n, f"x{n}")
+            return f"x{n}"
+            # return {0: "x", 1: "y", 2: "z", 3: "w"}.get(n, f"x{n}")
         elif typecode == "#Variable":
             return {0: "xX", 1: "yY", 2: "zZ", 3: "wW"}.get(n, f"xX{n}")
         elif typecode == "#Pattern":

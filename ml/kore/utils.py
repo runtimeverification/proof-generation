@@ -479,6 +479,19 @@ class KoreUtils:
         return KoreUtils.destruct_ml_pattern(MLPattern.IN, pattern)
 
     @staticmethod
+    def destruct_exists(pattern: Pattern) -> Tuple[Variable, Pattern]:
+        var, body = KoreUtils.destruct_ml_pattern(MLPattern.EXISTS, pattern)
+        assert isinstance(var, Variable)
+        return var, body
+
+    @staticmethod
+    def destruct_dv(pattern: Pattern) -> Tuple[Sort, StringLiteral]:
+        value, = KoreUtils.destruct_ml_pattern(MLPattern.DV, pattern)
+        assert isinstance(pattern, MLPattern) and isinstance(value, StringLiteral)
+        sort, = pattern.sorts
+        return sort, value
+
+    @staticmethod
     def is_top(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.TOP
 
@@ -501,6 +514,10 @@ class KoreUtils:
     @staticmethod
     def is_rewrites_star(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.REWRITES_STAR
+
+    @staticmethod
+    def is_dv(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.DV
 
     @staticmethod
     def destruct_nested_ml_pattern(construct: str, pattern: Pattern) -> Tuple[Pattern, ...]:
