@@ -17,15 +17,7 @@ from .substitution import SingleSubstitutionProofGenerator
 
 class EqualityProofGenerator(ProofGenerator):
     def apply_symmetry(self, equation: ProvableClaim) -> ProvableClaim:
-        lhs, rhs = KoreUtils.destruct_equals(equation.claim.pattern)
-        output_sort = KoreUtils.infer_sort(equation.claim.pattern)
-
-        new_claim = self.composer.construct_claim(
-            KoreUtils.construct_equals(output_sort, rhs, lhs),
-            sort_variables=list(equation.claim.sort_variables),
-        )
-
-        return self.composer.load_fresh_claim_placeholder("symmetry", new_claim)
+        return self.composer.apply_kore_lemma("kore-equals-symmetry", equation)
 
     def replace_equal_subpattern(
         self,

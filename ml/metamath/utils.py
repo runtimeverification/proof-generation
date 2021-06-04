@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Sequence
 
 from .ast import *
 
@@ -9,8 +9,16 @@ class MetamathUtils:
         return Application("\\top")
 
     @staticmethod
+    def construct_bot() -> Term:
+        return Application("\\bot")
+
+    @staticmethod
     def construct_and(left: Term, right: Term) -> Term:
         return Application("\\and", (left, right))
+
+    @staticmethod
+    def construct_or(left: Term, right: Term) -> Term:
+        return Application("\\or", (left, right))
 
     @staticmethod
     def construct_imp(left: Term, right: Term) -> Term:
@@ -34,6 +42,14 @@ class MetamathUtils:
         return (Application("|-"), term)
 
     @staticmethod
+    def construct_exists(var: Metavariable, term: Term) -> Term:
+        return Application("\\exists", (var, term))
+
+    @staticmethod
+    def construct_mu(var: Metavariable, term: Term) -> Term:
+        return Application("\\mu", (var, term))
+
+    @staticmethod
     def construct_substitution(after: Term, before: Term, substitute: Term, variable: Term) -> Terms:
         assert isinstance(variable, Metavariable)
         return (
@@ -43,6 +59,20 @@ class MetamathUtils:
             substitute,
             variable,
         )
+
+    @staticmethod
+    def construct_multi_and(terms: Sequence[Term]) -> Term:
+        if len(terms) == 0:
+            return MetamathUtils.construct_top()
+        else:
+            return MetamathUtils.construct_and(terms[0], MetamathUtils.construct_multi_and(terms[1:]))
+
+    @staticmethod
+    def construct_multi_or(terms: Sequence[Term]) -> Term:
+        if len(terms) == 0:
+            return MetamathUtils.construct_bot()
+        else:
+            return MetamathUtils.construct_or(terms[0], MetamathUtils.construct_multi_or(terms[1:]))
 
     @staticmethod
     def destruct_metamath_application(symbol: str, num_args: int, term: Term) -> Terms:
@@ -58,6 +88,24 @@ class MetamathUtils:
     @staticmethod
     def destruct_and(term: Term) -> Terms:
         return MetamathUtils.destruct_metamath_application("\\and", 2, term)
+
+    @staticmethod
+    def destruct_eq(term: Term) -> Terms:
+        return MetamathUtils.destruct_metamath_application("\\eq", 2, term)
+
+    @staticmethod
+    def destruct_exists(term: Term) -> Tuple[Metavariable, Term]:
+        var, body = MetamathUtils.destruct_metamath_application("\\exists", 2, term)
+        assert isinstance(var, Metavariable), \
+               f"expecting {var} to be a metavariable"
+        return var, body
+
+    @staticmethod
+    def destruct_mu(term: Term) -> Tuple[Metavariable, Term]:
+        var, body = MetamathUtils.destruct_metamath_application("\\mu", 2, term)
+        assert isinstance(var, Metavariable), \
+               f"expecting {var} to be a metavariable"
+        return var, body
 
     @staticmethod
     def destruct_provable(terms: Terms) -> Term:
@@ -93,5 +141,33 @@ class MetamathUtils:
         return MetamathUtils.is_application_of_symbol("\\kore-valid", 2, term)
 
     @staticmethod
+    def is_kore_is_sort(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\kore-is-sort", 1, term)
+
+    @staticmethod
     def is_in_sort(term: Term) -> bool:
         return MetamathUtils.is_application_of_symbol("\\kore-valid", 2, term)
+
+    @staticmethod
+    def is_exists(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\exists", 2, term)
+
+    @staticmethod
+    def is_mu(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\mu", 2, term)
+
+    @staticmethod
+    def destruct_nested(symbol: str, term: Term) -> Tuple[Term, ...]:
+        if isinstance(term, Application) and term.symbol == symbol:
+            left, right = term.subterms
+            return MetamathUtils.destruct_nested(symbol, left) + MetamathUtils.destruct_nested(symbol, right)
+        else:
+            return term,
+
+    @staticmethod
+    def destruct_nested_and(term: Term) -> Tuple[Term, ...]:
+        return MetamathUtils.destruct_nested("\\and", term)
+
+    @staticmethod
+    def destruct_nested_or(term: Term) -> Tuple[Term, ...]:
+        return MetamathUtils.destruct_nested("\\or", term)

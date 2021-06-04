@@ -539,7 +539,7 @@ class RewriteProofGenerator(ProofGenerator):
         self,
         step_index: int,
         step: RewritingStep,
-    ) -> Tuple[ProvableClaim, Theorem]:
+    ) -> ProvableClaim:
         """
         Prove that the initial pattern in the step
         rewrites to the union of all final patterns
@@ -589,7 +589,7 @@ class RewriteProofGenerator(ProofGenerator):
         final_claim = self.apply_rewrites_star_transitivity(simplification_claim, step_claim)
         final_claim = self.composer.load_provable_claim_as_theorem(theorem_name, final_claim)
 
-        return final_claim, self.composer.get_theorem(theorem_name)
+        return final_claim
 
     def connect_symbolic_steps(self, step1: ProvableClaim, step2: ProvableClaim) -> ProvableClaim:
         r"""
@@ -635,14 +635,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         rhs1_shuffle = prop_gen.apply_iff_elim_left(prop_gen.shuffle_nested(kore.MLPattern.OR, rhs1, lhs2_index))
 
-        step1 = self.composer.apply_kore_lemma(
-            "kore-rewrites-star-subsumption-rhs",
-            step1,
-            rhs1_shuffle,
-        )
-
-        # since we assumed we have at least 2 branches
-        # _, other_branches = KoreUtils.destruct_or(shuffled_rhs1)
+        step1 = self.composer.apply_kore_lemma("kore-rewrites-star-subsumption-rhs", step1, rhs1_shuffle)
 
         return self.composer.apply_kore_lemma("kore-rewrites-star-branch", step1, step2)
 
@@ -723,13 +716,11 @@ class RewriteProofGenerator(ProofGenerator):
         self.preprocess_task(task)
 
         step_claims = []
-        step_theorems = []
 
         for i, step in enumerate(task.steps):
             print(f"######## symbolic step {i} ########")
-            claim, theorem = self.prove_symbolic_step(i, step)
+            claim = self.prove_symbolic_step(i, step)
             step_claims.append(claim)
-            step_theorems.append(theorem)
 
         # TODO: not using task.initial and task.final yet
 
@@ -745,10 +736,7 @@ class RewriteProofGenerator(ProofGenerator):
         final_claim = self.apply_rewrites_star_reflexivity(initial_pattern)
         final_claim = self.simplify_pattern(final_claim, [0, 1])
 
-        # we need to replace the sorting essentials with the new ones present in the current context
-        claims = [ProvableClaim(claim.claim, theorem.as_proof()) for claim, theorem in zip(step_claims, step_theorems)]
-
-        for i, claim in enumerate(claims):
+        for i, claim in enumerate(step_claims):
             print(f"######## connecting symbolic step {i} ########")
             final_claim = self.connect_symbolic_steps(final_claim, claim)
 
@@ -1016,7 +1004,7 @@ class RewriteProofGenerator(ProofGenerator):
             return None
 
         instantiated_axiom = self.composer.apply_kore_lemma(
-            "kore-mp",
+            "kore-mp-alt",
             requires_proof,
             instantiated_axiom,
         )
@@ -1234,8 +1222,7 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
             # (unless it's an initializer)
             # TODO: slightly hacky
 
-            is_symbolic = len(KoreUtils.get_free_variables(application)) != 0 or \
-                          self.composer.has_concretized_variable(application)
+            is_symbolic = len(KoreUtils.get_free_variables(application)) != 0
 
             if symbol_name not in InnermostFunctionPathVisitor.SYMBOLIC_FUNCTIONS and \
                is_symbolic and \
