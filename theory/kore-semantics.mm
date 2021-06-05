@@ -273,10 +273,10 @@ $}
 ${
     $d x ph0 $.
     $d x ph1 $.
-    kore-semantics-equals $p |-
-        ( \imp ( \and ( \in-sort ph2 ph0 ) ( \in-sort ph3 ph0 ) )
-        ( \eq  ( \kore-equals ph0 ph1 ph2 ph3 )
-               ( \and ( \eq ph2 ph3 ) ( \inh ph1 ) ) ) )
+    kore-semantics-equals $p
+        |- ( \imp ( \and ( \in-sort ph2 ph0 ) ( \in-sort ph3 ph0 ) )
+                  ( \eq  ( \kore-equals ph0 ph1 ph2 ph3 )
+                         ( \and ( \eq ph2 ph3 ) ( \inh ph1 ) ) ) )
     $=
         $(
             apply "rule-eq-transitivity-hyp"

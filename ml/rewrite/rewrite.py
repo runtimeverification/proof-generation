@@ -15,7 +15,6 @@ from .encoder import KoreEncoder
 
 from .env import KoreComposer, ProofGenerator, ProvableClaim
 from .equality import EqualityProofGenerator
-from .quantifier import QuantifierProofGenerator
 from .unification import UnificationProofGenerator, InjectionCombine, UnificationResult, AdditionalEquation
 from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
@@ -454,7 +453,7 @@ class RewriteProofGenerator(ProofGenerator):
         assert lhs_unification_result is not None, \
                f"unable to unify the LHS of {applied_rule.rule_id} with the initial pattern {initial.pattern}"
 
-        instantiated_axiom = QuantifierProofGenerator(self.composer).prove_functional_pattern_substitution(
+        instantiated_axiom = EqualityProofGenerator(self.composer).prove_functional_pattern_substitution(
             rewrite_axiom,
             {
                 **rule_substitution.substitution,
@@ -983,7 +982,7 @@ class RewriteProofGenerator(ProofGenerator):
             return None
 
         # eliminate all universal quantifiers
-        instantiated_axiom = QuantifierProofGenerator(self.composer) \
+        instantiated_axiom = EqualityProofGenerator(self.composer) \
             .prove_functional_pattern_substitution(axiom, unification_result.substitution)
 
         # apply equations used in unification

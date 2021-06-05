@@ -2664,3 +2664,24 @@ ${
         $)
         ( element-var-is-var var-is-pattern in-sort-is-pattern and-is-pattern exists-is-pattern sorted-exists-is-pattern imp-is-pattern sorted-exists-is-sugar notation-reflexivity notation-symmetry notation-transitivity imp-reflexivity rule-imp-compat-in-and lemma-imp-compat-in-exists notation-imp notation-proof ) DFGCHAIDJDFGCHBIDJLCADKCBDKLDFGCHAIDFGCHBIDDFGCHDFGCHABDFGCHQERSCADKCBDKDFGCHAIDJDFGCHBIDJCADKDFGCHAIDJDFGCHAIDJCADMDFGCHAIDJDFGCHAIDJDFGCHAIDJNOPCBDKDFGCHBIDJDFGCHBIDJCBDMDFGCHBIDJDFGCHBIDJDFGCHBIDJNOPTUA $.
 $}
+
+eq-compat-in-ceil $p |- ( \imp ( \eq ph0 ph1 ) ( \eq ( \ceil ph0 ) ( \ceil ph1 ) ) ) $=
+    $(
+        apply "eq-elim-alt"
+        apply "substitution-ceil"
+        let $5 = "x"
+        apply "substitution-var-same"
+        substitution
+    $)
+    ( x-is-element-var element-var-is-var ceil-is-pattern var-is-pattern substitution-var-same substitution-ceil eq-elim-alt ) ABAEBECDFECAACDFCDACDGHBBCDFCDBCDGHI $.
+
+x-in-ceil-imp-ceil $p |- ( \imp ( \in x ( \ceil ph0 ) ) ( \ceil ph0 ) ) $=
+    $(
+        apply "rule-imp-transitivity"
+        meh
+        apply "lemma-ceil2-imp-ceil"
+        desugar "\in"
+        apply "lemma-imp-compat-in-ceil"
+        apply "and-elim-right-sugar"
+    $)
+    ( ceil-is-pattern element-var-is-var var-is-pattern and-is-pattern in-is-pattern imp-is-pattern notation-reflexivity and-elim-right-sugar lemma-imp-compat-in-ceil in-is-sugar notation-symmetry notation-transitivity notation-imp notation-proof lemma-ceil2-imp-ceil rule-imp-transitivity ) ACBGACCACBDEACFCACCHACBGACCHBDEACFACBDEACJKACBGACCBDEACFCACCACBGBDEACFCBDEACFCACBLBDEACFCBDEACFCBDEACFCIMNACCIOPAQR $.

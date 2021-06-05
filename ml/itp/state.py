@@ -481,7 +481,7 @@ class Tactic:
                 return None
             _, left, _, right = result
 
-            assert left.symbol == right.symbol
+            assert left.symbol == right.symbol, f"{left} != {right}"
             applied_notation = True
 
             return [(left, right)]
