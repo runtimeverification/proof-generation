@@ -228,7 +228,7 @@ class EqualityProofGenerator(ProofGenerator):
                 proof=self.composer.get_theorem("kore-variable-functional").apply(
                     x=self.composer.encode_pattern(pattern),
                     y=self.composer.encode_pattern(fresh_var),
-                    s0=self.composer.encode_pattern(sort_var),
+                    ph1=self.composer.encode_pattern(sort_var),
                     ph0=self.composer.encode_pattern(pattern.sort),
                 ),
             )
