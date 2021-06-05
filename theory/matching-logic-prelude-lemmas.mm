@@ -2685,3 +2685,73 @@ x-in-ceil-imp-ceil $p |- ( \imp ( \in x ( \ceil ph0 ) ) ( \ceil ph0 ) ) $=
         apply "and-elim-right-sugar"
     $)
     ( ceil-is-pattern element-var-is-var var-is-pattern and-is-pattern in-is-pattern imp-is-pattern notation-reflexivity and-elim-right-sugar lemma-imp-compat-in-ceil in-is-sugar notation-symmetry notation-transitivity notation-imp notation-proof lemma-ceil2-imp-ceil rule-imp-transitivity ) ACBGACCACBDEACFCACCHACBGACCHBDEACFACBDEACJKACBGACCBDEACFCACCACBGBDEACFCBDEACFCACBLBDEACFCBDEACFCBDEACFCIMNACCIOPAQR $.
+
+${
+    weakened-mp.0 $e |- ( \imp ph0 ( \imp ph1 ph2 ) ) $.
+    weakened-mp.1 $e |- ( \imp ph0 ph1 ) $.
+    weakened-mp  $p |- ( \imp ph0 ph2 ) $=
+        $(
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "proof-rule-prop-2"
+            apply "weakened-mp.0"
+            apply "weakened-mp.1"
+        $)
+        ( imp-is-pattern proof-rule-mp proof-rule-prop-2 ) ABFACFABCFFABFACFFABCHDGEG $.
+$}
+
+${
+    $d x ph1 $.
+    forall-propagate-in-floor-imp $p |- ( \imp ( \forall x ( \floor ( \imp ph0 ph1 ) ) ) ( \floor ( \imp ( \exists x ph0 ) ph1 ) ) ) $=
+        $(
+            desugar "\forall"
+            apply "rule-imp-transitivity"
+            apply "rule-contrapositive-sugar"
+            apply "lemma-imp-compat-in-exists"
+            let $5 = "( \ceil ( \not ( \imp ph0 ph1 ) ) )"
+            desugar "\floor"
+            apply "dn-intro-sugar"
+            desugar "\ceil"
+            apply "rule-imp-transitivity"
+            apply "rule-contrapositive-sugar"
+            apply "propagation-app-exists-right"
+            apply "fresh-in-symbol"
+            apply "notation-proof"
+            let $19 = "( \imp ( \not ( \ceil ( \exists x ( \not ( \imp ph0 ph1 ) ) ) ) ) ( \floor ( \imp ( \exists x ph0 ) ph1 ) ) )"
+            meh
+            notation
+            apply "rule-imp-transitivity"
+            apply "rule-contrapositive-sugar"
+            apply "lemma-imp-compat-in-ceil"
+            apply "dn-elim-sugar"
+            apply "notation-proof"
+            let $29 = "( \imp ( \floor ( \forall x ( \imp ph0 ph1 ) ) ) ( \floor ( \imp ( \exists x ph0 ) ph1 ) ) )"
+            meh
+            notation
+            apply "lemma-imp-compat-in-floor"
+            apply "lemma-prenex-forall-imp-alt"
+            apply "fresh-disjoint"
+        $)
+        ( not-is-pattern imp-is-pattern exists-is-pattern ceil-is-pattern floor-is-pattern definedness-is-symbol forall-is-pattern symbol-is-pattern app-is-pattern bot-is-pattern notation-symmetry notation-reflexivity notation-transitivity notation-imp notation-proof notation-not not-is-sugar rule-contrapositive-sugar rule-imp-transitivity floor-is-sugar element-var-is-var forall-is-sugar ceil-is-sugar dn-intro-sugar lemma-imp-compat-in-exists fresh-in-symbol propagation-app-exists-right dn-elim-sugar lemma-imp-compat-in-ceil fresh-disjoint lemma-prenex-forall-imp-alt lemma-imp-compat-in-floor notation-ceil notation-exists ) ABEHDCFDACFBEHEABEHCJACFBEHEABEHDCFDABEDGCFDACFBEHABEDGCFABEHDCFABEDGABEHDCABEDGABEDGDDEABEDGABEHDEABEDGUGABEDGABEHDABEDGABEDGDDABEDGOABEHABEDGDABEHABEDGDABEDGDABEUCABEDGDABEDGDABEDGDONPSQRUHUAIKABEDLCFDACFBEHEABEDGCFDACFBEHEIKABEDLCFDIKABEDCFLDACFBEHIKABEDCFLIKABEDLCFIKABEDCCUDIUIUJUAABEDCFGDACFBEHEIKABEDCFLDACFBEHEABEDCFGDABEDCFDDGDACFBEHABEDCFDDGABEDCFGABEDCFDDABEDCFABEDCFUKULUAABECJHACFBEHEABEDCFDDGDACFBEHEABECJACFBEABCBCUDUMUNUOABEDCFDDGDACFBEHABECJHACFBEHABEDCFDDGDABEDCFDDGMEABECJHABEDCFDDGTABECJHABEDCFDDGMEABECJHABECJDGDABEDCFDDGMEABECJUCABEDCFDDGMEABECJDGDABECJDGDABEDCFDDGMEABECJDGDABECJDGMEABEDCFDDGMEABECJDGTABEDCFDDGMEABECJDGMEABEDCFDDGMABECJDGMABEDCFDDABECJDABEDCFDABECJABEDCFDABEDCFMEABECJABEDCFTABECJABEDCFMEABECJABEDCFDABEDCFMEABECUEABEDCFMEABEDCFDABEDCFDABEDCFMEABEDCFDABEDCFMEABEDCFMEABEDCFTABEDCFMEABEDCFMEABEDCFMEONPNNPNPSUPMOQNPNNPNPACFBEHOQRUBIKABEDCFLDACFBEHABEDCFGDACFBEHIKABEDCFLABEDCFGABEDCFGIKABEDCFLABEDCFGIKABEDCFLIKABEDCFLABEDCFUFIKABEDCFLIKABEDCFLIKABEDCFLONPNSACFBEHOQRUBABEDGCFDACFBEHIKABEDLCFDACFBEHABEDGCFIKABEDLCFABEDGIKABEDLCABEDGIKABEDLIKABEDLABEDUFIKABEDLIKABEDLIKABEDLONPUQSACFBEHOQRUBABEHCJACFBEHABEHDCFDACFBEHABEHCJABEHDCFDABEHDCFDABEHCUEABEHDCFDABEHDCFDABEHDCFDONPACFBEHOQR $.
+$}
+
+${
+    lemma-imp-compat-in-exists-alt.0 $e #Fresh x ph0 $.
+    lemma-imp-compat-in-exists-alt.1 $e |- ( \imp ph0 ( \imp ph1 ph2 ) ) $.
+    lemma-imp-compat-in-exists-alt $p |- ( \imp ph0 ( \imp ( \exists x ph1 ) ( \exists x ph2 ) ) ) $=
+        $(
+            apply "rule-curry"
+            apply "rule-imp-transitivity"
+            apply "rule-imp-transitivity"
+            apply "rule-iff-elim-left"
+            apply "and-commutativity"
+            apply "rule-iff-elim-left"
+            apply "prenex-exists-and"
+            apply "lemma-imp-compat-in-exists-alt.0"
+            apply "lemma-imp-compat-in-exists"
+            apply "rule-uncurry"
+            apply "premises-switch"
+            apply "lemma-imp-compat-in-exists-alt.1"
+        $)
+        ( exists-is-pattern and-is-pattern rule-iff-elim-left rule-imp-transitivity and-commutativity prenex-exists-and premises-switch rule-uncurry lemma-imp-compat-in-exists rule-curry ) ABDGCDGABDGHBAHDGCDGABDGHBDGAHBAHDGABDGHBDGAHABDGKIBDGAHBAHDGBADELIJBAHCDBACABCFMNOJP $.
+$}
