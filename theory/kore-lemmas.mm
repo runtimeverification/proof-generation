@@ -352,3 +352,159 @@ ${
         $)
         ( imp-is-pattern forall-is-pattern element-var-is-var var-is-pattern eq-is-pattern exists-is-pattern proof-rule-mp fresh-disjoint weakening-imp3 functional-substitution lemma-prenex-forall-imp-right rule-iff-elim-left rule-curry lemma-forall-intro rule-uncurry ) EGCEFBPJQPEGCPPEIRSATIUAPEFBPJQPEGCPPPIRSATIUAFBPJQGCPPPEIRSATIUAPEFBPJQPEGCPPPPIRSATIUAFBPJQGCPEUDAFBPGCPHDPJIKAIRUCNOUEUBLUBEFBPPJQEFBPJQPEFBPPJQEFBPJQPEFBPJEJRUCUFUGEFBPPJEFBMUHUIUBUBUJ $.
 $}
+
+eq-compat-in-eq-alt $p |- ( \imp ( \eq ph0 ph1 ) ( \eq ( \eq ph0 ph2 ) ( \eq ph1 ph2 ) ) ) $=
+    $(
+        apply "rule-imp-transitivity"
+        apply "lemma-predicate-floor"
+        apply "lemma-floor-is-predicate"
+        apply "lemma-imp-compat-in-floor"
+        apply "rule-and-intro-alt2-sugar"
+        apply "rule-imp-transitivity"
+        apply "eq-symmetry"
+        apply "eq-transitivity"
+        apply "eq-transitivity"
+    $)
+    ( eq-is-pattern imp-is-pattern floor-is-pattern iff-is-pattern notation-reflexivity and-is-pattern notation-transitivity notation-proof is-predicate-is-pattern eq-is-sugar eq-transitivity rule-imp-transitivity notation-imp lemma-floor-is-predicate notation-is-predicate lemma-predicate-floor eq-symmetry rule-and-intro-alt2-sugar iff-is-sugar lemma-imp-compat-in-floor ) ABDABDFACDBCDDABDABGFLABDLABGQABDABGFABDABGFABGFABMABGFHJRKSABDFACDBCDGFEABDFACDBCDDEABDACDBCDGABDACDBCDEBCDACDEIEABDACDBCDGEABDACDBCDEBCDACDEABDBADACDBCDEBATBACNOABCNUAABDACDBCDGABDACDBCDEBCDACDEIABDHACDBCDGACDBCDEBCDACDEIACDBCDEBCDACDEIACDBCDUBACDBCDEBCDACDEIHJPKUCABDFACDBCDDABDFACDBCDGFABDFHACDBCDDACDBCDGFACDBCDGFACDBCDMACDBCDGFHJPKO $.
+
+${
+    nonempty-floor-is-top.0 $e |- ( \ceil ph0 ) $.
+    nonempty-floor-is-top   $p |- ( \iff ( \eq ph0 ( \and ( \floor ph1 ) ph0 ) ) ( \floor ph1 ) ) $=
+        $(
+            apply "rule-and-intro"
+            apply "rule-imp-transitivity"
+            apply "eq-compat-in-ceil"
+            apply "lemma-imp-compat-in-floor"
+            apply "rule-imp-transitivity"
+            apply "and-elim-left"
+            apply "rule-imp-transitivity"
+            apply "proof-rule-mp"
+            apply "mp"
+            apply "nonempty-floor-is-top.0"
+            apply "rule-imp-transitivity"
+            apply "lemma-imp-compat-in-ceil"
+            apply "and-elim-left"
+            apply "rule-imp-transitivity"
+            apply "ceil-floor-imp-floor"
+            apply "lemma-floor-elim-alt"
+            apply "rule-imp-transitivity"
+            apply "lemma-floor-imp-floor2"
+            apply "lemma-imp-compat-in-floor"
+            apply "rule-and-intro-alt2-sugar"
+            apply "rule-curry"
+            apply "imp-reflexivity"
+            apply "rule-weakening"
+            apply "and-elim-right"
+        $)
+        ( floor-is-pattern imp-is-pattern and-is-pattern ceil-is-pattern bot-is-pattern not-is-pattern eq-is-pattern notation-transitivity or-is-pattern iff-is-pattern notation-reflexivity notation-imp not-is-sugar notation-proof rule-imp-transitivity and-is-sugar or-is-sugar iff-is-sugar and-elim-left lemma-imp-compat-in-floor eq-is-sugar eq-compat-in-ceil mp proof-rule-mp lemma-imp-compat-in-ceil ceil-floor-imp-floor lemma-floor-elim-alt lemma-floor-imp-floor2 imp-reflexivity rule-curry and-elim-right rule-weakening rule-and-intro-alt2-sugar rule-and-intro ) ABDAFJBDEHEHEBDABDAFJEHEEHEABDAFJBDMABDAFJBDEBDABDAFJEABDAFJAGBDAFGJBDABDAFUEAGBDAFGMDBDEAGBDAFGJBDEAGBDAFGMBAGBDAFGMAGBDAFGEBAGBDAFGEHEHEBDAFGAGEHEEHEAGBDAFGEEAGBDAFGMAGBDAFGEEAGBDAFGEBDAFGAGEUBAGBDAFGMAGBDAFGEAGBDAFGEHEHEBDAFGAGEHEEHEAGBDAFGEAGBDAFGMAGBDAFGEIBDAFGAGEILHEAGBDAFGEHEHEBDAFGAGEHEEHEAGBDAFGMAGBDAFGEIBDAFGAGEILIAGBDAFGEIBDAFGAGEILHEAGBDAFGMAGBDAFGEBDAFGAGEFAGBDAFGEIBDAFGAGEILIAGBDAFGUAAGBDAFGEBDAFGAGESKAGBDAFGEIBDAFGAGEILPKAGBDAFGEIBDAFGAGEILHAGBDAFGEHEHEBDAFGAGEHEEHAGBDAFGEIBDAFGAGEILAGBDAFGEIIBDAFGAGEIEAGBDAFGEHEHEBDAFGAGEHEEAGBDAFGEIBDAFGAGEITAGBDAFGEIIBDAFGAGEIAGBDAFGEHEHEBDAFGAGEHEAGBDAFGEIIAGBDAFGEIHEAGBDAFGEHEHEAGBDAFGEIPAGBDAFGEIHAGBDAFGEHEHAGBDAFGEIAGBDAFGEHEAGBDAFGEHEAGBDAFGEPAGBDAFGEHENKHNOKBDAFGAGEIBDAFGAGEHEBDAFGAGEHEBDAFGAGEPBDAFGAGEHENKOKHNOKAGBDAFGENOQAGBDAFGEBDAFGBAGAGBDAFGEBDAFGEAGBDAFGUFCUGBDAFGBDGBBDAFBDBDHEHEAHEEHEBDEBDAFBDEBDAUBBDAFBDBDHEHEAHEEHEBDBDAFBDIAILHEBDHEHEAHEEHEBDAFBDIAILIBDIAILHEBDASBDIAILPKBDIAILHBDHEHEAHEEHBDIAILBDIIAIEBDHEHEAHEEBDIAITBDIIAIBDHEHEAHEBDIIBDIHEBDHEHEBDIPBDIHBDHEHBDIBDHEBDHEBDPBDHENKHNOKAIAHEAHEAPAHENKOKHNOKBDNOQUHBDGBDBBUIBUJRRRRUCAGBDAFGJBDAGBDAFGMDBDAGBDAFGJAGBDAFGMDAGBDAFGMDAGBDAFGUDAGBDAFGMDNKBDNOQRBDBDDABDAFJBUKBDDABDAFMDEBDDABDAFJEBDABDAFMBDABDAFEBDAFAEFEBDABDAFMEBDABDAFEBDAFAEBDABDAFBDAFULUMBDBDAFAEBDHEHEAHEEHEAEBDAFAEBDAUNBDAFABDHEHEAHEEHEABDAFBDIAILHEBDHEHEAHEEHEBDAFBDIAILIBDIAILHEBDASBDIAILPKBDIAILHBDHEHEAHEEHBDIAILBDIIAIEBDHEHEAHEEBDIAITBDIIAIBDHEHEAHEBDIIBDIHEBDHEHEBDIPBDIHBDHEHBDIBDHEBDHEBDPBDHENKHNOKAIAHEAHEAPAHENKOKHNOKANOQUOUPBDABDAFMBDABDAFEBDAFAEFBDNABDAFMABDAFEBDAFAEFABDAFEBDAFAEFABDAFUAABDAFEBDAFAEFNKOQUCBDDABDAFJBDDABDAFMDBDDNABDAFJABDAFMDABDAFMDABDAFUDABDAFMDNKOQRUQABDAFJBDMABDAFJBDEIBDABDAFJEILHEABDAFJBDEHEHEBDABDAFJEHEEHEABDAFJBDMABDAFJBDEIBDABDAFJEILIABDAFJBDEIBDABDAFJEILHEABDAFJBDMABDAFJBDEBDABDAFJEFABDAFJBDEIBDABDAFJEILIABDAFJBDUAABDAFJBDEBDABDAFJESKABDAFJBDEIBDABDAFJEILPKABDAFJBDEIBDABDAFJEILHABDAFJBDEHEHEBDABDAFJEHEEHABDAFJBDEIBDABDAFJEILABDAFJBDEIIBDABDAFJEIEABDAFJBDEHEHEBDABDAFJEHEEABDAFJBDEIBDABDAFJEITABDAFJBDEIIBDABDAFJEIABDAFJBDEHEHEBDABDAFJEHEABDAFJBDEIIABDAFJBDEIHEABDAFJBDEHEHEABDAFJBDEIPABDAFJBDEIHABDAFJBDEHEHABDAFJBDEIABDAFJBDEHEABDAFJBDEHEABDAFJBDEPABDAFJBDEHENKHNOKBDABDAFJEIBDABDAFJEHEBDABDAFJEHEBDABDAFJEPBDABDAFJEHENKOKHNOKQ $.
+$}
+
+${
+    $d x y $.
+    unit-sort-nonempty-alt $p |- ( \ceil ( \inh \unit-sort ) ) $=
+        $(
+            apply "proof-rule-mp"
+            apply "rule-imp-transitivity"
+            apply "membership-symbol-ceil-right"
+            let $6 = "x"
+            apply "x-in-ceil-imp-ceil"
+            let $7 = "y"
+            apply "proof-rule-mp"
+            apply "lemma-imp-compat-in-exists"
+            apply "include-imp-in"
+            apply "notation-proof"
+            apply "unit-sort-nonempty"
+            let $19 = "y"
+            notation
+        $)
+        ( y-is-element-var unit-sort-is-symbol symbol-is-pattern inh-is-pattern element-var-is-var var-is-pattern imp-is-pattern not-is-pattern ceil-is-pattern included-is-pattern floor-is-pattern bot-is-pattern notation-symmetry notation-transitivity exists-is-pattern in-is-pattern in-sort-is-pattern x-is-element-var included-is-sugar floor-is-sugar not-is-sugar proof-rule-mp membership-symbol-ceil-right x-in-ceil-imp-ceil rule-imp-transitivity include-imp-in lemma-imp-compat-in-exists unit-sort-nonempty in-sort-is-sugar notation-reflexivity notation-exists notation-proof ) BCDAPAOBCDIBCDAPAOBCDIRPBCDIBCDRAUCBCDRUDUEAEFBCDJAOBCDAPAOAEFBCDJBCDAPABCDAUFUGAEFBCQAOAEFBCDJAOAUHAEFBCDJAEFBCQAAEFBCDJAEFBCDGKAEFBCQAEFBCDSAEFBCQAEFBCDGKAEFBCQAEFBCDJAEFBCDGKAEFBCUIAEFBCDGKAEFBCDJAEFBCDGKAEFBCDGHIHAEFBCDJAEFBCDGTAEFBCDJAEFBCDGHIHAEFBCDJAEFBCDGKAEFBCDGHIHAEFBCDSAEFBCDGHIHAEFBCDGKAEFBCDGHIHAEFBCDGHILGAEFBCDGKAEFBCDGHIUAAEFBCDGKAEFBCDGHILGAEFBCDGKAEFBCDGHIHAEFBCDGHILGAEFBCDGTAEFBCDGHILGAEFBCDGHIHAEFBCDGHIHAEFBCDGHILGAEFBCDGHIHAEFBCDGHILGAEFBCDGHILGAEFBCDGHIUAAEFBCDGHILGAEFBCDGHILGAEFBCDGHILGUJMNMMNMNMNMNMNMNUKULUBUB $.
+$}
+
+${
+    kore-equals-to-eq.0 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-equals-to-eq.1 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-equals-to-eq.2 $e |- ( \imp th0 ( \kore-valid \unit-sort ( \kore-equals ph0 \unit-sort ph1 ph2 ) ) ) $.
+    kore-equals-to-eq   $p |- ( \imp th0 ( \eq ph1 ph2 ) ) $=
+        $(
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            meh
+            apply "kore-equals-to-eq.0"
+            apply "kore-equals-to-eq.1"
+            apply "kore-equals-to-eq.2"
+            apply "proof-rule-mp"
+            apply "weakening-imp4"
+            apply "rule-curry"
+            apply "rule-imp-transitivity"
+            apply "kore-semantics-equals"
+            apply "rule-imp-transitivity"
+            apply "eq-compat-in-eq-alt"
+            apply "proof-rule-mp"
+            apply "premises-switch"
+            apply "rule-curry"
+            apply "rule-imp-transitivity"
+            meh
+            apply "rule-imp-transitivity"
+            apply "lemma-floor-elim-alt"
+            apply "iff-elim-left"
+            meh
+            apply "rule-uncurry"
+            apply "eq-transitivity"
+            apply "lemma-floor-intro"
+            apply "rule-iff-transitivity"
+            apply "rule-iff-intro"
+            apply "eq-symmetry"
+            apply "eq-symmetry"
+            apply "nonempty-floor-is-top"
+            apply "unit-sort-nonempty-alt"
+        $)
+        ( unit-sort-is-symbol symbol-is-pattern eq-is-pattern inh-is-pattern kore-top-is-pattern kore-equals-is-pattern and-is-pattern kore-valid-is-pattern imp-is-pattern iff-is-pattern floor-is-pattern in-sort-is-pattern notation-reflexivity notation-transitivity proof-rule-mp eq-is-sugar rule-imp-transitivity notation-proof notation-symmetry notation-eq notation-imp rule-curry eq-symmetry weakening-imp4 kore-semantics-equals eq-compat-in-eq-alt eq-transitivity kore-valid-is-sugar rule-uncurry lemma-floor-elim-alt iff-elim-left premises-switch rule-iff-intro unit-sort-nonempty-alt nonempty-floor-is-top kore-top-is-sugar notation-and notation-iff rule-iff-transitivity lemma-floor-intro ) DHIAHIBCMOPDBCJPDCASPDHIAHIBCMOPDBCJPPDBASPDCASPDHIAHIBCMOPDBCJPPPBASCASHIAHIBCMOBCJPPPDBASPDCASPDHIAHIBCMOPDBCJPPPPBASCASHIAHIBCMOBCJDUKBASCASHIAHIBCMOBCJPBASCASNAHIBCMBCJHIKNJHIAHIBCMOBCJPAHIBCULAHIBCMBCJHIKNJAHIBCMHILJBCJHIKNHILJJHIAHIBCMOBCJPAHIBCMBCJHIKNHILUMBCJHIKNHILJBCJJAHIBCMHILJBCJHIKNHILJJHIAHIBCMOBCJPPAHIBCMHILJBCJHIKNHILJJBCJHIKNHILJBCJJHIAHIBCMOBCJPAHIBCMHILJBCJHIKNHILJJBCJHIKNHILJBCJJHIAHIBCMOBCJPAHIBCMHILJBCJHIKNHILJJBCJHIKNHILJBCJJNHIAHIBCMOBCJQRHIAHIBCMOBCJPAHIBCMHILJBCJHIKNHILJJBCJHIKNHILJBCJJHIAHIBCMOBCJQRHIAHIBCMOBCJHIKNHILJJBCJHIKNHILJBCJJHIAHIBCMOBCJJPPAHIBCMHILJBCJHIKNHILJJBCJHIKNHILJBCJJHIAHIBCMOBCJQRPPHIAHIBCMOBCJHIKNHILJBCJUNAHIBCMHILJBCJHIKNHILJJBCJHIKNHILJBCJJHIAHIBCMOBCJQRPHIAHIBCMOBCJHIKNHILJJBCJHIKNHILJBCJJHIAHIBCMOBCJJPAHIBCMHILJBCJHIKNHILJHIAHIBCMOBCJHIKNHILJAHIBCMHILJAHIBCMHILJHIAHIBCMOAHIBCMHILJTHIAHIBCMOAHIBCMHILJHIAHIBCMUOUFUABCJHIKNHILJTUGBCJHIKNHILJBCJJHIAHIBCMOBCJQRBCJHIKNHILJBCJJHIAHIBCMOBCJJBCJHIKNHILJBCJJTHIAHIBCMOBCJQRHIAHIBCMOBCJQRHIAHIBCMOBCJJHIAHIBCMOBCJQRTHIAHIBCMOBCJJHIAHIBCMOBCJQRHIAHIBCMOBCJUCUFUAUHUHUEUPHIAHIBCMOBCJQRHIAHIBCMOBCJQHIAHIBCMOBCJPHIAHIBCMOBCJQUQHIAHIBCMOBCJURUDUDUIUSBCJHIKNHILJBCJQRBCJHIKNHILJBCJJBCJHIKNHILJBCJQBCJHIKNHILJHILBCJHIKNJBCJBCJHIKNHILJHILBCJHIKNJHILBCJHIKNUJBCJHIKNHILUJUTHIKBCQRHIKNJBCQRQHILBCJHIKNJBCJQHIKBCQVAVBHILBCJHIKNJBCJHIKBCQRHIKNJBCQRHILBCJHIKNHIKBCQRHIKNHILHIKHIKHIVCHIKTUABCJHIKBCQRHIKBCJBCQRBCQRBCUCBCQRTUAHIKTVDUGBCUCVEUEVFVGBCJHIKNHILJBCJJBCJHIKNHILJBCJQRBCJHIKNHILJBCJQRBCJHIKNHILJBCJUCBCJHIKNHILJBCJQRTUAUEUBUDUDUIUBEUBFUBGUB $.
+$}
+
+${
+    kore-equals-elim.0 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-equals-elim.1 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-equals-elim.2 $e |- ( \imp th0 ( \kore-valid \unit-sort ( \kore-equals ph0 \unit-sort ph1 ph2 ) ) ) $.
+    kore-equals-elim.3 $e |- ( \imp th0 ph3 ) $.
+    kore-equals-elim.4 $e #Substitution ph3 ph4 ph1 x $.
+    kore-equals-elim.5 $e #Substitution ph5 ph4 ph2 x $.
+    kore-equals-elim   $p |- ( \imp th0 ph5 ) $=
+        $(
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "weakening-imp3"
+            meh
+            apply "kore-equals-to-eq"
+            apply "kore-equals-elim.0"
+            apply "kore-equals-elim.1"
+            apply "kore-equals-elim.2"
+            apply "kore-equals-elim.3"
+            apply "eq-elim"
+            apply "kore-equals-elim.4"
+            apply "kore-equals-elim.5"
+        $)
+        ( imp-is-pattern eq-is-pattern proof-rule-mp weakening-imp3 eq-elim kore-equals-to-eq ) GDOGFOGBCPOGDOGFOOBCPDFOOGBCPOGDOGFOOOBCPDFGRBCDFEHMNSQABCGIJKTQLQ $.
+$}
+
+${
+    $( the essentials and conclusion are put in a specific form to be recognized by KoreComposer $)
+    kore-equals-elim-alt.0 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-equals-elim-alt.1 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-equals-elim-alt.2 $e |- ( \imp th0 ( \kore-valid \unit-sort ( \kore-equals ph0 \unit-sort ph1 ph2 ) ) ) $.
+    kore-equals-elim-alt.3 $e |- ( \imp th0 ( \kore-valid ph6 ph3 ) ) $.
+    kore-equals-elim-alt.4 $e #Substitution ( \kore-valid ph6 ph3 ) ph4 ph1 x $.
+    kore-equals-elim-alt.5 $e #Substitution ( \kore-valid ph7 ph5 ) ph4 ph2 x $.
+    kore-equals-elim-alt   $p |- ( \imp th0 ( \kore-valid ph7 ph5 ) ) $=
+        $(
+            apply "kore-equals-elim"
+            apply "kore-equals-elim-alt.0"
+            apply "kore-equals-elim-alt.1"
+            apply "kore-equals-elim-alt.2"
+            apply "kore-equals-elim-alt.3"
+            apply "kore-equals-elim-alt.4"
+            apply "kore-equals-elim-alt.5"
+        $)
+        ( kore-valid-is-pattern kore-equals-elim ) ABCGDQEHFQIJKLMNOPR $.
+$}

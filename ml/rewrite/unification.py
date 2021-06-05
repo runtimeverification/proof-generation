@@ -14,7 +14,6 @@ from ml.metamath.composer import TypecodeProver, Proof
 
 from .env import ProofGenerator, KoreComposer, ProvableClaim
 from .equality import EqualityProofGenerator
-from .quantifier import QuantifierProofGenerator
 from .templates import KoreTemplates
 
 # AppliedEquation = List[Tuple[Equation, PatternPath]]
@@ -156,14 +155,14 @@ class InjectionCombine(Equation):
         assert sort_b1 == sort_b, f"ill-sorted injection {subpattern}"
 
         # sort_a < sort_b < sort_c
-        inj_axiom_instance = QuantifierProofGenerator(self.composer).get_inj_instance(sort_a, sort_b, sort_c)
+        inj_axiom_instance = EqualityProofGenerator(self.composer).get_inj_instance(sort_a, sort_b, sort_c)
 
         # the injection axiom should only have one free variable
         free_vars = list(KoreUtils.get_free_variables(inj_axiom_instance.claim))
         assert len(free_vars) == 1
         free_var, = free_vars
 
-        inj_axiom_instance = QuantifierProofGenerator(self.composer) \
+        inj_axiom_instance = EqualityProofGenerator(self.composer) \
             .prove_functional_pattern_substitution(inj_axiom_instance, { free_var: subsubpattern.arguments[0] })
 
         return EqualityProofGenerator(self.composer).replace_equal_subpattern(provable, path, inj_axiom_instance)
@@ -193,15 +192,15 @@ class InjectionSplit(Equation):
         assert sort_a == self.sort_a and sort_c == self.sort_c
 
         # sort_a < sort_b < sort_c
-        inj_axiom_instance = QuantifierProofGenerator(self.composer
-                                                      ).get_inj_instance(self.sort_a, self.sort_b, self.sort_c)
+        inj_axiom_instance = EqualityProofGenerator(self.composer
+                                                    ).get_inj_instance(self.sort_a, self.sort_b, self.sort_c)
 
         # the injection axiom should only have one free variable
         free_vars = list(KoreUtils.get_free_variables(inj_axiom_instance.claim))
         assert len(free_vars) == 1
         free_var, = free_vars
 
-        inj_axiom_instance = QuantifierProofGenerator(self.composer) \
+        inj_axiom_instance = EqualityProofGenerator(self.composer) \
             .prove_functional_pattern_substitution(inj_axiom_instance, { free_var: argument })
 
         eq_proof_gen = EqualityProofGenerator(self.composer)
@@ -236,7 +235,7 @@ class MapCommutativity(Equation):
         assert isinstance(var1, kore.Variable) and isinstance(var2, kore.Variable)
 
         subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
-        axiom_instance = QuantifierProofGenerator(self.composer) \
+        axiom_instance = EqualityProofGenerator(self.composer) \
             .prove_functional_pattern_substitution(comm_axiom, subst)
 
         return EqualityProofGenerator(self.composer).replace_equal_subpattern(
@@ -296,7 +295,7 @@ class MapAssociativity(Equation):
                 var3: subpattern.arguments[1].arguments[1],
             }
 
-        axiom_instance = QuantifierProofGenerator(self.composer) \
+        axiom_instance = EqualityProofGenerator(self.composer) \
             .prove_functional_pattern_substitution(assoc_axiom, subst)
 
         eq_proof_gen = EqualityProofGenerator(self.composer)
@@ -348,7 +347,7 @@ class MapRightUnit(Equation):
             assert KoreTemplates.is_map_unit_pattern(KoreTemplates.get_map_merge_right(subpattern))
             subst = {var: KoreTemplates.get_map_merge_left(subpattern)}
 
-        axiom_instance = QuantifierProofGenerator(self.composer) \
+        axiom_instance = EqualityProofGenerator(self.composer) \
             .prove_functional_pattern_substitution(right_unit_axiom, subst)
 
         eq_proof_gen = EqualityProofGenerator(self.composer)
