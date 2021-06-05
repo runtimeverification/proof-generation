@@ -476,19 +476,15 @@ class Tactic:
                not isinstance(right, Application):
                 return None
 
-            left_sugar_axiom = NotationProver.find_sugar_axiom(state.composer, left.symbol)
-            if left_sugar_axiom is not None:
-                applied_notation = True
-                left_expanded = NotationProver.apply_sugar_axiom(left_sugar_axiom, left)
-                return [(left_expanded, right)]
+            result = NotationProver.rewrite_to_same_head_symbol(state.composer, left, right)
+            if result is None:
+                return None
+            _, left, _, right = result
 
-            right_sugar_axiom = NotationProver.find_sugar_axiom(state.composer, right.symbol)
-            if right_sugar_axiom is not None:
-                applied_notation = True
-                right_expanded = NotationProver.apply_sugar_axiom(right_sugar_axiom, right)
-                return [(left, right_expanded)]
+            assert left.symbol == right.symbol
+            applied_notation = True
 
-            return None
+            return [(left, right)]
 
         subst = Unification.unify(
             equations,

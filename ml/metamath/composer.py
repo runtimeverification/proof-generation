@@ -10,6 +10,8 @@ import re
 
 from io import StringIO
 
+from ml.utils.hook import Hookable
+
 from .auto.unification import Unification
 
 from .ast import *
@@ -755,7 +757,7 @@ class Context:
             return False
 
         for disjoint in self.disjoints:
-            if distinct_metavars.issubset(set(disjoint.metavariables)):
+            if distinct_metavars.issubset({var.name for var in disjoint.metavariables}):
                 return True
 
         if self.prev is None:
@@ -764,7 +766,7 @@ class Context:
         return self.prev.are_metavariables_disjoint(distinct_metavars)
 
 
-class Composer:
+class Composer(Hookable):
     """
     Composer is a utility class used for
     emitting metamath statements and proofs
@@ -783,6 +785,13 @@ class Composer:
         # segment
         self.segment_stack: List[SegmentLabel] = [DEFAULT_SEGMENT]  # a stack of current segments
         self.backend = backend
+
+        self.notation_axiom_graph: Dict[str, Tuple[Theorem, str]] = {}  # symbol -> (theorem, symbol)
+        self.notation_congruence: Dict[str, Tuple[Theorem,
+                                                  Tuple[int, ...]]] = {}  # symbol -> [ (theorem, order of subterms) ]
+
+        self.substitution_lemmas: Dict[str, Tuple[Theorem,
+                                                  Tuple[int, ...]]] = {}  # symbol -> [ (theorem, order of subterms) ]
 
     def find_theorem(self, name: str) -> Optional[Theorem]:
         return self.theorems.get(name)
@@ -812,6 +821,8 @@ class Composer:
                 if theorem.statement.label == name:
                     self.theorems_by_typecode[stmt.terms[0].symbol].pop(i)
                     break
+
+        Composer.run_hooks("remove", self, name)
 
     def add_theorem_for_typecode(self, typecode: str, theorem: Theorem) -> None:
         if typecode not in self.theorems_by_typecode:
@@ -850,7 +861,7 @@ class Composer:
 
         assert isinstance(term1, Metavariable) and isinstance(term2, Metavariable)
 
-        return self.context.are_metavariables_disjoint({term1.name, term2.name})
+        return self.context.are_metavariables_disjoint((term1.name, term2.name))
 
     def cache_proof(self, *args: Any, **kwargs: Any) -> Proof:
         return self.proof_cache.cache(*args, **kwargs)
@@ -907,6 +918,8 @@ class Composer:
         # index by the typecode
         if (len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0):
             self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])
+
+        Composer.run_hooks("index", self, self.theorems[stmt.label])
 
     def push_context(self) -> None:
         self.context = Context(prev=self.context)
