@@ -1169,6 +1169,7 @@ class KoreComposer(Composer):
         theorem_name: str,
         *essential_provable_claims: ProvableClaim,
         goal: Optional[kore.Claim] = None,
+        cache_key: Optional[str] = None,
         **substitution: Union[mm.Term, kore.Pattern, kore.Sort],
     ) -> ProvableClaim:
         r"""
@@ -1255,6 +1256,9 @@ class KoreComposer(Composer):
             # now we need massage the proof to the expected form of the goal
             proof = self.rearrange_sorting_premise(goal_premise, proof)
 
+            if cache_key is not None:
+                proof = self.cache_proof(cache_key, proof)
+
             # if the goal is given, we can construct a ProvableClaim
             return ProvableClaim(goal, proof)
         else:
@@ -1267,5 +1271,8 @@ class KoreComposer(Composer):
             claim_premise = self.encode_axiom_premise(claim)
 
             proof = self.rearrange_sorting_premise(claim_premise, proof)
+
+            if cache_key is not None:
+                proof = self.cache_proof(cache_key, proof)
 
             return ProvableClaim(claim, proof)
