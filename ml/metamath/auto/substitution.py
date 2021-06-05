@@ -224,6 +224,12 @@ class SubstitutionProver:
         )
 
     @staticmethod
+    def check_and_cache(composer: Composer, proof: Proof) -> Proof:
+        if len(composer.get_all_essentials()) != 0:
+            return proof
+        return composer.cache_proof("substitution", proof)
+
+    @staticmethod
     def prove_substitution(
         composer: Composer,
         after_pattern: Term,
@@ -233,32 +239,41 @@ class SubstitutionProver:
         hypotheses: List[Theorem] = [],
     ) -> Proof:
         target = SubstitutionProver.get_target(after_pattern, before_pattern, subst_pattern, subst_var)
+        cached_proof = composer.lookup_proof_cache("substitution", target)
+        if cached_proof is not None:
+            return cached_proof
 
         if before_pattern == subst_var:
             # the entire pattern should be replaced by subst_pattern
-            return SubstitutionProver.modulo_notation(
+            return SubstitutionProver.check_and_cache(
                 composer,
-                after_pattern,
-                before_pattern,
-                subst_pattern,
-                subst_var,
-                proof=composer.get_theorem("substitution-var-same").apply(
-                    xX=subst_var,
-                    ph0=subst_pattern,
+                SubstitutionProver.modulo_notation(
+                    composer,
+                    after_pattern,
+                    before_pattern,
+                    subst_pattern,
+                    subst_var,
+                    proof=composer.get_theorem("substitution-var-same").apply(
+                        xX=subst_var,
+                        ph0=subst_pattern,
+                    ),
                 ),
             )
 
         if subst_pattern == subst_var:
             # substitution should do nothing to the before_pattern
-            return SubstitutionProver.modulo_notation(
+            return SubstitutionProver.check_and_cache(
                 composer,
-                after_pattern,
-                before_pattern,
-                subst_pattern,
-                subst_var,
-                proof=composer.get_theorem("substitution-identity").apply(
-                    xX=subst_var,
-                    ph0=before_pattern,
+                SubstitutionProver.modulo_notation(
+                    composer,
+                    after_pattern,
+                    before_pattern,
+                    subst_pattern,
+                    subst_var,
+                    proof=composer.get_theorem("substitution-identity").apply(
+                        xX=subst_var,
+                        ph0=before_pattern,
+                    ),
                 ),
             )
 
@@ -273,19 +288,22 @@ class SubstitutionProver:
                 hypotheses,
             )
             if proof is not None:
-                return proof
+                return SubstitutionProver.check_and_cache(composer, proof)
 
         if TypecodeProver.prove_typecode(composer, "#Symbol", before_pattern) is not None:
-            return SubstitutionProver.modulo_notation(
+            return SubstitutionProver.check_and_cache(
                 composer,
-                after_pattern,
-                before_pattern,
-                subst_pattern,
-                subst_var,
-                proof=composer.get_theorem("substitution-symbol").apply(
-                    xX=subst_var,
-                    ph0=subst_pattern,
-                    sg0=before_pattern,
+                SubstitutionProver.modulo_notation(
+                    composer,
+                    after_pattern,
+                    before_pattern,
+                    subst_pattern,
+                    subst_var,
+                    proof=composer.get_theorem("substitution-symbol").apply(
+                        xX=subst_var,
+                        ph0=subst_pattern,
+                        sg0=before_pattern,
+                    ),
                 ),
             )
 
@@ -293,16 +311,19 @@ class SubstitutionProver:
             # before_pattern is disjoint from subst_var
             # this includes the case when before_pattern is a variable
             # and is disjoint from subst_var
-            return SubstitutionProver.modulo_notation(
+            return SubstitutionProver.check_and_cache(
                 composer,
-                after_pattern,
-                before_pattern,
-                subst_pattern,
-                subst_var,
-                proof=composer.get_theorem("substitution-disjoint").apply(
-                    xX=subst_var,
-                    ph0=before_pattern,
-                    ph1=subst_pattern,
+                SubstitutionProver.modulo_notation(
+                    composer,
+                    after_pattern,
+                    before_pattern,
+                    subst_pattern,
+                    subst_var,
+                    proof=composer.get_theorem("substitution-disjoint").apply(
+                        xX=subst_var,
+                        ph0=before_pattern,
+                        ph1=subst_pattern,
+                    ),
                 ),
             )
 

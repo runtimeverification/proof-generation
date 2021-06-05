@@ -34,14 +34,17 @@ class EqualityProofGenerator(ProofGenerator):
         assert isinstance(equation_sort, kore.SortVariable), \
                f"expecting a more general form with a free sort variable"
 
-        # instantiate the equation with unit-sort for convenience
-        equation = self.instantiate_claim_with_unit_sort(equation)
-
         lhs, rhs = KoreUtils.destruct_equals(equation.claim.pattern)
-
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
         assert lhs == subpattern, \
                f"cannot apply equation {equation} on a {subpattern}"
+
+        goal = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, rhs)
+
+        encoded_goal = self.composer.encode_metamath_statement(goal)
+        cached_proof = self.composer.lookup_proof_cache("equality-elim", encoded_goal)
+        if cached_proof is not None:
+            return ProvableClaim(goal, cached_proof)
 
         # collect all free (sort and pattern) variables
         free_vars = {var.name for var in PatternVariableVisitor().visit(provable.claim)}
@@ -50,7 +53,6 @@ class EqualityProofGenerator(ProofGenerator):
         fresh_var_name, = self.composer.gen_fresh_metavariables("#ElementVariable", 1, free_vars)
         fresh_var = kore.Variable(fresh_var_name, KoreUtils.infer_sort(lhs))
 
-        new_claim = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, rhs)
         template = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, fresh_var)
 
         encoded_template = self.composer.encode_pattern(template)
@@ -58,9 +60,11 @@ class EqualityProofGenerator(ProofGenerator):
 
         return self.composer.apply_kore_lemma(
             "kore-equals-elim-alt",
-            equation,
+            # instantiate the equation with unit-sort for convenience
+            self.instantiate_claim_with_unit_sort(equation),
             provable,
-            goal=new_claim,
+            goal=goal,
+            cache_key="equality-elim",
             ph4=encoded_template_body,
             x=self.composer.encode_pattern(fresh_var),
         )
@@ -315,7 +319,7 @@ class EqualityProofGenerator(ProofGenerator):
 
         # look up proof cache
         cached_proof = self.composer.lookup_proof_cache(
-            "quant-functional-substitution",
+            "functional-substitution",
             self.composer.encode_metamath_statement(substituted_claim),
         )
         if cached_proof is not None:
@@ -425,6 +429,4 @@ class EqualityProofGenerator(ProofGenerator):
             th3=dummy_premise,
         )
 
-        return self.composer.construct_provable_claim(
-            substituted_claim, proof, cache_key="quant-functional-substitution"
-        )
+        return self.composer.construct_provable_claim(substituted_claim, proof, cache_key="functional-substitution")
