@@ -293,6 +293,21 @@ ${
     notation-substitution   $a #Substitution ph3 ph4 ph5 xX $.
 $}
 ${
+    notation-notation.0 $e #Notation ph0 ph1 $.
+    notation-notation.1 $e #Notation ph2 ph0 $.
+    notation-notation.2 $e #Notation ph3 ph1 $.
+    notation-notation   $p #Notation ph2 ph3 $=
+        $(
+            apply "notation-transitivity"
+            apply "notation-notation.1"
+            apply "notation-transitivity"
+            apply "notation-notation.0"
+            apply "notation-symmetry"
+            apply "notation-notation.2"
+        $)
+        ( notation-transitivity notation-symmetry ) CADFABDEDBGIHH $.
+$}
+${
     notation-application-context.0 $e #ApplicationContext xX ph0 $.
     notation-application-context.1 $e #Notation ph1 ph0 $.
     notation-application-context   $a #ApplicationContext xX ph1 $.

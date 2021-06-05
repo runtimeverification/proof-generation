@@ -113,7 +113,9 @@ class SubstitutionProver:
         hypotheses: List[Theorem] = [],
     ) -> Optional[Proof]:
         if after_pattern.symbol != before_pattern.symbol:
-            result = NotationProver.rewrite_to_same_head_symbol(composer, after_pattern, before_pattern)
+            result = NotationProver.rewrite_to_same_head_symbol(
+                composer, after_pattern, before_pattern, with_proof=False
+            )
             if result is None: return None
             _, new_after_pattern, _, new_before_pattern = result
 

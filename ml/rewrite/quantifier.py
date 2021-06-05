@@ -46,9 +46,26 @@ class QuantifierProofGenerator(ProofGenerator):
         Substitute a free sort variable in the given claim with
         a sort and return a new provable claim
         """
-        # TODO: prove this
-        substituted_claim = KoreUtils.copy_and_substitute_sort(provable.claim, substitution, self.composer.module)
-        return self.composer.load_fresh_claim_placeholder("functional-substitution", substituted_claim)
+
+        for sort_var, sort in sorted(substitution.items(), key=lambda t: t[0].name):
+            assert len(KoreUtils.get_free_sort_variables(sort)) == 0, \
+                   f"substituting sorts with free sort variables is not supported"
+
+            sort_is_functional = self.composer.get_theorem("kore-sort-functional").apply(
+                SortingProver.auto,
+                th0=MetamathUtils.construct_top(),
+                ph0=self.composer.encode_pattern(sort),
+                x=mm.Metavariable("x"),
+            )
+
+            provable = self.apply_functional_substitution(
+                provable,
+                sort_var,
+                sort,
+                sort_is_functional,
+            )
+
+        return provable
 
     def prove_inj_functional(self, application: kore.Application) -> ProvableClaim:
         """
