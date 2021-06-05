@@ -476,7 +476,7 @@ class Tactic:
                not isinstance(right, Application):
                 return None
 
-            result = NotationProver.rewrite_to_same_head_symbol(state.composer, left, right)
+            result = NotationProver.rewrite_to_same_head_symbol(state.composer, left, right, with_proof=False)
             if result is None:
                 return None
             _, left, _, right = result

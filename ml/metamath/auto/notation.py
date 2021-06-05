@@ -22,6 +22,7 @@ class NotationProver:
         "#Positive": ("notation-positive", [2]),
         "#ApplicationContext": ("notation-application-context", [2]),
         "#Substitution": ("notation-substitution", [1, 2, 3]),
+        "#Notation": ("notation-notation", [1, 2]),
     }
 
     @staticmethod
@@ -232,6 +233,12 @@ class NotationProver:
         return new_term
 
     @staticmethod
+    def apply_sugar_axioms(axioms: Tuple[Theorem, ...], term: Application) -> Application:
+        for axiom in axioms:
+            term = NotationProver.apply_sugar_axiom(axiom, term)
+        return term
+
+    @staticmethod
     def apply_sugar_axiom_with_proof(axiom: Theorem, term: Application) -> Tuple[Proof, Application]:
         result = NotationProver.apply_sugar_axiom(axiom, term)
         return axiom.match_and_apply(NotationProver.format_target(term, result)), result
@@ -265,6 +272,7 @@ class NotationProver:
         composer: Composer,
         left: Application,
         right: Application,
+        with_proof: bool = True,
     ) -> Optional[Tuple[Optional[Proof], Application, Optional[Proof], Application]]:
         """
         Return (left notation proof, new left, right notation proof, new right)
@@ -275,12 +283,20 @@ class NotationProver:
 
         left_path, right_path = paths
 
-        left_proof, new_left = NotationProver.apply_sugar_axioms_with_proof(
-            composer, tuple(theorem for theorem, _ in left_path), left
-        )
-        right_proof, new_right = NotationProver.apply_sugar_axioms_with_proof(
-            composer, tuple(theorem for theorem, _ in right_path), right
-        )
+        left_proof: Optional[Proof] = None
+        right_proof: Optional[Proof] = None
+
+        if with_proof:
+            left_proof, new_left = NotationProver.apply_sugar_axioms_with_proof(
+                composer, tuple(theorem for theorem, _ in left_path), left
+            )
+            right_proof, new_right = NotationProver.apply_sugar_axioms_with_proof(
+                composer, tuple(theorem for theorem, _ in right_path), right
+            )
+        else:
+            new_left = NotationProver.apply_sugar_axioms(tuple(theorem for theorem, _ in left_path), left)
+            new_right = NotationProver.apply_sugar_axioms(tuple(theorem for theorem, _ in right_path), right)
+
         assert isinstance(new_left, Application) and \
                isinstance(new_right, Application)
 
