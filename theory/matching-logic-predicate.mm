@@ -275,3 +275,125 @@ lemma-ceil-is-predicate $p |- ( \is-predicate ( \ceil ph0 ) ) $=
         apply "lemma-floor-is-predicate"
     $)
     ( not-is-pattern ceil-is-pattern floor-is-pattern is-predicate-is-pattern iff-is-pattern dn-intro-sugar dn-elim-sugar rule-iff-intro rule-iff-compat-in-not notation-reflexivity proof-rule-mp rule-iff-compat-in-ceil rule-iff-transitivity floor-is-sugar notation-symmetry notation-transitivity notation-not notation-iff notation-proof rule-iff-compat-in-predicate rule-iff-elim-right predicate-intro-not lemma-floor-is-predicate ) ABDBEACEACEABDBEACABDBACABBCBBFACABDBFACACBBABBCBBACACBBACGACHIACBABBCBACABBCAABBAABBAGAHIMJJNACABDBACABBCBBACKABDABBCBABDABBCBABBCBABOABBCBABBCBABBCBKPQRSTUAUBABDEABDBEABDUCABUDLL $.
+
+${
+    is-predicate-elim.0 $e |- ( \is-predicate ph0 ) $.
+    is-predicate-elim.1 $e #Substitution ph2 ph1 \bot x $.
+    is-predicate-elim.2 $e #Substitution ph3 ph1 \top x $.
+    is-predicate-elim.3 $e #Substitution ph4 ph1 ph0 x $.
+    is-predicate-elim.4 $e |- ph2 $.
+    is-predicate-elim.5 $e |- ph3 $.
+    is-predicate-elim   $p |- ph4 $=
+        $(
+            apply "proof-rule-mp"
+            meh
+            apply "is-predicate-elim.0"
+            apply "rule-or-elim"
+            apply "weakened-mp"
+            apply "rule-imp-transitivity"
+            apply "eq-symmetry"
+            apply "eq-elim"
+            apply "is-predicate-elim.2"
+            apply "is-predicate-elim.3"
+            apply "rule-weakening"
+            apply "is-predicate-elim.5"
+            apply "rule-imp-transitivity"
+            apply "eq-symmetry"
+            apply "weakened-mp"
+            apply "eq-elim"
+            apply "is-predicate-elim.1"
+            apply "is-predicate-elim.3"
+            apply "rule-weakening"
+            apply "is-predicate-elim.4"
+        $)
+        ( eq-is-pattern bot-is-pattern is-top-is-pattern imp-is-pattern is-bot-is-pattern top-is-pattern notation-reflexivity is-predicate-is-pattern notation-transitivity notation-imp not-is-pattern notation-proof eq-symmetry eq-elim rule-imp-transitivity rule-weakening weakened-mp is-top-is-sugar is-bot-is-sugar rule-or-elim or-is-pattern is-predicate-is-sugar or-is-sugar not-is-sugar proof-rule-mp ) ATEAONPAQPEPATEPAOAQEAODEAORAMDEPARMRAMPAORAMPRAUEAORAMARMRAMAOARMARMAUJARMSUARAMSUBUDRADEBFIJUFUGAODLUHUIAQNAMEANMNAMPAQNAMPNAUEAQNAMANMNAMAQANMANMAUKANMSUANAMSUBUDNAMCENACEBFHJUFNAMCKUHUIUGULATEAONPAQPEATAOUCAQPAONPAQPATAOAQUMAOUCAQPAUNAOAQUOUAAOUCAQAONPAQAOUCAONPAONPAOUPAONPSUAAQSUBUAESUBUDGUQ $.
+$}
+
+forall-predicate-case $p |- ( \imp ( \forall x ( \is-predicate ph0 ) ) ( \or ( \exists x ( \is-top ph0 ) ) ( \forall x ( \is-bot ph0 ) ) ) ) $=
+    $(
+        apply "weakened-mp"
+        meh
+        apply "rule-weakening"
+        apply "excluded-middle"
+        apply "proof-rule-mp"
+        apply "proof-rule-mp"
+        apply "proof-rule-mp"
+        apply "weakening-imp3"
+        apply "or-elim"
+        apply "rule-weakening"
+        apply "or-intro-left"
+        apply "rule-imp-transitivity"
+        meh
+        apply "proof-rule-mp"
+        apply "weakening-imp2"
+        apply "or-intro-right-sugar"
+        apply "proof-rule-mp"
+        apply "proof-rule-mp"
+        apply "weakening-imp2"
+        apply "contrapositive"
+        apply "lemma-imp-compat-in-exists-alt"
+        (apply "fresh-in-imp" | apply "fresh-in-bot" | apply "fresh-in-exists-shadowed")+
+        apply "proof-rule-mp"
+        apply "forall-intro-alt"
+        apply "rule-imp-transitivity"
+        apply "rule-iff-elim-left"
+        apply "or-commutativity"
+        apply "imp-reflexivity"
+    $)
+    ( is-top-is-pattern exists-is-pattern imp-is-pattern is-bot-is-pattern not-is-pattern forall-is-pattern or-is-pattern is-predicate-is-pattern bot-is-pattern notation-reflexivity notation-transitivity notation-imp proof-rule-mp not-is-sugar notation-proof or-is-sugar element-var-is-var rule-weakening weakening-imp2 forall-is-sugar iff-is-pattern rule-imp-transitivity weakening-imp3 or-elim or-intro-left contrapositive fresh-in-exists-shadowed fresh-in-bot fresh-in-imp notation-fresh forall-intro-alt or-commutativity is-predicate-is-sugar notation-iff rule-iff-elim-left imp-reflexivity lemma-imp-compat-in-exists-alt or-intro-right-sugar excluded-middle weakened-mp ) AJBHACBDACBDGIACBDAFBHIAJBHACBDGACBDAFBHIEEAJBHACBDACBDGIACBDAFBHIEEAJBHACBDACBDAFBHIEEAJBHACBDGACBDAFBHIEEAJBHACBDACBDGIACBDAFBHIEEEACBDACBDAFBHIEACBDGACBDAFBHIEACBDACBDGIACBDAFBHIEEEAJBHACBDACBDAFBHIEEAJBHACBDGACBDAFBHIEEAJBHACBDACBDGIACBDAFBHIEEEEACBDACBDAFBHIEACBDGACBDAFBHIEACBDACBDGIACBDAFBHIEAJBHUEACBDACBDAFBHIEACBDGACBDAFBHIEACBDKEACBDGEACBDAFBHIEEEACBDACBDAFBHIEACBDGACBDAFBHIEACBDACBDGIACBDAFBHIEEEACBDACBDGACBDAFBHIUFACBDACBDAFBHIEACBDGACBDAFBHIEACBDACBDGIACBDAFBHIEEACBDACBDAFBHIEACBDGACBDAFBHIEACBDKEACBDGEACBDAFBHIEEACBDACBDAFBHIELACBDGACBDAFBHIEACBDACBDGIACBDAFBHIEACBDGACBDAFBHIEACBDKEACBDGEACBDAFBHIEACBDGACBDAFBHIELACBDACBDGIACBDAFBHIACBDKEACBDGEACBDAFBHIACBDACBDGIACBDGACBDGEACBDKEACBDGEACBDACBDGRACBDGACBDGACBDKEACBDGACBDGACBDKEACBDKEACBDPACBDKELMACBDGLNMACBDAFBHILNNNQOAJBHACBDACBDAFBHIEACBDACBDKEAFBHEEACBDACBDAFBHIEACBDAFBHUGACBDACBDAFBHIACBDACBDKEAFBHEACBDLACBDAFBHIACBDGAFBHEACBDKEAFBHEACBDAFBHRACBDGAFBHACBDKEAFBHACBDPAFBHLNMNQTOAJBHACBDGAFBHEACBDGACBDAFBHIEAJBHAFGBDACBDEEAJBHACBDGAFBHEEAFGBDACBDEACBDGAFBHEEAJBHAFGBDACBDEEAJBHACBDGAFBHEEEAFGBDACBDEACBDGAFBHEAJBHUAAFGBDACBDEACBDKEAFGBDKEEEAFGBDACBDEACBDGAFBHEEAFGBDACBDUHAFGBDACBDEACBDGAFBHEAFGBDACBDEACBDKEAFGBDKEEAFGBDACBDELACBDGAFBHACBDKEAFGBDKEACBDPAFBHAFGBDKEAFGBDKEAFBHAFGBDGAFGBDKEAFBUBAFGBDPMAFGBDKELMNNQOAJBHAFGACBAJGBDKEAJBHBSAJGBDKBSAJGBUIBSUJUKAJBHAJGBDKEAJGBDKEAJBHAJGBDGAJGBDKEAJBUBAJGBDPMAJGBDKELMULAJAFGACEEAJBHAFGACEEAJAFGACEBUMAJAFACIAFGACEAJAFACIACAFIAFACIUCAJAFACIUCACAFUNAJAFACIACAFIAFACIAJACAFIACAFIAUOACAFILMAFACILUPQUQAFGACEAFGACEEAFACIAFGACEEAFGACEURAFACIAFGACEAFGACEAFGACEAFACIAFGACEAFGACEAFACRAFGACELMAFGACELNQUDOUSOAFBHACBDAFBHIEACBDGAFBHEACBDGACBDAFBHIEEAFBHACBDAFBHIACBDGUAAFBHACBDUTOUDOAJBHACBDACBDGIACBDVATVB $.
+
+predicate-intro-exists $p |- ( \imp ( \forall x ( \is-predicate ph0 ) ) ( \is-predicate ( \exists x ph0 ) ) ) $=
+    $(
+        apply "rule-imp-transitivity"
+        apply "forall-predicate-case"
+        apply "rule-or-elim"
+        apply "lemma-prenex-forall-imp"
+        meh
+        apply "lemma-forall-intro"
+        apply "rule-imp-transitivity"
+        meh
+        apply "or-intro-left"
+        meh
+        meh
+        apply "lemma-imp-compat-in-floor"
+        apply "rule-imp-transitivity"
+        apply "and-elim-right"
+        apply "rule-and-intro-alt2-sugar"
+        apply "rule-weakening"
+        apply "rule-weakening"
+        apply "top-intro"
+        apply "proof-rule-mp"
+        apply "weakening-imp2"
+        apply "exists-intro-alt"
+        apply "rule-imp-transitivity"
+        meh
+        apply "or-intro-right-sugar"
+        meh
+        apply "rule-imp-transitivity"
+        apply "lemma-imp-compat-in-forall"
+        apply "lemma-imp-compat-in-floor"
+        apply "and-elim-left"
+        apply "rule-imp-transitivity"
+        meh
+        apply "lemma-imp-compat-in-floor"
+        apply "rule-and-intro-alt2-sugar"
+        apply "imp-reflexivity"
+        apply "rule-weakening"
+        apply "bot-elim"
+        meh
+        apply "forall-propagate-in-floor-imp"
+        (apply "fresh-in-imp" | apply "fresh-in-bot" | apply "fresh-in-app" | apply "fresh-in-symbol" | apply "fresh-in-exists-shadowed")+
+    $)
+    ( imp-is-pattern bot-is-pattern exists-is-pattern not-is-pattern top-is-pattern iff-is-pattern is-top-is-pattern element-var-is-var is-bot-is-pattern notation-transitivity or-is-pattern notation-reflexivity floor-is-pattern not-is-sugar ceil-is-pattern fresh-in-imp is-predicate-is-pattern notation-fresh fresh-in-bot forall-is-pattern notation-imp definedness-is-symbol symbol-is-pattern notation-proof app-is-pattern and-is-pattern or-is-sugar iff-is-sugar eq-is-pattern eq-is-sugar rule-imp-transitivity fresh-in-exists-shadowed and-is-sugar is-top-is-sugar is-bot-is-sugar is-predicate-is-sugar rule-weakening lemma-imp-compat-in-floor fresh-in-symbol top-is-sugar fresh-in-app ceil-is-sugar floor-is-sugar rule-and-intro-alt2-sugar forall-predicate-case and-elim-right top-intro weakening-imp2 exists-intro-alt proof-rule-mp or-intro-left lemma-forall-intro lemma-prenex-forall-imp and-elim-left lemma-imp-compat-in-forall forall-propagate-in-floor-imp imp-reflexivity bot-elim or-intro-right-sugar rule-or-elim ) ASBUBAIBEAKBUBMABESABVGAIBEDCAKBUBCABESCAIBEAKBUBMABESCAIBEAKBUBABESAIABESBABEIFABEKCABESBJABEIFABEKBJABEIDCABEIFBJABEIDBJABEGHFQDCABEIBJABEGHFQDBJUDUEABEGHFUGABEGHFQBJUDUEABEGHFBJBJUDVAABEGHDCABEGHFBJABEGHDBJABEGCFGABECFMDCABEGHBJABEGCFGABECFMDBJABEGCFFGABECFCABEGCFGABECFMBJABEGCFFGABECFBJABEGCFDCABEGCFFBJABEGCFDBJABEGCDCABEGCFBJABEGCDBJABEGBJABUNDDCGBJDDBJBJUABJUARGDDCDDCGDFDDCVBDPLDDCNLTRBJUARABEGCFABEGCDCABEGCDCABEGCPABEGCDCNLTBJUARABEGCFFABEGCFDCABEGCFDCABEGCFPABEGCFDCNLTGABECDCGABECFBJGABECDBJGABEBJDDCGBJDDBJBJUABJUARGDDCDDCGDFDDCVBDPLDDCNLTABUNRBJUARGABECFGABECDCGABECDCGABECPGABECDCNLTRABEGCFGABECFMABEGCFFGABECFCABEGCFFGABECFCABEGCFGABECFUIABEGCFFGABECFCNLTBJUARABEGHABEGCFGABECFMDCABEGCFGABECFMDCABEGHABEGCFGABECFMFABEGCFGABECFMDCABEGHABEGCGABECUHABEGCFGABECFMFABEGUJABEGCGABECUOLABEGCFGABECFMPLABEGCFGABECFMDCNLTBJUARABEGHFABEGHDCABEGHDCABEGHPABEGHDCNLTVCABEGHFQUDUEABEGHFUGUDUEABEGHFUGABEGHFVDUDUEABEGHFUGNLTBJUARABEIABEGHFQDCABEGHFQDCABEIABEGHFQFABEGHFQDCABEIABEGHOABEGHFQFABEIABEGUKABEGHOABEUPABEGULLABEGHVELABEGHFQPLABEGHFQDCNLTBJUARABEIFABEIDCABEIDCABEIPABEIDCNLTABEDHFQDCABEKBJABEDHFQDBJUDUEABEDHFUGABEDHFQBJUDUEABEDHFBJBJUDVAABEDHDCABEDHFBJABEDHDBJABEDCFDABECFMDCABEDHBJABEDCFDABECFMDBJABEDCFFDABECFCABEDCFDABECFMBJABEDCFFDABECFBJABEDCFDCABEDCFFBJABEDCFDBJABEDCDCABEDCFBJABEDCDBJABEDBJABUNBJUARBJUARABEDCFABEDCDCABEDCDCABEDCPABEDCDCNLTBJUARABEDCFFABEDCFDCABEDCFDCABEDCFPABEDCFDCNLTDABECDCDABECFBJDABECDBJDABEBJBJUAABUNRBJUARDABECFDABECDCDABECDCDABECPDABECDCNLTRABEDCFDABECFMABEDCFFDABECFCABEDCFFDABECFCABEDCFDABECFUIABEDCFFDABECFCNLTBJUARABEDHABEDCFDABECFMDCABEDCFDABECFMDCABEDHABEDCFDABECFMFABEDCFDABECFMDCABEDHABEDCDABECUHABEDCFDABECFMFABEDUJABEDCDABECUOLABEDCFDABECFMPLABEDCFDABECFMDCNLTBJUARABEDHFABEDHDCABEDHDCABEDHPABEDHDCNLTVCABEDHFQUDUEABEDHFUGUDUEABEDHFUGABEDHFVDUDUEABEDHFUGNLTBJUARABEKABEDHFQDCABEDHFQDCABEKABEDHFQFABEDHFQDCABEKABEDHOABEDHFQFABEKABEDUKABEDHOABEUQABEDULLABEDHVELABEDHFQPLABEDHFQDCNLTRABESABEIFABEKCABEIFABEKCABESABEIABEKMABEIFABEKCABEURABEIABEKUILABEIFABEKCNLTAIABESCBAIABEIABESAGHOABEGHOCAIABEICAGHABEGHAGHGACABEGHAGCDCDCGACDCCDCGACCAGHGACCAGCGACVHAGHGACAGCDCDCGACDCCDCGACAGHAGCFGACFMDCAGCDCDCGACDCCDCAGHAGCFGACFMFAGCFGACFMDCAGHAGCGACUHAGCFGACFMFAGUJAGCGACUOLAGCFGACFMPLAGCFGACFMDAGCDCDCGACDCCDAGCFGACFMAGCFFGACFCAGCDCDCGACDCCAGCFGACFUIAGCFFGACFAGCDCDCGACDCAGCFFAGCFDCAGCDCDCAGCFPAGCFDAGCDCDAGCFAGCDCAGCDCAGCPAGCDCNLDNUCLGACFGACDCGACDCGACPGACDCNLUCLDNUCLGACNUCUFGACABEGCGABECUHCGACABEGHCGACABEGCGABECGACABEGCABEGVIUSUSAABECGACGABECCAABEGVJABVKVLVFGACABEGHGACABEGCGABECUHGACNABEGUJUCUFUMUTAIABEIAGHOABEGHOAIAGHOAGHOAIAGUKAGHOAUPAGULLAGHONLABEIABEGUKABEGHOABEUPABEGULLUCUFABEIABEIDCABEKCCABEIABESCABEIABEKVMABEIABESABEIABEIDCABEKCABEINABESABEIFABEKCABEIDCABEKCABESABEIABEKMABEIFABEKCABEURABEIABEKUILABEIFABEKABEIDCABEKABEIPABEKNUCLUCUFUMVNVOAKBUBABEKABESAKBUBADCOBUBABEKAKADCOBADHOADCOCAKADCOCADHADCADCDCDCDACDCCDCADCCADHADCCADCDACVPADHADCADCDCDCDACDCCDCADCADHADCFDACFMDCADCDCDCDACDCCDCADHADCFDACFMFADCFDACFMDCADHADCDACUHADCFDACFMFADUJADCDACUOLADCFDACFMPLADCFDACFMDADCDCDCDACDCCDADCFDACFMADCFFDACFCADCDCDCDACDCCADCFDACFUIADCFFDACFADCDCDCDACDCADCFFADCFDCADCDCDCADCFPADCFDADCDCDADCFADCDCADCDCADCPADCDCNLDNUCLDACFDACDCDACDCDACPDACDCNLUCLDNUCLADCNUCUFUTAKADCOADHOADCOAKADHOADHOAKADUKADHOAUQADULLADHONLADCONUCUFVQADCOBUBABEDCOABEKADBVRABEDCOABEDHOCABEDCOABEKCABEDCABEDHABEDCABEDCDABECUHCABEDCABEDHCABEDCABEDCDABECABEDCVSABEDCDABECABEVTUSVFABEDCABEDHABEDCABEDCDABECUHABEDCNABEDUJUCUFUTABEDCOABEKABEDCOABEDHOABEDCONABEKABEDUKABEDHOABEUQABEDULLUCUFUMUMABEKABEIABEKMCABEKABESCABEKABEIWAABEKABESABEKABEIABEKMABEKNABEURUCUFUMWBAIBEAKBUBMABESAIBEDCAKBUBCABESAIBEAKBUBMAIBEFAKBUBCAIBEDCAKBUBCAIBEAKBUBUIAIBEFAKBUBAIBEDCAKBUBAIBEFAIBEDCAIBEDCAIBEPAIBEDCNLAKBUBNUCLABESNUCUFUM $.
+
+${
+    rule-predicate-intro-exists.0 $e |- ( \is-predicate ph0 ) $.
+    rule-predicate-intro-exists   $p |- ( \is-predicate ( \exists x ph0 ) ) $=
+        $(
+            apply "proof-rule-mp"
+            apply "predicate-intro-exists"
+            apply "lemma-forall-intro"
+            apply "rule-predicate-intro-exists.0"
+        $)
+        ( is-predicate-is-pattern forall-is-pattern exists-is-pattern predicate-intro-exists lemma-forall-intro proof-rule-mp ) ADBEABFDABGADBCHI $.
+$}
