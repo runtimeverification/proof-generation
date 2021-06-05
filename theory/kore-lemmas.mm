@@ -266,39 +266,6 @@ ${
     kore-iff-elim-right   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph1 ) ) ) $= ? $.
 $}
 
-$( ${
-    kore-functional.0 $e |- ( \kore-valid ph1 ( \kore-exists ph0 ph1 y ( \kore-equals ph0 ph1 y ph2 ) ) ) $.
-    kore-functional.1 $e |- ( \in-sort ph2 ph0 ) $.
-    kore-functional.2 $e |- ( \ceil ( \inh ph1 ) ) $.
-    kore-functional $p |- ( \exists y ( \eq y ph2 ) ) $= ? $.
-$} $)
-
-$(
-sorted-functional-to-functional $p |- ( \imp ( \sorted-exists x ph0 ( \eq x ph1 ) ) ( \exists x ( \eq x ph1 ) ) ) $= ? $.
-
-${
-    lifted-mp.0 $e ( \imp ph0 ( \imp ( \included ph0 ph1 ) ph1 ) ) $.
-    lifted-mp   $p $.
-$}
-
-kore-functional-alt-lemma-0 $p
-    |- ( \imp ( \in-sort ph2 ph1 ) ( \imp  ) )
-$= ? $.
-
-kore-functional-alt $p
-    |- ( \imp ( \and ( \in-sort ph2 ph1 )
-              ( \and ( \ceil ( \inh ph0 ) )
-                     ( \kore-valid ph0 ( \kore-exists ph1 ph0 x ( \kore-equals ph1 ph0 x ph2 ) ) ) ) )
-              ( \exists x ( \eq x ph2 ) ) )
-$= ? $.
-
-${
-    kore-functional.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-exists ph1 ph0 x ( \kore-equals ph1 ph0 x ph2 ) ) ) ) $.
-    kore-functional   $p |- ( \imp th0 ( \exists x ( \eq x ph2 ) ) ) $= ? $.
-$}
-
-$)
-
 unit-sort-is-kore-sort $p |- ( \kore-is-sort \unit-sort ) $=
     $(
         apply "notation-proof"

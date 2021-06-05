@@ -25,6 +25,19 @@ ${
 $}
 
 ${
+    $d xX y $.
+    $d y ph6 $. $( this assumption is too strong for symbolic terms, it only needs to not occur free $)
+    substitution-kore-exists-alt.0 $e #Substitution ph0 ph3 ph6 xX $.
+    substitution-kore-exists-alt.1 $e #Substitution ph1 ph4 ph6 xX $.
+    substitution-kore-exists-alt.2 $e #Substitution ph2 ph5 ph6 xX $.
+    substitution-kore-exists-alt   $p #Substitution ( \kore-exists ph0 ph1 y ph2 ) ( \kore-exists ph3 ph4 y ph5 ) ph6 xX $=
+        $(
+            substitution
+        $)
+        ( and-is-pattern element-var-is-var var-is-pattern sorted-exists-is-pattern in-sort-is-pattern inh-is-pattern exists-is-pattern notation-reflexivity kore-exists-is-pattern notation-transitivity substitution-and sorted-exists-is-sugar notation-substitution kore-exists-is-sugar substitution-disjoint substitution-in-sort substitution-exists-alt substitution-inh ) ACHPBRMDFHPERMGABCHUADEFHUAGIGACHPBRDFHPERIHNOAQCMHSHNODQFMHSGACHPDFHPGIHNOAQCMHNODQFMGHIGHNOAQCHNODQFIGHNOAHNODIHNOGIUGJUHLUCUIACHPHNOAQCMHSHNOAQCMHSACHUDHNOAQCMHSTUBDFHPHNODQFMHSHNODQFMHSDFHUDHNODQFMHSTUBGTUEGBEIKUJUCABCHUAACHPBRMACHPBRMABCHUFACHPBRMTUBDEFHUADFHPERMDFHPERMDEFHUFDFHPERMTUBGTUE $.
+$}
+
+${
     $d x ph1 $.
     substitution-kore-exists-shadowed $p #Substitution ( \kore-exists ph0 ph1 x ph2 ) ( \kore-exists ph0 ph1 x ph2 ) ph3 x $=
         $(
@@ -80,7 +93,7 @@ $}
 
 ${
     substitution-kore-top.0 $e #Substitution ph0 ph1 ph2 xX $.
-    substitution-kore-top $p #Substitution ( \kore-top ph0 ) ( \kore-top ph1 ) ph2 xX $= ( inhabitant-is-symbol symbol-is-pattern app-is-pattern inh-is-pattern notation-symmetry kore-top-is-pattern notation-transitivity notation-reflexivity kore-top-is-sugar inh-is-sugar substitution-symbol substitution-app notation-substitution ) FGAHFGBHCAKBKCDCFGAFGBDCDFPEQAKAIFGAHANFGAHAIAIFGAHAIFGAHFGAHAOFGAHFGAHFGAHMJLJJLBKBIFGBHBNFGBHBIBIFGBHBIFGBHFGBHBOFGBHFGBHFGBHMJLJJLCMR $.
+    substitution-kore-top $p #Substitution ( \kore-top ph0 ) ( \kore-top ph1 ) ph2 xX $= ( inh-is-pattern kore-top-is-pattern notation-reflexivity kore-top-is-sugar notation-transitivity substitution-inh notation-substitution ) AFBFCAGBGCDCABDEKAGAFAFAIAFHJBGBFBFBIBFHJCHL $.
 $}
 
 ${
@@ -220,19 +233,8 @@ ${
     substitution-kore-forall.0 $e #Substitution ph0 ph3 ph6 xX $.
     substitution-kore-forall.1 $e #Substitution ph2 ph5 ph6 xX $.
     substitution-kore-forall $p #Substitution ( \kore-forall ph0 ph1 y ph2 ) ( \kore-forall ph3 ph1 y ph5 ) ph6 xX $=
-        $(
-            desugar "\kore-forall"
-            apply "substitution-kore-not"
-            apply "substitution-fresh"
-            apply "fresh-disjoint"
-            apply "substitution-kore-exists"
-            apply "substitution-kore-forall.0"
-            apply "substitution-kore-not"
-            apply "substitution-fresh"
-            apply "fresh-disjoint"
-            apply "substitution-kore-forall.1"
-        $)
-        ( kore-not-is-pattern kore-exists-is-pattern kore-forall-is-pattern notation-reflexivity fresh-disjoint substitution-fresh substitution-kore-not kore-forall-is-sugar notation-symmetry notation-transitivity substitution-kore-exists notation-substitution ) BABBCKGLKBDBBEKGLKFABCGMDBEGMFHBABBCKGLBDBBEKGLFHBFHBHOPABBCKDBEKFGHIBCBEFHBFHBHOPJQUAQABCGMBABBCKGLKBABBCKGLKABCGRBABBCKGLKBABBCKGLKBABBCKGLKNSTDBEGMBDBBEKGLKBDBBEKGLKDBEGRBDBBEKGLKBDBBEKGLKBDBBEKGLKNSTFNUB $.
+        $( substitution $)
+        ( kore-not-is-pattern kore-exists-is-pattern kore-forall-is-pattern notation-reflexivity substitution-disjoint substitution-kore-not kore-forall-is-sugar notation-transitivity substitution-kore-exists notation-substitution ) BABBCKGLKBDBBEKGLKFABCGMDBEGMFHBABBCKGLBDBBEKGLFHBFHOABBCKDBEKFGHIBCBEFHBFHOJPSPABCGMBABBCKGLKBABBCKGLKABCGQBABBCKGLKNRDBEGMBDBBEKGLKBDBBEKGLKDBEGQBDBBEKGLKNRFNT $.
 $}
 
 ${

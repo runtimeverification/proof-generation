@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Mapping
+from typing import Optional, List, Tuple, Mapping, Dict
 
 from ..ast import Metavariable, Term, Statement, Application, StructuredStatement, ProvableStatement
 from ..composer import Composer, Theorem, MethodAutoProof, Proof
@@ -25,69 +25,127 @@ class NotationProver:
     }
 
     @staticmethod
-    def format_target(left: Term, right: Term) -> StructuredStatement:
-        return ProvableStatement(
-            "",
-            (
-                Application(NotationProver.SYMBOL),
-                left,
-                right,
-            ),
-        )
+    @Composer.add_hook("index")
+    def hook_index(composer: Composer, theorem: Theorem) -> None:
+        """
+        Called in composer every time when a new theorem is indexed
+        """
+        sugar_axiom_info = NotationProver.destruct_sugar_axiom(theorem)
+        if sugar_axiom_info is not None:
+            from_symbol, to_symbol = sugar_axiom_info
+
+            assert from_symbol not in composer.notation_axiom_graph, \
+                   f"symbol {from_symbol} can be rewritten to both " \
+                   f"{to_symbol} (through {theorem.statement.label}) and {composer.notation_axiom_graph[from_symbol][1]}"
+
+            composer.notation_axiom_graph[from_symbol] = theorem, to_symbol
+            return
+
+        congruence_lemma_info = NotationProver.destruct_congruence_lemma(theorem)
+        if congruence_lemma_info is not None:
+            symbol, order = congruence_lemma_info
+            if symbol not in composer.notation_congruence:
+                composer.notation_congruence[symbol] = theorem, order
+            return  # otherwise we just ignore it
 
     @staticmethod
-    def apply_sugar_axiom(axiom: Theorem, term: Term) -> Term:
+    @Composer.add_hook("remove")
+    def hook_remove(composer: Composer, name: str) -> None:
         """
-        Rewrite a term using a sugar axiom, from left to right
+        Remove a theorem from the index
         """
+        composer.notation_axiom_graph = {
+            symbol1: (theorem, symbol2)
+            for symbol1, (theorem, symbol2) in composer.notation_axiom_graph.items() if theorem.statement.label != name
+        }
 
-        assert len(axiom.statement.terms) == 3, \
-               f"invalid sugar axiom {axiom}"
-
-        substitution = Unification.match_terms_as_instance(axiom.statement.terms[1], term)
-        assert substitution is not None, \
-               f"invalid sugar axiom {axiom}"
-
-        return axiom.statement.terms[2].substitute(substitution)
+        composer.notation_congruence = {
+            symbol: (theorem, order)
+            for symbol, (theorem, order) in composer.notation_congruence.items() if theorem.statement.label != name
+        }
 
     @staticmethod
-    def find_sugar_axiom(composer: Composer, symbol: str) -> Optional[Theorem]:
+    def get_path_to_root(composer: Composer, symbol: str) -> Tuple[Tuple[Theorem, str], ...]:
+        path = []
+
+        while symbol in composer.notation_axiom_graph:
+            theroem, parent_symbol = composer.notation_axiom_graph[symbol]
+            path.append((theroem, parent_symbol))
+            symbol = parent_symbol
+
+        return tuple(path)
+
+    @staticmethod
+    def get_path_to_lowest_common_ancestor(
+        composer: Composer, symbol1: str, symbol2: str
+    ) -> Optional[Tuple[Tuple[Tuple[Theorem, str], ...],  # tuple of (theorem name, symbol)
+                        Tuple[Tuple[Theorem, str], ...], ]]:
         """
+        Return a list of theorems to apply on each side
+        """
+
+        if symbol1 == symbol2:
+            return (), ()
+
+        path1 = NotationProver.get_path_to_root(composer, symbol1)
+        path2 = NotationProver.get_path_to_root(composer, symbol2)
+
+        for i, (_, symbol) in enumerate(path2):
+            if symbol == symbol1:
+                return (), path2[:i + 1]
+
+        for i, (_, symbol) in enumerate(path1):
+            if symbol == symbol2:
+                return path1[:i + 1], ()
+
+        if len(path1) == 0 or len(path2) == 0:
+            return None
+
+        if path1[-1] != path2[-1]:
+            return None
+
+        for i, ((_, subsymbol1), (_, subsymbol2)) in enumerate(zip(path1[::-1], path2[::-1])):
+            if subsymbol1 != subsymbol2:
+                break
+
+        return path1[:len(path1) - i], path2[:len(path2) - i]
+
+    @staticmethod
+    def destruct_sugar_axiom(theorem: Theorem) -> Optional[Tuple[str, str]]:
+        """
+        If the theorem is a "sugar axiom", return (symbol A, symbol B)
+        such that the sugar axiom is defining A as B
+
         A sugar axiom of symbol S should be of the form
         $a #Notation ( S a b c ... ) phi $. for some phi, and metavariables a b c
         and it should not have any essential hypotheses (the ones with essentials
         are not supported right now)
         """
-        for theorem in composer.get_theorems_of_typecode(NotationProver.SYMBOL):
-            if not (len(theorem.statement.terms) == 3 and len(theorem.context.essentials) == 0):
-                continue
+        if not len(theorem.statement.terms) == 3 or len(theorem.context.essentials) != 0:
+            return None
 
-            lhs = theorem.statement.terms[1]
+        head, lhs, rhs = theorem.statement.terms
 
-            if not (isinstance(lhs, Application) and lhs.symbol == symbol):
-                continue
+        if head != Application("#Notation"):
+            return None
 
-            failed = False
+        if not isinstance(lhs, Application) or not isinstance(rhs, Application):
+            return None
 
-            for subterm in lhs.subterms:
-                if not isinstance(subterm, Metavariable):
-                    failed = True
-                    break
-            if failed:
-                continue
+        for subterm in lhs.subterms:
+            if not isinstance(subterm, Metavariable):
+                return None
 
-            # check that RHS doesn't have variables not appearing in the LHS
-            left_metavars = lhs.get_metavariables()
-            right_metavars = theorem.statement.terms[2].get_metavariables()
-            if not right_metavars.issubset(left_metavars):
-                continue
+        # check that RHS doesn't have variables not appearing in the LHS
+        left_metavars = lhs.get_metavariables()
+        right_metavars = rhs.get_metavariables()
+        if not right_metavars.issubset(left_metavars):
+            return None
 
-            return theorem
-
-        return None
+        return lhs.symbol, rhs.symbol
 
     @staticmethod
-    def find_congruence_lemma(composer: Composer, symbol: str) -> Optional[Tuple[Theorem, List[int]]]:
+    def destruct_congruence_lemma(theorem: Theorem) -> Optional[Tuple[str, Tuple[int, ...]]]:
         """
         A congruence lemma for a symbol S is of the form
         ${
@@ -101,57 +159,136 @@ class NotationProver:
         The returned list indicates the order of children
         appearing in the essential hypotheses
         """
-        for theorem in composer.get_theorems_of_typecode(NotationProver.SYMBOL):
-            if len(theorem.statement.terms) != 3:
-                continue
+        if len(theorem.statement.terms) != 3:
+            return None
 
-            _, lhs, rhs = theorem.statement.terms
+        head, lhs, rhs = theorem.statement.terms
 
-            if not (isinstance(lhs, Application) and isinstance(rhs, Application) and lhs.symbol == symbol
-                    and rhs.symbol == symbol and len(lhs.subterms) == len(rhs.subterms)):
-                continue
+        if head != Application("#Notation"):
+            return None
 
-            failed = False
-            # (metavar pair) -> order in the application
-            order_of_metavars = {}
+        if not (isinstance(lhs, Application) and \
+                isinstance(rhs, Application) and \
+                lhs.symbol == rhs.symbol and \
+                len(lhs.subterms) == len(rhs.subterms)):
+            return None
 
-            # check that all children of the applications are metavariables
-            for i, (s1, s2) in enumerate(zip(
-                    lhs.subterms,
-                    rhs.subterms,
-            )):
-                if not isinstance(s1, Metavariable) or not isinstance(s2, Metavariable):
-                    failed = True
-                    break
-                order_of_metavars[s1.name, s2.name] = i
-            if failed:
-                continue
+        # (metavar pair) -> order in the application
+        order_of_metavars = {}
 
-            essentials_order = []
+        # check that all children of the applications are metavariables
+        for i, (s1, s2) in enumerate(zip(lhs.subterms, rhs.subterms)):
+            if not isinstance(s1, Metavariable) or not isinstance(s2, Metavariable):
+                return None
+            order_of_metavars[s1.name, s2.name] = i
 
-            # check that essentials only assumes things about metavariables
-            for essential in theorem.context.essentials:
-                if not (len(essential.terms) == 3 and essential.terms[0] == Application(NotationProver.SYMBOL)):
-                    continue
+        essentials_order = []
 
-                lhs_var = essential.terms[1]
-                rhs_var = essential.terms[2]
+        # check that essentials only assumes things about metavariables
+        for essential in theorem.context.essentials:
+            if not (len(essential.terms) == 3 and essential.terms[0] == Application(NotationProver.SYMBOL)):
+                return None
 
-                if not (isinstance(lhs_var, Metavariable) and isinstance(rhs_var, Metavariable)):
-                    continue
+            _, lhs_var, rhs_var = essential.terms
 
-                pair = lhs_var.name, rhs_var.name
-                if pair not in order_of_metavars:
-                    failed = True
-                    break
+            if not (isinstance(lhs_var, Metavariable) and isinstance(rhs_var, Metavariable)):
+                return None
 
-                essentials_order.append(order_of_metavars[pair])
-            if failed:
-                continue
+            pair = lhs_var.name, rhs_var.name
+            if pair not in order_of_metavars:
+                return None
 
-            return theorem, essentials_order
+            essentials_order.append(order_of_metavars[pair])
 
+        return lhs.symbol, tuple(essentials_order)
+
+    @staticmethod
+    def format_target(left: Term, right: Term) -> StructuredStatement:
+        return ProvableStatement(
+            "",
+            (
+                Application(NotationProver.SYMBOL),
+                left,
+                right,
+            ),
+        )
+
+    @staticmethod
+    def apply_sugar_axiom(axiom: Theorem, term: Application) -> Application:
+        """
+        Rewrite a term using a sugar axiom, from left to right
+        """
+
+        assert len(axiom.statement.terms) == 3, \
+               f"invalid sugar axiom {axiom.statement}"
+
+        substitution = Unification.match_terms_as_instance(axiom.statement.terms[1], term)
+        assert substitution is not None, \
+               f"invalid sugar axiom {axiom.statement}"
+
+        new_term = axiom.statement.terms[2].substitute(substitution)
+        assert isinstance(new_term, Application)
+
+        return new_term
+
+    @staticmethod
+    def apply_sugar_axiom_with_proof(axiom: Theorem, term: Application) -> Tuple[Proof, Application]:
+        result = NotationProver.apply_sugar_axiom(axiom, term)
+        return axiom.match_and_apply(NotationProver.format_target(term, result)), result
+
+    @staticmethod
+    def apply_sugar_axioms_with_proof(composer: Composer, axioms: Tuple[Theorem, ...],
+                                      term: Application) -> Tuple[Optional[Proof], Application]:
+        current_proof: Optional[Proof] = None
+
+        for axiom in axioms:
+            step_proof, term = NotationProver.apply_sugar_axiom_with_proof(axiom, term)
+
+            if current_proof is None:
+                current_proof = step_proof
+            else:
+                current_proof = composer.get_theorem(NotationProver.TRANS).apply(
+                    current_proof,
+                    step_proof,
+                )
+
+        return current_proof, term
+
+    @staticmethod
+    def find_sugar_axiom(composer: Composer, symbol: str) -> Optional[Theorem]:
+        if symbol in composer.notation_axiom_graph:
+            return composer.notation_axiom_graph[symbol][0]
         return None
+
+    @staticmethod
+    def rewrite_to_same_head_symbol(
+        composer: Composer,
+        left: Application,
+        right: Application,
+    ) -> Optional[Tuple[Optional[Proof], Application, Optional[Proof], Application]]:
+        """
+        Return (left notation proof, new left, right notation proof, new right)
+        """
+        paths = NotationProver.get_path_to_lowest_common_ancestor(composer, left.symbol, right.symbol)
+        if paths is None:
+            return None
+
+        left_path, right_path = paths
+
+        left_proof, new_left = NotationProver.apply_sugar_axioms_with_proof(
+            composer, tuple(theorem for theorem, _ in left_path), left
+        )
+        right_proof, new_right = NotationProver.apply_sugar_axioms_with_proof(
+            composer, tuple(theorem for theorem, _ in right_path), right
+        )
+        assert isinstance(new_left, Application) and \
+               isinstance(new_right, Application)
+
+        return left_proof, new_left, right_proof, new_right
+
+    @staticmethod
+    def apply_reflexivity(composer: Composer, term: Term) -> Proof:
+        return composer.get_theorem(NotationProver.REFL).apply(ph0=term)
 
     @staticmethod
     def prove_notation(composer: Composer, left: Term, right: Term) -> Proof:
@@ -182,7 +319,7 @@ class NotationProver:
         symmetric_target = NotationProver.format_target(right, left)
 
         if left == right:
-            return composer.get_theorem(NotationProver.REFL).match_and_apply(target)
+            return NotationProver.apply_reflexivity(composer, left)
 
         # different metavariables
         if isinstance(left, Metavariable) and isinstance(right, Metavariable):
@@ -202,55 +339,61 @@ class NotationProver:
         assert isinstance(left, Application) and isinstance(right, Application)
 
         if left.symbol == right.symbol:
-            found = NotationProver.find_congruence_lemma(composer, left.symbol)
-            if found is not None:
-                congruence, order = found
+            if left.symbol in composer.notation_congruence:
+                theorem, order = composer.notation_congruence[left.symbol]
                 subproofs = []
 
                 for n in order:
                     # show that the nth subterms are equal
                     assert n < len(left.subterms) and n < len(
                         right.subterms
-                    ), f"ill-formed congruence axiom {congruence.statement.label}"
+                    ), f"ill-formed congruence axiom {theorem.statement.label}"
 
                     subproof = NotationProver.prove_notation(composer, left.subterms[n], right.subterms[n])
                     subproofs.append(subproof)
 
-                proof = congruence.match_and_apply(target, *subproofs)
+                proof = theorem.match_and_apply(target, *subproofs)
                 assert proof.is_proof_of(target), f"congruence axiom gave unexpected result"
 
                 return proof
+            elif left.symbol in composer.notation_axiom_graph:
+                # expand further to find congruence lemma
+                theorem, _ = composer.notation_axiom_graph[left.symbol]
 
-        # reduce one of the terms using sugar axiom
-        sugar_axiom = NotationProver.find_sugar_axiom(composer, left.symbol)
-        if sugar_axiom:
-            substitution = Unification.match_terms_as_instance(sugar_axiom.statement.terms[1], left)
-            assert (substitution is not None), f"ill-formed sugar axiom {sugar_axiom.statement}"
+                step_proof1, left = NotationProver.apply_sugar_axiom_with_proof(theorem, left)
+                step_proof2, right = NotationProver.apply_sugar_axiom_with_proof(theorem, right)
+                proof = NotationProver.prove_notation(composer, left, right)
 
-            reduction_proof = sugar_axiom.apply(**substitution)
-            new_left = reduction_proof.conclusion[2]
+                return composer.get_theorem(NotationProver.TRANS).apply(
+                    step_proof1,
+                    composer.get_theorem(NotationProver.TRANS).apply(
+                        proof,
+                        composer.get_theorem(NotationProver.SYM).apply(step_proof2),
+                    ),
+                )
 
-            # switching the order here in the hope
-            # that we don't produce a proof that's too long
-            proof = NotationProver.prove_notation(composer, right, new_left)
+            assert False, f"failed to show {left} === {right}"
 
-            return composer.cache_proof(
-                "notation-cache",
-                composer.get_theorem(NotationProver.TRANS).apply(
-                    reduction_proof,
-                    composer.get_theorem(NotationProver.SYM).apply(proof),
-                ),
+        # try to rewrite both terms to a common head symbol
+        result = NotationProver.rewrite_to_same_head_symbol(composer, left, right)
+        assert result is not None, \
+               f"cannot rewrite {left} and {right} to have the same head symbol"
+        left_proof, left, right_proof, right = result
+
+        proof = NotationProver.prove_notation(composer, left, right)
+
+        if left_proof is not None:
+            proof = composer.get_theorem(NotationProver.TRANS).apply(
+                left_proof,
+                proof,
             )
 
-        sugar_axiom = NotationProver.find_sugar_axiom(composer, right.symbol)
-        if sugar_axiom:
-            # TODO: just being lazy here
-            return composer.cache_proof(
-                "notation-cache",
-                composer.get_theorem(NotationProver.SYM).apply(NotationProver.prove_notation(composer, right, left), ),
-            )
+        if right_proof is not None:
+            proof = composer.get_theorem(NotationProver.TRANS
+                                         ).apply(proof,
+                                                 composer.get_theorem(NotationProver.SYM).apply(right_proof))
 
-        assert False, f"ran out of tricks, cannot show {left} === {right}"
+        return composer.cache_proof("notation-cache", proof)
 
     @staticmethod
     def expand_sugar(composer: Composer, term: Term, target_symbol: Optional[str] = None) -> Term:
@@ -274,9 +417,9 @@ class NotationProver:
 
         # find a axiom to desugar the current head
         if target_symbol is None or term.symbol == target_symbol:
-            sugar_axiom = NotationProver.find_sugar_axiom(composer, term.symbol)
+            if term.symbol in composer.notation_axiom_graph:
+                sugar_axiom, _ = composer.notation_axiom_graph[term.symbol]
 
-            if sugar_axiom is not None:
                 substitution = Unification.match_terms_as_instance(sugar_axiom.statement.terms[1], term)
                 assert (substitution is not None), f"ill-formed sugar axiom {sugar_axiom.statement}"
 
@@ -307,11 +450,11 @@ class NotationProver:
 
         final_term = Application(term.symbol, tuple(expanded_subterms))
 
-        congruence_lemma_pair = NotationProver.find_congruence_lemma(composer, term.symbol)
-        if congruence_lemma_pair is not None:
+        if term.symbol in composer.notation_congruence:
             # if we are lucky enough to find a congruence lemma for the current symbol
             # apply it to get the final result
-            congruence_lemma, order = congruence_lemma_pair
+            congruence_lemma, order = composer.notation_congruence[term.symbol]
+
             reordered_subproofs = []
             for n in order:
                 assert n < len(subproofs), f"ill-formed congruence axiom {congruence_lemma.statement.label}"
