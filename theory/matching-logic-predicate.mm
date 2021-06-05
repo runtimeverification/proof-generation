@@ -397,3 +397,28 @@ ${
         $)
         ( is-predicate-is-pattern forall-is-pattern exists-is-pattern predicate-intro-exists lemma-forall-intro proof-rule-mp ) ADBEABFDABGADBCHI $.
 $}
+
+${
+    $d x ph0 $.
+    nonempty-predicate-is-top.0 $e |- ( \ceil ph0 ) $.
+    nonempty-predicate-is-top.1 $e |- ( \is-predicate ph1 ) $.
+    nonempty-predicate-is-top   $p |- ( \imp ( \eq ph0 ( \and ph1 ph0 ) ) ph1 ) $=
+        $(
+            apply "is-predicate-elim", x = "x", ph1 = "( \imp ( \eq ph0 ( \and x ph0 ) ) x )", ph2 = "( \imp ( \eq ph0 ( \and \bot ph0 ) ) \bot )", ph3 = "( \imp ( \eq ph0 ( \and \top ph0 ) ) \top )"
+            apply "nonempty-predicate-is-top.1"
+            (substitution)+
+            apply "proof-rule-mp"
+            apply "rule-iff-elim-left"
+            apply "rule-iff-compat-in-not"
+            apply "rule-iff-compat-in-eq"
+            apply "iff-reflexivity"
+            apply "rule-iff-intro"
+            apply "bot-elim"
+            apply "and-elim-left"
+            apply "nonempty-is-not-bot"
+            apply "nonempty-predicate-is-top.0"
+            apply "rule-weakening"
+            apply "top-intro"
+        $)
+        ( bot-is-pattern imp-is-pattern not-is-pattern and-is-pattern x-is-element-var element-var-is-var eq-is-pattern top-is-pattern var-is-pattern notation-transitivity notation-reflexivity substitution-disjoint substitution-var-same or-is-pattern not-is-sugar notation-imp substitution-and substitution-eq substitution-imp iff-is-pattern notation-proof iff-reflexivity bot-elim and-elim-left and-is-sugar or-is-sugar rule-iff-intro rule-iff-compat-in-eq rule-iff-compat-in-not notation-symmetry notation-iff rule-iff-elim-left nonempty-is-not-bot proof-rule-mp top-intro rule-weakening is-predicate-elim ) BAIJMAHKIJMFAEAHKEFALAHKLFABAHKBFIDEAEAHKEAIJMAHKIJMIJEAEAHAIJMAHIJAEIJPEEAIJMAIJEIJQAEIJPUAUBEIJQUCLALAHKLAIJMAHKIJMIJLALAHAIJMAHIJALIJPLLAIJMAIJLIJQALIJPUAUBLIJQUCBABAHKBAIJMAHKIJMIJBABAHAIJMAHIJABIJPBBAIJMAIJBIJQABIJPUAUBBIJQUCAEKGAEAHKEFAEKGAEAHKEFAEKGAEAHKGUDAEKGAEAHKEFUDAEKAEAHKAEAEAHAUFEEAHEAHUGEEFEFAEFFEFEFEAHEFEAUHEAHEEEFEFAEFFEFEEAHEGAGREFEEFEFAEFFEFEAHEGAGRGEGAGREFEAUIEGAGRSNEGAGREEEFEFAEFFEEGAGREGGAGFEEFEFAEFFEGAGUJEGGAGEEFEFAEFEGGEGEFEEFEFEGSEGEEEFEEGEEFEEFESEEFONEOTNAGAEFAEFASAEFONTNEOTNEOTUEUKULUMAEKGAEAHKEFAEKGAEAHKGAEKGOAEAHKEFAEAHKEFAEAHKGAEAHKEFOAEAHKGAEAHKEFAEAHKSUNNUOUEUPACUQURALAHKLUSUTVA $.
+$}
