@@ -2785,3 +2785,17 @@ ${
         $)
         ( imp-is-pattern exists-is-pattern and-is-pattern imp-reflexivity rule-uncurry exists-intro-alt rule-imp-transitivity rule-curry element-var-is-var fresh-in-exists-shadowed fresh-in-imp proof-rule-gen ) ABEABCFECABEABCFABEAGBBCFABEABABEHIBCJKLABCFCMDBCNOP $.
 $}
+
+restricted-inclusion $p |- ( \imp ( \included ph0 ph1 ) ( \eq ( \and ph1 ph0 ) ph0 ) ) $=
+    $(
+        apply "lemma-imp-compat-in-floor"
+        apply "rule-and-intro-alt2-sugar"
+        apply "rule-weakening"
+        apply "and-elim-right"
+        apply "rule-curry"
+        apply "rule-and-intro-alt2-sugar"
+        apply "rule-uncurry"
+        apply "imp-reflexivity"
+        apply "and-elim-right"
+    $)
+    ( imp-is-pattern bot-is-pattern not-is-pattern and-is-pattern notation-transitivity notation-reflexivity or-is-pattern floor-is-pattern notation-imp iff-is-pattern not-is-sugar notation-proof included-is-pattern eq-is-pattern and-elim-right and-is-sugar or-is-sugar rule-and-intro-alt2-sugar rule-weakening imp-reflexivity rule-uncurry rule-curry iff-is-sugar lemma-imp-compat-in-floor included-is-sugar eq-is-sugar ) ABCJBAFALJCABOBAFAPCABCBAFALABCBAFACABAFCFCABCBAFALCABCBAFACABAFCABCBAFACBDCDCADCCDCACBAFACBAQBAFABDCDCADCCDCABAFBEAEIDCBDCDCADCCDCBAFBEAEIEBEAEIDCBARBEAEIMGBEAEIDBDCDCADCCDBEAEIBEEAECBDCDCADCCBEAESBEEAEBDCDCADCBEEBEDCBDCDCBEMBEDBDCDBEBDCBDCBMBDCHGDHKGAEADCADCAMADCHGKGDHKGAHKNUAABCABAFABCAFBAABCABABCUBUCABCDCDCADCCDCACABCAFACABCAQABCAFAABCDCDCADCCDCAABCAFABCEAEIDCABCDCDCADCCDCABCAFABCEAEIEABCEAEIDCABCARABCEAEIMGABCEAEIDABCDCDCADCCDABCEAEIABCEEAECABCDCDCADCCABCEAESABCEEAEABCDCDCADCABCEEABCEDCABCDCDCABCEMABCEDABCDCDABCEABCDCABCDCABCMABCDCHGDHKGAMKGDHKGAHKNTUDTABCBAFALABCBAFACABAFCFABCHBAFALBAFACABAFCFBAFACABAFCFBAFAUEBAFACABAFCFHGKNUFABOBAFAPABCJBAFALJABOABCJABCJABUGABCJHGBAFAPBAFALJBAFALJBAFAUHBAFALJHGKN $.
