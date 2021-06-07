@@ -14,7 +14,7 @@ import yaml
 from ml.utils.profiler import MemoryProfiler
 from ml.utils.stopwatch import Stopwatch
 
-from ml.kore.parser import parse_definition, parse_pattern
+from ml.kore.parser import parse_definition, parse_pattern, parse_axiom
 from ml.kore.visitors import FreePatternVariableVisitor, PatternSubstitutionVisitor
 from ml.kore.ast import StringLiteral, MLPattern, Module, Pattern
 from ml.kore.utils import KoreUtils
@@ -44,11 +44,31 @@ def load_rewriting_task(module: Module, task_path: str) -> RewritingTask:
 
 
 def prove_rewriting(
-    env: KoreComposer,
+    composer: KoreComposer,
     task: RewritingTask,
 ) -> None:
-    gen = RewriteProofGenerator(env)
+    gen = RewriteProofGenerator(composer)
     gen.prove_symbolic_rewriting_task(task)
+    return
+
+    sum_claim_src = r"""
+    axiom{} \one-path-reaches-star{SortGeneratedTopCell{}} (
+        \and{SortGeneratedTopCell{}} (
+            \equals{SortBool{},SortGeneratedTopCell{}}(
+            Lbl'Unds-GT-Eqls'Int'Unds'{}(VarN:SortInt{},\dv{SortInt{}}("0")),
+            \dv{SortBool{}}("true")
+        ),
+        Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortStmt{}, SortKItem{}}(Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'BExp'Unds'Block{}(Lbl'BangUndsUnds'IMP-SYNTAX'Unds'BExp'Unds'BExp{}(Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'Unds'BExp'Unds'AExp'Unds'AExp{}(inj{SortId{}, SortAExp{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortAExp{}}(\dv{SortInt{}}("0")))),Lbl'LBraUndsRBraUnds'IMP-SYNTAX'Unds'Block'Unds'Stmt{}(Lbl'UndsUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'Stmt'Unds'Stmt{}(Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(\dv{SortId{}}("sum"),Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(inj{SortId{}, SortAExp{}}(\dv{SortId{}}("sum")),inj{SortId{}, SortAExp{}}(\dv{SortId{}}("n")))),Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(\dv{SortId{}}("n"),Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(inj{SortId{}, SortAExp{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortAExp{}}(\dv{SortInt{}}("-1")))))))),dotk{}())),Lbl'-LT-'state'-GT-'{}(Lbl'Unds'Map'Unds'{}(Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortKItem{}}(VarN:SortInt{})),Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("sum")),inj{SortInt{}, SortKItem{}}(VarS:SortInt{}))))),Var'Unds'DotVar0:SortGeneratedCounterCell{})),
+        \and{SortGeneratedTopCell{}} (
+            \top{SortGeneratedTopCell{}}(),
+            Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(dotk{}()),Lbl'-LT-'state'-GT-'{}(Lbl'Unds'Map'Unds'{}(Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("0"))),Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("sum")),inj{SortInt{}, SortKItem{}}(Lbl'UndsPlus'Int'Unds'{}(VarS:SortInt{},Lbl'UndsSlsh'Int'Unds'{}(Lbl'UndsStar'Int'Unds'{}(Lbl'UndsPlus'Int'Unds'{}(VarN:SortInt{},\dv{SortInt{}}("1")),VarN:SortInt{}),\dv{SortInt{}}("2")))))))),Var'Unds'DotVar0:SortGeneratedCounterCell{})
+        )
+    ) []
+    """
+
+    sum_claim = parse_axiom(sum_claim_src, composer.module)
+    # KoreUtils.pretty_print(sum_claim)
+    gen.prove_one_path_reachability_claim((sum_claim, ), sum_claim, task.steps)
 
 
 def set_additional_flags(parser: argparse.ArgumentParser) -> None:

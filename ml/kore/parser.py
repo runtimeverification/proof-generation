@@ -185,6 +185,7 @@ ML_SYMBOLS.2: "\\top" | "\\bottom"
             | "\\ceil" | "\\floor"
             | "\\equals" | "\\in"
             | "\\next" | "\\rewrites"
+            | "\\one-path-reaches-star"
             | "\\dv"
 
 ml_symbols: ML_SYMBOLS
@@ -299,10 +300,14 @@ def parse_pattern(src: str, module: Optional[Module] = None) -> Pattern:
     return pattern
 
 
-def parse_axiom(src: str) -> Axiom:
+def parse_axiom(src: str, module: Optional[Module] = None) -> Axiom:
     tree = axiom_parser.parse(src)
     axiom = ASTTransformer().transform(tree)
     assert isinstance(axiom, Axiom)
+
+    if module is not None:
+        axiom.resolve(module)
+
     return axiom
 
 

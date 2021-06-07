@@ -409,6 +409,10 @@ class KoreUtils:
         return KoreUtils.construct_binary_ml_pattern(MLPattern.REWRITES_STAR, left, right)
 
     @staticmethod
+    def construct_rewrites_plus(left: Pattern, right: Pattern) -> MLPattern:
+        return KoreUtils.construct_binary_ml_pattern(MLPattern.REWRITES_PLUS, left, right)
+
+    @staticmethod
     def construct_implies(left: Pattern, right: Pattern) -> MLPattern:
         return KoreUtils.construct_binary_ml_pattern(MLPattern.IMPLIES, left, right)
 
@@ -457,6 +461,10 @@ class KoreUtils:
     @staticmethod
     def destruct_rewrites_star(pattern: Pattern) -> List[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.REWRITES_STAR, pattern)
+
+    @staticmethod
+    def destruct_rewrites_plus(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.REWRITES_PLUS, pattern)
 
     @staticmethod
     def destruct_equals(pattern: Pattern) -> List[Pattern]:
@@ -512,8 +520,16 @@ class KoreUtils:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.IN
 
     @staticmethod
+    def is_rewrites(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.REWRITES
+
+    @staticmethod
     def is_rewrites_star(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.REWRITES_STAR
+
+    @staticmethod
+    def is_rewrites_plus(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.REWRITES_PLUS
 
     @staticmethod
     def is_dv(pattern: Pattern) -> bool:
