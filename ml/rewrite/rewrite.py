@@ -155,7 +155,7 @@ class RewriteProofGenerator(ProofGenerator):
             return self.composer.apply_kore_lemma(
                 "kore-weakening",
                 conclusion_validity,
-                ph2=premise,
+                ph1=premise,
             )
 
         # TODO: call SMT solver and check
@@ -1004,8 +1004,8 @@ class RewriteProofGenerator(ProofGenerator):
 
         instantiated_axiom = self.composer.apply_kore_lemma(
             "kore-mp-alt",
-            requires_proof,
             instantiated_axiom,
+            requires_proof,
         )
 
         # now we have a conjunction and{R}(<equation>, <ensures>)

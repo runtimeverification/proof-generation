@@ -422,3 +422,32 @@ ${
         $)
         ( bot-is-pattern imp-is-pattern not-is-pattern and-is-pattern x-is-element-var element-var-is-var eq-is-pattern top-is-pattern var-is-pattern notation-transitivity notation-reflexivity substitution-disjoint substitution-var-same or-is-pattern not-is-sugar notation-imp substitution-and substitution-eq substitution-imp iff-is-pattern notation-proof iff-reflexivity bot-elim and-elim-left and-is-sugar or-is-sugar rule-iff-intro rule-iff-compat-in-eq rule-iff-compat-in-not notation-symmetry notation-iff rule-iff-elim-left nonempty-is-not-bot proof-rule-mp top-intro rule-weakening is-predicate-elim ) BAIJMAHKIJMFAEAHKEFALAHKLFABAHKBFIDEAEAHKEAIJMAHKIJMIJEAEAHAIJMAHIJAEIJPEEAIJMAIJEIJQAEIJPUAUBEIJQUCLALAHKLAIJMAHKIJMIJLALAHAIJMAHIJALIJPLLAIJMAIJLIJQALIJPUAUBLIJQUCBABAHKBAIJMAHKIJMIJBABAHAIJMAHIJABIJPBBAIJMAIJBIJQABIJPUAUBBIJQUCAEKGAEAHKEFAEKGAEAHKEFAEKGAEAHKGUDAEKGAEAHKEFUDAEKAEAHKAEAEAHAUFEEAHEAHUGEEFEFAEFFEFEFEAHEFEAUHEAHEEEFEFAEFFEFEEAHEGAGREFEEFEFAEFFEFEAHEGAGRGEGAGREFEAUIEGAGRSNEGAGREEEFEFAEFFEEGAGREGGAGFEEFEFAEFFEGAGUJEGGAGEEFEFAEFEGGEGEFEEFEFEGSEGEEEFEEGEEFEEFESEEFONEOTNAGAEFAEFASAEFONTNEOTNEOTUEUKULUMAEKGAEAHKEFAEKGAEAHKGAEKGOAEAHKEFAEAHKEFAEAHKGAEAHKEFOAEAHKGAEAHKEFAEAHKSUNNUOUEUPACUQURALAHKLUSUTVA $.
 $}
+
+${
+    $d x ph1 $.
+    $d x ph2 $.
+    predicate-and-propagate-in-eq.0 $e |- ( \is-predicate ph0 ) $.
+    predicate-and-propagate-in-eq   $p |- ( \imp ( \and ph0 ( \eq ph1 ph2 ) ) ( \eq ( \and ph0 ph1 ) ph2 ) ) $=
+        $(
+            apply "is-predicate-elim", x = "x", ph1 = "( \imp ( \and x ( \eq ph1 ph2 ) ) ( \eq ( \and x ph1 ) ph2 ) )", ph2 = "( \imp ( \and \bot ( \eq ph1 ph2 ) ) ( \eq ( \and \bot ph1 ) ph2 ) )", ph3 = "( \imp ( \and \top ( \eq ph1 ph2 ) ) ( \eq ( \and \top ph1 ) ph2 ) )"
+            apply "predicate-and-propagate-in-eq.0"
+            substitution
+            substitution
+            substitution
+            apply "rule-imp-transitivity"
+            apply "and-elim-left"
+            apply "bot-elim"
+            apply "rule-imp-transitivity"
+            apply "and-elim-right"
+            apply "proof-rule-mp"
+            apply "eq-transitivity"
+            apply "lemma-floor-intro"
+            apply "rule-and-intro"
+            apply "and-elim-right"
+            apply "rule-and-intro-alt2-sugar"
+            apply "rule-weakening"
+            apply "top-intro"
+            apply "imp-reflexivity"
+        $)
+        ( imp-is-pattern bot-is-pattern top-is-pattern not-is-pattern and-is-pattern eq-is-pattern x-is-element-var element-var-is-var or-is-pattern notation-transitivity notation-reflexivity var-is-pattern not-is-sugar notation-imp substitution-disjoint iff-is-pattern substitution-var-same substitution-eq substitution-and notation-proof and-is-sugar or-is-sugar floor-is-pattern substitution-imp rule-imp-transitivity and-elim-right and-elim-left bot-elim eq-transitivity top-intro rule-weakening imp-reflexivity rule-and-intro-alt2-sugar rule-and-intro iff-is-sugar lemma-floor-intro eq-is-sugar proof-rule-mp is-predicate-elim ) AKLPBCJIKLPBICJEFBCJIFBICJEGBCJIGBICJEABCJIABICJEKDFFBCJIFBICJKLPBCJIKLPBICJKLFFBCJKLPBCJKLFKLUAFBCBCKLBFKLSCFKLSUBUCFFBICKLPBICKLFFBKLPBKLFKLUABFKLSUCCFKLSUBUHGGBCJIGBICJKLPBCJIKLPBICJKLGGBCJKLPBCJKLGKLUAGBCBCKLBGKLSCGKLSUBUCGGBICKLPBICKLGGBKLPBKLGKLUABGKLSUCCGKLSUBUHAABCJIABICJKLPBCJIKLPBICJKLAABCJKLPBCJKLAKLUAABCBCKLBAKLSCAKLSUBUCAABICKLPBICKLAABKLPBKLAKLUABAKLSUCCAKLSUBUHFBCJIFFBICJFFEFEBCJFEEFEFEFBCJIFEFBCJUKFBCJIFFFEFEBCJFEEFEFFBCJIFHBCJHMFEFFEFEBCJFEEFEFBCJIFHBCJHMHFHBCJHMFEFBCJUEFHBCJHMQNFHBCJHMFFFEFEBCJFEEFFHBCJHMFHHBCJHEFFEFEBCJFEEFHBCJHUFFHHBCJHFFEFEBCJFEFHHFHFEFFEFEFHQFHFFFEFFHFFEFFEFQFFEONFORNBCJHBCJFEBCJFEBCJQBCJFEONRNFORNFORUDFBICJULUIGBCJIBCJGBICJGFEFEBCJFEEFEBCJEGBCJIBCJEGBCJUJGBCJIBCJGFEFEBCJFEEFEBCJGBCJIGHBCJHMFEGFEFEBCJFEEFEGBCJIGHBCJHMHGHBCJHMFEGBCJUEGHBCJHMQNGHBCJHMFGFEFEBCJFEEFGHBCJHMGHHBCJHEGFEFEBCJFEEGHBCJHUFGHHBCJHGFEFEBCJFEGHHGHFEGFEFEGHQGHFGFEFGHGFEGFEGQGFEONFORNBCJQRNFORNBCJORUDGBIBJBCJGBICJEGBIBCUMGBIBTUGGBIBJGBIBTGBIBEFEFEBGBIEFEEFEGBIBTGBIBEBGBIEGFEFEBFEEFEBEGBIBEGBUJGBIBGFEFEBFEEFEBGBIGHBHMFEGFEFEBFEEFEGBIGHBHMHGHBHMFEGBUEGHBHMQNGHBHMFGFEFEBFEEFGHBHMGHHBHEGFEFEBFEEGHBHUFGHHBHGFEFEBFEGHHGHFEGFEFEGHQGHFGFEFGHGFEGFEGQGFEONFORNBHBFEBFEBQBFEONRNFORNBORUDBGBBGUNUOBUPUQURGBIBTGBIBEHBGBIEHMFEGBIBEFEFEBGBIEFEEFEGBIBTGBIBEHBGBIEHMHGBIBEHBGBIEHMFEGBIBTGBIBEBGBIEIGBIBEHBGBIEHMHGBIBUSGBIBEBGBIEUENGBIBEHBGBIEHMQNGBIBEHBGBIEHMFGBIBEFEFEBGBIEFEEFGBIBEHBGBIEHMGBIBEHHBGBIEHEGBIBEFEFEBGBIEFEEGBIBEHBGBIEHUFGBIBEHHBGBIEHGBIBEFEFEBGBIEFEGBIBEHHGBIBEHFEGBIBEFEFEGBIBEHQGBIBEHFGBIBEFEFGBIBEHGBIBEFEGBIBEFEGBIBEQGBIBEFEONFORNBGBIEHBGBIEFEBGBIEFEBGBIEQBGBIEFEONRNFORNUDUTGBIBJGBIBTUGGBIBTUGGBIBVAGBIBTUGONUDVBUIVC $.
+$}
