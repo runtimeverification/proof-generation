@@ -9,7 +9,29 @@ $[ theory/matching-logic-disjointness.mm $]
 
 ${
     kore-equals-symmetry.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-equals ph1 ph0 ph3 ph2 ) ) ) $.
-    kore-equals-symmetry   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-equals ph1 ph0 ph2 ph3 ) ) ) $= ? $.
+    kore-equals-symmetry   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-equals ph1 ph0 ph2 ph3 ) ) ) $=
+        $(
+            apply "weakened-mp"
+            meh
+            apply "kore-equals-symmetry.0"
+            apply "rule-weakening"
+            apply "proof-rule-mp"
+            apply "eq-transitivity"
+            apply "lemma-floor-intro"
+            apply "rule-iff-compat-in-not"
+            apply "rule-iff-compat-in-or"
+            apply "rule-iff-compat-in-not"
+            apply "rule-iff-compat-in-not"
+            apply "rule-iff-compat-in-and"
+            apply "rule-iff-compat-in-ceil"
+            apply "rule-iff-compat-in-and"
+            apply "rule-iff-compat-in-not"
+            apply "and-commutativity"
+            apply "iff-reflexivity"
+            apply "iff-reflexivity"
+            apply "iff-reflexivity"
+        $)
+        ( kore-iff-is-pattern not-is-pattern kore-equals-is-pattern kore-not-is-pattern kore-top-is-pattern kore-ceil-is-pattern and-is-pattern kore-implies-is-pattern eq-is-pattern notation-transitivity kore-valid-is-pattern or-is-pattern iff-is-pattern notation-reflexivity ceil-is-pattern imp-is-pattern notation-proof floor-is-pattern notation-iff rule-iff-compat-in-not kore-not-is-sugar iff-reflexivity kore-valid-is-sugar notation-imp kore-and-is-pattern kore-iff-is-sugar kore-and-is-sugar rule-iff-compat-in-and kore-ceil-is-sugar kore-floor-is-pattern kore-equals-is-sugar kore-floor-is-sugar and-is-sugar eq-transitivity and-commutativity rule-iff-compat-in-ceil rule-iff-compat-in-or lemma-floor-intro eq-is-sugar proof-rule-mp rule-weakening weakened-mp ) EABADCIQABACDIQEABADCIQABACDIQUBBACDIBADCIOABADCIQABACDIQUBBACDIBADCIOBADCIAKOBACDIAKOUBUBBACDIBADCIOABADCIQABACDIQUBUBBACDIBADCIAKUTBACDIBADCIOABADCIQABACDIQUBBACDIBADCIOBADCIAKOBACDIAKOUBBACDIBADCIOTABADCIQABACDIQBADCIAKOBACDIAKOABADCIQBADCIAKOBADCIAKOABADCIUIBADCIAKOTPABACDIQBACDIAKOBACDIAKOABACDIUIBACDIAKOTPUJUJUCBACDIBADCISUDBACDIBADCIOBACDIBADCISBABBCDGJLHHAKHRHBABBDCGJLHHAKHRHSBACDIBADCISBABBCDGJLHHAKHRBABBDCGJLHHAKHRBABBCDGJLHHBABBDCGJLHHAKHAKHBABBCDGJLHBABBDCGJLHBABBCDGJLBABBDCGJLBBCDGJUAAKMBBDCGJUAAKMSBABBCDGJLBABBDCGJLSBBCDGJUABBDCGJUAAKAKBBCDGJBBDCGJBCDGHBKMBDCGHBKMSBBCDGJBBDCGJSBCDGHBDCGHBKBKBCDGBDCGBCDNBDCNMBDCNBCDNMSBCDGBDCGSBCDNBDCNVABCDGBDCGBCDNBDCNMBDCNBCDNMBCDGBCDNBDCNMBCDNBDCNMBCDGBBCDNBDCNUKBCDNBDCNMBCDULBBCDNBDCNUMPBCDNBDCNMTPBDCGBDCNBCDNMBDCNBCDNMBDCGBBDCNBCDNUKBDCNBCDNMBDCULBBDCNBCDNUMPBDCNBCDNMTPUEUCUFBKUHUNBBCDGJBBDCGJBCDGHBKMBDCGHBKMBBCDGJBCDGHBKMBCDGHBKMBBCDGUGBCDGHBKMTPBBDCGJBDCGHBKMBDCGHBKMBBDCGUGBDCGHBKMTPUEUCVBAKUHUNBABBCDGJLBABBDCGJLBBCDGJUAAKMBBDCGJUAAKMBABBCDGJLBBCDGJUAAKMBBCDGJUAAKMBABBCDGJUOBBCDGJUAAKMTPBABBDCGJLBBDCGJUAAKMBBDCGJUAAKMBABBDCGJUOBBDCGJUAAKMTPUEUCUFUFAKHUHVCUFBACDIBADCIBABBCDGJLHHAKHRHBABBDCGJLHHAKHRHBACDIBABBCDGJLHHAKHRHBABBCDGJLHHAKHRHBACDIBABBCDGJLHAKMBABBCDGJLHHAKHRHBACDIABABBCDGJLJBABBCDGJLHAKMBACDIBABCDGUPABABBCDGJLJBACDUQBABCDGURPABABBCDGJLUGPBABBCDGJLHAKUSPBABBCDGJLHHAKHRHTPBADCIBABBDCGJLHHAKHRHBABBDCGJLHHAKHRHBADCIBABBDCGJLHAKMBABBDCGJLHHAKHRHBADCIABABBDCGJLJBABBDCGJLHAKMBADCIBABDCGUPABABBDCGJLJBADCUQBABDCGURPABABBDCGJLUGPBABBDCGJLHAKUSPBABBDCGJLHHAKHRHTPUEUCVDBACDIBADCIOBACDIBADCISUDBACDIBADCISUDBACDIBADCIVEBACDIBADCISUDTPUCVFVGFVH $.
 $}
 
 ${

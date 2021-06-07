@@ -656,6 +656,9 @@ class MLPattern(Pattern):
     NEXT = "\\next"
     REWRITES = "\\rewrites"
     REWRITES_STAR = "\\rewrites-star"
+    REWRITES_PLUS = "\\rewrites-plus"
+    ONE_PATH_REACHES_STAR = "\\one-path-reaches-star"
+    ONE_PATH_REACHES_PLUS = "\\one-path-reaches-plus"
 
     DV = "\\dv"
 
@@ -678,6 +681,9 @@ class MLPattern(Pattern):
         NEXT: (1, 1),
         REWRITES: (1, 2),
         REWRITES_STAR: (1, 2),
+        REWRITES_PLUS: (1, 2),
+        ONE_PATH_REACHES_STAR: (1, 2),
+        ONE_PATH_REACHES_PLUS: (1, 2),
         DV: (1, 1),
     }
 

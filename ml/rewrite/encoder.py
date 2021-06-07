@@ -30,6 +30,9 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
     IN = "\\kore-in"
     REWRITES = "\\kore-rewrites"
     REWRITES_STAR = "\\kore-rewrites-star"
+    REWRITES_PLUS = "\\kore-rewrites-plus"
+    ONE_PATH_REACHES_STAR = "\\kore-one-path-reaches-star"
+    ONE_PATH_REACHES_PLUS = "\\kore-one-path-reaches-plus"
     DV = "\\kore-dv"
     IS_SORT = "\\kore-is-sort"
     STRING = "\\kore-string"
@@ -53,6 +56,9 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         kore.MLPattern.IN: IN,
         kore.MLPattern.REWRITES: REWRITES,
         kore.MLPattern.REWRITES_STAR: REWRITES_STAR,
+        kore.MLPattern.REWRITES_PLUS: REWRITES_PLUS,
+        kore.MLPattern.ONE_PATH_REACHES_STAR: ONE_PATH_REACHES_STAR,
+        kore.MLPattern.ONE_PATH_REACHES_PLUS: ONE_PATH_REACHES_PLUS,
         kore.MLPattern.DV: DV,
         kore.MLPattern.FORALL: FORALL,
         kore.MLPattern.EXISTS: EXISTS,

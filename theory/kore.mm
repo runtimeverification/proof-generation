@@ -23,8 +23,12 @@ $c \kore-equals $.
 $c \kore-in $.
 $c \kore-next $.
 $c \kore-eventually $.
+$c \kore-weak-eventually $.
 $c \kore-rewrites $.
 $c \kore-rewrites-star $.
+$c \kore-rewrites-plus $.
+$c \kore-one-path-reaches-plus $.
+$c \kore-one-path-reaches-star $.
 $c \kore-dv $.
 $c \kore-valid $.
 $c \kore-is-sort $.
@@ -86,11 +90,27 @@ ${
     kore-evetually-is-sugar $a #Notation ( \kore-eventually ph0 ph1 ) ( \mu X ( \kore-or ph0 ph1 ( \kore-next ph0 X ) ) ) $.
 $}
 
+kore-weak-evetually-is-pattern $a #Pattern ( \kore-weak-eventually ph0 ph1 ) $.
+${
+    $d X ph0 $.
+    $d X ph1 $.
+    kore-weak-evetually-is-sugar $a #Notation ( \kore-weak-eventually ph0 ph1 ) ( \nu X ( \kore-or ph0 ph1 ( \kore-next ph0 X ) ) ) $.
+$}
+
 kore-rewrites-is-pattern $a #Pattern ( \kore-rewrites ph0 ph1 ph2 ) $.
 kore-rewrites-is-sugar $a #Notation ( \kore-rewrites ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-next ph0 ph2 ) ) $.
 
 kore-rewrites-star-is-pattern $a #Pattern ( \kore-rewrites-star ph0 ph1 ph2 ) $.
 kore-rewrites-star-is-sugar $a #Notation ( \kore-rewrites-star ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-eventually ph0 ph2 ) ) $.
+
+kore-rewrites-plus-is-pattern $a #Pattern ( \kore-rewrites-plus ph0 ph1 ph2 ) $.
+kore-rewrites-plus-is-sugar $a #Notation ( \kore-rewrites-plus ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-next ph0 ( \kore-eventually ph0 ph2 ) ) ) $.
+
+kore-one-path-reaches-star-is-pattern $a #Pattern ( \kore-one-path-reaches-star ph0 ph1 ph2 ) $.
+kore-one-path-reaches-star-is-sugar $a #Notation ( \kore-one-path-reaches-star ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-weak-eventually ph0 ph2 ) ) $.
+
+kore-one-path-reaches-plus-is-pattern $a #Pattern ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) $.
+kore-one-path-reaches-plus-is-sugar $a #Notation ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-next ph0 ( \kore-weak-eventually ph0 ph2 ) ) ) $.
 
 $c \kore-dv-symbol $.
 kore-dv-is-symbol $a #Symbol \kore-dv-symbol $.
