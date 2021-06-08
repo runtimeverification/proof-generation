@@ -123,6 +123,10 @@ class MetamathUtils:
         return len(terms) == 5 and terms[0] == Application("#Substitution")
 
     @staticmethod
+    def is_fresh(terms: Terms) -> bool:
+        return len(terms) == 3 and terms[0] == Application("#Fresh")
+
+    @staticmethod
     def is_application_of_symbol(symbol: str, num_args: int, term: Term) -> bool:
         return isinstance(term, Application) and \
                term.symbol == symbol and \

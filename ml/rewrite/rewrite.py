@@ -80,10 +80,9 @@ class RewriteProofGenerator(ProofGenerator):
 
         self.preprocess_steps(steps)
 
-        expected_lhs, _, goal, _ = self.destruct_rewrite_axiom(claim, separate_rhs=False)
-        assert steps[
-            0
-        ].initial.pattern == expected_lhs, f"different initial patterns: {steps[0].initial.pattern} != {expected_lhs}"
+        expected_lhs, _, goal, _ = self.destruct_rewrite_axiom(claim, separate_lhs=False, separate_rhs=False)
+        assert steps[0].initial.as_pattern() == expected_lhs, \
+               f"different initial patterns: {steps[0].initial.as_pattern()} != {expected_lhs}"
 
         print(f"### step 0")
         symbolic_execution = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, 0, steps[0])
@@ -123,11 +122,94 @@ class RewriteProofGenerator(ProofGenerator):
             transitivity2,
         )
 
+        # apply circularity
+        final_claim = self.prove_circularity(final_claim)
+
         final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
 
         KoreUtils.pretty_print(final_claim.claim)
 
         # TODO: apply circularity
+
+    def prove_circularity(
+        self,
+        provable: ProvableClaim,
+    ) -> ProvableClaim:
+        """
+        Given a proof of
+        |- o [] forall x phi -> phi
+        Eliminate the circularity assumption to get a proof of
+        |- phi
+        """
+        left, right = KoreUtils.destruct_implies(provable.claim.pattern)
+        circular_assumption, = KoreUtils.destruct_circularity(left)
+        circular_assumption_stripped = KoreUtils.strip_forall(circular_assumption)
+
+        assert circular_assumption_stripped == right, \
+               f"not an application of circularity: the circular assumption " \
+               f"{circular_assumption_stripped} is distinct from the conclusion {right}"
+
+        free_vars = list(KoreUtils.get_free_variables(provable.claim))
+        free_vars.sort(key=lambda v: v.name, reverse=True)
+        # note that this order has to be the same as when we quantified the circularity
+        # TODO: a bit hacky
+
+        eq_proof_gen = EqualityProofGenerator(self.composer)
+        prop_gen = PropositionalProofGenerator(self.composer)
+
+        # quantify all free variables first
+        for var in free_vars:
+            # add a quantifer and then push it to the right of the implication
+            provable = eq_proof_gen.apply_forall_intro(provable, var)
+            provable = eq_proof_gen.apply_prenex_implies_right(provable)
+
+        # get a proof of |- WF -> forall ... phi
+        provable = self.composer.apply_kore_lemma(
+            "kore-reachability-one-path-circularity-lemma",
+            provable,
+        )
+
+        # show that the body WF -> phi
+        # implies just phi (since it's a one-path reachability pattern)
+        lhs, rhs = KoreUtils.destruct_implies(provable.claim.pattern)
+        stripped_rhs = KoreUtils.strip_forall(rhs)
+
+        # (WF -> (... =>+ ...)) -> (... =>+ ...)
+        # here phi = (... =>+ ...)
+        remove_wf = self.composer.apply_kore_lemma(
+            "kore-reachability-permits-non-wf",
+            goal=self.composer.construct_claim(
+                KoreUtils.construct_implies(
+                    KoreUtils.construct_implies(lhs, stripped_rhs),
+                    stripped_rhs,
+                ),
+            ),
+        )
+
+        # add quantifies to both sides
+        for var in free_vars:
+            # (forall WF -> phi) -> forall phi
+            remove_wf = eq_proof_gen.apply_implies_compat_in_forall(remove_wf, var)
+
+            lhs, rhs = KoreUtils.destruct_implies(remove_wf.claim.pattern)
+            _, lhs = KoreUtils.destruct_forall(lhs)
+            lhs_lhs, lhs_rhs = KoreUtils.destruct_implies(lhs)
+
+            # (WF -> forall phi) -> (forall WF -> phi)
+            prenex = eq_proof_gen.get_prenex_implies_left(var, lhs_lhs, lhs_rhs)
+
+            # (WF -> forall phi) -> forall phi
+            remove_wf = prop_gen.apply_implies_transitivity(prenex, remove_wf)
+
+        # finally removes the WF -> at the beginning of the claim
+        provable = prop_gen.apply_mp(
+            remove_wf,
+            provable,
+        )
+
+        provable = eq_proof_gen.eliminate_all_universal_quantifiers(provable)
+
+        return provable
 
     def prove_one_path_subsumption_under_axiom(
         self,

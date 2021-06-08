@@ -316,3 +316,10 @@ class PropositionalProofGenerator(ProofGenerator):
             claim,
             ph1=additional_premise,
         )
+
+    def apply_mp(self, implication: ProvableClaim, premise: ProvableClaim) -> ProvableClaim:
+        return self.composer.apply_kore_lemma(
+            "kore-mp-alt",
+            implication,
+            premise,
+        )

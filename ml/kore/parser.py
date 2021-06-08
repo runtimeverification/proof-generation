@@ -186,6 +186,7 @@ ML_SYMBOLS.2: "\\top" | "\\bottom"
             | "\\equals" | "\\in"
             | "\\next" | "\\rewrites"
             | "\\one-path-reaches-star"
+            | "\\one-path-reaches-plus"
             | "\\dv"
 
 ml_symbols: ML_SYMBOLS

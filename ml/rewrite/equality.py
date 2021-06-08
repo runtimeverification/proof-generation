@@ -14,11 +14,141 @@ from ml.metamath.auto.substitution import SubstitutionProver
 from .env import ProofGenerator, ProvableClaim
 from .substitution import SingleSubstitutionProofGenerator
 from .encoder import KoreEncoder, KoreDecoder
+from .propositional import PropositionalProofGenerator
 
 
 class EqualityProofGenerator(ProofGenerator):
     def apply_symmetry(self, equation: ProvableClaim) -> ProvableClaim:
         return self.composer.apply_kore_lemma("kore-equals-symmetry", equation)
+
+    def apply_forall_intro(self, provable: ProvableClaim, variable: kore.Variable) -> ProvableClaim:
+        """
+        Universally quantify an indicated free variable
+        """
+
+        free_vars = KoreUtils.get_free_variables(provable.claim)
+        assert variable in free_vars, \
+               f"{variable} is not a free variable in {provable.claim}"
+
+        # TODO: prove this
+
+        return self.composer.load_fresh_claim_placeholder(
+            "forall-intro",
+            KoreUtils.construct_forall(variable, provable.claim.pattern),
+        )
+
+    def apply_forall_elim(self, provable: ProvableClaim) -> ProvableClaim:
+        """
+        Remove the top level universal quantifier and let the
+        variable appear free
+        """
+        _, body = KoreUtils.destruct_forall(provable.claim.pattern)
+
+        # TODO: prove this
+
+        return self.composer.load_fresh_claim_placeholder(
+            "forall-elim",
+            body,
+        )
+
+    def eliminate_all_universal_quantifiers(self, provable: ProvableClaim) -> ProvableClaim:
+        while KoreUtils.is_forall(provable.claim.pattern):
+            provable = self.apply_forall_elim(provable)
+        return provable
+
+    def apply_implies_compat_in_forall(self, provable: ProvableClaim, variable: kore.Variable) -> ProvableClaim:
+        """
+        From
+        |- phi -> psi
+        get
+        |- (forall x phi) -> (forall x psi)
+        """
+
+        left, right = KoreUtils.destruct_implies(provable.claim.pattern)
+
+        goal = KoreUtils.construct_implies(
+            KoreUtils.construct_forall(variable, left),
+            KoreUtils.construct_forall(variable, right),
+        )
+
+        # TODO: prove this
+        return self.composer.load_fresh_claim_placeholder("forall-compat", goal)
+
+    def apply_prenex_implies_left(self, provable: ProvableClaim) -> ProvableClaim:
+        """
+        Given a proof of |- phi -> forall x psi
+        return a proof of |- forall x (phi -> psi)
+        given that x is free in phi
+        """
+        left, right = KoreUtils.destruct_implies(provable.claim.pattern)
+        var, right_body = KoreUtils.destruct_forall(right)
+
+        return PropositionalProofGenerator(self.composer).apply_mp(
+            self.get_prenex_implies_left(
+                var,
+                left,
+                right_body,
+            ),
+            provable,
+        )
+
+    def apply_prenex_implies_right(self, provable: ProvableClaim) -> ProvableClaim:
+        """
+        Given a proof of |- forall x (phi -> psi)
+        return a proof of |- phi -> forall x psi
+        given that x is free in phi
+        """
+        var, body = KoreUtils.destruct_forall(provable.claim.pattern)
+        left, right = KoreUtils.destruct_implies(body)
+
+        return PropositionalProofGenerator(self.composer).apply_mp(
+            self.get_prenex_implies_right(
+                var,
+                left,
+                right,
+            ),
+            provable,
+        )
+
+    def get_prenex_implies_left(
+        self, variable: kore.Variable, left: kore.Pattern, right: kore.Pattern
+    ) -> ProvableClaim:
+        r"""
+        Given patterns left, right and a variable x
+        Return a proof of
+        |- (left -> forall x right) -> forall x (left -> right)
+        given that x is free in left
+        """
+
+        goal = KoreUtils.construct_implies(
+            KoreUtils.construct_implies(left, KoreUtils.construct_forall(variable, right)),
+            KoreUtils.construct_forall(variable, KoreUtils.construct_implies(left, right))
+        )
+
+        return self.composer.apply_kore_lemma(
+            "kore-forall-prenex-implies-left",
+            goal=self.composer.construct_claim(goal),
+        )
+
+    def get_prenex_implies_right(
+        self, variable: kore.Variable, left: kore.Pattern, right: kore.Pattern
+    ) -> ProvableClaim:
+        r"""
+        Given patterns left, right and a variable x
+        Return a proof of
+        |- (forall x (left -> right)) -> (left -> forall x right)
+        given that x is free in left
+        """
+
+        goal = KoreUtils.construct_implies(
+            KoreUtils.construct_forall(variable, KoreUtils.construct_implies(left, right)),
+            KoreUtils.construct_implies(left, KoreUtils.construct_forall(variable, right)),
+        )
+
+        return self.composer.apply_kore_lemma(
+            "kore-forall-prenex-implies-right",
+            goal=self.composer.construct_claim(goal),
+        )
 
     def replace_equal_subpattern(
         self,

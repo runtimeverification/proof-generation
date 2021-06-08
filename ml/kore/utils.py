@@ -478,6 +478,14 @@ class KoreUtils:
         return KoreUtils.destruct_ml_pattern(MLPattern.OR, pattern)
 
     @staticmethod
+    def destruct_always(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.ALWAYS, pattern)
+
+    @staticmethod
+    def destruct_circularity(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.CIRCULARITY, pattern)
+
+    @staticmethod
     def destruct_rewrites(pattern: Pattern) -> List[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.REWRITES, pattern)
 
@@ -488,6 +496,14 @@ class KoreUtils:
     @staticmethod
     def destruct_rewrites_plus(pattern: Pattern) -> List[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.REWRITES_PLUS, pattern)
+
+    @staticmethod
+    def destruct_one_path_reaches_star(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.ONE_PATH_REACHES_STAR, pattern)
+
+    @staticmethod
+    def destruct_one_path_reaches_plus(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.ONE_PATH_REACHES_PLUS, pattern)
 
     @staticmethod
     def destruct_equals(pattern: Pattern) -> List[Pattern]:
@@ -516,6 +532,12 @@ class KoreUtils:
         return var, body
 
     @staticmethod
+    def destruct_forall(pattern: Pattern) -> Tuple[Variable, Pattern]:
+        var, body = KoreUtils.destruct_ml_pattern(MLPattern.FORALL, pattern)
+        assert isinstance(var, Variable)
+        return var, body
+
+    @staticmethod
     def destruct_dv(pattern: Pattern) -> Tuple[Sort, StringLiteral]:
         value, = KoreUtils.destruct_ml_pattern(MLPattern.DV, pattern)
         assert isinstance(pattern, MLPattern) and isinstance(value, StringLiteral)
@@ -533,6 +555,10 @@ class KoreUtils:
     @staticmethod
     def is_or(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.OR
+
+    @staticmethod
+    def is_forall(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.FORALL
 
     @staticmethod
     def is_equals(pattern: Pattern) -> bool:

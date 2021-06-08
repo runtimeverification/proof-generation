@@ -231,6 +231,20 @@ ${
     kore-one-path-reaches-plus-union   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ( \kore-or ph0 ph1 ph2 ) ph3 ) ( \kore-or ph0 ph4 ph5 ) ) ) ) $= ? $.
 $}
 
+${
+    kore-reachability-one-path-circularity-lemma.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-circularity ph0 ph1 ) ph1 ) ) ) $.
+    kore-reachability-one-path-circularity-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-well-founded ph0 ) ph1 ) ) ) $= ? $.
+$}
+
+${
+    kore-reachability-permits-non-wf $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-implies ph0 ( \kore-well-founded ph0 ) ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ) $= ? $.
+$}
+
+$( ${
+    kore-implies-compat-in-kore-forall.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
+    kore-implies-compat-in-kore-forall   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-forall ph3 ph0 x ph1 ) ( \kore-forall ph3 ph0 x ph2 ) ) ) ) $= ? $.
+$} $)
+
 $( Reachability rules $)
 
 ${

@@ -26,6 +26,7 @@ $c \kore-all-path-next $.
 $c \kore-eventually $.
 $c \kore-weak-eventually $.
 $c \kore-always $.
+$c \kore-well-founded $.
 $c \kore-rewrites $.
 $c \kore-rewrites-star $.
 $c \kore-rewrites-plus $.
@@ -114,6 +115,12 @@ ${
     $d X ph0 $.
     $d X ph1 $.
     kore-always-is-sugar $a #Notation ( \kore-always ph0 ph1 ) ( \kore-nu ph0 X ( \kore-and ph0 ph1 ( \kore-next ph0 X ) ) ) $.
+$}
+
+kore-well-founded-is-pattern $a #Pattern ( \kore-well-founded ph0 ) $.
+${
+    $d X ph0 $.
+    kore-well-founded-is-sugar $a #Notation ( \kore-well-founded ph0 ) ( \mu X ( \kore-circularity ph0 X ) ) $.
 $}
 
 kore-rewrites-is-pattern $a #Pattern ( \kore-rewrites ph0 ph1 ph2 ) $.
