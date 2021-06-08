@@ -42,6 +42,8 @@ class RewriteProofGenerator(ProofGenerator):
             "LblnotBool'Unds'": BooleanNotEvaluator(env),
             "Lbl'UndsEqlsEqls'K'Unds'": KEqualityEvaluator(env),
             "Lbl'UndsEqlsSlshEqls'K'Unds'": KNotEqualityEvaluator(env),
+            "Lblkeys'LParUndsRParUnds'MAP'Unds'Set'Unds'Map": MapKeysEvaluator(env),
+            "LblSet'Coln'in": SetInEvaluator(env),
             "LblMap'Coln'lookup": MapLookupEvaluator(env),
         }
         self.disjoint_gen = DisjointnessProofGenerator(env)
@@ -100,8 +102,7 @@ class RewriteProofGenerator(ProofGenerator):
         unification_gen = UnificationProofGenerator(self.composer)
 
         if rule_hint is not None:
-            assert rule_hint in self.composer.rewrite_axioms, \
-                   f"unable to find axiom with id {rule_hint} in the hint"
+            assert (rule_hint in self.composer.rewrite_axioms), f"unable to find axiom with id {rule_hint} in the hint"
             axioms = [self.composer.rewrite_axioms[rule_hint]]
         else:
             axioms = list(self.composer.rewrite_axioms.values())
@@ -194,8 +195,9 @@ class RewriteProofGenerator(ProofGenerator):
 
         self.composer.encode_pattern(initial_pattern)
 
-        assert len(rewriting_step.applied_rules) == 1 and len(rewriting_step.remainders) == 0, \
-               "non-determinism not supported"
+        assert (
+            len(rewriting_step.applied_rules) == 1 and len(rewriting_step.remainders) == 0
+        ), "non-determinism not supported"
 
         rule = rewriting_step.applied_rules[0]
 
@@ -220,11 +222,11 @@ class RewriteProofGenerator(ProofGenerator):
             return None
 
         unification_result = UnificationProofGenerator(self.composer).unify_patterns(expected, given)
-        assert unification_result is not None, \
-               f"expecting the following patterns to be equal or unifiable: {given} and {expected}"
+        assert (
+            unification_result is not None
+        ), f"expecting the following patterns to be equal or unifiable: {given} and {expected}"
 
-        assert len(unification_result.substitution) == 0, \
-               "patterns should be concrete"
+        assert len(unification_result.substitution) == 0, "patterns should be concrete"
 
         simplification_claim = self.apply_reflexivity(expected)
 
@@ -278,8 +280,9 @@ class RewriteProofGenerator(ProofGenerator):
             step_claim = self.prove_rewriting_step(step)
             lhs, rhs = self.decompose_concrete_rewrite_claim(step_claim)
 
-            assert step_initial == lhs, \
-                   f"unexpected rewriting claim, expected to rewrite from {step_initial}, but got {lhs}"
+            assert (
+                step_initial == lhs
+            ), f"unexpected rewriting claim, expected to rewrite from {step_initial}, but got {lhs}"
 
             self.composer.load_comment(f"\nrewriting step:\n{lhs}\n=>\n{rhs}\n")
             step_claim = self.composer.load_provable_claim_as_theorem(
@@ -438,21 +441,20 @@ class RewriteProofGenerator(ProofGenerator):
                 # the following chunk of nonsense basically
                 # checks that body is of the form
                 # top /\ (<innter condition> /\ top)
-                if isinstance(body, kore.MLPattern) and \
-                   body.construct == kore.MLPattern.AND and \
-                   isinstance(body.arguments[0], kore.MLPattern) and \
-                   body.arguments[0].construct == kore.MLPattern.TOP and \
-                   isinstance(body.arguments[1], kore.MLPattern) and \
-                   body.arguments[1].construct == kore.MLPattern.AND and \
-                   isinstance(body.arguments[1].arguments[1], kore.MLPattern) and \
-                   body.arguments[1].arguments[1].construct == kore.MLPattern.TOP:
+                if (isinstance(body, kore.MLPattern) and body.construct == kore.MLPattern.AND
+                        and isinstance(body.arguments[0], kore.MLPattern)
+                        and body.arguments[0].construct == kore.MLPattern.TOP
+                        and isinstance(body.arguments[1], kore.MLPattern)
+                        and body.arguments[1].construct == kore.MLPattern.AND
+                        and isinstance(body.arguments[1].arguments[1], kore.MLPattern)
+                        and body.arguments[1].arguments[1].construct == kore.MLPattern.TOP):
 
                     inner_condition = body.arguments[1].arguments[0]
 
                     if isinstance(inner_condition, kore.MLPattern):
-                        if inner_condition.construct == kore.MLPattern.CEIL and \
-                           isinstance(inner_condition.arguments[0], kore.MLPattern) and \
-                           inner_condition.arguments[0].construct == kore.MLPattern.AND:
+                        if (inner_condition.construct == kore.MLPattern.CEIL
+                                and isinstance(inner_condition.arguments[0], kore.MLPattern)
+                                and inner_condition.arguments[0].construct == kore.MLPattern.AND):
                             # ( \ceil ( \and <left> <right> ) )
                             lemma = "owise-var-1-cond-0"
                             left, right = inner_condition.arguments[0].arguments
@@ -461,10 +463,13 @@ class RewriteProofGenerator(ProofGenerator):
                             lemma = "owise-var-1-cond-0-alt"
                             left, right = inner_condition.arguments
                         else:
-                            assert False, f"expecting disjointness condition, got {inner_condition}"
+                            assert (False), f"expecting disjointness condition, got {inner_condition}"
 
                         output_sort = KoreUtils.infer_sort(pattern)
-                        claim = kore.Claim([], kore.MLPattern(kore.MLPattern.NOT, [output_sort], [pattern]))
+                        claim = kore.Claim(
+                            [],
+                            kore.MLPattern(kore.MLPattern.NOT, [output_sort], [pattern]),
+                        )
                         claim.resolve(self.composer.module)
 
                         print("> proving disjointness claim")
@@ -538,8 +543,8 @@ class RewriteProofGenerator(ProofGenerator):
             if requires.construct == kore.MLPattern.AND:
                 # resolve each side separately and combine
                 left, right = requires.arguments
-                left_unification = self.resolve_unification_obligations_in_requires_clause(left)
-                right_unification = self.resolve_unification_obligations_in_requires_clause(right)
+                left_unification = (self.resolve_unification_obligations_in_requires_clause(left))
+                right_unification = (self.resolve_unification_obligations_in_requires_clause(right))
 
                 if left_unification is None or right_unification is None:
                     return None
@@ -573,7 +578,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # there could be more unification conditions in the require clause
         requires_substituted = KoreUtils.copy_and_substitute_pattern(requires, unification_result.substitution)
-        side_unification_result = self.resolve_unification_obligations_in_requires_clause(requires_substituted)
+        side_unification_result = (self.resolve_unification_obligations_in_requires_clause(requires_substituted))
 
         if side_unification_result is None:
             return None
@@ -589,8 +594,8 @@ class RewriteProofGenerator(ProofGenerator):
             return None
 
         # eliminate all universal quantifiers
-        instantiated_axiom = QuantifierProofGenerator(self.composer) \
-            .prove_forall_elim(axiom, unification_result.substitution)
+        instantiated_axiom = QuantifierProofGenerator(self.composer
+                                                      ).prove_forall_elim(axiom, unification_result.substitution)
 
         # apply equations used in unification
         for equation, path in unification_result.applied_equations:
@@ -609,7 +614,7 @@ class RewriteProofGenerator(ProofGenerator):
         if requires_proof is None:
             return None
 
-        sort_param, = instantiated_axiom.claim.sort_variables
+        (sort_param, ) = instantiated_axiom.claim.sort_variables
         encoded_sort_param = self.composer.encode_pattern(sort_param)
 
         removed_requires = self.composer.get_theorem("kore-mp-v1").apply(
@@ -808,6 +813,9 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
         "Lbl'UndsPipe'-'-GT-Unds'",
         "Lbl'Unds'Map'Unds'",
         "Lbl'Stop'Map",
+        "Lbl'Stop'Set",
+        "LblSetItem",
+        "Lbl'Unds'Set'Unds",
     }
 
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
@@ -867,8 +875,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         sort_var = kore.SortVariable("R")
         output_sort = KoreUtils.infer_sort(application)
 
-        assert output_sort == KoreUtils.infer_sort(result), \
-               f"result {result} has a different sort than {application}"
+        assert output_sort == KoreUtils.infer_sort(result), f"result {result} has a different sort than {application}"
 
         claim = kore.Claim(
             [sort_var],
@@ -1013,6 +1020,71 @@ class MapLookupEvaluator(BuiltinFunctionEvaluator):
         assert isinstance(map_pattern, kore.Application)
 
         found = self.lookup(map_pattern, key_pattern)
-        assert found is not None, f"key {key_pattern} does not exist in map pattern {map_pattern}"
+        assert (found is not None), f"key {key_pattern} does not exist in map pattern {map_pattern}"
 
         return self.build_equation(application, found)
+
+
+class SetInEvaluator(BuiltinFunctionEvaluator):
+    def is_element(self, app: kore.Application, element: kore.Pattern) -> bool:
+
+        if KoreTemplates.is_set_unit_pattern(app):
+            return False
+        elif KoreTemplates.is_set_merge_pattern(app):
+
+            left, right = app.arguments
+            assert isinstance(left, kore.Application)
+            assert isinstance(right, kore.Application)
+
+            element_in_left = self.is_element(left, element)
+            element_in_right = self.is_element(right, element)
+
+            return element_in_left or element_in_right
+        elif KoreTemplates.is_set_singleton_pattern(app):
+            found_element = app.arguments
+
+            return element == found_element
+
+        return False
+
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        key, set_pattern = application.arguments
+
+        assert isinstance(set_pattern, kore.Application)
+        return self.build_arithmetic_equation(application, self.is_element(set_pattern, key))
+
+
+class MapKeysEvaluator(BuiltinFunctionEvaluator):
+    def get_keys(self, app: kore.Application) -> kore.Pattern:
+        if KoreTemplates.is_map_unit_pattern(app):
+            unit_symbol = self.composer.module.get_symbol_by_name("Lbl'Stop'Set")
+            assert unit_symbol is not None
+            unit_symbol_instance = kore.SymbolInstance(unit_symbol, [])
+            return kore.Application(unit_symbol_instance, [])
+        elif KoreTemplates.is_map_merge_pattern(app):
+
+            left, right = app.arguments
+            merge_symbol = self.composer.module.get_symbol_by_name("Lbl'Unds'Set'Unds")
+            assert isinstance(left, kore.Application)
+            assert isinstance(right, kore.Application)
+            assert merge_symbol is not None
+
+            left_keys = self.get_keys(left)
+            right_keys = self.get_keys(right)
+
+            merge_symbol_instance = kore.SymbolInstance(merge_symbol, [])
+            return kore.Application(merge_symbol_instance, [left_keys, right_keys])
+        else:
+            assert KoreTemplates.is_map_mapsto_pattern(app)
+            key, value = app.arguments
+
+            singleton_symbol = self.composer.module.get_symbol_by_name("LblSetItem")
+            assert singleton_symbol is not None
+            singleton_symbol_instance = kore.SymbolInstance(singleton_symbol, [])
+            return kore.Application(singleton_symbol_instance, [key])
+
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        map_pattern = application.arguments[0]
+
+        assert isinstance(map_pattern, kore.Application)
+        return self.build_equation(application, self.get_keys(map_pattern))

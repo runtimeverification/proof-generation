@@ -78,7 +78,7 @@ class KoreTemplates:
         return eqn_lhs.symbol
 
     @staticmethod
-    def get_sorts_of_subsort_axiom(axiom: kore.Axiom) -> Optional[Tuple[kore.SortInstance, kore.SortInstance]]:
+    def get_sorts_of_subsort_axiom(axiom: kore.Axiom, ) -> Optional[Tuple[kore.SortInstance, kore.SortInstance]]:
         attribute = axiom.get_attribute_by_symbol("subsort")
         if attribute is None:
             return None
@@ -104,7 +104,7 @@ class KoreTemplates:
         return id_term.arguments[0].content
 
     @staticmethod
-    def get_symbol_of_functional_axiom(axiom: kore.Axiom) -> Optional[kore.SymbolInstance]:
+    def get_symbol_of_functional_axiom(axiom: kore.Axiom, ) -> Optional[kore.SymbolInstance]:
         """
         Get the corresponding symbol instance of the given functional axiom
         """
@@ -134,7 +134,7 @@ class KoreTemplates:
         return rhs.symbol
 
     @staticmethod
-    def get_sort_symbol_of_no_junk_axiom(axiom: kore.Axiom) -> Optional[kore.SortInstance]:
+    def get_sort_symbol_of_no_junk_axiom(axiom: kore.Axiom, ) -> Optional[kore.SortInstance]:
         """
         A no junk axiom should be a disjunction of existential patterns
         """
@@ -156,7 +156,7 @@ class KoreTemplates:
         return sort
 
     @staticmethod
-    def get_symbol_for_no_confusion_same_constructor_axiom(axiom: kore.Axiom) -> Optional[kore.SymbolInstance]:
+    def get_symbol_for_no_confusion_same_constructor_axiom(axiom: kore.Axiom, ) -> Optional[kore.SymbolInstance]:
         r"""
         Axiom of the form
         f(ph1, ..., phn) /\ f(ph1', ..., phn') => f(ph1 /\ ph1', ..., phn /\ phn')
@@ -191,6 +191,31 @@ class KoreTemplates:
         return left.symbol, right.symbol
 
     ###################################
+    # Utils methods for set patterns. #
+    ###################################
+
+    @staticmethod
+    def is_set_merge_pattern(pattern: kore.Pattern) -> bool:
+        return (
+            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'Unds'Set'Unds'"
+            and len(pattern.arguments) == 2
+        )
+
+    @staticmethod
+    def is_set_singleton_pattern(pattern: kore.Pattern) -> bool:
+        return (
+            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "LblSetItem"
+            and len(pattern.arguments) == 1
+        )
+
+    @staticmethod
+    def is_set_unit_pattern(pattern: kore.Pattern) -> bool:
+        return (
+            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'Stop'Set"
+            and len(pattern.arguments) == 0
+        )
+
+    ###################################
     # Utils methods for map patterns. #
     ###################################
 
@@ -222,13 +247,13 @@ class KoreTemplates:
         phi ::= merge(phi1, phi2) | phi1 |-> phi2 | .map
         """
 
-        if KoreTemplates.is_map_unit_pattern(pattern) or \
-           KoreTemplates.is_map_mapsto_pattern(pattern):
+        if KoreTemplates.is_map_unit_pattern(pattern) or KoreTemplates.is_map_mapsto_pattern(pattern):
             return True
 
         if KoreTemplates.is_map_merge_pattern(pattern):
-            return KoreTemplates.is_map_pattern(KoreTemplates.get_map_merge_left(pattern)) and \
-                   KoreTemplates.is_map_pattern(KoreTemplates.get_map_merge_right(pattern))
+            return KoreTemplates.is_map_pattern(
+                KoreTemplates.get_map_merge_left(pattern)
+            ) and KoreTemplates.is_map_pattern(KoreTemplates.get_map_merge_right(pattern))
 
         return False
 
@@ -248,8 +273,10 @@ class KoreTemplates:
     def in_place_swap_map_merge_pattern(pattern: kore.Pattern) -> None:
         assert KoreTemplates.is_map_merge_pattern(pattern)
         assert isinstance(pattern, kore.Application)
-        pattern.arguments[0], pattern.arguments[1] = \
-            pattern.arguments[1], pattern.arguments[0]
+        pattern.arguments[0], pattern.arguments[1] = (
+            pattern.arguments[1],
+            pattern.arguments[0],
+        )
 
     @staticmethod
     def in_place_rotate_right_map_merge_pattern(pattern: kore.Pattern) -> None:
@@ -272,7 +299,7 @@ class KoreTemplates:
         left.arguments[1] = right
 
     @staticmethod
-    def get_path_to_smallest_key_in_map_pattern(pattern: kore.Pattern) -> Tuple[kore.Pattern, PatternPath]:
+    def get_path_to_smallest_key_in_map_pattern(pattern: kore.Pattern, ) -> Tuple[kore.Pattern, PatternPath]:
         r"""
         Return the path to the pattern with the smallest key.
         0 means "left branch" and 1 means "right branch".
@@ -281,12 +308,10 @@ class KoreTemplates:
         assert KoreTemplates.is_map_pattern(pattern)
         assert isinstance(pattern, kore.Application)
 
-        if KoreTemplates.is_map_mapsto_pattern(pattern) or \
-           KoreTemplates.is_map_unit_pattern(pattern):
+        if KoreTemplates.is_map_mapsto_pattern(pattern) or KoreTemplates.is_map_unit_pattern(pattern):
             return pattern, []
 
-        assert KoreTemplates.is_map_merge_pattern(pattern), \
-               f"expecting a map merge, got {pattern}"
+        assert KoreTemplates.is_map_merge_pattern(pattern), f"expecting a map merge, got {pattern}"
 
         lhs = KoreTemplates.get_map_merge_left(pattern)
         rhs = KoreTemplates.get_map_merge_right(pattern)
