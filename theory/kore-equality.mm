@@ -92,12 +92,12 @@ ${
     $d z th1 $.
     $d z th2 $.
     $d x ph0 $.
-    $d y th0 $.
-    functional-substitution-alt.0 $e |- ( \imp th0 ( \exists x ( \eq x ph0 ) ) ) $.
-    functional-substitution-alt.1 $e |- ( \imp ( \and th0 th1 ) ph1 ) $.
-    functional-substitution-alt.2 $e #Substitution ( \imp th2 ph2 ) ( \imp th1 ph1 ) ph0 y $.
-    functional-substitution-alt.3 $e #Substitution ( \imp th3 ph3 ) ( \imp th1 ph1 ) z y $.
-    functional-substitution-alt   $p |- ( \imp ( \and th0 th2 ) ph2 ) $=
+    functional-substitution-alt2.0 $e #Fresh y th0 $.
+    functional-substitution-alt2.1 $e |- ( \imp th0 ( \exists x ( \eq x ph0 ) ) ) $.
+    functional-substitution-alt2.2 $e |- ( \imp ( \and th0 th1 ) ph1 ) $.
+    functional-substitution-alt2.3 $e #Substitution ( \imp th2 ph2 ) ( \imp th1 ph1 ) ph0 y $.
+    functional-substitution-alt2.4 $e #Substitution ( \imp th3 ph3 ) ( \imp th1 ph1 ) z y $.
+    functional-substitution-alt2   $p |- ( \imp ( \and th0 th2 ) ph2 ) $=
         $(
             apply "rule-uncurry"
             apply "proof-rule-mp"
@@ -106,18 +106,104 @@ ${
             apply "weakening-imp3"
             apply "functional-substitution"
             apply "fresh-disjoint"
-            apply "functional-substitution-alt.2"
-            apply "functional-substitution-alt.3"
-            apply "functional-substitution-alt.0"
+            apply "functional-substitution-alt2.3"
+            apply "functional-substitution-alt2.4"
+            apply "functional-substitution-alt2.1"
             apply "proof-rule-mp"
             apply "rule-iff-elim-left"
             apply "lemma-prenex-forall-imp-right"
-            apply "fresh-disjoint"
+            apply "functional-substitution-alt2.0"
             apply "lemma-forall-intro"
             apply "rule-curry"
-            apply "functional-substitution-alt.1"
+            apply "functional-substitution-alt2.2"
         $)
-        ( imp-is-pattern forall-is-pattern element-var-is-var var-is-pattern eq-is-pattern exists-is-pattern proof-rule-mp fresh-disjoint weakening-imp3 functional-substitution lemma-prenex-forall-imp-right rule-iff-elim-left rule-curry lemma-forall-intro rule-uncurry ) EGCEFBPJQPEGCPPEIRSATIUAPEFBPJQPEGCPPPIRSATIUAFBPJQGCPPPEIRSATIUAPEFBPJQPEGCPPPPIRSATIUAFBPJQGCPEUDAFBPGCPHDPJIKAIRUCNOUEUBLUBEFBPPJQEFBPJQPEFBPPJQEFBPJQPEFBPJEJRUCUFUGEFBPPJEFBMUHUIUBUBUJ $.
+        ( imp-is-pattern forall-is-pattern element-var-is-var var-is-pattern eq-is-pattern exists-is-pattern proof-rule-mp weakening-imp3 fresh-disjoint functional-substitution lemma-prenex-forall-imp-right rule-iff-elim-left rule-curry lemma-forall-intro rule-uncurry ) EGCEFBQJRQEGCQQEISTAUAIUBQEFBQJRQEGCQQQISTAUAIUBFBQJRGCQQQEISTAUAIUBQEFBQJRQEGCQQQQISTAUAIUBFBQJRGCQEUDAFBQGCQHDQJIKAISUEOPUFUCMUCEFBQQJREFBQJRQEFBQQJREFBQJRQEFBQJLUGUHEFBQQJEFBNUIUJUCUCUK $.
+$}
+
+${
+    $d z ph0 $.
+    $d z ph1 $.
+    $d z ph2 $.
+    $d z y $.
+    $d z x $.
+    $d z th1 $.
+    $d z th2 $.
+    $d x ph0 $.
+    $d y th0 $.
+    functional-substitution-alt.0 $e |- ( \imp th0 ( \exists x ( \eq x ph0 ) ) ) $.
+    functional-substitution-alt.1 $e |- ( \imp ( \and th0 th1 ) ph1 ) $.
+    functional-substitution-alt.2 $e #Substitution ( \imp th2 ph2 ) ( \imp th1 ph1 ) ph0 y $.
+    functional-substitution-alt.3 $e #Substitution ( \imp th3 ph3 ) ( \imp th1 ph1 ) z y $.
+    functional-substitution-alt   $p |- ( \imp ( \and th0 th2 ) ph2 ) $=
+        $(
+            apply "functional-substitution-alt2"
+            apply "fresh-disjoint"
+            apply "functional-substitution-alt.0"
+            apply "functional-substitution-alt.1"
+            apply "functional-substitution-alt.2"
+            apply "functional-substitution-alt.3"
+        $)
+        ( element-var-is-var fresh-disjoint functional-substitution-alt2 ) ABCDEFGHIJKEJPQLMNOR $.
+$}
+
+${
+    $d z ph0 $.
+    $d z ph1 $.
+    $d z ph2 $.
+    $d z y $.
+    $d z x $.
+    $d z th1 $.
+    $d z th2 $.
+    $d x ph0 $.
+    $d y th0 $.
+    functional-substitution-alt3.0 $e |- ( \imp th0 ( \exists x ( \eq x ph0 ) ) ) $.
+    functional-substitution-alt3.2 $e #Substitution ( \imp th2 ph2 ) ( \imp th1 ph1 ) ph0 y $.
+    functional-substitution-alt3.3 $e #Substitution ( \imp th3 ph3 ) ( \imp th1 ph1 ) z y $.
+    functional-substitution-alt3   $p |- ( \imp th0 ( \imp ( \forall y ( \imp th1 ph1 ) ) ( \imp th2 ph2 ) ) ) $=
+        $(
+            apply "rule-curry"
+            apply "rule-curry"
+            apply "functional-substitution-alt2"
+            apply "fresh-in-imp"
+            apply "fresh-in-imp"
+            apply "fresh-in-imp"
+            apply "fresh-in-imp"
+            apply "fresh-disjoint"
+            (apply "fresh-in-bot")+
+            (apply "fresh-in-imp")+
+            apply "fresh-in-exists-shadowed"
+            (apply "fresh-in-bot")+
+            apply "rule-uncurry"
+            apply "premises-switch"
+            apply "rule-weakening"
+            apply "functional-substitution-alt3.0"
+            apply "rule-uncurry"
+            apply "rule-uncurry"
+            apply "rule-weakening"
+            apply "proof-rule-mp"
+            apply "forall-intro-alt"
+            apply "imp-reflexivity"
+            apply "functional-substitution-alt3.2"
+            apply "functional-substitution-alt3.3"
+        $)
+        ( imp-is-pattern not-is-pattern forall-is-pattern bot-is-pattern element-var-is-var exists-is-pattern or-is-pattern notation-transitivity and-is-pattern fresh-in-imp notation-reflexivity notation-fresh fresh-in-bot not-is-sugar var-is-pattern eq-is-pattern rule-uncurry rule-weakening rule-curry fresh-disjoint fresh-in-exists-shadowed forall-is-sugar or-is-sugar and-is-sugar premises-switch forall-intro-alt imp-reflexivity proof-rule-mp functional-substitution-alt2 ) EFBOJQGCOEFBOJQUCGCABCDEFBOJQUCFGHIJKEPFBOJQPUAROEFBOJQUCJSEPFBOJQPUARJSEPPFBOJQPOEPFBOJQPUAJSEPPFBOJQPJSEPROEPPJSEPRJSEROEPJSERJSEJSUNJSUGUDEPEROEROEUHEROUEUBUFJSUGUDEPPEPROEPROEPUHEPROUEUBUFFBOJQROFBOJQPJSFBOJQRJSFBOPJTROFBOJQJSFBOPJTRJSFBOPJUOJSUGUDFBOJQFBOPJTROFBOPJTROFBOJQFBOPJTPFBOPJTROFBOJUPFBOPJTUHUBFBOPJTROUEUBUFJSUGUDFBOJQPFBOJQROFBOJQROFBOJQUHFBOJQROUEUBUFUDEPFBOJQPUAEPPFBOJQPOEPPFBOJQPOEPFBOJQPUQEPPFBOJQPOUEUBUFJSUGUDEFBOJQUCEPFBOJQPUAROEPFBOJQPUAROEFBOJQUCEPFBOJQPUAPEPFBOJQPUAROEFBOJQUREPFBOJQPUAUHUBEPFBOJQPUAROUEUBUFEFBOJQISUIAUJITFBOJQEISUIAUJITFBOJQEISUIAUJITOLULUSUKEFBOJQUCFBEFBOJQFBOEFBOJQFBOOFBOFBOOFBOJQFBOOFBOFBOJUTFBOVAVBULUKUKMNVCUMUM $.
+$}
+
+${
+    $d z ph0 $.
+    $d z ph1 $.
+    $d z ph2 $.
+    $d z y $.
+    $d z x $.
+    $d z th1 $.
+    $d z th2 $.
+    $d x ph0 $.
+    $d y th0 $.
+    kore-functional-substitution.0 $e |- ( \imp th0 ( \in-sort ph4 ph0 ) ) $.
+    kore-functional-substitution.1 $e |- ( \imp th0 ( \kore-valid \unit-sort ( \kore-exists ph0 \unit-sort x ( \kore-equals ph0 \unit-sort x ph4 ) ) ) ) $.
+    kore-functional-substitution.2 $e #Substitution ph3 ph2 ph4 y $.
+    kore-functional-substitution.3 $e #Substitution ph5 ph2 z y $.
+    kore-functional-substitution   $p |- ( \imp th0 ( \kore-valid ph1 ( \kore-implies ph1 ( \kore-forall ph0 y ph1 ph2 ) ph3 ) ) ) $= ? $.
 $}
 
 eq-compat-in-eq-alt $p |- ( \imp ( \eq ph0 ph1 ) ( \eq ( \eq ph0 ph2 ) ( \eq ph1 ph2 ) ) ) $=

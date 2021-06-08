@@ -219,7 +219,9 @@ class KoreUtils:
         Quantify all free (pattern) variables in the given axiom
         """
 
-        free_vars = axiom.pattern.visit(FreePatternVariableVisitor())
+        free_vars = list(FreePatternVariableVisitor().visit(axiom.pattern))
+        free_vars.sort(key=lambda v: v.name, reverse=True)
+
         body = axiom.pattern
         body_sort = KoreUtils.infer_sort(body)
 
@@ -385,6 +387,11 @@ class KoreUtils:
         return MLPattern(MLPattern.DV, [sort], [StringLiteral(literal)])
 
     @staticmethod
+    def construct_unary_ml_pattern(construct: str, pattern: Pattern) -> MLPattern:
+        sort = KoreUtils.infer_sort(pattern)
+        return MLPattern(construct, [sort], [pattern])
+
+    @staticmethod
     def construct_binary_ml_pattern(construct: str, left: Pattern, right: Pattern) -> MLPattern:
         left_sort = KoreUtils.infer_sort(left)
         right_sort = KoreUtils.infer_sort(right)
@@ -401,8 +408,24 @@ class KoreUtils:
         return KoreUtils.construct_binary_ml_pattern(MLPattern.OR, left, right)
 
     @staticmethod
+    def construct_always(pattern: Pattern) -> MLPattern:
+        return KoreUtils.construct_unary_ml_pattern(MLPattern.ALWAYS, pattern)
+
+    @staticmethod
+    def construct_circularity(pattern: Pattern) -> MLPattern:
+        return KoreUtils.construct_unary_ml_pattern(MLPattern.CIRCULARITY, pattern)
+
+    @staticmethod
     def construct_rewrites(left: Pattern, right: Pattern) -> MLPattern:
         return KoreUtils.construct_binary_ml_pattern(MLPattern.REWRITES, left, right)
+
+    @staticmethod
+    def construct_one_path_reaches_star(left: Pattern, right: Pattern) -> MLPattern:
+        return KoreUtils.construct_binary_ml_pattern(MLPattern.ONE_PATH_REACHES_STAR, left, right)
+
+    @staticmethod
+    def construct_one_path_reaches_plus(left: Pattern, right: Pattern) -> MLPattern:
+        return KoreUtils.construct_binary_ml_pattern(MLPattern.ONE_PATH_REACHES_PLUS, left, right)
 
     @staticmethod
     def construct_rewrites_star(left: Pattern, right: Pattern) -> MLPattern:
@@ -506,6 +529,10 @@ class KoreUtils:
     @staticmethod
     def is_and(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.AND
+
+    @staticmethod
+    def is_or(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.OR
 
     @staticmethod
     def is_equals(pattern: Pattern) -> bool:

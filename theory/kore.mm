@@ -22,13 +22,16 @@ $c \kore-floor $.
 $c \kore-equals $.
 $c \kore-in $.
 $c \kore-next $.
+$c \kore-all-path-next $.
 $c \kore-eventually $.
 $c \kore-weak-eventually $.
+$c \kore-always $.
 $c \kore-rewrites $.
 $c \kore-rewrites-star $.
 $c \kore-rewrites-plus $.
 $c \kore-one-path-reaches-plus $.
 $c \kore-one-path-reaches-star $.
+$c \kore-circularity $.
 $c \kore-dv $.
 $c \kore-valid $.
 $c \kore-is-sort $.
@@ -83,6 +86,15 @@ kore-next-is-pattern $a #Pattern ( \kore-next ph0 ph1 ) $.
 kore-next-is-sugar $a #Notation ( \kore-next ph0 ph1 ) ( \app \kore-next-symbol ph1 ) $.
 kore-next-sorting $a |- ( \imp ( \in-sort ph1 ph0 ) ( \in-sort ( \kore-next ph0 ph1 ) ph0 ) ) $.
 
+kore-mu-is-pattern $a #Pattern ( \kore-mu ph0 X ph1 ) $.
+kore-mu-is-sugar $a #Notation ( \kore-mu ph0 X ph1 ) ( \mu X ph1 ) $.
+
+kore-nu-is-pattern $a #Pattern ( \kore-nu ph0 X ph1 ) $.
+kore-nu-is-sugar $a #Notation ( \kore-nu ph0 X ph1 ) ( \kore-not ph0 ( \mu X ( \kore-not ph0 ph1 ) ) ) $.
+
+kore-all-path-next-is-pattern $a #Pattern ( \kore-all-path-next ph0 ph1 ) $.
+kore-all-path-next-is-sugar $a #Notation ( \kore-all-path-next ph0 ph1 ) ( \kore-not ph0 ( \kore-next ph0 ( \kore-not ph0 ph1 ) ) ) $.
+
 kore-evetually-is-pattern $a #Pattern ( \kore-eventually ph0 ph1 ) $.
 ${
     $d X ph0 $.
@@ -94,7 +106,14 @@ kore-weak-evetually-is-pattern $a #Pattern ( \kore-weak-eventually ph0 ph1 ) $.
 ${
     $d X ph0 $.
     $d X ph1 $.
-    kore-weak-evetually-is-sugar $a #Notation ( \kore-weak-eventually ph0 ph1 ) ( \nu X ( \kore-or ph0 ph1 ( \kore-next ph0 X ) ) ) $.
+    kore-weak-evetually-is-sugar $a #Notation ( \kore-weak-eventually ph0 ph1 ) ( \kore-nu ph0 X ( \kore-or ph0 ph1 ( \kore-next ph0 X ) ) ) $.
+$}
+
+kore-always-is-pattern $a #Pattern ( \kore-always ph0 ph1 ) $.
+${
+    $d X ph0 $.
+    $d X ph1 $.
+    kore-always-is-sugar $a #Notation ( \kore-always ph0 ph1 ) ( \kore-nu ph0 X ( \kore-and ph0 ph1 ( \kore-next ph0 X ) ) ) $.
 $}
 
 kore-rewrites-is-pattern $a #Pattern ( \kore-rewrites ph0 ph1 ph2 ) $.
@@ -111,6 +130,9 @@ kore-one-path-reaches-star-is-sugar $a #Notation ( \kore-one-path-reaches-star p
 
 kore-one-path-reaches-plus-is-pattern $a #Pattern ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) $.
 kore-one-path-reaches-plus-is-sugar $a #Notation ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-next ph0 ( \kore-weak-eventually ph0 ph2 ) ) ) $.
+
+kore-circularity-is-pattern $a #Pattern ( \kore-circularity ph0 ph1 ) $.
+kore-circularity-is-sugar $a #Notation ( \kore-circularity ph0 ph1 ) ( \kore-all-path-next ph0 ( \kore-always ph0 ph1 ) ) $.
 
 $c \kore-dv-symbol $.
 kore-dv-is-symbol $a #Symbol \kore-dv-symbol $.

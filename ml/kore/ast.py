@@ -654,6 +654,9 @@ class MLPattern(Pattern):
     IN = "\\in"
 
     NEXT = "\\next"
+    ALWAYS = "\\always"
+    CIRCULARITY = "\\circularity"
+
     REWRITES = "\\rewrites"
     REWRITES_STAR = "\\rewrites-star"
     REWRITES_PLUS = "\\rewrites-plus"
@@ -679,6 +682,8 @@ class MLPattern(Pattern):
         EQUALS: (2, 2),
         IN: (2, 2),
         NEXT: (1, 1),
+        ALWAYS: (1, 1),
+        CIRCULARITY: (1, 1),
         REWRITES: (1, 2),
         REWRITES_STAR: (1, 2),
         REWRITES_PLUS: (1, 2),
