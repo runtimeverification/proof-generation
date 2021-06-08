@@ -54,6 +54,13 @@ class RewriteProofGenerator(ProofGenerator):
         }
         self.disjoint_gen = DisjointnessProofGenerator(env)
 
+    def is_claim_application(self, step: RewritingStep) -> bool:
+        if len(step.applied_rules) != 1:
+            return False
+
+        rule_id = step.applied_rules[0].rule_id
+        return rule_id is not None and rule_id.startswith("claim")
+
     def prove_one_path_reachability_claim(
         self,
         circularity_claims: Tuple[kore.Claim, ...],
@@ -69,20 +76,112 @@ class RewriteProofGenerator(ProofGenerator):
         assert len(circularity_claims) == 1 and circularity_claims[0] == claim, \
                f"not implemented"
 
-        # lhs, requires, rhs, ensures = self.destruct_rewrite_axiom(claim)
-        # KoreUtils.pretty_print(lhs)
+        assert len(steps) != 0, "trivial claim is not supported"
 
-        assert len(steps) != 0
+        self.preprocess_steps(steps)
+
+        expected_lhs, _, goal, _ = self.destruct_rewrite_axiom(claim, separate_rhs=False)
+        assert steps[
+            0
+        ].initial.pattern == expected_lhs, f"different initial patterns: {steps[0].initial.pattern} != {expected_lhs}"
 
         print(f"### step 0")
-        final_claim = self.prove_symbolic_step(kore.MLPattern.REWRITES_PLUS, 0, steps[0])
+        symbolic_execution = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, 0, steps[0])
 
-        for i, step in enumerate(steps[1:-1], 1):
-            print(f"### step {i}")
-            step_claim = self.prove_symbolic_step(kore.MLPattern.REWRITES_STAR, i, step)
-            final_claim = self.connect_symbolic_steps(kore.MLPattern.REWRITES_PLUS, final_claim, step_claim)
+        claim_steps = []
+
+        for i, step in enumerate(steps[1:], 1):
+            if self.is_claim_application(step):
+                # claims will be resolved in the end
+                print(f"### step {i} is claim application, skipped")
+                claim_steps.append(step)
+                continue
+            else:
+                print(f"### step {i}")
+            step_claim = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_STAR, i, step)
+            symbolic_execution = self.connect_symbolic_steps(
+                kore.MLPattern.ONE_PATH_REACHES_PLUS, symbolic_execution, step_claim
+            )
+
+        # we first construct a generalized version of the claim by
+        # universally quantify all variables
+        quantified_claim = self.quantify_all_free_variables(claim)
+
+        # weakens the current claim by adding a circularity premise of quantified_claim
+        transitivity1 = PropositionalProofGenerator(self.composer).apply_weakening(
+            symbolic_execution,
+            KoreUtils.construct_circularity(quantified_claim.pattern),
+        )
+
+        # proves RHS of the current claim => RHS of the goal claim, under the premise of quantified claim
+        _, _, rhs, _ = self.destruct_rewrite_axiom(symbolic_execution, separate_lhs=False, separate_rhs=False)
+        transitivity2 = self.prove_one_path_subsumption_under_axiom(rhs, goal, quantified_claim, tuple(claim_steps))
+
+        final_claim = self.composer.apply_kore_lemma(
+            "kore-reachability-one-path-transitivity",
+            transitivity1,
+            transitivity2,
+        )
+
+        final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
 
         KoreUtils.pretty_print(final_claim.claim)
+
+        # TODO: apply circularity
+
+    def prove_one_path_subsumption_under_axiom(
+        self,
+        initial: kore.Pattern,
+        goal: kore.Pattern,
+        axiom: kore.Claim,
+        claim_steps: Tuple[RewritingStep, ...],
+    ) -> ProvableClaim:
+        """
+        The finishing step of a reachability claim
+        
+        Prove that (at Kore level)
+        |- <body of the axiom> -> <disjunction> => <goal>
+        """
+
+        if KoreUtils.is_or(initial):
+            left, right = KoreUtils.destruct_or(initial)
+            return self.composer.apply_kore_lemma(
+                "kore-reachability-one-path-case-star",
+                self.prove_one_path_subsumption_under_axiom(left, goal, axiom, claim_steps),
+                self.prove_one_path_subsumption_under_axiom(right, goal, axiom, claim_steps),
+            )
+
+        # if matches any claim steps, use the axiom rule
+        # otherwise try to prove subsumption directly
+        for step in claim_steps:
+            if step.initial.as_pattern() == initial:
+                # TODO: prove this
+                return self.composer.load_fresh_claim_placeholder(
+                    "reachability-axiom",
+                    KoreUtils.construct_implies(
+                        KoreUtils.construct_always(axiom.pattern),
+                        KoreUtils.construct_one_path_reaches_star(initial, goal),
+                    ),
+                )
+
+        # otherwise try to show direct subsumption
+        # TODO: prove this
+        subsumption = self.composer.load_fresh_claim_placeholder(
+            "subsumption", KoreUtils.construct_implies(initial, goal)
+        )
+
+        claim = self.composer.apply_kore_lemma(
+            "kore-one-path-reaches-star-intro-alt2",
+            subsumption,
+        )
+
+        return PropositionalProofGenerator(self.composer
+                                           ).apply_weakening(claim, KoreUtils.construct_always(axiom.pattern))
+
+    def quantify_all_free_variables(self, claim: kore.Claim) -> kore.Claim:
+        copied_claim = KoreUtils.copy_ast(self.composer.module, claim)
+        KoreUtils.quantify_all_free_variables_in_axiom(copied_claim)
+        return copied_claim
 
     def destruct_rewrite_axiom(
         self,
@@ -531,28 +630,42 @@ class RewriteProofGenerator(ProofGenerator):
         where => can be =>* or =>+
         """
 
-        assert (KoreUtils.is_rewrites_star(rewrite1.claim.pattern) and
-                KoreUtils.is_rewrites_star(rewrite2.claim.pattern)) or \
-               (KoreUtils.is_rewrites_plus(rewrite1.claim.pattern) and
-                KoreUtils.is_rewrites_plus(rewrite2.claim.pattern))
+        rewrite_type1 = self.get_reachability_type(rewrite1)
+        rewrite_type2 = self.get_reachability_type(rewrite2)
+
+        assert rewrite_type1 == rewrite_type2
 
         lhs1, left_constraints1, _, _ = self.destruct_rewrite_axiom(rewrite1, separate_rhs=False)
         lhs2, left_constraints2, _, _ = self.destruct_rewrite_axiom(rewrite2, separate_rhs=False)
         assert lhs1 == lhs2, f"{lhs1} != {lhs2}"
         assert left_constraints1 is not None and left_constraints2 is not None
 
-        if KoreUtils.is_rewrites_star(rewrite1.claim.pattern):
+        if rewrite_type1 == kore.MLPattern.REWRITES_STAR:
             return self.composer.apply_kore_lemma(
                 "kore-rewrites-star-union",
                 rewrite1,
                 rewrite2,
             )
-        else:
+        elif rewrite_type1 == kore.MLPattern.REWRITES_STAR:
             return self.composer.apply_kore_lemma(
                 "kore-rewrites-plus-union",
                 rewrite1,
                 rewrite2,
             )
+        elif rewrite_type1 == kore.MLPattern.ONE_PATH_REACHES_STAR:
+            return self.composer.apply_kore_lemma(
+                "kore-one-path-reaches-star-union",
+                rewrite1,
+                rewrite2,
+            )
+        elif rewrite_type1 == kore.MLPattern.ONE_PATH_REACHES_PLUS:
+            return self.composer.apply_kore_lemma(
+                "kore-one-path-reaches-plus-union",
+                rewrite1,
+                rewrite2,
+            )
+
+        assert False, f"unsupported reachability type {rewrite_type1}"
 
     def prove_symbolic_step(
         self,
@@ -675,10 +788,22 @@ class RewriteProofGenerator(ProofGenerator):
                 self.apply_reachability_intro(kore.MLPattern.REWRITES_PLUS, step1),
                 self.apply_reachability_intro(kore.MLPattern.REWRITES_STAR, step2),
             )
+        elif reachability == kore.MLPattern.ONE_PATH_REACHES_STAR:
+            return self.composer.apply_kore_lemma(
+                "kore-one-path-reaches-star-branch",
+                self.apply_reachability_intro(kore.MLPattern.ONE_PATH_REACHES_STAR, step1),
+                self.apply_reachability_intro(kore.MLPattern.ONE_PATH_REACHES_STAR, step2),
+            )
+        elif reachability == kore.MLPattern.ONE_PATH_REACHES_PLUS:
+            return self.composer.apply_kore_lemma(
+                "kore-one-path-reaches-plus-branch",
+                self.apply_reachability_intro(kore.MLPattern.ONE_PATH_REACHES_PLUS, step1),
+                self.apply_reachability_intro(kore.MLPattern.ONE_PATH_REACHES_STAR, step2),
+            )
 
         assert False, f"unsupported reachbility type {reachability}"
 
-    def preprocess_task(self, task: RewritingTask) -> None:
+    def preprocess_steps(self, steps: Tuple[RewritingStep, ...]) -> None:
         """
         Does two things:
         - simplify the final results for each step
@@ -695,7 +820,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # task.concretize(concretization_substitution)
 
-        for step in task.steps:
+        for step in steps:
             for applied_rule in step.applied_rules:
                 simplified_results = []
                 for result in applied_rule.results:
@@ -752,7 +877,7 @@ class RewriteProofGenerator(ProofGenerator):
         """
 
         print("preprocess rewriting task")
-        self.preprocess_task(task)
+        self.preprocess_steps(task.steps)
 
         step_claims = []
 
@@ -805,9 +930,18 @@ class RewriteProofGenerator(ProofGenerator):
     (src, dest): theorem name
     """
     REACHABILITY_INTRO_THEOREMS = {
-        (kore.MLPattern.REWRITES, kore.MLPattern.REWRITES_STAR): "kore-rewrites-star-intro",
-        (kore.MLPattern.REWRITES, kore.MLPattern.REWRITES_PLUS): "kore-rewrites-plus-intro",
-        (kore.MLPattern.REWRITES_PLUS, kore.MLPattern.REWRITES_STAR): "kore-rewrites-star-intro-alt",
+        (kore.MLPattern.REWRITES, kore.MLPattern.REWRITES_STAR):
+        "kore-rewrites-star-intro",
+        (kore.MLPattern.REWRITES, kore.MLPattern.REWRITES_PLUS):
+        "kore-rewrites-plus-intro",
+        (kore.MLPattern.REWRITES_PLUS, kore.MLPattern.REWRITES_STAR):
+        "kore-rewrites-star-intro-alt",
+        (kore.MLPattern.REWRITES_STAR, kore.MLPattern.ONE_PATH_REACHES_STAR):
+        "kore-one-path-reaches-star-intro",
+        (kore.MLPattern.REWRITES_PLUS, kore.MLPattern.ONE_PATH_REACHES_PLUS):
+        "kore-one-path-reaches-plus-intro",
+        (kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_STAR):
+        "kore-one-path-reaches-star-intro-alt",
     }
     """
     (resulting type, src, dest)
@@ -817,11 +951,19 @@ class RewriteProofGenerator(ProofGenerator):
         "kore-rewrites-plus-transitivity",
         (kore.MLPattern.REWRITES_STAR, kore.MLPattern.REWRITES_STAR, kore.MLPattern.REWRITES_STAR):
         "kore-rewrites-star-transitivity",
+        (
+            kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_STAR
+        ):
+        "kore-one-path-reaches-plus-transitivity",
+        (
+            kore.MLPattern.ONE_PATH_REACHES_STAR, kore.MLPattern.ONE_PATH_REACHES_STAR, kore.MLPattern.ONE_PATH_REACHES_STAR
+        ):
+        "kore-one-path-reaches-star-transitivity",
     }
 
     REACHABILITY_REFLEXIVITY_THEOREMS = {
         kore.MLPattern.REWRITES_STAR: "kore-rewrites-star-reflexivity",
-        # kore.MLPattern.ONE_PATH_REACHES_STAR: ,
+        kore.MLPattern.ONE_PATH_REACHES_STAR: "kore-one-path-reaches-star-reflexivity",
     }
     """
     type: (left subsumption, right subsumption)
@@ -830,6 +972,10 @@ class RewriteProofGenerator(ProofGenerator):
         kore.MLPattern.REWRITES: ("kore-rewrites-subsumption-lhs", "kore-rewrites-subsumption-rhs"),
         kore.MLPattern.REWRITES_STAR: ("kore-rewrites-star-subsumption-lhs", "kore-rewrites-star-subsumption-rhs"),
         kore.MLPattern.REWRITES_PLUS: ("kore-rewrites-plus-subsumption-lhs", "kore-rewrites-plus-subsumption-rhs"),
+        kore.MLPattern.ONE_PATH_REACHES_STAR:
+        ("kore-one-path-reaches-star-subsumption-lhs", "kore-one-path-reaches-star-subsumption-rhs"),
+        kore.MLPattern.ONE_PATH_REACHES_PLUS:
+        ("kore-one-path-reaches-plus-subsumption-lhs", "kore-one-path-reaches-plus-subsumption-rhs"),
     }
 
     def construct_reachability_claim(

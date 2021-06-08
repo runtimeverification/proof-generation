@@ -305,3 +305,14 @@ class PropositionalProofGenerator(ProofGenerator):
             return shuffle
 
         assert False, f"{n}^th conjunct does not exist in {pattern}"
+
+    def apply_weakening(self, claim: ProvableClaim, additional_premise: kore.Pattern) -> ProvableClaim:
+        """
+        Given a proof of |- phi and a pattern psi
+        return a proof of |- psi -> phi
+        """
+        return self.composer.apply_kore_lemma(
+            "kore-weakening",
+            claim,
+            ph1=additional_premise,
+        )

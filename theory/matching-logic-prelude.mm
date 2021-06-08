@@ -10,8 +10,7 @@ $(
     Part 5. Constant, Unary, and Binary Functions (internal use only)
     Part 6. Unit
     Part 7. Pairs
-    Part 8. Tuples
-    Part 9. Functions
+    Part 8. Modality
 $)
 
 $( Part 0. More Metavariables $)

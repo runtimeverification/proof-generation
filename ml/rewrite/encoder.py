@@ -28,6 +28,8 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
     FLOOR = "\\kore-floor"
     EQUALS = "\\kore-equals"
     IN = "\\kore-in"
+    ALWAYS = "\\kore-always"
+    CIRCULARITY = "\\kore-circularity"
     REWRITES = "\\kore-rewrites"
     REWRITES_STAR = "\\kore-rewrites-star"
     REWRITES_PLUS = "\\kore-rewrites-plus"
@@ -54,6 +56,8 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         kore.MLPattern.FLOOR: FLOOR,
         kore.MLPattern.EQUALS: EQUALS,
         kore.MLPattern.IN: IN,
+        kore.MLPattern.ALWAYS: ALWAYS,
+        kore.MLPattern.CIRCULARITY: CIRCULARITY,
         kore.MLPattern.REWRITES: REWRITES,
         kore.MLPattern.REWRITES_STAR: REWRITES_STAR,
         kore.MLPattern.REWRITES_PLUS: REWRITES_PLUS,
