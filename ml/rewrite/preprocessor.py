@@ -27,13 +27,30 @@ class KorePreprocessor:
     MISSING_SUBSORT_AXIOMS = [
         ("SortKConfigVar", "SortKItem"),
     ]
+    """
+    These symbols are marked as hooked function symbols
+    but for the purpose of proof generation they should
+    be constructors
+    """
+    REMOVE_FUNCTION_ATTRIBUTES = [
+        "Lbl'UndsPipe'-'-GT-Unds'",
+        "Lbl'Unds'Map'Unds'",
+        "Lbl'Stop'Map",
+    ]
 
     def preprocess(self, definition: kore.Definition) -> None:
+        self.remove_function_attributes(definition)
         self.add_missing_functional_axioms(definition)
         self.add_missing_subsort_axioms(definition)
         for module in definition.module_map.values():
             KoreUtils.instantiate_all_alias_uses(module)
             # KoreUtils.quantify_all_free_variables(module)
+
+    def remove_function_attributes(self, definition: kore.Definition) -> None:
+        for module in definition.module_map.values():
+            for symbol_def in module.symbol_map.values():
+                if symbol_def.symbol in KorePreprocessor.REMOVE_FUNCTION_ATTRIBUTES:
+                    symbol_def.remove_attribute_by_symbol("function")
 
     def add_missing_functional_axioms(self, definition: kore.Definition) -> None:
         # modules in which MISSING_FUNCTIONAL_AXIOMS

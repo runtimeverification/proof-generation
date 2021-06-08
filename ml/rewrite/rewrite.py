@@ -16,7 +16,7 @@ from .encoder import KoreEncoder
 
 from .env import KoreComposer, ProofGenerator, ProvableClaim
 from .equality import EqualityProofGenerator
-from .unification import UnificationProofGenerator, InjectionCombine, UnificationResult, AdditionalEquation
+from .unification import UnificationProofGenerator, InjectionCombine, UnificationResult, ConstraintEquation
 from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
 from .propositional import PropositionalProofGenerator
@@ -246,11 +246,34 @@ class RewriteProofGenerator(ProofGenerator):
                     ),
                 )
 
+        constrained_pattern1 = ConstrainedPattern.from_pattern(initial)
+        constrained_pattern2 = ConstrainedPattern.from_pattern(goal)
+
+        unification_result = \
+            UnificationProofGenerator(self.composer, allow_unevaluated_functions=True, disable_substitution=True) \
+                .unify_patterns(constrained_pattern1.pattern, constrained_pattern2.pattern)
+
+        if unification_result is None:
+            # then try to prove that the constraint is unsatisfiable
+            # TODO: merge this into prove_constrained_pattern_subsumption
+            constraint_unsat = self.check_smt_unsat(constrained_pattern1.get_constraint())
+            subsumption = self.composer.apply_kore_lemma(
+                "kore-not-elim",
+                constraint_unsat,
+                ph2=constrained_pattern1.pattern,
+                ph3=goal,
+            )
+        else:
+            subsumption = self.prove_constrained_pattern_subsumption(
+                constrained_pattern1,
+                constrained_pattern2,
+            )
+
         # otherwise try to show direct subsumption
         # TODO: prove this
-        subsumption = self.composer.load_fresh_claim_placeholder(
-            "subsumption", KoreUtils.construct_implies(initial, goal)
-        )
+        # subsumption = self.composer.load_fresh_claim_placeholder(
+        #     "subsumption", KoreUtils.construct_implies(initial, goal)
+        # )
 
         claim = self.composer.apply_kore_lemma(
             "kore-one-path-reaches-star-intro-alt2",
@@ -382,106 +405,51 @@ class RewriteProofGenerator(ProofGenerator):
 
         return claim
 
+    # TODO: put this to EqualityProofGenerator
     def apply_constraint_equation(
         self,
-        claim: ProvableClaim,
-        equation: Tuple[kore.Pattern, kore.Pattern],
-        reverse: bool,
+        pattern: kore.Pattern,
         position: PatternPath,
+        equation: ConstraintEquation,
     ) -> ProvableClaim:
         r"""
-        Assume the claim has the form
-        lhs -> constraint /\ rhs
-        And the equation E is present as a conjunct in constraint
+        Given phi = phi1 /\ phi2
+        Assume
+        |- phi1 -> equation
 
-        We apply E to rhs at <position> and return a proof of
-        lhs -> constraint /\ rhs[E/position]
+        when prove that
+        |- phi1 /\ phi2 -> phi1 /\ phi2[equation/path]
         """
 
-        equation_sort = KoreUtils.infer_sort(equation[0])
+        constraint, term = KoreUtils.destruct_and(pattern)
 
-        # locate the position of the equality in the conjunction
-        _, rhs = KoreUtils.destruct_implies(claim.claim.pattern)
-        constraint, rhs_term = KoreUtils.destruct_and(rhs)
-        constraint_equalities = KoreUtils.destruct_nested_and(constraint)
+        equation_sort = KoreUtils.infer_sort(pattern)
+        equation_pattern = KoreUtils.construct_equals(equation_sort, equation.lhs, equation.rhs)
 
-        for i, equality in enumerate(constraint_equalities):
-            if KoreUtils.is_equals(equality):
-                eq_lhs, eq_rhs = KoreUtils.destruct_equals(equality)
-                if eq_lhs == equation[0] and eq_rhs == equation[1]:
-                    eq_position = i
-                    break
-        else:
-            assert False, f"failed to find equation {equation[0]} = {equation[1]} in the constraint {constraint}"
+        constraint_imp = self.check_smt_implication(constraint, equation_pattern)
 
-        prop_gen = PropositionalProofGenerator(self.composer)
-
-        # constraint <-> (rest /\ target_equation)
-        constraint_shuffle = prop_gen.shuffle_nested(kore.MLPattern.AND, constraint, eq_position)
-        constraint_shuffle = prop_gen.apply_iff_transitivity(
-            constraint_shuffle,
-            prop_gen.apply_commutativity(
-                kore.MLPattern.AND,
-                KoreUtils.destruct_iff(constraint_shuffle.claim.pattern)[1]
-            ),
-        )
-        _, shuffled_constraint = KoreUtils.destruct_iff(constraint_shuffle.claim.pattern)
-
-        # constraint /\ rhs_term <-> (rest /\ target_equation) /\ rhs_term
-        shuffle = prop_gen.apply_iff_compatibility(
-            kore.MLPattern.AND,
-            constraint_shuffle,
-            prop_gen.apply_iff_reflexivity(rhs_term),
-        )
-
-        all_metavars = {KoreEncoder.encode_variable(var) for var in PatternVariableVisitor().visit(rhs_term)}
+        all_metavars = {KoreEncoder.encode_variable(var) for var in PatternVariableVisitor().visit(pattern)}
         fresh_var, = self.composer.gen_fresh_metavariables("#ElementVariable", 1, all_metavars)
 
         var = kore.Variable(fresh_var, equation_sort)
         var.resolve(self.composer.module)
-        template_rhs_term = KoreUtils.copy_and_replace_path_by_pattern_in_pattern(rhs_term, position, var)
 
-        new_rhs_term1 = KoreUtils.copy_and_substitute_pattern(template_rhs_term, {var: equation[0]})
-        new_rhs_term2 = KoreUtils.copy_and_substitute_pattern(template_rhs_term, {var: equation[1]})
+        template_term = KoreUtils.copy_and_replace_path_by_pattern_in_pattern(term, position, var)
+        new_term = KoreUtils.copy_and_replace_path_by_pattern_in_pattern(term, position, equation.rhs)
 
         goal = self.composer.construct_claim(
-            KoreUtils.construct_iff(
-                KoreUtils.construct_and(shuffled_constraint, new_rhs_term1),
-                KoreUtils.construct_and(shuffled_constraint, new_rhs_term2),
+            KoreUtils.construct_implies(
+                pattern,
+                KoreUtils.construct_and(constraint, new_term),
             ),
         )
 
-        eq_claim = self.composer.apply_kore_lemma(
+        return self.composer.apply_kore_lemma(
             "kore-equality-in-constraint",
+            constraint_imp,
             x=var,
-            ph5=template_rhs_term,
+            ph4=template_term,
             goal=goal,
-        )
-
-        if reverse:
-            eq_claim = prop_gen.apply_iff_symmetry(eq_claim)
-            final_rhs_term = new_rhs_term1
-        else:
-            final_rhs_term = new_rhs_term2
-
-        # shuffle the constraint back to the original form
-        # (rest /\ target_equation) /\ new_rhs_term <-> constraint /\ rhs_term
-        unshuffle = prop_gen.apply_iff_compatibility(
-            kore.MLPattern.AND,
-            prop_gen.apply_iff_symmetry(constraint_shuffle),
-            prop_gen.apply_iff_reflexivity(final_rhs_term),
-        )
-
-        final_claim = prop_gen.apply_iff_multiple_transitivity(
-            shuffle,
-            eq_claim,
-            unshuffle,
-        )
-
-        # now connect with the original implication
-        return prop_gen.apply_implies_transitivity(
-            claim,
-            prop_gen.apply_iff_elim_left(final_claim),
         )
 
     def prove_constrained_pattern_subsumption(
@@ -496,23 +464,23 @@ class RewriteProofGenerator(ProofGenerator):
         pattern1_constraint = pattern1.get_constraint()
         pattern2_constraint = pattern2.get_constraint()
 
-        constraint_equalities = self.get_equalities_in_constraint(pattern1_constraint)
-
         unification_result = \
-            UnificationProofGenerator(self.composer, constraint_equalities)\
+            UnificationProofGenerator(self.composer, allow_unevaluated_functions=True, disable_substitution=True) \
                 .unify_patterns(pattern1.pattern, pattern2.pattern)
 
         # we can not instantiate variables here so the substitution must be empty
         assert unification_result is not None and len(unification_result.substitution) == 0, \
                f"failed to prove {pattern1.as_pattern()} is subsumed by {pattern2.as_pattern()}"
 
-        claim = PropositionalProofGenerator(self.composer).apply_implies_reflexivity(pattern1.as_pattern())
+        prop_gen = PropositionalProofGenerator(self.composer)
+
+        claim = prop_gen.apply_implies_reflexivity(pattern1.as_pattern())
 
         for equation, path in unification_result.applied_equations:
-            if isinstance(equation, AdditionalEquation):
-                claim = self.apply_constraint_equation(
-                    claim, constraint_equalities[equation.equation_index], equation.reverse, path
-                )
+            if isinstance(equation, ConstraintEquation):
+                _, current_rhs = KoreUtils.destruct_implies(claim.claim.pattern)
+                simplification = self.apply_constraint_equation(current_rhs, path, equation)
+                claim = prop_gen.apply_implies_transitivity(claim, simplification)
             else:
                 claim = equation.replace_equal_subpattern(claim, [0, 1, 1] + path)  # rhs
 
@@ -579,15 +547,15 @@ class RewriteProofGenerator(ProofGenerator):
 
         return theorem.as_proof()
 
-    def get_equalities_in_constraint(self, constraint: kore.Pattern) -> Tuple[Tuple[kore.Pattern, kore.Pattern], ...]:
-        if KoreUtils.is_and(constraint):
-            left, right = KoreUtils.destruct_and(constraint)
-            return self.get_equalities_in_constraint(left) + self.get_equalities_in_constraint(right)
-        elif KoreUtils.is_equals(constraint):
-            left, right = KoreUtils.destruct_equals(constraint)
-            return (left, right),
-        else:
-            return ()
+    # def get_equalities_in_constraint(self, constraint: kore.Pattern) -> Tuple[Tuple[kore.Pattern, kore.Pattern], ...]:
+    #     if KoreUtils.is_and(constraint):
+    #         left, right = KoreUtils.destruct_and(constraint)
+    #         return self.get_equalities_in_constraint(left) + self.get_equalities_in_constraint(right)
+    #     elif KoreUtils.is_equals(constraint):
+    #         left, right = KoreUtils.destruct_equals(constraint)
+    #         return (left, right),
+    #     else:
+    #         return ()
 
     def prove_symbolic_branch(
         self,
@@ -631,7 +599,7 @@ class RewriteProofGenerator(ProofGenerator):
         rhs = KoreUtils.copy_and_substitute_pattern(rhs, rule_substitution.substitution)
 
         # we also consider a extra set of equalities in the constraint
-        unification_gen = UnificationProofGenerator(self.composer, self.get_equalities_in_constraint(final.constraint))
+        unification_gen = UnificationProofGenerator(self.composer, allow_unevaluated_functions=True)
 
         # unify the LHS with the initial pattern
         lhs_unification_result = unification_gen.unify_patterns(lhs, initial.pattern)
@@ -1583,16 +1551,6 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
     it doesn't have any (sub-)subpattern with a function-like head
     """
     """
-    These symbols are marked as hooked function symbols
-    but for the purpose of proof generation they should
-    be constructors
-    """
-    EXCEPTIONS = {
-        "Lbl'UndsPipe'-'-GT-Unds'",
-        "Lbl'Unds'Map'Unds'",
-        "Lbl'Stop'Map",
-    }
-    """
     These functions can accept symbolic arguments
     """
     SYMBOLIC_FUNCTIONS = {
@@ -1620,18 +1578,13 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
                 return [i] + path
 
         # if the application itself is a function, return the empty path (pointing to itself)
-        if (isinstance(application.symbol.definition, kore.SymbolDefinition)
-                and application.symbol.definition.get_attribute_by_symbol("function") is not None):
-
+        if KoreTemplates.is_function_pattern(application) and \
+           isinstance(application.symbol.definition, kore.SymbolDefinition):
             symbol_name = application.symbol.get_symbol_name()
-
-            if symbol_name in InnermostFunctionPathVisitor.EXCEPTIONS:
-                return None
 
             # do not find symbolic instances of concrete functions
             # (unless it's an initializer)
             # TODO: slightly hacky
-
             is_symbolic = len(KoreUtils.get_free_variables(application)) != 0
 
             if symbol_name not in InnermostFunctionPathVisitor.SYMBOLIC_FUNCTIONS and \

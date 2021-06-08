@@ -48,8 +48,8 @@ def prove_rewriting(
     task: RewritingTask,
 ) -> None:
     gen = RewriteProofGenerator(composer)
-    # gen.prove_symbolic_rewriting_task(task)
-    # return
+    gen.prove_symbolic_rewriting_task(task)
+    return
 
     sum_claim_src = r"""
     axiom{} \one-path-reaches-plus{SortGeneratedTopCell{}} (

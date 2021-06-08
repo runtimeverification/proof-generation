@@ -460,32 +460,50 @@ class MapUnificationMixin:
         return UnificationResult({}, applied_eqs1 + [(eq.get_inverse(), path) for eq, path in applied_eqs2[::-1]])
 
 
+# @dataclass
+# class AdditionalEquation(Equation):
+#     """
+#     This serves as an indicator to the caller
+#     of the unification generator where an
+#     additional equation (equations in the constraint)
+#     is applied during unification
+#     """
+#     def __init__(self, composer: KoreComposer, equation_index: int, reverse: bool):
+#         super().__init__(composer)
+#         self.equation_index = equation_index
+#         self.reverse = reverse
+#         # reverse = False: apply the equation from left to right
+#         # reverse = True: apply the equataion from right to left
+
+
 @dataclass
-class AdditionalEquation(Equation):
+class ConstraintEquation(Equation):
     """
     This serves as an indicator to the caller
     of the unification generator where an
     additional equation (equations in the constraint)
     is applied during unification
     """
-    def __init__(self, composer: KoreComposer, equation_index: int, reverse: bool):
+    def __init__(self, composer: KoreComposer, lhs: kore.Pattern, rhs: kore.Pattern):
         super().__init__(composer)
-        self.equation_index = equation_index
-        self.reverse = reverse
-        # reverse = False: apply the equation from left to right
-        # reverse = True: apply the equataion from right to left
+        self.lhs = lhs
+        self.rhs = rhs
 
 
 class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
     def __init__(
-        self, composer: KoreComposer, additional_equations: Tuple[Tuple[kore.Pattern, kore.Pattern], ...] = ()
+        self,
+        composer: KoreComposer,
+        allow_unevaluated_functions: bool = False,
+        disable_substitution: bool = False,
     ):
         """
         additional_equations specifies a list of equations that
         we should consider equal. Used for constrained patterns
         """
         super().__init__(composer)
-        self.additional_equations = additional_equations
+        self.allow_unevaluated_functions = allow_unevaluated_functions
+        self.disable_substitution = disable_substitution
 
     """
     Unify two patterns modulo certain equations
@@ -498,7 +516,7 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         Losely following https://github.com/kframework/kore/blob/master/docs/2018-11-12-Unification.md
         """
         algorithms = (
-            self.unify_additional_equations,
+            # self.unify_additional_equations,
             self.unify_vars,
             self.unify_applications,
             self.unify_ml_patterns,
@@ -507,20 +525,12 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
             self.unify_right_duplicate_conjunction,
             self.unify_distinct_inj,
             self.unify_concrete_map_patterns,
+            self.unify_unevaluated_functions,
         )
         for algo in algorithms:
             result = algo(pattern1, pattern2)
             if result is not None:
                 return result
-
-        return None
-
-    def unify_additional_equations(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
-        for i, (left, right) in enumerate(self.additional_equations):
-            if left == pattern1 and right == pattern2:
-                return UnificationResult().append_equation(AdditionalEquation(self.composer, i, False), [])
-            elif left == pattern2 and right == pattern1:
-                return UnificationResult().append_equation(AdditionalEquation(self.composer, i, True), [])
 
         return None
 
@@ -535,6 +545,9 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
 
         if pattern1 == pattern2:
             return UnificationResult()
+
+        if self.disable_substitution:
+            return None
 
         if isinstance(pattern1, kore.Variable):
             if pattern1 in FreePatternVariableVisitor().visit(pattern2):
@@ -732,5 +745,29 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
                     return None
 
                 return result.append_equation(InjectionSplit(self.composer, sort_a, sort_b, sort_c1), [])
+
+        return None
+
+    def can_be_matched(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> bool:
+        """
+        This works on domain values but will probably fail on ADTs
+        """
+        return KoreTemplates.is_function_pattern(pattern1) and KoreTemplates.is_function_pattern(pattern2) or \
+               KoreTemplates.is_function_pattern(pattern1) and KoreUtils.is_dv(pattern2) or \
+               isinstance(pattern1, kore.Variable) and KoreTemplates.is_function_pattern(pattern2) or \
+               isinstance(pattern1, kore.Variable) and KoreUtils.is_dv(pattern2) or \
+               isinstance(pattern1, kore.Variable) and isinstance(pattern2, kore.Variable)
+
+    def unify_unevaluated_functions(self, pattern1: kore.Pattern,
+                                    pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        """
+        If allow_unevaluated_functions is True,
+        we will also add extra equations for unmatched
+        subterms that have function head symbols
+        """
+
+        if self.allow_unevaluated_functions and \
+           (self.can_be_matched(pattern1, pattern2) or self.can_be_matched(pattern2, pattern1)):
+            return UnificationResult().append_equation(ConstraintEquation(self.composer, pattern1, pattern2), [])
 
         return None

@@ -65,6 +65,9 @@ class AttributeMixin:
                 return attr
         return None
 
+    def remove_attribute_by_symbol(self, symbol: str) -> None:
+        self.attributes = tuple(attr for attr in self.attributes if attr.symbol.definition != symbol)
+
     def has_attribute(self, name: str) -> bool:
         if self.get_attribute_by_symbol(name) is not None:
             return True

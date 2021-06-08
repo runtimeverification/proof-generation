@@ -1,12 +1,6 @@
 $[ theory/kore.mm $]
 
 ${
-    fresh-in-kore-not.0 $e #Fresh xX ph0 $.
-    fresh-in-kore-not.1 $e #Fresh xX ph1 $.
-    fresh-in-kore-not   $p #Fresh xX ( \kore-not ph0 ph1 ) $= ? $.
-$}
-
-${
     $d X xX $.
     $d X ph0 $.
     $d X ph1 $.
