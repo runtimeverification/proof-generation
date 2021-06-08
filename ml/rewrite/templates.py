@@ -10,26 +10,20 @@ class KoreTemplates:
     A utility class used to extract and identify
     certain information in a kompile-generated kore module
     """
-
     @staticmethod
     def is_rewrite_axiom(axiom: kore.Axiom) -> bool:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
-        return (
-            isinstance(inner_pattern, kore.MLPattern)
-            and inner_pattern.construct == kore.MLPattern.REWRITES
-        )
+        return (isinstance(inner_pattern, kore.MLPattern) and inner_pattern.construct == kore.MLPattern.REWRITES)
 
     @staticmethod
     def is_anywhere_rule_axiom(axiom: kore.Axiom) -> bool:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
         return (
-            isinstance(inner_pattern, kore.MLPattern)
-            and inner_pattern.construct == kore.MLPattern.IMPLIES
+            isinstance(inner_pattern, kore.MLPattern) and inner_pattern.construct == kore.MLPattern.IMPLIES
             and isinstance(inner_pattern.arguments[1], kore.MLPattern)
             and inner_pattern.arguments[1].construct == kore.MLPattern.AND
             and isinstance(inner_pattern.arguments[1].arguments[0], kore.MLPattern)
-            and inner_pattern.arguments[1].arguments[0].construct
-            == kore.MLPattern.EQUALS
+            and inner_pattern.arguments[1].arguments[0].construct == kore.MLPattern.EQUALS
         )
 
     @staticmethod
@@ -40,58 +34,41 @@ class KoreTemplates:
     def is_map_commutativity_axiom(axiom: kore.Axiom) -> bool:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
         return (
-            axiom.has_attribute("comm")
-            and isinstance(inner_pattern, kore.MLPattern)
-            and inner_pattern.construct == kore.MLPattern.EQUALS
-            and str(inner_pattern.sorts[0]) == r"SortMap{}"
+            axiom.has_attribute("comm") and isinstance(inner_pattern, kore.MLPattern)
+            and inner_pattern.construct == kore.MLPattern.EQUALS and str(inner_pattern.sorts[0]) == r"SortMap{}"
         )
 
     @staticmethod
     def is_map_associativity_axiom(axiom: kore.Axiom) -> bool:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
         return (
-            axiom.has_attribute("assoc")
-            and isinstance(inner_pattern, kore.MLPattern)
-            and inner_pattern.construct == kore.MLPattern.EQUALS
-            and str(inner_pattern.sorts[0]) == r"SortMap{}"
+            axiom.has_attribute("assoc") and isinstance(inner_pattern, kore.MLPattern)
+            and inner_pattern.construct == kore.MLPattern.EQUALS and str(inner_pattern.sorts[0]) == r"SortMap{}"
         )
 
     @staticmethod
     def is_map_right_unit_axiom(axiom: kore.Axiom) -> bool:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
         return (
-            axiom.has_attribute("unit")
-            and isinstance(inner_pattern, kore.MLPattern)
-            and inner_pattern.construct == kore.MLPattern.EQUALS
-            and str(inner_pattern.sorts[0]) == r"SortMap{}"
+            axiom.has_attribute("unit") and isinstance(inner_pattern, kore.MLPattern)
+            and inner_pattern.construct == kore.MLPattern.EQUALS and str(inner_pattern.sorts[0]) == r"SortMap{}"
             and isinstance(inner_pattern.arguments[0], kore.Application)
             and isinstance(inner_pattern.arguments[0].arguments[1], kore.Application)
-            and inner_pattern.arguments[0].arguments[1].symbol.get_symbol_name()
-            == "Lbl'Stop'Map"
+            and inner_pattern.arguments[0].arguments[1].symbol.get_symbol_name() == "Lbl'Stop'Map"
         )
 
     @staticmethod
-    def get_symbol_of_equational_axiom(
-        axiom: kore.Axiom,
-    ) -> Optional[kore.SymbolInstance]:
+    def get_symbol_of_equational_axiom(axiom: kore.Axiom, ) -> Optional[kore.SymbolInstance]:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
-        if not (
-            isinstance(inner_pattern, kore.MLPattern)
-            and inner_pattern.construct == kore.MLPattern.IMPLIES
-        ):
+        if not (isinstance(inner_pattern, kore.MLPattern) and inner_pattern.construct == kore.MLPattern.IMPLIES):
             return None
 
         rhs = inner_pattern.arguments[1]
-        if not (
-            isinstance(rhs, kore.MLPattern) and rhs.construct == kore.MLPattern.AND
-        ):
+        if not (isinstance(rhs, kore.MLPattern) and rhs.construct == kore.MLPattern.AND):
             return None
 
         equation = rhs.arguments[0]
-        if not (
-            isinstance(equation, kore.MLPattern)
-            and equation.construct == kore.MLPattern.EQUALS
-        ):
+        if not (isinstance(equation, kore.MLPattern) and equation.construct == kore.MLPattern.EQUALS):
             return None
 
         eqn_lhs = equation.arguments[0]
@@ -101,9 +78,7 @@ class KoreTemplates:
         return eqn_lhs.symbol
 
     @staticmethod
-    def get_sorts_of_subsort_axiom(
-        axiom: kore.Axiom,
-    ) -> Optional[Tuple[kore.SortInstance, kore.SortInstance]]:
+    def get_sorts_of_subsort_axiom(axiom: kore.Axiom, ) -> Optional[Tuple[kore.SortInstance, kore.SortInstance]]:
         attribute = axiom.get_attribute_by_symbol("subsort")
         if attribute is None:
             return None
@@ -112,10 +87,7 @@ class KoreTemplates:
         sort1.resolve(axiom.get_parent())
         sort2.resolve(axiom.get_parent())
 
-        if not (
-            isinstance(sort1, kore.SortInstance)
-            and isinstance(sort2, kore.SortInstance)
-        ):
+        if not (isinstance(sort1, kore.SortInstance) and isinstance(sort2, kore.SortInstance)):
             return None
 
         return sort1, sort2
@@ -128,15 +100,11 @@ class KoreTemplates:
         id_term = axiom.get_attribute_by_symbol("UNIQUE'Unds'ID")
         if id_term is None:
             return None
-        assert len(id_term.arguments) == 1 and isinstance(
-            id_term.arguments[0], kore.StringLiteral
-        )
+        assert len(id_term.arguments) == 1 and isinstance(id_term.arguments[0], kore.StringLiteral)
         return id_term.arguments[0].content
 
     @staticmethod
-    def get_symbol_of_functional_axiom(
-        axiom: kore.Axiom,
-    ) -> Optional[kore.SymbolInstance]:
+    def get_symbol_of_functional_axiom(axiom: kore.Axiom, ) -> Optional[kore.SymbolInstance]:
         """
         Get the corresponding symbol instance of the given functional axiom
         """
@@ -156,10 +124,7 @@ class KoreTemplates:
             return None
 
         equality = inner_existential.arguments[1]
-        if (
-            not isinstance(equality, kore.MLPattern)
-            or equality.construct != kore.MLPattern.EQUALS
-        ):
+        if (not isinstance(equality, kore.MLPattern) or equality.construct != kore.MLPattern.EQUALS):
             return None
 
         rhs = equality.arguments[1]
@@ -169,9 +134,7 @@ class KoreTemplates:
         return rhs.symbol
 
     @staticmethod
-    def get_sort_symbol_of_no_junk_axiom(
-        axiom: kore.Axiom,
-    ) -> Optional[kore.SortInstance]:
+    def get_sort_symbol_of_no_junk_axiom(axiom: kore.Axiom, ) -> Optional[kore.SortInstance]:
         """
         A no junk axiom should be a disjunction of existential patterns
         """
@@ -193,26 +156,18 @@ class KoreTemplates:
         return sort
 
     @staticmethod
-    def get_symbol_for_no_confusion_same_constructor_axiom(
-        axiom: kore.Axiom,
-    ) -> Optional[kore.SymbolInstance]:
+    def get_symbol_for_no_confusion_same_constructor_axiom(axiom: kore.Axiom, ) -> Optional[kore.SymbolInstance]:
         r"""
         Axiom of the form
         f(ph1, ..., phn) /\ f(ph1', ..., phn') => f(ph1 /\ ph1', ..., phn /\ phn')
         """
         axiom_body = KoreUtils.strip_forall(axiom.pattern)
-        if not (
-            isinstance(axiom_body, kore.MLPattern)
-            and axiom_body.construct == kore.MLPattern.IMPLIES
-            and isinstance(axiom_body.arguments[0], kore.MLPattern)
-            and axiom_body.arguments[0].construct == kore.MLPattern.AND
-            and isinstance(axiom_body.arguments[0].arguments[0], kore.Application)
-            and isinstance(axiom_body.arguments[0].arguments[1], kore.Application)
-            and isinstance(axiom_body.arguments[1], kore.Application)
-            and axiom_body.arguments[0].arguments[0].symbol
-            == axiom_body.arguments[0].arguments[1].symbol
-            == axiom_body.arguments[1].symbol
-        ):
+        if not (isinstance(axiom_body, kore.MLPattern) and axiom_body.construct == kore.MLPattern.IMPLIES
+                and isinstance(axiom_body.arguments[0], kore.MLPattern) and axiom_body.arguments[0].construct
+                == kore.MLPattern.AND and isinstance(axiom_body.arguments[0].arguments[0], kore.Application)
+                and isinstance(axiom_body.arguments[0].arguments[1], kore.Application) and isinstance(
+                    axiom_body.arguments[1], kore.Application) and axiom_body.arguments[0].arguments[0].symbol ==
+                axiom_body.arguments[0].arguments[1].symbol == axiom_body.arguments[1].symbol):
             return None
 
         return axiom_body.arguments[1].symbol
@@ -222,21 +177,15 @@ class KoreTemplates:
         axiom: kore.Axiom,
     ) -> Optional[Tuple[kore.SymbolInstance, kore.SymbolInstance]]:
         axiom_body = KoreUtils.strip_forall(axiom.pattern)
-        if not (
-            isinstance(axiom_body, kore.MLPattern)
-            and axiom_body.construct == kore.MLPattern.NOT
-            and isinstance(axiom_body.arguments[0], kore.MLPattern)
-            and axiom_body.arguments[0].construct == kore.MLPattern.AND
-        ):
+        if not (isinstance(axiom_body, kore.MLPattern) and axiom_body.construct == kore.MLPattern.NOT and isinstance(
+                axiom_body.arguments[0], kore.MLPattern) and axiom_body.arguments[0].construct == kore.MLPattern.AND):
             return None
 
         left, right = axiom_body.arguments[0].arguments
         left = KoreUtils.strip_exists(left)
         right = KoreUtils.strip_exists(right)
 
-        if not isinstance(left, kore.Application) or not isinstance(
-            right, kore.Application
-        ):
+        if not isinstance(left, kore.Application) or not isinstance(right, kore.Application):
             return None
 
         return left.symbol, right.symbol
@@ -248,24 +197,21 @@ class KoreTemplates:
     @staticmethod
     def is_set_merge_pattern(pattern: kore.Pattern) -> bool:
         return (
-            isinstance(pattern, kore.Application)
-            and pattern.symbol.get_symbol_name() == "Lbl'Unds'Set'Unds'"
+            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'Unds'Set'Unds'"
             and len(pattern.arguments) == 2
         )
 
     @staticmethod
     def is_set_singleton_pattern(pattern: kore.Pattern) -> bool:
         return (
-            isinstance(pattern, kore.Application)
-            and pattern.symbol.get_symbol_name() == "LblSetItem"
+            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "LblSetItem"
             and len(pattern.arguments) == 1
         )
 
     @staticmethod
     def is_set_unit_pattern(pattern: kore.Pattern) -> bool:
         return (
-            isinstance(pattern, kore.Application)
-            and pattern.symbol.get_symbol_name() == "Lbl'Stop'Set"
+            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'Stop'Set"
             and len(pattern.arguments) == 0
         )
 
@@ -276,24 +222,21 @@ class KoreTemplates:
     @staticmethod
     def is_map_merge_pattern(pattern: kore.Pattern) -> bool:
         return (
-            isinstance(pattern, kore.Application)
-            and pattern.symbol.get_symbol_name() == "Lbl'Unds'Map'Unds'"
+            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'Unds'Map'Unds'"
             and len(pattern.arguments) == 2
         )
 
     @staticmethod
     def is_map_mapsto_pattern(pattern: kore.Pattern) -> bool:
         return (
-            isinstance(pattern, kore.Application)
-            and pattern.symbol.get_symbol_name() == "Lbl'UndsPipe'-'-GT-Unds'"
+            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'UndsPipe'-'-GT-Unds'"
             and len(pattern.arguments) == 2
         )
 
     @staticmethod
     def is_map_unit_pattern(pattern: kore.Pattern) -> bool:
         return (
-            isinstance(pattern, kore.Application)
-            and pattern.symbol.get_symbol_name() == "Lbl'Stop'Map"
+            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'Stop'Map"
             and len(pattern.arguments) == 0
         )
 
@@ -304,17 +247,13 @@ class KoreTemplates:
         phi ::= merge(phi1, phi2) | phi1 |-> phi2 | .map
         """
 
-        if KoreTemplates.is_map_unit_pattern(
-            pattern
-        ) or KoreTemplates.is_map_mapsto_pattern(pattern):
+        if KoreTemplates.is_map_unit_pattern(pattern) or KoreTemplates.is_map_mapsto_pattern(pattern):
             return True
 
         if KoreTemplates.is_map_merge_pattern(pattern):
             return KoreTemplates.is_map_pattern(
                 KoreTemplates.get_map_merge_left(pattern)
-            ) and KoreTemplates.is_map_pattern(
-                KoreTemplates.get_map_merge_right(pattern)
-            )
+            ) and KoreTemplates.is_map_pattern(KoreTemplates.get_map_merge_right(pattern))
 
         return False
 
@@ -360,9 +299,7 @@ class KoreTemplates:
         left.arguments[1] = right
 
     @staticmethod
-    def get_path_to_smallest_key_in_map_pattern(
-        pattern: kore.Pattern,
-    ) -> Tuple[kore.Pattern, PatternPath]:
+    def get_path_to_smallest_key_in_map_pattern(pattern: kore.Pattern, ) -> Tuple[kore.Pattern, PatternPath]:
         r"""
         Return the path to the pattern with the smallest key.
         0 means "left branch" and 1 means "right branch".
@@ -371,14 +308,10 @@ class KoreTemplates:
         assert KoreTemplates.is_map_pattern(pattern)
         assert isinstance(pattern, kore.Application)
 
-        if KoreTemplates.is_map_mapsto_pattern(
-            pattern
-        ) or KoreTemplates.is_map_unit_pattern(pattern):
+        if KoreTemplates.is_map_mapsto_pattern(pattern) or KoreTemplates.is_map_unit_pattern(pattern):
             return pattern, []
 
-        assert KoreTemplates.is_map_merge_pattern(
-            pattern
-        ), f"expecting a map merge, got {pattern}"
+        assert KoreTemplates.is_map_merge_pattern(pattern), f"expecting a map merge, got {pattern}"
 
         lhs = KoreTemplates.get_map_merge_left(pattern)
         rhs = KoreTemplates.get_map_merge_right(pattern)
@@ -408,10 +341,7 @@ class KoreTemplates:
         """
         Strip call outermost injection calls
         """
-        while (
-            isinstance(pattern, kore.Application)
-            and pattern.symbol.get_symbol_name() == "inj"
-        ):
+        while (isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "inj"):
             assert len(pattern.arguments) == 1
             pattern = pattern.arguments[0]
         return pattern
