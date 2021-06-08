@@ -164,7 +164,8 @@ $}
 fresh-in-exists-shadowed $a #Fresh x ( \exists x ph0 ) $.
 ${
     $d xX X $.
-    fresh-in-mu $a #Fresh xX ( \mu X ph0 ) $.
+    fresh-in-mu.0 $e #Fresh xX ph0 $.
+    fresh-in-mu   $a #Fresh xX ( \mu X ph0 ) $.
 $}
 fresh-in-mu-shadowed $a #Fresh X ( \mu X ph0 ) $.
 ${
@@ -330,6 +331,10 @@ $}
 ${
     notation-exists.0 $e #Notation ph0 ph1 $.
     notation-exists $a #Notation ( \exists x ph0 ) ( \exists x ph1 ) $.
+$}
+${
+    notation-mu.0 $e #Notation ph0 ph1 $.
+    notation-mu $a #Notation ( \mu X ph0 ) ( \mu X ph1 ) $.
 $}
 
 $( Defining Very Basic Syntactic Sugar $)

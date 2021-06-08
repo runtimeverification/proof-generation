@@ -167,40 +167,51 @@ ${
 $}
 
 ${
+    $d X xX $.
+    $d X ph4 $.
+    substitution-kore-mu.0 $e #Substitution ph0 ph2 ph4 xX $.
+    substitution-kore-mu.1 $e #Substitution ph1 ph3 ph4 xX $.
+    substitution-kore-mu.2 $e #Positive X ph1 $.
+    substitution-kore-mu.3 $e #Positive X ph3 $.
+    substitution-kore-mu   $p #Substitution ( \kore-mu ph0 X ph1 ) ( \kore-mu ph2 X ph3 ) ph4 xX $=
+        $(
+            apply "notation-substitution"
+            meh
+            apply "kore-mu-is-sugar"
+            apply "kore-mu-is-sugar"
+            apply "notation-reflexivity"
+            apply "substitution-and"
+            apply "substitution-mu"
+            apply "substitution-identity"
+            apply "substitution-kore-mu.1"
+            substitution
+        $)
+        ( mu-is-pattern inh-is-pattern and-is-pattern kore-mu-is-pattern kore-mu-is-sugar set-var-is-var substitution-identity substitution-mu substitution-inh substitution-and notation-reflexivity notation-substitution ) BFJLAMNDFKLCMNEABFJOCDFKOEGEBFJLAMDFKLCMGEDDBFFGDFQRISEACGHTUAABFPCDFPEUBUC $.
+$}
+
+${
     $d Y xX $.
     $d Y ph0 $.
     $d Y ph1 $.
     $d Y ph2 $.
     $d Y ph3 $.
     $d Y ph4 $.
-
-    substitution-kore-eventually-lemma-0 $p #Pattern ( \mu Y ( \kore-or ph0 ph1 ( \kore-next ph0 Y ) ) ) $=
-        $(
-            apply "mu-is-pattern"
-            desugar-all
-            apply "positive-in-imp"
-            apply "negative-disjoint"
-            apply "positive-in-app"
-            apply "positive-in-symbol"
-            apply "positive-in-var"
-        $)
-        ( set-var-is-var var-is-pattern imp-is-pattern kore-next-is-symbol bot-is-pattern symbol-is-pattern kore-next-is-pattern app-is-pattern notation-symmetry not-is-pattern or-is-pattern notation-transitivity kore-or-is-pattern notation-reflexivity negative-disjoint positive-in-symbol positive-in-var positive-in-app positive-in-imp kore-or-is-sugar or-is-sugar not-is-sugar kore-next-is-sugar notation-imp notation-positive mu-is-pattern ) ABACDEJPCBHFGICDEKFABACDEJPCDBHFGICDEKCDBHFCDRGICDECDCDGSCDCDTUAUBABACDEJPBACDEJNBHFGICDEKFABACDEJUCBHFGICDEKFBACDEJNBACDEJNBHFGICDEKFBACDEJNBMACDEJFBHFGICDEKFBACDEJUDBHFGICDEKFBMACDEJFBHFGICDEKBMACDEJBMBHFBMBHFBHFBUEBHFBHFBHFQLOLACDEJGICDEKACDEJGICDEKGICDEKACDEUFGICDEKGICDEKGICDEKQLOLUGLOLLOUHUI $.
-
     substitution-kore-eventually.0 $e #Substitution ph0 ph2 ph4 xX $.
     substitution-kore-eventually.1 $e #Substitution ph1 ph3 ph4 xX $.
     substitution-kore-eventually $p #Substitution ( \kore-eventually ph0 ph1 ) ( \kore-eventually ph2 ph3 ) ph4 xX $=
         $(
             apply "notation-substitution"
             meh
-            apply "kore-evetually-is-sugar"
-            apply "kore-evetually-is-sugar"
+            apply "kore-evetually-is-sugar", X = "Y"
+            apply "kore-evetually-is-sugar", X = "Y"
             apply "notation-reflexivity"
-            let $7 = "Y", $10 = "Y"
-            apply "substitution-mu"
-            apply "substitution-identity"
+            apply "substitution-kore-mu"
+            apply "substitution-kore-eventually.0"
             substitution
+            positive
+            positive
         $)
-        ( Y-is-element-var set-var-is-var var-is-pattern imp-is-pattern kore-next-is-symbol kore-next-is-pattern bot-is-pattern symbol-is-pattern app-is-pattern notation-symmetry not-is-pattern kore-or-is-pattern or-is-pattern notation-transitivity notation-reflexivity substitution-kore-eventually-lemma-0 kore-evetually-is-pattern substitution-imp kore-or-is-sugar or-is-sugar not-is-sugar kore-next-is-sugar notation-imp notation-substitution kore-evetually-is-sugar substitution-identity substitution-bot substitution-symbol substitution-var-diff substitution-app substitution-mu ) ABIUDCDIUDEABUECDUEEFECDCIJKNTCDCIJKNTABAIJKNTIIFCDCIJKNTIJUNBOLMPIJKQLDOLMPIJKQLEABAIJKNTCDCIJKNTEFEBOLMPIJKQDOLMPIJKQFEBODOFHEFUOUFEMPIJKMPIJKFEFMUPEFIJUQURUFABAIJKNTBAIJKNUABOLMPIJKQLABAIJKNUGBOLMPIJKQLBAIJKNUABAIJKNUABOLMPIJKQLBAIJKNUABSAIJKNLBOLMPIJKQLBAIJKNUHBOLMPIJKQLBSAIJKNLBOLMPIJKQBSAIJKNBSBOLBSBOLBOLBUIBOLBOLBOLUCRUBRAIJKNMPIJKQAIJKNMPIJKQMPIJKQAIJKUJMPIJKQMPIJKQMPIJKQUCRUBRUKRUBRRUBCDCIJKNTDCIJKNUADOLMPIJKQLCDCIJKNUGDOLMPIJKQLDCIJKNUADCIJKNUADOLMPIJKQLDCIJKNUADSCIJKNLDOLMPIJKQLDCIJKNUHDOLMPIJKQLDSCIJKNLDOLMPIJKQDSCIJKNDSDOLDSDOLDOLDUIDOLDOLDOLUCRUBRCIJKNMPIJKQCIJKNMPIJKQMPIJKQCIJKUJMPIJKQMPIJKQMPIJKQUCRUBRUKRUBRRUBEUCULUSABIUMCDIUMEUCUL $.
+        ( Y-is-element-var set-var-is-var var-is-pattern kore-next-is-pattern or-is-pattern not-is-pattern kore-next-is-symbol symbol-is-pattern imp-is-pattern app-is-pattern notation-reflexivity kore-or-is-pattern notation-transitivity notation-positive negative-disjoint positive-disjoint positive-in-var positive-in-app kore-next-is-sugar positive-in-imp or-is-sugar kore-or-is-sugar kore-mu-is-pattern kore-evetually-is-pattern kore-evetually-is-sugar substitution-disjoint substitution-kore-next substitution-kore-or substitution-kore-mu notation-substitution ) AABAIJKLTIBAIJKLMABAIJKLTIJBNAIJKLQBAIJKLMIJBNAIJKLIJBNIJUCOPIJKRAIJKLIJOPIJKIJOPIJUDIJIJUEUFAIJKLOPIJKROPIJKRAIJKUGOPIJKRSUAUBUHBAIJKLMBNAIJKLQBNAIJKLQBAIJKLUIBNAIJKLQSUAUBABAIJKLTBAIJKLMBAIJKLMABAIJKLUJBAIJKLMSUAUBUKCCDCIJKLTIDCIJKLMCDCIJKLTIJDNCIJKLQDCIJKLMIJDNCIJKLIJDNIJUCOPIJKRCIJKLIJOPIJKIJOPIJUDIJIJUEUFCIJKLOPIJKROPIJKRCIJKUGOPIJKRSUAUBUHDCIJKLMDNCIJKLQDNCIJKLQDCIJKLUIDNCIJKLQSUAUBCDCIJKLTDCIJKLMDCIJKLMCDCIJKLUJDCIJKLMSUAUBUKEABULCDULEFAABAIJKLTCCDCIJKLTEIFGABAIJKLCDCIJKLEFGHAIJKCIJKEFGIJKEFUNUOUPBAIJKLMABAIJKLTIJBNAIJKLQBAIJKLMIJBNAIJKLIJBNIJUCOPIJKRAIJKLIJOPIJKIJOPIJUDIJIJUEUFAIJKLOPIJKROPIJKRAIJKUGOPIJKRSUAUBUHBAIJKLMBNAIJKLQBNAIJKLQBAIJKLUIBNAIJKLQSUAUBABAIJKLTBAIJKLMBAIJKLMABAIJKLUJBAIJKLMSUAUBDCIJKLMCDCIJKLTIJDNCIJKLQDCIJKLMIJDNCIJKLIJDNIJUCOPIJKRCIJKLIJOPIJKIJOPIJUDIJIJUEUFCIJKLOPIJKROPIJKRCIJKUGOPIJKRSUAUBUHDCIJKLMDNCIJKLQDNCIJKLQDCIJKLUIDNCIJKLQSUAUBCDCIJKLTDCIJKLMDCIJKLMCDCIJKLUJDCIJKLMSUAUBUQABIUMCDIUMESUR $.
 $}
 
 ${
