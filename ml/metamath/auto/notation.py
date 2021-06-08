@@ -20,6 +20,7 @@ class NotationProver:
         "|-": ("notation-proof", [1]),
         "#Fresh": ("notation-fresh", [2]),
         "#Positive": ("notation-positive", [2]),
+        "#Negative": ("notation-negative", [2]),
         "#ApplicationContext": ("notation-application-context", [2]),
         "#Substitution": ("notation-substitution", [1, 2, 3]),
         "#Notation": ("notation-notation", [1, 2]),
@@ -302,6 +303,16 @@ class NotationProver:
                isinstance(new_right, Application)
 
         return left_proof, new_left, right_proof, new_right
+
+    @staticmethod
+    def expand_top_level_once(composer: Composer, term: Application) -> Application:
+        """
+        Expand the top level construct once without proof
+        """
+        assert term.symbol in composer.notation_axiom_graph, \
+               f"unable to expand the top level construct of {term} further"
+        theorem, _ = composer.notation_axiom_graph[term.symbol]
+        return NotationProver.apply_sugar_axiom(theorem, term)
 
     @staticmethod
     def apply_reflexivity(composer: Composer, term: Term) -> Proof:

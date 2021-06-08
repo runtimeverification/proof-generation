@@ -5,13 +5,16 @@ Some automated tactics
 from typing import Optional, Tuple, List, Union, Dict
 
 from ml.metamath.ast import Application, Term, Metavariable, StructuredStatement, Statement, ProvableStatement
-from ml.metamath.composer import Theorem, TypecodeProver, Proof
+from ml.metamath.composer import Theorem, Proof
 
 from ml.metamath.auto.unification import Unification
 from ml.metamath.auto.notation import NotationProver
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.sorting import SortingProver
 from ml.metamath.auto.context import ApplicationContextProver
+from ml.metamath.auto.fresh import FreshProver
+from ml.metamath.auto.typecode import TypecodeProver
+from ml.metamath.auto.positive import PositiveProver
 
 from .state import ProofState, Goal, NoStateChangeException, Tactic
 from .tactics import ApplyTactic
@@ -294,6 +297,34 @@ class ApplicationContextTactic(Tactic):
         goal = state.resolve_top_goal(self)
         statement = goal.statement
         self.proof = ApplicationContextProver.prove_application_context_statement(state.composer, statement)
+
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        return self.proof
+
+
+@ProofState.register_tactic("fresh")
+class FreshTactic(Tactic):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
+        goal = state.resolve_top_goal(self)
+        statement = goal.statement
+        assert len(statement.terms
+                   ) == 3 and statement.terms[0] == Application("#Fresh"), f"not a #Fresh goal {statement}"
+        self.proof = FreshProver.prove_fresh_statement(state.composer, statement)
+
+    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+        return self.proof
+
+
+@ProofState.register_tactic("positive")
+@ProofState.register_tactic("negative")
+class PositiveTactic(Tactic):
+    def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
+        goal = state.resolve_top_goal(self)
+        statement = goal.statement
+        assert len(
+            statement.terms
+        ) == 3 and statement.terms[0] == Application("#Positive"), f"not a #Positive or #Negative goal {statement}"
+        self.proof = PositiveProver.prove_statement(state.composer, statement)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         return self.proof

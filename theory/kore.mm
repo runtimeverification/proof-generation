@@ -87,11 +87,20 @@ kore-next-is-pattern $a #Pattern ( \kore-next ph0 ph1 ) $.
 kore-next-is-sugar $a #Notation ( \kore-next ph0 ph1 ) ( \app \kore-next-symbol ph1 ) $.
 kore-next-sorting $a |- ( \imp ( \in-sort ph1 ph0 ) ( \in-sort ( \kore-next ph0 ph1 ) ph0 ) ) $.
 
-kore-mu-is-pattern $a #Pattern ( \kore-mu ph0 X ph1 ) $.
-kore-mu-is-sugar $a #Notation ( \kore-mu ph0 X ph1 ) ( \mu X ph1 ) $.
+${
+    kore-mu-is-pattern.0 $e #Positive X ph1 $.
+    kore-mu-is-pattern   $a #Pattern ( \kore-mu ph0 X ph1 ) $.
+$}
+kore-mu-is-sugar $a #Notation ( \kore-mu ph0 X ph1 ) ( \and ( \mu X ph1 ) ( \inh ph0 ) ) $.
 
-kore-nu-is-pattern $a #Pattern ( \kore-nu ph0 X ph1 ) $.
-kore-nu-is-sugar $a #Notation ( \kore-nu ph0 X ph1 ) ( \kore-not ph0 ( \mu X ( \kore-not ph0 ph1 ) ) ) $.
+${
+    kore-nu-is-pattern.0 $e #Positive X ph1 $.
+    kore-nu-is-pattern   $a #Pattern ( \kore-nu ph0 X ph1 ) $.
+$}
+${
+    kore-nu-is-sugar.0 $e #Substitution ph2 ph1 ( \kore-not ph0 X ) X $.
+    kore-nu-is-sugar $a #Notation ( \kore-nu ph0 X ph1 ) ( \kore-not ph0 ( \kore-mu ph0 X ( \kore-not ph0 ph2 ) ) ) $.
+$}
 
 kore-all-path-next-is-pattern $a #Pattern ( \kore-all-path-next ph0 ph1 ) $.
 kore-all-path-next-is-sugar $a #Notation ( \kore-all-path-next ph0 ph1 ) ( \kore-not ph0 ( \kore-next ph0 ( \kore-not ph0 ph1 ) ) ) $.
@@ -100,27 +109,27 @@ kore-evetually-is-pattern $a #Pattern ( \kore-eventually ph0 ph1 ) $.
 ${
     $d X ph0 $.
     $d X ph1 $.
-    kore-evetually-is-sugar $a #Notation ( \kore-eventually ph0 ph1 ) ( \mu X ( \kore-or ph0 ph1 ( \kore-next ph0 X ) ) ) $.
+    kore-evetually-is-sugar $a #Notation ( \kore-eventually ph0 ph1 ) ( \kore-mu ph0 X ( \kore-or ph0 ph1 ( \kore-next ph0 X ) ) ) $.
 $}
 
 kore-weak-evetually-is-pattern $a #Pattern ( \kore-weak-eventually ph0 ph1 ) $.
 ${
     $d X ph0 $.
     $d X ph1 $.
-    kore-weak-evetually-is-sugar $a #Notation ( \kore-weak-eventually ph0 ph1 ) ( \kore-nu ph0 X ( \kore-or ph0 ph1 ( \kore-next ph0 X ) ) ) $.
+    kore-weak-evetually-is-sugar $a #Notation ( \kore-weak-eventually ph0 ph1 ) ( \kore-not ph0 ( \kore-mu ph0 X ( \kore-not ph0 ( \kore-or ph0 ph1 ( \kore-next ph0 ( \kore-not ph0 X ) ) ) ) ) ) $.
 $}
 
 kore-always-is-pattern $a #Pattern ( \kore-always ph0 ph1 ) $.
 ${
     $d X ph0 $.
     $d X ph1 $.
-    kore-always-is-sugar $a #Notation ( \kore-always ph0 ph1 ) ( \kore-nu ph0 X ( \kore-and ph0 ph1 ( \kore-next ph0 X ) ) ) $.
+    kore-always-is-sugar $a #Notation ( \kore-always ph0 ph1 ) ( \kore-not ph0 ( \kore-mu ph0 X ( \kore-not ph0 ( \kore-and ph0 ph1 ( \kore-next ph0 ( \kore-not ph0 X ) ) ) ) ) ) $.
 $}
 
 kore-well-founded-is-pattern $a #Pattern ( \kore-well-founded ph0 ) $.
 ${
     $d X ph0 $.
-    kore-well-founded-is-sugar $a #Notation ( \kore-well-founded ph0 ) ( \mu X ( \kore-circularity ph0 X ) ) $.
+    kore-well-founded-is-sugar $a #Notation ( \kore-well-founded ph0 ) ( \kore-mu X ( \kore-circularity ph0 X ) ) $.
 $}
 
 kore-rewrites-is-pattern $a #Pattern ( \kore-rewrites ph0 ph1 ph2 ) $.

@@ -163,16 +163,8 @@ ${
         $(
             apply "rule-curry"
             apply "rule-curry"
-            apply "functional-substitution-alt2"
-            apply "fresh-in-imp"
-            apply "fresh-in-imp"
-            apply "fresh-in-imp"
-            apply "fresh-in-imp"
-            apply "fresh-disjoint"
-            (apply "fresh-in-bot")+
-            (apply "fresh-in-imp")+
-            apply "fresh-in-exists-shadowed"
-            (apply "fresh-in-bot")+
+            apply "functional-substitution-alt2", y = "y"
+            fresh
             apply "rule-uncurry"
             apply "premises-switch"
             apply "rule-weakening"
@@ -186,7 +178,8 @@ ${
             apply "functional-substitution-alt3.2"
             apply "functional-substitution-alt3.3"
         $)
-        ( imp-is-pattern not-is-pattern forall-is-pattern bot-is-pattern element-var-is-var exists-is-pattern or-is-pattern notation-transitivity and-is-pattern fresh-in-imp notation-reflexivity notation-fresh fresh-in-bot not-is-sugar var-is-pattern eq-is-pattern rule-uncurry rule-weakening rule-curry fresh-disjoint fresh-in-exists-shadowed forall-is-sugar or-is-sugar and-is-sugar premises-switch forall-intro-alt imp-reflexivity proof-rule-mp functional-substitution-alt2 ) EFBOJQGCOEFBOJQUCGCABCDEFBOJQUCFGHIJKEPFBOJQPUAROEFBOJQUCJSEPFBOJQPUARJSEPPFBOJQPOEPFBOJQPUAJSEPPFBOJQPJSEPROEPPJSEPRJSEROEPJSERJSEJSUNJSUGUDEPEROEROEUHEROUEUBUFJSUGUDEPPEPROEPROEPUHEPROUEUBUFFBOJQROFBOJQPJSFBOJQRJSFBOPJTROFBOJQJSFBOPJTRJSFBOPJUOJSUGUDFBOJQFBOPJTROFBOPJTROFBOJQFBOPJTPFBOPJTROFBOJUPFBOPJTUHUBFBOPJTROUEUBUFJSUGUDFBOJQPFBOJQROFBOJQROFBOJQUHFBOJQROUEUBUFUDEPFBOJQPUAEPPFBOJQPOEPPFBOJQPOEPFBOJQPUQEPPFBOJQPOUEUBUFJSUGUDEFBOJQUCEPFBOJQPUAROEPFBOJQPUAROEFBOJQUCEPFBOJQPUAPEPFBOJQPUAROEFBOJQUREPFBOJQPUAUHUBEPFBOJQPUAROUEUBUFEFBOJQISUIAUJITFBOJQEISUIAUJITFBOJQEISUIAUJITOLULUSUKEFBOJQUCFBEFBOJQFBOEFBOJQFBOOFBOFBOOFBOJQFBOOFBOFBOJUTFBOVAVBULUKUKMNVCUMUM $.
+        $( ( imp-is-pattern not-is-pattern forall-is-pattern bot-is-pattern element-var-is-var exists-is-pattern or-is-pattern notation-transitivity and-is-pattern fresh-in-imp notation-reflexivity notation-fresh fresh-in-bot not-is-sugar var-is-pattern eq-is-pattern rule-uncurry rule-weakening rule-curry fresh-disjoint fresh-in-exists-shadowed forall-is-sugar or-is-sugar and-is-sugar premises-switch forall-intro-alt imp-reflexivity proof-rule-mp functional-substitution-alt2 ) EFBOJQGCOEFBOJQUCGCABCDEFBOJQUCFGHIJKEPFBOJQPUAROEFBOJQUCJSEPFBOJQPUARJSEPPFBOJQPOEPFBOJQPUAJSEPPFBOJQPJSEPROEPPJSEPRJSEROEPJSERJSEJSUNJSUGUDEPEROEROEUHEROUEUBUFJSUGUDEPPEPROEPROEPUHEPROUEUBUFFBOJQROFBOJQPJSFBOJQRJSFBOPJTROFBOJQJSFBOPJTRJSFBOPJUOJSUGUDFBOJQFBOPJTROFBOPJTROFBOJQFBOPJTPFBOPJTROFBOJUPFBOPJTUHUBFBOPJTROUEUBUFJSUGUDFBOJQPFBOJQROFBOJQROFBOJQUHFBOJQROUEUBUFUDEPFBOJQPUAEPPFBOJQPOEPPFBOJQPOEPFBOJQPUQEPPFBOJQPOUEUBUFJSUGUDEFBOJQUCEPFBOJQPUAROEPFBOJQPUAROEFBOJQUCEPFBOJQPUAPEPFBOJQPUAROEFBOJQUREPFBOJQPUAUHUBEPFBOJQPUAROUEUBUFEFBOJQISUIAUJITFBOJQEISUIAUJITFBOJQEISUIAUJITOLULUSUKEFBOJQUCFBEFBOJQFBOEFBOJQFBOOFBOFBOOFBOJQFBOOFBOFBOJUTFBOVAVBULUKUKMNVCUMUM $. $)
+        ( imp-is-pattern not-is-pattern forall-is-pattern bot-is-pattern element-var-is-var exists-is-pattern or-is-pattern notation-reflexivity notation-transitivity notation-fresh and-is-pattern fresh-disjoint fresh-in-imp not-is-sugar var-is-pattern eq-is-pattern rule-uncurry rule-weakening rule-curry fresh-in-exists-shadowed forall-is-sugar or-is-sugar and-is-sugar premises-switch forall-intro-alt imp-reflexivity proof-rule-mp functional-substitution-alt2 ) EFBOJQGCOEFBOJQUEGCABCDEFBOJQUEFGHIJKEPFBOJQPUAPEFBOJQUEJSEPFBOJQPUAROEPFBOJQPUAPJSEPFBOJQPUARJSEPPFBOJQPOEPFBOJQPUAJSEPPFBOJQPJSEPPJSUFFBOJQROFBOJQPJSFBOJQRJSFBOPJTPFBOJQJSFBOPJTROFBOPJTPJSFBOPJTRJSFBOPJUNRJSUFUGFBOPJTPFBOPJTROFBOPJTROFBOPJTUHFBOPJTROUBUCUDFBOJQFBOPJTPFBOPJTPFBOJUOFBOPJTPUBUCUDRJSUFUGFBOJQPFBOJQROFBOJQROFBOJQUHFBOJQROUBUCUDUGEPFBOJQPUAEPPFBOJQPOEPPFBOJQPOEPFBOJQPUPEPPFBOJQPOUBUCUDRJSUFUGEPFBOJQPUAPEPFBOJQPUAROEPFBOJQPUAROEPFBOJQPUAUHEPFBOJQPUAROUBUCUDEFBOJQUEEPFBOJQPUAPEPFBOJQPUAPEFBOJQUQEPFBOJQPUAPUBUCUDEFBOJQISUIAUJITFBOJQEISUIAUJITFBOJQEISUIAUJITOLULURUKEFBOJQUEFBEFBOJQFBOEFBOJQFBOOFBOFBOOFBOJQFBOOFBOFBOJUSFBOUTVAULUKUKMNVBUMUM $.
 $}
 
 ${

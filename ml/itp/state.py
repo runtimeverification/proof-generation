@@ -19,13 +19,14 @@ from typing import (
 from abc import abstractmethod
 
 from ml.metamath.ast import StructuredStatement, Metavariable, Term, Terms, ProvableStatement, Application
-from ml.metamath.composer import Composer, Theorem, Context, TypecodeProver, Proof, TheoremContext
+from ml.metamath.composer import Composer, Theorem, Context, Proof, TheoremContext
 from ml.metamath.parser import (
     parse_term_with_metavariables,
     parse_terms_with_metavariables,
 )
 from ml.metamath.auto.notation import NotationProver
 from ml.metamath.auto.unification import Unification
+from ml.metamath.auto.typecode import TypecodeProver
 
 from .extension import SchematicVariable
 
@@ -444,6 +445,8 @@ class Tactic:
                     term,
                     extension=lambda typecode, term: Tactic.typcode_extension(state, typecode, term),
             ):
+                if svar.typecode == "#Pattern" and isinstance(term, Application):
+                    continue
                 return False
         return True
 

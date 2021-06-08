@@ -86,6 +86,10 @@ class MetamathUtils:
         return MetamathUtils.destruct_metamath_application("\\imp", 2, term)
 
     @staticmethod
+    def destruct_app(term: Term) -> Terms:
+        return MetamathUtils.destruct_metamath_application("\\app", 2, term)
+
+    @staticmethod
     def destruct_and(term: Term) -> Terms:
         return MetamathUtils.destruct_metamath_application("\\and", 2, term)
 

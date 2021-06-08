@@ -1,11 +1,12 @@
 from typing import List, Optional, Tuple
 
 from ..ast import Metavariable, Term, Application, StructuredStatement, ProvableStatement
-from ..composer import Composer, Theorem, MethodAutoProof, TypecodeProver, Proof
+from ..composer import Composer, Theorem, MethodAutoProof, Proof
 from ..utils import MetamathUtils
 
 from .notation import NotationProver
 from .unification import Unification
+from .typecode import TypecodeProver
 
 
 class SubstitutionProver:
