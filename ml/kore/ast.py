@@ -656,6 +656,7 @@ class MLPattern(Pattern):
     NEXT = "\\next"
     ALWAYS = "\\always"
     CIRCULARITY = "\\circularity"
+    WELL_FOUNDED = "\\well-founded"
 
     REWRITES = "\\rewrites"
     REWRITES_STAR = "\\rewrites-star"
@@ -684,6 +685,7 @@ class MLPattern(Pattern):
         NEXT: (1, 1),
         ALWAYS: (1, 1),
         CIRCULARITY: (1, 1),
+        WELL_FOUNDED: (1, 0),
         REWRITES: (1, 2),
         REWRITES_STAR: (1, 2),
         REWRITES_PLUS: (1, 2),

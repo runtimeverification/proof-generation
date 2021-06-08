@@ -52,15 +52,20 @@ def prove_rewriting(
     # return
 
     sum_claim_src = r"""
-    axiom{} \one-path-reaches-star{SortGeneratedTopCell{}} (
+    axiom{} \one-path-reaches-plus{SortGeneratedTopCell{}} (
         \and{SortGeneratedTopCell{}} (
-            \equals{SortBool{},SortGeneratedTopCell{}}(
-                Lbl'Unds-GT-Eqls'Int'Unds'{}(VarSpecVarN:SortInt{},\dv{SortInt{}}("0")),
-                \dv{SortBool{}}("true")
+            \and{SortGeneratedTopCell{}}(
+                \equals{SortBool{},SortGeneratedTopCell{}}(
+                    \dv{SortBool{}}("true"),Lbl'Unds-GT-Eqls'Int'Unds'{}(VarSpecVarN:SortInt{},\dv{SortInt{}}("0"))
+                ),
+                \top{SortGeneratedTopCell{}}()
             ),
             Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortStmt{}, SortKItem{}}(Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'BExp'Unds'Block{}(Lbl'BangUndsUnds'IMP-SYNTAX'Unds'BExp'Unds'BExp{}(Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'Unds'BExp'Unds'AExp'Unds'AExp{}(inj{SortId{}, SortAExp{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortAExp{}}(\dv{SortInt{}}("0")))),Lbl'LBraUndsRBraUnds'IMP-SYNTAX'Unds'Block'Unds'Stmt{}(Lbl'UndsUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'Stmt'Unds'Stmt{}(Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(\dv{SortId{}}("sum"),Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(inj{SortId{}, SortAExp{}}(\dv{SortId{}}("sum")),inj{SortId{}, SortAExp{}}(\dv{SortId{}}("n")))),Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(\dv{SortId{}}("n"),Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(inj{SortId{}, SortAExp{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortAExp{}}(\dv{SortInt{}}("-1")))))))),dotk{}())),Lbl'-LT-'state'-GT-'{}(Lbl'Unds'Map'Unds'{}(Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortKItem{}}(VarSpecVarN:SortInt{})),Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("sum")),inj{SortInt{}, SortKItem{}}(VarSpecVarS:SortInt{}))))),Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0")))),
         \and{SortGeneratedTopCell{}} (
-            \top{SortGeneratedTopCell{}}(),
+            \and{SortGeneratedTopCell{}}(
+                \top{SortGeneratedTopCell{}}(),
+                \top{SortGeneratedTopCell{}}()
+            ),
             Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(dotk{}()),Lbl'-LT-'state'-GT-'{}(Lbl'Unds'Map'Unds'{}(Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("0"))),Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("sum")),inj{SortInt{}, SortKItem{}}(Lbl'UndsPlus'Int'Unds'{}(VarSpecVarS:SortInt{},Lbl'UndsSlsh'Int'Unds'{}(Lbl'UndsStar'Int'Unds'{}(Lbl'UndsPlus'Int'Unds'{}(VarSpecVarN:SortInt{},\dv{SortInt{}}("1")),VarSpecVarN:SortInt{}),\dv{SortInt{}}("2")))))))),Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0")))
         )
     ) []

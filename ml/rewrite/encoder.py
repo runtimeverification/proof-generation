@@ -30,6 +30,7 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
     IN = "\\kore-in"
     ALWAYS = "\\kore-always"
     CIRCULARITY = "\\kore-circularity"
+    WELL_FOUNDED = "\\kore-well-founded"
     REWRITES = "\\kore-rewrites"
     REWRITES_STAR = "\\kore-rewrites-star"
     REWRITES_PLUS = "\\kore-rewrites-plus"
@@ -58,6 +59,7 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         kore.MLPattern.IN: IN,
         kore.MLPattern.ALWAYS: ALWAYS,
         kore.MLPattern.CIRCULARITY: CIRCULARITY,
+        kore.MLPattern.WELL_FOUNDED: WELL_FOUNDED,
         kore.MLPattern.REWRITES: REWRITES,
         kore.MLPattern.REWRITES_STAR: REWRITES_STAR,
         kore.MLPattern.REWRITES_PLUS: REWRITES_PLUS,

@@ -16,6 +16,7 @@ from ml.metamath.utils import MetamathUtils
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.context import ApplicationContextProver
 from ml.metamath.auto.sorting import SortingProver
+from ml.metamath.auto.fresh import FreshProver
 
 from .encoder import KoreEncoder, KoreDecoder
 from .templates import KoreTemplates
@@ -1136,6 +1137,9 @@ class KoreComposer(Composer):
         for essential in theorem.context.essentials:
             if MetamathUtils.is_substitution(essential.terms):
                 essential_proofs.append(SubstitutionProver.auto)
+
+            elif MetamathUtils.is_fresh(essential.terms):
+                essential_proofs.append(FreshProver.auto)
 
             elif MetamathUtils.is_provable(essential.terms):
                 premise, conclusion = self.destruct_premise(essential)
