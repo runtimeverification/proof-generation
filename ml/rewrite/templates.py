@@ -320,3 +320,16 @@ class KoreTemplates:
             assert len(pattern.arguments) == 1
             pattern = pattern.arguments[0]
         return pattern
+
+    @staticmethod
+    def is_function_pattern(pattern: kore.Pattern) -> bool:
+        """
+        Check if the head symbol is a K function
+        """
+        if not isinstance(pattern, kore.Application):
+            return False
+
+        if not isinstance(pattern.symbol.definition, kore.SymbolDefinition):
+            return False
+
+        return pattern.symbol.definition.get_attribute_by_symbol("function") is not None

@@ -39,13 +39,20 @@ ${
     kore-in-reflexivity   $p |- ( \imp th0 ( \kore-valid ph1 ( \kore-in ph0 ph1 ph2 ph2 ) ) ) $= ? $.
 $}
 
-${
+$( ${
     kore-equality-in-constraint.0 $e #Substitution ph6 ph5 ph3 x $.
     kore-equality-in-constraint.1 $e #Substitution ph7 ph5 ph4 x $.
     kore-equality-in-constraint   $p
         |- ( \imp th0 ( \kore-valid ph0 ( \kore-iff ph0
             ( \kore-and ph0 ( \kore-and ph0 ph8 ( \kore-equals ph2 ph0 ph3 ph4 ) ) ph6 )
             ( \kore-and ph0 ( \kore-and ph0 ph8 ( \kore-equals ph2 ph0 ph3 ph4 ) ) ph7 ) ) ) ) $= ? $.
+$} $)
+
+${
+    kore-equality-in-constraint.0 $e #Substitution ph2 ph4 ph5 x $.
+    kore-equality-in-constraint.1 $e #Substitution ph3 ph4 ph6 x $.
+    kore-equality-in-constraint.2 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-equals ph7 ph0 ph5 ph6 ) ) ) ) $.
+    kore-equality-in-constraint   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $= ? $.
 $}
 
 unit-sort-is-kore-sort $p |- ( \kore-is-sort \unit-sort ) $=
