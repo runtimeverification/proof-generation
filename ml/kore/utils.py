@@ -563,7 +563,7 @@ class KoreUtils:
     @staticmethod
     def is_implies(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.IMPLIES
-        
+
     @staticmethod
     def is_not(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.NOT

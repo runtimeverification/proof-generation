@@ -196,8 +196,11 @@ class ConstrainedPattern(WithSchema):
 
     @staticmethod
     def from_pattern(pattern: kore.Pattern) -> ConstrainedPattern:
-        constraint, term = KoreUtils.destruct_and(pattern)
-        return ConstrainedPattern(term, constraint)
+        if KoreUtils.is_and(pattern):
+            constraint, term = KoreUtils.destruct_and(pattern)
+            return ConstrainedPattern(term, constraint)
+        else:
+            return ConstrainedPattern(pattern, parse_pattern("\\top{SortGeneratedTopCell{}}()"))
 
     @staticmethod
     def get_raw_schema() -> Any:
@@ -333,6 +336,52 @@ class RewritingStep(WithSchema):
         assert "applied-rules" in obj and isinstance(obj["applied-rules"], tuple)
         assert "remainders" in obj and isinstance(obj["remainders"], tuple)
         return RewritingStep(obj["initial"], obj["applied-rules"], obj["remainders"])
+
+
+@dataclass
+class ReachabilityTask(WithSchema):
+    lhs: ConstrainedPattern
+    rhs: ConstrainedPattern
+    claim_id: str
+    steps: Tuple[RewritingStep, ...]
+
+    def resolve(self, module: kore.Module) -> None:
+        self.lhs.resolve(module)
+        self.rhs.resolve(module)
+
+        for step in self.steps:
+            step.resolve(module)
+
+    @staticmethod
+    def get_raw_schema() -> Any:
+        return {
+            "task": "reachability",
+            "claim": schema.And(str, schema.Use(parse_pattern)),
+            "claim-id": str,
+            "steps": schema.Or(
+                None,
+                schema.And([RewritingStep.get_schema()], schema.Use(tuple)),
+            ),
+        }
+
+    @staticmethod
+    def parse_from_object(obj: Any) -> ReachabilityTask:
+        assert isinstance(obj, dict)
+        assert "claim" in obj and isinstance(obj["claim"], kore.Pattern)
+        assert "claim-id" in obj and isinstance(obj["claim-id"], str)
+        assert "steps" in obj and (isinstance(obj["steps"], tuple) or obj["steps"] is None)
+        steps = () if obj["steps"] is None else obj["steps"]
+
+        lhs, rhs = KoreUtils.destruct_implies(obj["claim"])
+        assert isinstance(rhs, kore.Application)
+        rhs, = rhs.arguments
+
+        return ReachabilityTask(
+            ConstrainedPattern.from_pattern(lhs),
+            ConstrainedPattern.from_pattern(rhs),
+            obj["claim-id"],
+            steps,
+        )
 
 
 @dataclass

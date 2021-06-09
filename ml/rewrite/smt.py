@@ -1,6 +1,6 @@
 from typing import Dict, Callable, Optional, Union
 
-import z3 # type: ignore
+import z3  # type: ignore
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
@@ -54,7 +54,7 @@ class SMTProofGenerator(ProofGenerator):
         """
         Encode a kore predicate as a boolean term
         """
-        
+
         if isinstance(predicate, kore.MLPattern):
             if KoreUtils.is_equals(predicate):
                 left, right = KoreUtils.destruct_equals(predicate)
@@ -63,7 +63,7 @@ class SMTProofGenerator(ProofGenerator):
             elif KoreUtils.is_and(predicate):
                 left, right = KoreUtils.destruct_and(predicate)
                 return z3.And(self.encode_predicate(left), self.encode_predicate(right))
-            
+
             elif KoreUtils.is_or(predicate):
                 left, right = KoreUtils.destruct_or(predicate)
                 return z3.Or(self.encode_predicate(left), self.encode_predicate(right))
@@ -118,7 +118,7 @@ class SMTProofGenerator(ProofGenerator):
 
             if sort_id == "SortInt":
                 return z3.Int(term.name)
- 
+
             elif sort_id == "SortBool":
                 return z3.Bool(term.name)
 

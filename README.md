@@ -21,7 +21,7 @@ You would also need to build and install a custom version of K at [here](https:/
 which uses a modified haskell backend to print extra proof hints for rewriting.
 
 You could also try to use the current version of K but
-you would need to add an extra flag `--no-backend-hints` for the `scripts.run_test`
+you would need to add an extra flag `--no-backend-hints` for the `scripts.prove_symbolic`
 script below.
 
 The newer versions might **not** work since they may generate different axioms for rewriting.
@@ -32,7 +32,7 @@ Examples of generating proofs for concrete rewriting
 Suppose you have a K definition `def.k` with the main module `MAIN`, and a
 program `pgm.txt`, you can use
 
-    python3 -m scripts.run_test def.k MAIN pgm.txt --output rewriting-proof
+    python3 -m scripts.prove_symbolic def.k MAIN pgm.txt --output rewriting-proof
 
 to generate the (concrete) rewriting proof for the program `pgm.txt` and output
 to the `rewriting-proof` directory.

@@ -5,18 +5,19 @@ import time
 import code
 import argparse
 
-from typing import List, Tuple, Optional, Sequence, ContextManager
+from typing import List, Tuple, Optional, Sequence, ContextManager, Union, Dict
 from io import StringIO
 from contextlib import nullcontext
 
 import yaml
+import schema  # type: ignore
 
 from ml.utils.profiler import MemoryProfiler
 from ml.utils.stopwatch import Stopwatch
 
 from ml.kore.parser import parse_definition, parse_pattern, parse_axiom
 from ml.kore.visitors import FreePatternVariableVisitor, PatternSubstitutionVisitor
-from ml.kore.ast import StringLiteral, MLPattern, Module, Pattern
+from ml.kore.ast import StringLiteral, MLPattern, Module, Pattern, Claim
 from ml.kore.utils import KoreUtils
 
 from ml.metamath.parser import load_database
@@ -28,52 +29,53 @@ from .env import KoreComposer
 from .rewrite import RewriteProofGenerator
 from .preprocessor import KorePreprocessor
 from .disjointness import DisjointnessProofGenerator
-from .tasks import RewritingTask
+from .tasks import RewritingTask, ReachabilityTask
 
 
-def load_rewriting_task(module: Module, task_path: str) -> RewritingTask:
+def load_tasks(module: Module, task_path: str) -> Tuple[Tuple[RewritingTask, ...], Tuple[ReachabilityTask, ...]]:
     """
-    Load all rewriting information in a directory
-    as substitutions (lists of tuples of patterns) in the given module
+    Load all tasks in the document.
+    We are expecting either a single rewriting task
+    or a list of reachability tasks
     """
     with open(task_path) as task_file:
-        loaded_obj = yaml.load(task_file, Loader=yaml.Loader)
-        task = RewritingTask.load_from_object(loaded_obj)
-        task.resolve(module)
-        return task
+        rewriting_tasks = []
+        reachability_tasks = []
+
+        for doc in yaml.load_all(task_file, Loader=yaml.Loader):
+            task: Union[RewritingTask, ReachabilityTask] = schema.Schema(
+                schema.Or(
+                    ReachabilityTask.get_schema(),
+                    RewritingTask.get_schema(),
+                )
+            ).validate(doc)
+
+            task.resolve(module)
+
+            if isinstance(task, RewritingTask):
+                rewriting_tasks.append(task)
+            else:
+                reachability_tasks.append(task)
+
+        return tuple(rewriting_tasks), tuple(reachability_tasks)
 
 
 def prove_rewriting(
     composer: KoreComposer,
     task: RewritingTask,
 ) -> None:
+    print("proving symbolic execution")
     gen = RewriteProofGenerator(composer)
     gen.prove_symbolic_rewriting_task(task)
-    return
 
-    sum_claim_src = r"""
-    axiom{} \one-path-reaches-plus{SortGeneratedTopCell{}} (
-        \and{SortGeneratedTopCell{}} (
-            \and{SortGeneratedTopCell{}}(
-                \equals{SortBool{},SortGeneratedTopCell{}}(
-                    \dv{SortBool{}}("true"),Lbl'Unds-GT-Eqls'Int'Unds'{}(VarSpecVarN:SortInt{},\dv{SortInt{}}("0"))
-                ),
-                \top{SortGeneratedTopCell{}}()
-            ),
-            Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(kseq{}(inj{SortStmt{}, SortKItem{}}(Lblwhile'LParUndsRParUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'BExp'Unds'Block{}(Lbl'BangUndsUnds'IMP-SYNTAX'Unds'BExp'Unds'BExp{}(Lbl'Unds-LT-EqlsUndsUnds'IMP-SYNTAX'Unds'BExp'Unds'AExp'Unds'AExp{}(inj{SortId{}, SortAExp{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortAExp{}}(\dv{SortInt{}}("0")))),Lbl'LBraUndsRBraUnds'IMP-SYNTAX'Unds'Block'Unds'Stmt{}(Lbl'UndsUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'Stmt'Unds'Stmt{}(Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(\dv{SortId{}}("sum"),Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(inj{SortId{}, SortAExp{}}(\dv{SortId{}}("sum")),inj{SortId{}, SortAExp{}}(\dv{SortId{}}("n")))),Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(\dv{SortId{}}("n"),Lbl'UndsPlusUndsUnds'IMP-SYNTAX'Unds'AExp'Unds'AExp'Unds'AExp{}(inj{SortId{}, SortAExp{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortAExp{}}(\dv{SortInt{}}("-1")))))))),dotk{}())),Lbl'-LT-'state'-GT-'{}(Lbl'Unds'Map'Unds'{}(Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortKItem{}}(VarSpecVarN:SortInt{})),Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("sum")),inj{SortInt{}, SortKItem{}}(VarSpecVarS:SortInt{}))))),Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0")))),
-        \and{SortGeneratedTopCell{}} (
-            \and{SortGeneratedTopCell{}}(
-                \top{SortGeneratedTopCell{}}(),
-                \top{SortGeneratedTopCell{}}()
-            ),
-            Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'T'-GT-'{}(Lbl'-LT-'k'-GT-'{}(dotk{}()),Lbl'-LT-'state'-GT-'{}(Lbl'Unds'Map'Unds'{}(Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("n")),inj{SortInt{}, SortKItem{}}(\dv{SortInt{}}("0"))),Lbl'UndsPipe'-'-GT-Unds'{}(inj{SortId{}, SortKItem{}}(\dv{SortId{}}("sum")),inj{SortInt{}, SortKItem{}}(Lbl'UndsPlus'Int'Unds'{}(VarSpecVarS:SortInt{},Lbl'UndsSlsh'Int'Unds'{}(Lbl'UndsStar'Int'Unds'{}(Lbl'UndsPlus'Int'Unds'{}(VarSpecVarN:SortInt{},\dv{SortInt{}}("1")),VarSpecVarN:SortInt{}),\dv{SortInt{}}("2")))))))),Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0")))
-        )
-    ) []
-    """
 
-    sum_claim = parse_axiom(sum_claim_src, composer.module)
-    # KoreUtils.pretty_print(sum_claim)
-    gen.prove_one_path_reachability_claim((sum_claim, ), sum_claim, task.steps)
+def prove_reachability(
+    composer: KoreComposer,
+    tasks: Tuple[ReachabilityTask, ...],
+) -> None:
+    print("proving one-path reachability")
+    gen = RewriteProofGenerator(composer)
+    gen.prove_one_path_reachability_claims(tasks)
 
 
 def set_additional_flags(parser: argparse.ArgumentParser) -> None:
@@ -224,14 +226,18 @@ def run_on_arguments(args: argparse.Namespace) -> None:
         with stopwatch.start("module"), env.in_segment("module"):
             env.load_module(module)
 
-        # TODO: currently only supports rewriting hints
-        rewriting_task: Optional[RewritingTask] = None
-
         if args.task is not None:
-            rewriting_task = load_rewriting_task(module, args.task)
+            rewriting_tasks, reachability_tasks = load_tasks(module, args.task)
 
-            with stopwatch.start("rewrite"), env.in_segment("rewrite"):
-                prove_rewriting(env, rewriting_task)
+            if len(rewriting_tasks) != 0:
+                assert len(reachability_tasks) == 0 and len(rewriting_tasks) == 1
+                with stopwatch.start("rewrite"), env.in_segment("rewrite"):
+                    prove_rewriting(env, rewriting_tasks[0])
+
+            else:
+                assert len(reachability_tasks) != 0
+                with stopwatch.start("rewrite"), env.in_segment("rewrite"):
+                    prove_reachability(env, reachability_tasks)
 
     if args.benchmark:
         module_elapsed = stopwatch.get_elapsed("module")

@@ -68,6 +68,9 @@ class AttributeMixin:
     def remove_attribute_by_symbol(self, symbol: str) -> None:
         self.attributes = tuple(attr for attr in self.attributes if attr.symbol.definition != symbol)
 
+    def add_attribute(self, attribute: Application) -> None:
+        self.attributes += attribute,
+
     def has_attribute(self, name: str) -> bool:
         if self.get_attribute_by_symbol(name) is not None:
             return True
@@ -491,7 +494,9 @@ class Axiom(Sentence):
         )
 
     def __str__(self) -> str:
-        return "axiom {{{}}} {}".format(", ".join(map(str, self.sort_variables)), self.pattern)
+        return "{} {{{}}} {}".format(
+            "claim" if self.is_claim else "axiom", ", ".join(map(str, self.sort_variables)), self.pattern
+        )
 
 
 Claim = Axiom
