@@ -39,6 +39,88 @@ ${
     kore-in-reflexivity   $p |- ( \imp th0 ( \kore-valid ph1 ( \kore-in ph0 ph1 ph2 ph2 ) ) ) $= ? $.
 $}
 
+${
+    sorted-forall-propagate-floor $p |- ( \imp ( \sorted-forall x ph0 ( \floor ph1 ) ) ( \floor ( \sorted-forall x ph0 ph1 ) ) ) $=
+        $(
+            apply "rule-imp-transitivity"
+            apply "lemma-imp-compat-in-forall"
+            apply "predicate-imp-propagate-in-floor"
+            apply "lemma-floor-is-predicate"
+            apply "floor-propagation-forall-left"
+        $)
+        ( element-var-is-var var-is-pattern imp-is-pattern floor-is-pattern in-sort-is-pattern forall-is-pattern sorted-forall-is-pattern inh-is-pattern notation-reflexivity notation-transitivity notation-proof is-predicate-is-pattern sorted-forall-is-sugar notation-imp lemma-floor-is-predicate included-is-pattern in-sort-is-sugar included-is-sugar notation-is-predicate predicate-imp-propagate-in-floor lemma-imp-compat-in-forall floor-propagation-forall-left notation-floor rule-imp-transitivity ) ABGCJCDEAHBFGCIABCJGCDEAHBGFCICDEAHBFGCIFABGCJCDEAHBFGCIFCDEAHBGFCDEAHBFGCCDEAHBCDEAKFGOCDEAHOCDEAKFRCDEAHCDEAKFGCDEAHCDEAKFGCDEAKFGCDEAHCDEAKSCDEAKFGCDEATCDEAKUAMCDEAKFGLMUBNUCUDABGCJCDEAHBFGCICDEAHBGFCICDEAHBFGCIABGCJCDEAHBGFCICDEAHBGFCIABGCPCDEAHBGFCILMCDEAHBFGCILQNCDEAHBFGCICDEAHBFCIGFCDEAHBFGCIABCJGFCDEAHBFCUECDEAHBFGCIABCJGCDEAHBFGCICDEAHBFCIGCDEAHBFGCILABCJCDEAHBFCIABCJCDEAHBFCICDEAHBFCIABCPCDEAHBFCILMUFQNUG $.
+$}
+
+${
+    $d x ph2 $.
+    kore-forall-intro-lemma $p |- ( \imp ( \sorted-forall x ph0 ( \eq ph1 ph2 ) ) ( \eq ( \and ( \sorted-forall x ph0 ph1 ) ph2 ) ph2 ) ) $=
+        $(
+            apply "rule-imp-transitivity"
+            apply "sorted-forall-propagate-floor"
+            apply "lemma-imp-compat-in-floor"
+            apply "rule-imp-transitivity"
+            apply "lemma-imp-compat-in-forall"
+            apply "predicate-imp-propagate-in-iff"
+            apply "lemma-floor-is-predicate"
+            apply "rule-imp-transitivity"
+            apply "prenex-forall-iff-left"
+            apply "fresh-disjoint"
+            apply "proof-rule-mp"
+            apply "iff-transitivity"
+            apply "rule-and-intro"
+            apply "prenex-forall-and-left"
+            apply "fresh-disjoint"
+            apply "rule-and-intro-alt2-sugar"
+            apply "lemma-imp-compat-in-forall"
+            apply "and-elim-left"
+            apply "proof-rule-mp"
+            apply "forall-intro-alt"
+            apply "and-elim-right"
+        $)
+        ( imp-is-pattern element-var-is-var var-is-pattern in-sort-is-pattern and-is-pattern bot-is-pattern sorted-forall-is-pattern forall-is-pattern not-is-pattern iff-is-pattern floor-is-pattern notation-reflexivity notation-transitivity or-is-pattern notation-imp not-is-sugar eq-is-pattern notation-proof inh-is-pattern sorted-forall-is-sugar and-is-sugar or-is-sugar rule-imp-transitivity eq-is-sugar is-predicate-is-pattern lemma-imp-compat-in-forall fresh-disjoint proof-rule-mp sorted-forall-propagate-floor notation-sorted-forall lemma-floor-is-predicate included-is-pattern in-sort-is-sugar included-is-sugar notation-is-predicate predicate-imp-propagate-in-iff prenex-forall-iff-left iff-transitivity prenex-forall-and-left notation-and and-elim-left forall-intro-alt and-elim-right rule-and-intro-alt2-sugar rule-and-intro iff-is-sugar lemma-imp-compat-in-floor ) ABCUADKABCNDKOABDKCICUAABCNODKABCNDKOEABCUADKABCNDKOEABCNDUMABCUADKABCNDKOABCNODKABCNDKOABCUAABCNODAPBCUABCNOBCNOBCUHBCNOPQUNABCNDKOPSUBABCNDKOABDKCICNOEABCNDKOABDKCICUAEABCNDKABDKCICNABCNDKDFGAHBECICNDLABDKCICNDFGAHBCNEDLDFGAHBECICNDLEABCNDKDFGAHBECICNDLEDFGAHBCNEDFGAHBECICNDDFGAHBCDFGAUCEOUIDFGAHUIDFGAUCEUODFGAHDFGAUCEODFGAHDFGAUCEODFGAUCEODFGAHDFGAUCUPDFGAUCEODFGAUQDFGAUCURQDFGAUCEOPQUSUBUTUJABCNDKDFGAHBECICNDLDFGAHBCNEDLDFGAHBECICNDLABCNDKDFGAHBCNEDLDFGAHBCNEDLABCNDUDDFGAHBCNEDLPQDFGAHBECICNDLPSUBDFGAHBECICNDLDFGAHBECIDLCNABDKCICNDFGAHBECICDCDFUKVAABDKCIDFGAHBECIDLNDFGAHBECIDLCNABDKCICNEABDKCIDFGAHBECIDLCVBABDKCIDFGAHBECIDLEJEJEDFGAHBECIDLABDKCIEJEEJEABDKCIDFGAHBECIDLNABDKCIDFGAHBECIDLEDFGAHBECIDLABDKCIEDFGAHBEDLCIDFGAHBECIDLEABDKCIDFGAHBECIDLEDFGAHBECDCDFUKVCABDKCIDFGAHBECIDLDFGAHBEDLCIDFGAHBECIDLABDKCDFGAHBEDLCABDKDFGAHBEDLDFGAHBEDLABDUDDFGAHBEDLPQCPVDDFGAHBECIDLPSUBDFGAHBECIDLABDKCDFGAHBECIDLDFGAHBEDLEDFGAHBECIDLABDKEDFGAHBECIDFGAHBEDDFGAHBEJEJECJEEJEDFGAHBEEDFGAHBECIDFGAHBEEDFGAHBECVEDFGAHBECIDFGAHBEDFGAHBEJEJECJEEJEDFGAHBEDFGAHBECIDFGAHBEMCMRJEDFGAHBEJEJECJEEJEDFGAHBECIDFGAHBEMCMRMDFGAHBEMCMRJEDFGAHBECUEDFGAHBEMCMRTQDFGAHBEMCMRJDFGAHBEJEJECJEEJDFGAHBEMCMRDFGAHBEMMCMEDFGAHBEJEJECJEEDFGAHBEMCMUFDFGAHBEMMCMDFGAHBEJEJECJEDFGAHBEMMDFGAHBEMJEDFGAHBEJEJEDFGAHBEMTDFGAHBEMJDFGAHBEJEJDFGAHBEMDFGAHBEJEDFGAHBEJEDFGAHBETDFGAHBEJEPQJPSQCMCJECJECTCJEPQSQJPSQDFGAHBEPSUBUJDFGAHBECIDLABDKDFGAHBECIDLDFGAHBEDLDFGAHBECIDLPABDUDSUBDFGAHBECICEDFGAHBECIDLCEDFGAHBECICDVFDFGAHBEJEJECJEEJECEDFGAHBECICEDFGAHBECVGDFGAHBECICDFGAHBEJEJECJEEJECDFGAHBECIDFGAHBEMCMRJEDFGAHBEJEJECJEEJEDFGAHBECIDFGAHBEMCMRMDFGAHBEMCMRJEDFGAHBECUEDFGAHBEMCMRTQDFGAHBEMCMRJDFGAHBEJEJECJEEJDFGAHBEMCMRDFGAHBEMMCMEDFGAHBEJEJECJEEDFGAHBEMCMUFDFGAHBEMMCMDFGAHBEJEJECJEDFGAHBEMMDFGAHBEMJEDFGAHBEJEJEDFGAHBEMTDFGAHBEMJDFGAHBEJEJDFGAHBEMDFGAHBEJEDFGAHBEJEDFGAHBETDFGAHBEJEPQJPSQCMCJECJECTCJEPQSQJPSQCPSUBULVHVIABDKCIDFGAHBECIDLNABDKCIDFGAHBECIDLEMDFGAHBECIDLABDKCIEMRJEABDKCIDFGAHBECIDLEJEJEDFGAHBECIDLABDKCIEJEEJEABDKCIDFGAHBECIDLNABDKCIDFGAHBECIDLEMDFGAHBECIDLABDKCIEMRMABDKCIDFGAHBECIDLEMDFGAHBECIDLABDKCIEMRJEABDKCIDFGAHBECIDLNABDKCIDFGAHBECIDLEDFGAHBECIDLABDKCIEIABDKCIDFGAHBECIDLEMDFGAHBECIDLABDKCIEMRMABDKCIDFGAHBECIDLVJABDKCIDFGAHBECIDLEDFGAHBECIDLABDKCIEUEQABDKCIDFGAHBECIDLEMDFGAHBECIDLABDKCIEMRTQABDKCIDFGAHBECIDLEMDFGAHBECIDLABDKCIEMRJABDKCIDFGAHBECIDLEJEJEDFGAHBECIDLABDKCIEJEEJABDKCIDFGAHBECIDLEMDFGAHBECIDLABDKCIEMRABDKCIDFGAHBECIDLEMMDFGAHBECIDLABDKCIEMEABDKCIDFGAHBECIDLEJEJEDFGAHBECIDLABDKCIEJEEABDKCIDFGAHBECIDLEMDFGAHBECIDLABDKCIEMUFABDKCIDFGAHBECIDLEMMDFGAHBECIDLABDKCIEMABDKCIDFGAHBECIDLEJEJEDFGAHBECIDLABDKCIEJEABDKCIDFGAHBECIDLEMMABDKCIDFGAHBECIDLEMJEABDKCIDFGAHBECIDLEJEJEABDKCIDFGAHBECIDLEMTABDKCIDFGAHBECIDLEMJABDKCIDFGAHBECIDLEJEJABDKCIDFGAHBECIDLEMABDKCIDFGAHBECIDLEJEABDKCIDFGAHBECIDLEJEABDKCIDFGAHBECIDLETABDKCIDFGAHBECIDLEJEPQJPSQDFGAHBECIDLABDKCIEMDFGAHBECIDLABDKCIEJEDFGAHBECIDLABDKCIEJEDFGAHBECIDLABDKCIETDFGAHBECIDLABDKCIEJEPQSQJPSQUBULUGUGVKABCNDKOABDKCICUAABCNDKOABDKCICNOABCNDKOPABDKCICUAABDKCICNOABDKCICNOABDKCICUHABDKCICNOPQSUBUG $.
+$}
+
+${
+    $d x th0 $.
+    $d x ph0 $.
+    kore-forall-intro.0 $e |- ( \sorted-forall x ph2 ( \imp th0 ( \kore-valid ph0 ph1 ) ) ) $.
+    kore-forall-intro   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-forall ph2 ph0 x ph1 ) ) ) $=
+        $(
+            apply "rule-imp-transitivity"
+            meh
+            apply "proof-rule-mp"
+            apply "eq-transitivity"
+            apply "kore-semantics-forall"
+            apply "fresh-disjoint"
+            apply "rule-imp-transitivity"
+            meh
+            apply "kore-forall-intro-lemma"
+            apply "proof-rule-mp"
+            apply "rule-iff-elim-left"
+            apply "lemma-prenex-forall-imp-right"
+            apply "fresh-disjoint"
+            apply "proof-rule-mp"
+            apply "lemma-imp-compat-in-forall"
+            apply "premises-switch-alt"
+            apply "kore-forall-intro.0"
+        $)
+        ( kore-top-is-pattern eq-is-pattern imp-is-pattern sorted-forall-is-pattern element-var-is-var var-is-pattern in-sort-is-pattern inh-is-pattern and-is-pattern kore-forall-is-pattern forall-is-pattern kore-valid-is-pattern notation-reflexivity notation-imp notation-transitivity notation-proof notation-symmetry proof-rule-mp iff-is-pattern fresh-disjoint sorted-forall-is-sugar kore-valid-is-sugar rule-imp-transitivity lemma-prenex-forall-imp-right notation-iff rule-iff-elim-left premises-switch-alt lemma-imp-compat-in-forall notation-forall kore-forall-intro-lemma kore-top-is-sugar notation-and notation-eq eq-transitivity kore-semantics-forall ) DCBEJANOAGHACABEPRDCBAGHEJCBEJANOAGHDEKLCMBAGHIIEQDCBAGHEJIDEKLCMBAGHIIEQDCBAGHEJIDEKLCMBAGHIIEQDEKLCMBAGHIEQIUEDEKLCMBAGHIIEQDCBAGHEJIUEDEKLCMBAGHIEDEKUFUJDEKLCMBAGHIIEQDCBAGHEJIDEKLCMBAGHIIEQDEKLCMBAGHIEQIDEKLCMBAGHIIEQSDCBAGHEJDEKLCMBAGHIEQDSCBAGHEJEKLCMBAGHIEQEKLCMBAGHIEQCBAGHEUGEKLCMBAGHIEQSUATUKUBULEKLCMDBAGHIIEQDEKLCMBAGHIIEQEKLCMDBAGHIIDEKLCMBAGHIIEEKLCMDBAGHUMUNCDABRIEJEKLCMDBAGHIIEQFEKLCMDBAGHIIEQEKLCMDABRIIEQCDABRIEJEKLCMDBAGHIIEKLCMDABRIIEEKLCMDBAGHIEKLCMDABRIEKLCMSDBAGHDABRDSBAGHBAGHABRBAGHSABRBAGHABUHUCUATTUOCDABRIEJEKLCMDABRIIEQCDABRIEUGUCUAUBUDUDCBAGHEJCBEJAGOAGHICBAGHEJCBEJANOAGHICBAGEUPCBAGHEJCBEJANOAGHCBAGHEJCBEJAGOAGHCBAGHEJSCBEJANOAGCBEJAGOAGCBEJANCBEJAGCBEJSANANAGANSAGANAUQUCUAURAGSUSTUBUICABEPCBEJANOHCBEJANOAGHACABEPRICABEPCBEJANOHCBEJANOAGHCABEPAGHIICABEPCBEJANOHCBEJANOAGHACABEPRIICABEPCBEJANOAGUTCABEPCBEJANOHCBEJANOAGHACABEPRICABEPCBEJANOHCBEJANOAGHCABEPAGHICABEPCBEJANOHSCBEJANOAGHACABEPRCBEJANOAGHCABEPAGHCBEJANOAGHSACABEPRCABEPAGHCABEPAGHACABEPUHCABEPAGHSUATTUBCABEAEKUFVAUDUI $.
+$}
+
+${
+    $d x th0 $.
+    $d x ph0 $.
+    kore-forall-intro-alt.0 $e |- ( \imp ( \and ( \in-sort x ph2 ) th0 ) ( \kore-valid ph0 ph1 ) ) $.
+    kore-forall-intro-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-forall ph2 ph0 x ph1 ) ) ) $=
+        $(
+            from "kore-forall-intro-alt.0", "rule-curry"
+            from "hyp-0", "lemma-forall-intro"
+            apply "kore-forall-intro"
+            apply "hyp-1"
+        $)
+        ( imp-is-pattern kore-valid-is-pattern element-var-is-var var-is-pattern in-sort-is-pattern forall-is-pattern sorted-forall-is-pattern rule-curry lemma-forall-intro sorted-forall-is-sugar notation-reflexivity notation-transitivity notation-proof kore-forall-intro ) ABCDEEIJCKDABHGGELCDABHGEMEIJCKDABHGGEEIJCKDABHFNOCDABHGEMEIJCKDABHGGELEIJCKDABHGGELCDABHGEPEIJCKDABHGGELQRST $.
+$}
+
 $( ${
     kore-equality-in-constraint.0 $e #Substitution ph6 ph5 ph3 x $.
     kore-equality-in-constraint.1 $e #Substitution ph7 ph5 ph4 x $.
