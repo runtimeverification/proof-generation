@@ -2336,6 +2336,20 @@ floor-propagation-forall-right $p |- ( \imp ( \floor ( \forall x ph0 ) ) ( \fora
     $)
     ( not-is-pattern ceil-is-pattern exists-is-pattern forall-is-pattern floor-is-pattern imp-is-pattern notation-reflexivity notation-symmetry notation-transitivity rule-imp-transitivity forall-is-sugar notation-not notation-imp notation-proof floor-is-sugar dn-elim-sugar lemma-imp-compat-in-exists ceil-propagation-exists-right dn-intro-sugar lemma-imp-compat-in-ceil rule-contrapositive-sugar notation-ceil notation-forall ) ABFCDCACDCBFHABFGAGBFHACBECCDCACDCCBECHABFCDCACDCBFHACDCCBEACBECCDACDCCBEACDBEACBECCDACDCCACDBACDRSACDBEACBEDACBECCDACBTACBEACBECCACBEUAUBLLUCABFCDCACDCBFACBECCDCACDCCBECABFCDACBECCDABFCACBECCABFACBECABFACBECACBECABMACBECACBECACBECIJKNUDNACDCBFACDCCBECACDCCBECACDCBMACDCCBECACDCCBECACDCCBECIJKOPABFGAGBFABFCDCACDCBFABFGABFCDCABFCDCABFQABFCDCABFCDCABFCDCIJKAGACDCBAGACDCACDCAQACDCACDCACDCIJKUEOP $.
 
+floor-propagation-forall-left $p |- ( \imp ( \forall x ( \floor ph0 ) ) ( \floor ( \forall x ph0 ) ) ) $=
+    $(
+        apply "rule-contrapositive"
+        apply "rule-imp-transitivity"
+        apply "lemma-imp-compat-in-ceil"
+        apply "dn-elim-sugar"
+        apply "rule-imp-transitivity"
+        meh
+        apply "lemma-imp-compat-in-exists"
+        apply "dn-intro-sugar"
+        apply "ceil-propagation-exists-left"
+    $)
+    ( not-is-pattern exists-is-pattern ceil-is-pattern floor-is-pattern forall-is-pattern imp-is-pattern bot-is-pattern notation-reflexivity notation-transitivity notation-imp notation-proof forall-is-sugar notation-not floor-is-sugar rule-imp-transitivity not-is-sugar dn-elim-sugar lemma-imp-compat-in-ceil ceil-propagation-exists-left dn-intro-sugar lemma-imp-compat-in-exists rule-contrapositive ) AFCBDIHABGCEIHHAFBGABGFHABGCEAFCBDABGCEACBDEAFCBDABGCACBDACBDCCACBDHABGCACBDHACBDSABGCACBDACBDCCACBDABGACBDCABGACBDCACBDCABNACBDCJKOACBDJLMTACBDEACEBDAFCBDACBUAACEAFCBACEACECCHACEAFCHACEUBACEAFCACEACECCACEJAFACECAFACECACECAPACECJKOLMUCQQUDAFBGABGFAFCBDIHABGCEIHAFBGAFCBDIHAFCBDIHAFBGAFCBDCAFCBDIHAFBNAFCBDRKAFCBDIHJKABGFABGCEIHABGCEIHABGFABGCECABGCEIHABGPABGCERKABGCEIHJKLM $.
+
 ${
     rule-eq-to-iff.0 $e |- ( \eq ph0 ph1 ) $.
     rule-eq-to-iff $p |- ( \iff ph0 ph1 ) $=
@@ -2786,6 +2800,26 @@ ${
         ( imp-is-pattern exists-is-pattern and-is-pattern imp-reflexivity rule-uncurry exists-intro-alt rule-imp-transitivity rule-curry element-var-is-var fresh-in-exists-shadowed fresh-in-imp proof-rule-gen ) ABEABCFECABEABCFABEAGBBCFABEABABEHIBCJKLABCFCMDBCNOP $.
 $}
 
+${
+    prenex-forall-iff-left.0 $e #Fresh x ph1 $.
+    prenex-forall-iff-left   $p |- ( \imp ( \forall x ( \iff ph0 ph1 ) ) ( \iff ( \forall x ph0 ) ph1 ) ) $=
+        $(
+            apply "rule-and-intro-alt2-sugar"
+            apply "proof-rule-mp"
+            apply "forall-intro-alt"
+            apply "rule-imp-transitivity"
+            apply "and-elim-left"
+            apply "forall-intro-alt"
+            apply "rule-imp-transitivity"
+            apply "lemma-imp-compat-in-forall"
+            apply "and-elim-right"
+            apply "rule-iff-elim-left"
+            apply "lemma-prenex-forall-imp-right"
+            apply "prenex-forall-iff-left.0"
+        $)
+        ( imp-is-pattern bot-is-pattern not-is-pattern forall-is-pattern iff-is-pattern notation-transitivity or-is-pattern notation-reflexivity notation-imp not-is-sugar and-is-pattern iff-is-sugar notation-proof forall-intro-alt and-is-sugar or-is-sugar rule-imp-transitivity and-elim-left proof-rule-mp and-elim-right lemma-imp-compat-in-forall lemma-prenex-forall-imp-right rule-iff-elim-left rule-and-intro-alt2-sugar ) ABICHACHBEBACHEOEABICHACHBIEABICHACHBEBACHEABIACHBEEABICHACHBEEABIACHBECRABIABEACHBEABEFEFEBAEFEEFEABEEABIABEEABEBAEUBABIABEABEFEFEBAEFEEFEABEABIABEGBAEGKFEABEFEFEBAEFEEFEABIABEGBAEGKGABEGBAEGKFEABIABEBAEOABEGBAEGKGABPABEBAESJABEGBAEGKNJABEGBAEGKFABEFEFEBAEFEEFABEGBAEGKABEGGBAEGEABEFEFEBAEFEEABEGBAEGTABEGGBAEGABEFEFEBAEFEABEGGABEGFEABEFEFEABEGNABEGFABEFEFABEGABEFEABEFEABENABEFELJFLMJBAEGBAEFEBAEFEBAENBAEFELJMJFLMJABELMQABCRUAUCABICHBAECHBACHEABIBAECABEFEFEBAEFEEFEBAEEABIBAEEABEBAEUDABIBAEABEFEFEBAEFEEFEBAEABIABEGBAEGKFEABEFEFEBAEFEEFEABIABEGBAEGKGABEGBAEGKFEABIABEBAEOABEGBAEGKGABPABEBAESJABEGBAEGKNJABEGBAEGKFABEFEFEBAEFEEFABEGBAEGKABEGGBAEGEABEFEFEBAEFEEABEGBAEGTABEGGBAEGABEFEFEBAEFEABEGGABEGFEABEFEFEABEGNABEGFABEFEFABEGABEFEABEFEABENABEFELJFLMJBAEGBAEFEBAEFEBAENBAEFELJMJFLMJBAELMQUEBAECHBACHEBACDUFUGUAUHABICHACHBIABICHACHBEBACHEOABICHLACHBIACHBEBACHEOACHBEBACHEOACHBPACHBEBACHEOLJMQ $.
+$}
+
 restricted-inclusion $p |- ( \imp ( \included ph0 ph1 ) ( \eq ( \and ph1 ph0 ) ph0 ) ) $=
     $(
         apply "lemma-imp-compat-in-floor"
@@ -2799,3 +2833,23 @@ restricted-inclusion $p |- ( \imp ( \included ph0 ph1 ) ( \eq ( \and ph1 ph0 ) p
         apply "and-elim-right"
     $)
     ( imp-is-pattern bot-is-pattern not-is-pattern and-is-pattern notation-transitivity notation-reflexivity or-is-pattern floor-is-pattern notation-imp iff-is-pattern not-is-sugar notation-proof included-is-pattern eq-is-pattern and-elim-right and-is-sugar or-is-sugar rule-and-intro-alt2-sugar rule-weakening imp-reflexivity rule-uncurry rule-curry iff-is-sugar lemma-imp-compat-in-floor included-is-sugar eq-is-sugar ) ABCJBAFALJCABOBAFAPCABCBAFALABCBAFACABAFCFCABCBAFALCABCBAFACABAFCABCBAFACBDCDCADCCDCACBAFACBAQBAFABDCDCADCCDCABAFBEAEIDCBDCDCADCCDCBAFBEAEIEBEAEIDCBARBEAEIMGBEAEIDBDCDCADCCDBEAEIBEEAECBDCDCADCCBEAESBEEAEBDCDCADCBEEBEDCBDCDCBEMBEDBDCDBEBDCBDCBMBDCHGDHKGAEADCADCAMADCHGKGDHKGAHKNUAABCABAFABCAFBAABCABABCUBUCABCDCDCADCCDCACABCAFACABCAQABCAFAABCDCDCADCCDCAABCAFABCEAEIDCABCDCDCADCCDCABCAFABCEAEIEABCEAEIDCABCARABCEAEIMGABCEAEIDABCDCDCADCCDABCEAEIABCEEAECABCDCDCADCCABCEAESABCEEAEABCDCDCADCABCEEABCEDCABCDCDCABCEMABCEDABCDCDABCEABCDCABCDCABCMABCDCHGDHKGAMKGDHKGAHKNTUDTABCBAFALABCBAFACABAFCFABCHBAFALBAFACABAFCFBAFACABAFCFBAFAUEBAFACABAFCFHGKNUFABOBAFAPABCJBAFALJABOABCJABCJABUGABCJHGBAFAPBAFALJBAFALJBAFAUHBAFALJHGKN $.
+
+iff-transitivity $p |- ( \imp ( \iff ph0 ph1 ) ( \imp ( \iff ph1 ph2 ) ( \iff ph0 ph2 ) ) ) $=
+    $(
+        apply "rule-curry"
+        apply "rule-and-intro-alt2-sugar"
+        apply "rule-imp-transitivity"
+        apply "rule-imp-compat-in-and"
+        apply "and-elim-left"
+        apply "and-elim-left"
+        apply "rule-uncurry"
+        apply "imp-transitivity"
+        apply "rule-imp-transitivity"
+        apply "rule-imp-compat-in-and"
+        apply "and-elim-right"
+        apply "and-elim-right"
+        apply "rule-uncurry"
+        apply "premises-switch"
+        apply "imp-transitivity"
+    $)
+    ( imp-is-pattern bot-is-pattern not-is-pattern iff-is-pattern notation-transitivity or-is-pattern notation-reflexivity and-is-pattern notation-imp not-is-sugar iff-is-sugar notation-proof and-is-sugar or-is-sugar and-elim-left rule-imp-compat-in-and imp-transitivity rule-uncurry rule-imp-transitivity and-elim-right premises-switch rule-and-intro-alt2-sugar rule-curry ) ABGBCGACGABGBCGKACDCADKDABGBCGKACGDABGBCGKACDCADABGBCGKABDBCDKACDABGABDBCGBCDABDEDEDBADEDDEDABDDABGABDDABDBADRABGABDABDEDEDBADEDDEDABDABGABDFBADFIEDABDEDEDBADEDDEDABGABDFBADFIFABDFBADFIEDABGABDBADKABDFBADFIFABNABDBADPHABDFBADFIMHABDFBADFIEABDEDEDBADEDDEABDFBADFIABDFFBADFDABDEDEDBADEDDABDFBADFQABDFFBADFABDEDEDBADEDABDFFABDFEDABDEDEDABDFMABDFEABDEDEABDFABDEDABDEDABDMABDEDJHEJLHBADFBADEDBADEDBADMBADEDJHLHEJLHABDJLOBCDEDEDCBDEDDEDBCDDBCGBCDDBCDCBDRBCGBCDBCDEDEDCBDEDDEDBCDBCGBCDFCBDFIEDBCDEDEDCBDEDDEDBCGBCDFCBDFIFBCDFCBDFIEDBCGBCDCBDKBCDFCBDFIFBCNBCDCBDPHBCDFCBDFIMHBCDFCBDFIEBCDEDEDCBDEDDEBCDFCBDFIBCDFFCBDFDBCDEDEDCBDEDDBCDFCBDFQBCDFFCBDFBCDEDEDCBDEDBCDFFBCDFEDBCDEDEDBCDFMBCDFEBCDEDEBCDFBCDEDBCDEDBCDMBCDEDJHEJLHCBDFCBDEDCBDEDCBDMCBDEDJHLHEJLHBCDJLOSABDBCDACDABCTUAUBABGBCGKBADCBDKCADABGBADBCGCBDABDEDEDBADEDDEDBADDABGBADDABDBADUCABGBADABDEDEDBADEDDEDBADABGABDFBADFIEDABDEDEDBADEDDEDABGABDFBADFIFABDFBADFIEDABGABDBADKABDFBADFIFABNABDBADPHABDFBADFIMHABDFBADFIEABDEDEDBADEDDEABDFBADFIABDFFBADFDABDEDEDBADEDDABDFBADFQABDFFBADFABDEDEDBADEDABDFFABDFEDABDEDEDABDFMABDFEABDEDEABDFABDEDABDEDABDMABDEDJHEJLHBADFBADEDBADEDBADMBADEDJHLHEJLHBADJLOBCDEDEDCBDEDDEDCBDDBCGCBDDBCDCBDUCBCGCBDBCDEDEDCBDEDDEDCBDBCGBCDFCBDFIEDBCDEDEDCBDEDDEDBCGBCDFCBDFIFBCDFCBDFIEDBCGBCDCBDKBCDFCBDFIFBCNBCDCBDPHBCDFCBDFIMHBCDFCBDFIEBCDEDEDCBDEDDEBCDFCBDFIBCDFFCBDFDBCDEDEDCBDEDDBCDFCBDFQBCDFFCBDFBCDEDEDCBDEDBCDFFBCDFEDBCDEDEDBCDFMBCDFEBCDEDEBCDFBCDEDBCDEDBCDMBCDEDJHEJLHCBDFCBDEDCBDEDCBDMCBDEDJHLHEJLHCBDJLOSBADCBDCADCBDBADCADCBATUDUAUBUEABGBCGKACGABGBCGKACDCADKABGBCGKJACGACDCADKACDCADKACNACDCADKJHLOUF $.

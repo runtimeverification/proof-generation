@@ -281,12 +281,6 @@ class RewriteProofGenerator(ProofGenerator):
                 constrained_pattern2,
             )
 
-        # otherwise try to show direct subsumption
-        # TODO: prove this
-        # subsumption = self.composer.load_fresh_claim_placeholder(
-        #     "subsumption", KoreUtils.construct_implies(initial, goal)
-        # )
-
         claim = self.composer.apply_kore_lemma(
             "kore-one-path-reaches-star-intro-alt2",
             subsumption,

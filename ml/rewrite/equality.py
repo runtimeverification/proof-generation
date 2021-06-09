@@ -26,15 +26,25 @@ class EqualityProofGenerator(ProofGenerator):
         Universally quantify an indicated free variable
         """
 
-        free_vars = KoreUtils.get_free_variables(provable.claim)
-        assert variable in free_vars, \
+        assert variable in KoreUtils.get_free_variables(provable.claim), \
                f"{variable} is not a free variable in {provable.claim}"
 
-        # TODO: prove this
+        goal = KoreUtils.construct_forall(variable, provable.claim.pattern)
 
-        return self.composer.load_fresh_claim_placeholder(
-            "forall-intro",
-            KoreUtils.construct_forall(variable, provable.claim.pattern),
+        encoded_variable = self.composer.encode_pattern(variable)
+        encoded_sort = self.composer.encode_pattern(variable.sort)
+
+        other_premises = KoreEncoder().encode_free_variable_premise(goal)
+        variable_sorting = MetamathUtils.construct_in_sort(encoded_variable, encoded_sort)
+
+        premises_rearranged = self.composer.rearrange_sorting_premise(
+            MetamathUtils.construct_and(variable_sorting, other_premises),
+            provable.proof,
+        )
+
+        return self.composer.construct_provable_claim(
+            claim=goal,
+            proof=self.composer.get_theorem("kore-forall-intro-alt").apply(premises_rearranged, ),
         )
 
     def apply_forall_elim(self, provable: ProvableClaim) -> ProvableClaim:
