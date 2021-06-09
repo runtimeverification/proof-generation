@@ -514,6 +514,10 @@ class KoreUtils:
         return KoreUtils.destruct_ml_pattern(MLPattern.IMPLIES, pattern)
 
     @staticmethod
+    def destruct_not(pattern: Pattern) -> List[Pattern]:
+        return KoreUtils.destruct_ml_pattern(MLPattern.NOT, pattern)
+
+    @staticmethod
     def destruct_iff(pattern: Pattern) -> List[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.IFF, pattern)
 
@@ -549,8 +553,20 @@ class KoreUtils:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.TOP
 
     @staticmethod
+    def is_bottom(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.BOTTOM
+
+    @staticmethod
     def is_and(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.AND
+
+    @staticmethod
+    def is_implies(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.IMPLIES
+        
+    @staticmethod
+    def is_not(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.NOT
 
     @staticmethod
     def is_or(pattern: Pattern) -> bool:

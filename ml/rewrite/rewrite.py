@@ -21,6 +21,7 @@ from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
 from .propositional import PropositionalProofGenerator
 from .substitution import SingleSubstitutionProofGenerator
+from .smt import SMTProofGenerator
 from .tasks import RewritingStep, RewritingTask, ConstrainedPattern, Substitution, AppliedRule
 
 ReachabilityType = str
@@ -30,8 +31,8 @@ class RewriteProofGenerator(ProofGenerator):
     """
     Generate proofs for rewriting related claims
     """
-    def __init__(self, env: KoreComposer):
-        super().__init__(env)
+    def __init__(self, composer: KoreComposer):
+        super().__init__(composer)
         self.owise_assumption_counter = 0
         self.rewrite_claim_counter = 0
         self.simplification_counter = 0
@@ -39,20 +40,23 @@ class RewriteProofGenerator(ProofGenerator):
         self.kore_is_predicate_counter = 0
         self.sorting_hypotheses_counter = 0
         self.hooked_symbol_evaluators = {
-            "Lbl'UndsPlus'Int'Unds'": IntegerAdditionEvaluator(env),
-            "Lbl'Unds'-Int'Unds'": IntegerSubtractionEvaluator(env),
-            "Lbl'UndsStar'Int'Unds'": IntegerMultiplicationEvaluator(env),
-            "Lbl'UndsSlsh'Int'Unds'": IntegerDivisionEvaluator(env),
-            "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(env),
-            "Lbl'Unds-LT-Eqls'Int'Unds'": IntegerLessThanOrEqualToEvaluator(env),
-            "Lbl'UndsEqlsEqls'Int'Unds'": IntegerEqualityEvaluator(env),
-            "Lbl'Unds'andBool'Unds'": BooleanAndEvaluator(env),
-            "LblnotBool'Unds'": BooleanNotEvaluator(env),
-            "Lbl'UndsEqlsEqls'K'Unds'": KEqualityEvaluator(env),
-            "Lbl'UndsEqlsSlshEqls'K'Unds'": KNotEqualityEvaluator(env),
-            "LblMap'Coln'lookup": MapLookupEvaluator(env),
+            "Lbl'UndsPlus'Int'Unds'": IntegerAdditionEvaluator(composer),
+            "Lbl'Unds'-Int'Unds'": IntegerSubtractionEvaluator(composer),
+            "Lbl'UndsStar'Int'Unds'": IntegerMultiplicationEvaluator(composer),
+            "Lbl'UndsSlsh'Int'Unds'": IntegerDivisionEvaluator(composer),
+            "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(composer),
+            "Lbl'Unds-LT-Eqls'Int'Unds'": IntegerLessThanOrEqualToEvaluator(composer),
+            "Lbl'UndsEqlsEqls'Int'Unds'": IntegerEqualityEvaluator(composer),
+            "Lbl'Unds'andBool'Unds'": BooleanAndEvaluator(composer),
+            "LblnotBool'Unds'": BooleanNotEvaluator(composer),
+            "Lbl'UndsEqlsEqls'K'Unds'": KEqualityEvaluator(composer),
+            "Lbl'UndsEqlsSlshEqls'K'Unds'": KNotEqualityEvaluator(composer),
+            "LblMap'Coln'lookup": MapLookupEvaluator(composer),
         }
-        self.disjoint_gen = DisjointnessProofGenerator(env)
+        self.disjoint_gen = DisjointnessProofGenerator(composer)
+        self.smt_gen = SMTProofGenerator(composer)
+        self.prop_gen = PropositionalProofGenerator(composer)
+        self.eq_gen = EqualityProofGenerator(composer)
 
     def is_claim_application(self, step: RewritingStep) -> bool:
         if len(step.applied_rules) != 1:
@@ -107,7 +111,7 @@ class RewriteProofGenerator(ProofGenerator):
         quantified_claim = self.quantify_all_free_variables(claim)
 
         # weakens the current claim by adding a circularity premise of quantified_claim
-        transitivity1 = PropositionalProofGenerator(self.composer).apply_weakening(
+        transitivity1 = self.prop_gen.apply_weakening(
             symbolic_execution,
             KoreUtils.construct_circularity(quantified_claim.pattern),
         )
@@ -154,14 +158,11 @@ class RewriteProofGenerator(ProofGenerator):
         # note that this order has to be the same as when we quantified the circularity
         # TODO: a bit hacky
 
-        eq_proof_gen = EqualityProofGenerator(self.composer)
-        prop_gen = PropositionalProofGenerator(self.composer)
-
         # quantify all free variables first
         for var in free_vars:
             # add a quantifer and then push it to the right of the implication
-            provable = eq_proof_gen.apply_forall_intro(provable, var)
-            provable = eq_proof_gen.apply_prenex_implies_right(provable)
+            provable = self.eq_gen.apply_forall_intro(provable, var)
+            provable = self.eq_gen.apply_prenex_implies_right(provable)
 
         # get a proof of |- WF -> forall ... phi
         provable = self.composer.apply_kore_lemma(
@@ -189,25 +190,25 @@ class RewriteProofGenerator(ProofGenerator):
         # add quantifies to both sides
         for var in free_vars:
             # (forall WF -> phi) -> forall phi
-            remove_wf = eq_proof_gen.apply_implies_compat_in_forall(remove_wf, var)
+            remove_wf = self.eq_gen.apply_implies_compat_in_forall(remove_wf, var)
 
             lhs, rhs = KoreUtils.destruct_implies(remove_wf.claim.pattern)
             _, lhs = KoreUtils.destruct_forall(lhs)
             lhs_lhs, lhs_rhs = KoreUtils.destruct_implies(lhs)
 
             # (WF -> forall phi) -> (forall WF -> phi)
-            prenex = eq_proof_gen.get_prenex_implies_left(var, lhs_lhs, lhs_rhs)
+            prenex = self.eq_gen.get_prenex_implies_left(var, lhs_lhs, lhs_rhs)
 
             # (WF -> forall phi) -> forall phi
-            remove_wf = prop_gen.apply_implies_transitivity(prenex, remove_wf)
+            remove_wf = self.prop_gen.apply_implies_transitivity(prenex, remove_wf)
 
         # finally removes the WF -> at the beginning of the claim
-        provable = prop_gen.apply_mp(
+        provable = self.prop_gen.apply_mp(
             remove_wf,
             provable,
         )
 
-        provable = eq_proof_gen.eliminate_all_universal_quantifiers(provable)
+        provable = self.eq_gen.eliminate_all_universal_quantifiers(provable)
 
         return provable
 
@@ -249,14 +250,10 @@ class RewriteProofGenerator(ProofGenerator):
         constrained_pattern1 = ConstrainedPattern.from_pattern(initial)
         constrained_pattern2 = ConstrainedPattern.from_pattern(goal)
 
-        unification_result = \
-            UnificationProofGenerator(self.composer, allow_unevaluated_functions=True, disable_substitution=True) \
-                .unify_patterns(constrained_pattern1.pattern, constrained_pattern2.pattern)
+        constraint_unsat = self.check_smt_unsat(constrained_pattern1.get_constraint())
 
-        if unification_result is None:
-            # then try to prove that the constraint is unsatisfiable
-            # TODO: merge this into prove_constrained_pattern_subsumption
-            constraint_unsat = self.check_smt_unsat(constrained_pattern1.get_constraint())
+        if constraint_unsat is not None:
+            # if the constraint is unsatisfiable, the subsumption is trivial
             subsumption = self.composer.apply_kore_lemma(
                 "kore-not-elim",
                 constraint_unsat,
@@ -280,8 +277,7 @@ class RewriteProofGenerator(ProofGenerator):
             subsumption,
         )
 
-        return PropositionalProofGenerator(self.composer
-                                           ).apply_weakening(claim, KoreUtils.construct_always(axiom.pattern))
+        return self.prop_gen.apply_weakening(claim, KoreUtils.construct_always(axiom.pattern))
 
     def quantify_all_free_variables(self, claim: kore.Claim) -> kore.Claim:
         copied_claim = KoreUtils.copy_ast(self.composer.module, claim)
@@ -332,13 +328,8 @@ class RewriteProofGenerator(ProofGenerator):
     def check_smt_unsat(
         self,
         pattern: kore.Pattern,
-    ) -> ProvableClaim:
-        claim = self.composer.construct_claim(KoreUtils.construct_not(pattern))
-
-        print("SMT unsat obligation:")
-        KoreUtils.pretty_print(claim)
-
-        return self.composer.load_fresh_claim_placeholder("smt-obligation-counter", claim)
+    ) -> Optional[ProvableClaim]:
+        return self.smt_gen.check_validity(KoreUtils.construct_not(pattern))
 
     def check_smt_implication(
         self,
@@ -366,10 +357,14 @@ class RewriteProofGenerator(ProofGenerator):
             )
 
         # TODO: call SMT solver and check
-        print("SMT proof obligation:")
-        KoreUtils.pretty_print(claim.pattern)
+        # print("SMT proof obligation:")
+        # KoreUtils.pretty_print(claim.pattern)
 
-        return self.composer.load_fresh_claim_placeholder("smt-obligation-counter", claim)
+        provable = self.smt_gen.check_validity(claim)
+        assert provable is not None, \
+               f"predicate {KoreUtils.construct_implies(premise, conclusion)} is not valid"
+
+        return provable
 
     def prove_trivial_subsumption(
         self,
@@ -386,7 +381,7 @@ class RewriteProofGenerator(ProofGenerator):
         if unification_result is None or len(unification_result.substitution) != 0:
             return None
 
-        claim = PropositionalProofGenerator(self.composer).apply_implies_reflexivity(pattern1.as_pattern())
+        claim = self.prop_gen.apply_implies_reflexivity(pattern1.as_pattern())
 
         pattern1_constraint = pattern1.get_constraint()
         pattern2_constraint = pattern2.get_constraint()
@@ -472,15 +467,13 @@ class RewriteProofGenerator(ProofGenerator):
         assert unification_result is not None and len(unification_result.substitution) == 0, \
                f"failed to prove {pattern1.as_pattern()} is subsumed by {pattern2.as_pattern()}"
 
-        prop_gen = PropositionalProofGenerator(self.composer)
-
-        claim = prop_gen.apply_implies_reflexivity(pattern1.as_pattern())
+        claim = self.prop_gen.apply_implies_reflexivity(pattern1.as_pattern())
 
         for equation, path in unification_result.applied_equations:
             if isinstance(equation, ConstraintEquation):
                 _, current_rhs = KoreUtils.destruct_implies(claim.claim.pattern)
                 simplification = self.apply_constraint_equation(current_rhs, path, equation)
-                claim = prop_gen.apply_implies_transitivity(claim, simplification)
+                claim = self.prop_gen.apply_implies_transitivity(claim, simplification)
             else:
                 claim = equation.replace_equal_subpattern(claim, [0, 1, 1] + path)  # rhs
 
@@ -606,7 +599,7 @@ class RewriteProofGenerator(ProofGenerator):
         assert lhs_unification_result is not None, \
                f"unable to unify the LHS of {applied_rule.rule_id} with the initial pattern {initial.pattern}"
 
-        instantiated_axiom = EqualityProofGenerator(self.composer).prove_functional_pattern_substitution(
+        instantiated_axiom = self.eq_gen.prove_functional_pattern_substitution(
             rewrite_axiom,
             {
                 **rule_substitution.substitution,
@@ -762,11 +755,10 @@ class RewriteProofGenerator(ProofGenerator):
             lhs_constraint,
         )
 
-        prop_gen = PropositionalProofGenerator(self.composer)
-        constraint_splitting = prop_gen.apply_implies_compatibility(
+        constraint_splitting = self.prop_gen.apply_implies_compatibility(
             kore.MLPattern.AND,
             constraint_splitting,
-            prop_gen.apply_implies_reflexivity(lhs_term),
+            self.prop_gen.apply_implies_reflexivity(lhs_term),
         )
 
         theorem_name = f"symbolic-step-{step_index}"
@@ -821,9 +813,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # now we assume there are at least 2 branches in step1
 
-        prop_gen = PropositionalProofGenerator(self.composer)
-
-        rhs1_shuffle = prop_gen.apply_iff_elim_left(prop_gen.shuffle_nested(kore.MLPattern.OR, rhs1, lhs2_index))
+        rhs1_shuffle = self.prop_gen.apply_iff_elim_left(self.prop_gen.shuffle_nested(kore.MLPattern.OR, rhs1, lhs2_index))
         step1 = self.apply_reachability_subsumption_right(step1, rhs1_shuffle)
 
         if reachability == kore.MLPattern.REWRITES_STAR:
@@ -883,7 +873,6 @@ class RewriteProofGenerator(ProofGenerator):
         branches = KoreUtils.destruct_nested_or(rhs)
 
         unification_gen = UnificationProofGenerator(self.composer)
-        prop_gen = PropositionalProofGenerator(self.composer)
 
         for i, branch in enumerate(branches[start_from:], start_from):
             branch_constraint, branch_term = KoreUtils.destruct_and(branch)
@@ -903,7 +892,10 @@ class RewriteProofGenerator(ProofGenerator):
                 assert len(branches) > 1, "pruning the only branch"
 
                 constraint_unsat = self.check_smt_unsat(branch_constraint)
-                rhs_shuffle = prop_gen.apply_iff_elim_left(prop_gen.shuffle_nested(kore.MLPattern.OR, rhs, i))
+                assert constraint_unsat is not None, \
+                       f"{branch_constraint} is not unsat"
+
+                rhs_shuffle = self.prop_gen.apply_iff_elim_left(self.prop_gen.shuffle_nested(kore.MLPattern.OR, rhs, i))
 
                 # connect with the existing claim
                 claim = self.composer.apply_kore_lemma(
@@ -1368,7 +1360,7 @@ class RewriteProofGenerator(ProofGenerator):
             return None
 
         # eliminate all universal quantifiers
-        instantiated_axiom = EqualityProofGenerator(self.composer) \
+        instantiated_axiom = self.eq_gen \
             .prove_functional_pattern_substitution(axiom, unification_result.substitution)
 
         # apply equations used in unification
@@ -1460,7 +1452,7 @@ class RewriteProofGenerator(ProofGenerator):
         """
         # with self.composer.new_context():
         # self.add_free_variable_sorting_hypotheses(pattern)
-        dummy_claim = PropositionalProofGenerator(self.composer).apply_implies_reflexivity(pattern)
+        dummy_claim = self.prop_gen.apply_implies_reflexivity(pattern)
         simplified_claim = self.simplify_pattern(dummy_claim, [0, 0])
         simplified_pattern, _ = KoreUtils.destruct_implies(simplified_claim.claim.pattern)
         return simplified_pattern
@@ -1502,8 +1494,7 @@ class RewriteProofGenerator(ProofGenerator):
                     axiom = self.find_anywhere_axiom_for_pattern(function_subpattern)
 
                 # finish up the rewriting by substituting in the rhs
-                provable = EqualityProofGenerator(self.composer
-                                                  ).replace_equal_subpattern(provable, path + function_path, axiom)
+                provable = self.eq_gen.replace_equal_subpattern(provable, path + function_path, axiom)
                 continue
 
             break
