@@ -204,7 +204,7 @@ def gen_proof(args: argparse.Namespace) -> None:
         else:
             gen_task(cache_dir, task_path, pgm)
 
-    ### step 4. generate proof object
+    ### step 3. generate proof object
     print(f"- generating proof")
 
     args.definition = kore_definition

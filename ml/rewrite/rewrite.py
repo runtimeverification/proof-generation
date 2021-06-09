@@ -22,7 +22,7 @@ from .disjointness import DisjointnessProofGenerator
 from .propositional import PropositionalProofGenerator
 from .substitution import SingleSubstitutionProofGenerator
 from .smt import SMTProofGenerator
-from .tasks import RewritingStep, RewritingTask, ConstrainedPattern, Substitution, AppliedRule
+from .tasks import RewritingStep, RewritingTask, ReachabilityTask, ConstrainedPattern, Substitution, AppliedRule
 
 ReachabilityType = str
 
@@ -65,11 +65,16 @@ class RewriteProofGenerator(ProofGenerator):
         rule_id = step.applied_rules[0].rule_id
         return rule_id is not None and rule_id.startswith("claim")
 
+    def prove_one_path_reachability_claims(
+        self,
+        tasks: Tuple[ReachabilityTask, ...],
+    ) -> None:
+        assert len(tasks) == 1, "not implemented"
+        self.prove_one_path_reachability_claim(tasks[0])
+
     def prove_one_path_reachability_claim(
         self,
-        circularity_claims: Tuple[kore.Claim, ...],
-        claim: kore.Claim,
-        steps: Tuple[RewritingStep, ...],
+        task: ReachabilityTask,
     ) -> None:
         """
         Prove a one-path reachability claim
@@ -77,23 +82,23 @@ class RewriteProofGenerator(ProofGenerator):
         and the hints
         """
 
-        assert len(circularity_claims) == 1 and circularity_claims[0] == claim, \
-               f"not implemented"
+        claim = self.composer.construct_claim(
+            KoreUtils.construct_one_path_reaches_plus(
+                task.lhs.as_pattern(),
+                task.rhs.as_pattern(),
+            ),
+        )
 
-        assert len(steps) != 0, "trivial claim is not supported"
+        assert len(task.steps) != 0, "trivial claim is not supported"
 
-        self.preprocess_steps(steps)
-
-        expected_lhs, _, goal, _ = self.destruct_rewrite_axiom(claim, separate_lhs=False, separate_rhs=False)
-        assert steps[0].initial.as_pattern() == expected_lhs, \
-               f"different initial patterns: {steps[0].initial.as_pattern()} != {expected_lhs}"
+        self.preprocess_steps(task.steps)
 
         print(f"### step 0")
-        symbolic_execution = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, 0, steps[0])
+        symbolic_execution = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, 0, task.steps[0])
 
         claim_steps = []
 
-        for i, step in enumerate(steps[1:], 1):
+        for i, step in enumerate(task.steps[1:], 1):
             if self.is_claim_application(step):
                 # claims will be resolved in the end
                 print(f"### step {i} is claim application, skipped")
@@ -105,6 +110,17 @@ class RewriteProofGenerator(ProofGenerator):
             symbolic_execution = self.connect_symbolic_steps(
                 kore.MLPattern.ONE_PATH_REACHES_PLUS, symbolic_execution, step_claim
             )
+
+        lhs, _ = KoreUtils.destruct_one_path_reaches_plus(symbolic_execution.claim.pattern)
+
+        # make the LHS of the symbolic execution same as the lhs of the claim
+        symbolic_execution = self.apply_reachability_subsumption_left(
+            self.prove_constrained_pattern_subsumption(
+                task.lhs,
+                ConstrainedPattern.from_pattern(lhs),
+            ),
+            symbolic_execution,
+        )
 
         # we first construct a generalized version of the claim by
         # universally quantify all variables
@@ -118,7 +134,9 @@ class RewriteProofGenerator(ProofGenerator):
 
         # proves RHS of the current claim => RHS of the goal claim, under the premise of quantified claim
         _, _, rhs, _ = self.destruct_rewrite_axiom(symbolic_execution, separate_lhs=False, separate_rhs=False)
-        transitivity2 = self.prove_one_path_subsumption_under_axiom(rhs, goal, quantified_claim, tuple(claim_steps))
+        transitivity2 = self.prove_one_path_subsumption_under_axiom(
+            rhs, task.rhs.as_pattern(), quantified_claim, tuple(claim_steps)
+        )
 
         final_claim = self.composer.apply_kore_lemma(
             "kore-reachability-one-path-transitivity",
@@ -128,12 +146,9 @@ class RewriteProofGenerator(ProofGenerator):
 
         # apply circularity
         final_claim = self.prove_circularity(final_claim)
-
         final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
 
         KoreUtils.pretty_print(final_claim.claim)
-
-        # TODO: apply circularity
 
     def prove_circularity(
         self,
@@ -813,7 +828,9 @@ class RewriteProofGenerator(ProofGenerator):
 
         # now we assume there are at least 2 branches in step1
 
-        rhs1_shuffle = self.prop_gen.apply_iff_elim_left(self.prop_gen.shuffle_nested(kore.MLPattern.OR, rhs1, lhs2_index))
+        rhs1_shuffle = self.prop_gen.apply_iff_elim_left(
+            self.prop_gen.shuffle_nested(kore.MLPattern.OR, rhs1, lhs2_index)
+        )
         step1 = self.apply_reachability_subsumption_right(step1, rhs1_shuffle)
 
         if reachability == kore.MLPattern.REWRITES_STAR:
