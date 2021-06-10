@@ -96,16 +96,17 @@ class RewriteProofGenerator(ProofGenerator):
         print(f"### step 0")
         symbolic_execution = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, 0, task.steps[0])
 
-        claim_steps = []
+        circularity_steps = []
 
         for i, step in enumerate(task.steps[1:], 1):
             if self.is_claim_application(step):
                 # claims will be resolved in the end
-                print(f"### step {i} is claim application, skipped")
-                claim_steps.append(step)
+                print(f"### step {i} uses circularity, skipped")
+                circularity_steps.append(step)
                 continue
             else:
                 print(f"### step {i}")
+                # TODO: add support for using another claim
             step_claim = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_STAR, i, step)
             symbolic_execution = self.connect_symbolic_steps(
                 kore.MLPattern.ONE_PATH_REACHES_PLUS, symbolic_execution, step_claim
@@ -135,7 +136,7 @@ class RewriteProofGenerator(ProofGenerator):
         # proves RHS of the current claim => RHS of the goal claim, under the premise of quantified claim
         _, _, rhs, _ = self.destruct_rewrite_axiom(symbolic_execution, separate_lhs=False, separate_rhs=False)
         transitivity2 = self.prove_one_path_subsumption_under_axiom(
-            rhs, task.rhs.as_pattern(), quantified_claim, tuple(claim_steps)
+            rhs, task.rhs.as_pattern(), quantified_claim, tuple(circularity_steps)
         )
 
         final_claim = self.composer.apply_kore_lemma(
@@ -232,39 +233,102 @@ class RewriteProofGenerator(ProofGenerator):
         initial: kore.Pattern,
         goal: kore.Pattern,
         axiom: kore.Claim,
-        claim_steps: Tuple[RewritingStep, ...],
+        circularity_steps: Tuple[RewritingStep, ...],
     ) -> ProvableClaim:
         """
         The finishing step of a reachability claim
         
         Prove that (at Kore level)
-        |- <body of the axiom> -> <disjunction> => <goal>
+        |- always (<body of the quantified axiom>) -> <disjunction> => <goal>
         """
 
         if KoreUtils.is_or(initial):
             left, right = KoreUtils.destruct_or(initial)
             return self.composer.apply_kore_lemma(
                 "kore-reachability-one-path-case-star",
-                self.prove_one_path_subsumption_under_axiom(left, goal, axiom, claim_steps),
-                self.prove_one_path_subsumption_under_axiom(right, goal, axiom, claim_steps),
+                self.prove_one_path_subsumption_under_axiom(left, goal, axiom, circularity_steps),
+                self.prove_one_path_subsumption_under_axiom(right, goal, axiom, circularity_steps),
             )
-
-        # if matches any claim steps, use the axiom rule
-        # otherwise try to prove subsumption directly
-        for step in claim_steps:
-            if step.initial.as_pattern() == initial:
-                # TODO: prove this
-                return self.composer.load_fresh_claim_placeholder(
-                    "reachability-axiom",
-                    KoreUtils.construct_implies(
-                        KoreUtils.construct_always(axiom.pattern),
-                        KoreUtils.construct_one_path_reaches_star(initial, goal),
-                    ),
-                )
 
         constrained_pattern1 = ConstrainedPattern.from_pattern(initial)
         constrained_pattern2 = ConstrainedPattern.from_pattern(goal)
 
+        # if matches any claim steps, use the axiom rule
+        for step in circularity_steps:
+            if step.initial.as_pattern() == initial:
+                # TODO: merge this with the usual process for instantiating axioms
+
+                substitution = step.applied_rules[0].get_substitution()
+                axiom_instantiation = self.eq_gen.apply_functional_substitution_as_implication(
+                    axiom.pattern, substitution
+                )
+
+                always_elim = self.composer.apply_kore_lemma(
+                    "kore-always-elim",
+                    goal=self.composer.construct_claim(
+                        KoreUtils.construct_implies(
+                            KoreUtils.construct_always(axiom.pattern),
+                            axiom.pattern,
+                        ),
+                    ),
+                )
+
+                axiom_instantiation = self.prop_gen.apply_implies_transitivity(
+                    always_elim,
+                    axiom_instantiation,
+                )
+
+                # simplify concrete function terms
+                axiom_instantiation = self.simplify_pattern(axiom_instantiation, [0, 1, 1])  # rhs
+                axiom_instantiation = self.simplify_pattern(axiom_instantiation, [0, 1, 0, 0])  # requires clause
+
+                # arrange the LHS to be initial
+                _, instantiated_reachability = KoreUtils.destruct_implies(axiom_instantiation.claim.pattern)
+                instantiated_lhs, _ = KoreUtils.destruct_one_path_reaches_plus(instantiated_reachability)
+
+                subsumption_lhs = self.prove_constrained_pattern_subsumption(
+                    constrained_pattern1,
+                    ConstrainedPattern.from_pattern(instantiated_lhs),
+                )
+
+                axiom_instantiation = self.composer.apply_kore_lemma(
+                    "kore-one-path-reaches-plus-subsumption-lhs-alt",
+                    subsumption_lhs,
+                    axiom_instantiation,
+                )
+
+                axiom_instantiation = self.composer.apply_kore_lemma(
+                    "kore-one-path-reaches-plus-constraint-lemma-alt",
+                    self.composer.apply_kore_lemma(
+                        "kore-one-path-reaches-plus-ignore-ensures-alt",
+                        axiom_instantiation,
+                    ),
+                )
+
+                # arrange the RHS to be goal
+                _, instantiated_reachability = KoreUtils.destruct_implies(axiom_instantiation.claim.pattern)
+                _, instantiated_rhs = KoreUtils.destruct_one_path_reaches_plus(instantiated_reachability)
+
+                subsumption_rhs = self.prove_constrained_pattern_subsumption(
+                    ConstrainedPattern.from_pattern(instantiated_rhs),
+                    constrained_pattern2,
+                )
+
+                axiom_instantiation = self.composer.apply_kore_lemma(
+                    "kore-one-path-reaches-plus-subsumption-rhs-alt",
+                    axiom_instantiation,
+                    subsumption_rhs,
+                )
+
+                # convert into one-path-reaches-star
+                axiom_instantiation = self.composer.apply_kore_lemma(
+                    "kore-one-path-reaches-star-intro-alt3",
+                    axiom_instantiation,
+                )
+
+                return axiom_instantiation
+
+        # otherwise try to prove subsumption directly
         constraint_unsat = self.check_smt_unsat(constrained_pattern1.get_constraint())
 
         if constraint_unsat is not None:
@@ -608,7 +672,7 @@ class RewriteProofGenerator(ProofGenerator):
         assert lhs_unification_result is not None, \
                f"unable to unify the LHS of {applied_rule.rule_id} with the initial pattern {initial.pattern}"
 
-        instantiated_axiom = self.eq_gen.prove_functional_pattern_substitution(
+        instantiated_axiom = self.eq_gen.apply_functional_substitution(
             rewrite_axiom,
             {
                 **rule_substitution.substitution,
@@ -1372,7 +1436,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # eliminate all universal quantifiers
         instantiated_axiom = self.eq_gen \
-            .prove_functional_pattern_substitution(axiom, unification_result.substitution)
+            .apply_functional_substitution(axiom, unification_result.substitution)
 
         # apply equations used in unification
         for equation, path in unification_result.applied_equations:

@@ -82,6 +82,14 @@ class MetamathUtils:
         return term.subterms
 
     @staticmethod
+    def destruct_is_predicate(term: Term) -> Terms:
+        return MetamathUtils.destruct_metamath_application("\\is-predicate", 1, term)
+
+    @staticmethod
+    def destruct_floor(term: Term) -> Terms:
+        return MetamathUtils.destruct_metamath_application("\\floor", 1, term)
+
+    @staticmethod
     def destruct_imp(term: Term) -> Terms:
         return MetamathUtils.destruct_metamath_application("\\imp", 2, term)
 
@@ -141,6 +149,10 @@ class MetamathUtils:
         return MetamathUtils.is_application_of_symbol("\\top", 0, term)
 
     @staticmethod
+    def is_floor(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\floor", 1, term)
+
+    @staticmethod
     def is_imp(term: Term) -> bool:
         return MetamathUtils.is_application_of_symbol("\\imp", 2, term)
 
@@ -159,6 +171,10 @@ class MetamathUtils:
     @staticmethod
     def is_exists(term: Term) -> bool:
         return MetamathUtils.is_application_of_symbol("\\exists", 2, term)
+
+    @staticmethod
+    def is_and(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\and", 2, term)
 
     @staticmethod
     def is_mu(term: Term) -> bool:
