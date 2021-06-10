@@ -385,6 +385,36 @@ kore-circularity-sorting $p |- ( \in-sort ( \kore-circularity ph0 ph1 ) ph0 ) $=
     $( apply "kore-all-path-next-sorting" $)
     ( kore-always-is-pattern kore-all-path-next-is-pattern kore-circularity-is-pattern in-sort-is-pattern notation-reflexivity kore-all-path-next-sorting kore-circularity-is-sugar notation-transitivity notation-in-sort notation-proof ) AABCDAFABEAFAABCHABEAAABCDAABEAABCDAABCDABIAABCDGJAGKL $.
 
+${
+    $d X Y ph0 $.
+    kore-well-founded-sorting $p |- ( \in-sort ( \kore-well-founded ph0 ) ph0 ) $=
+        $(
+            apply "notation-proof"
+            apply "kore-mu-sorting-alt"
+            meh
+            apply "notation-in-sort"
+            apply "kore-well-founded-is-sugar", X = "X"
+            apply "notation-reflexivity"
+            apply "notation-positive"
+            meh
+            apply "kore-circularity-is-sugar"
+            apply "notation-positive"
+            meh
+            apply "kore-all-path-next-is-sugar"
+            apply "notation-positive"
+            meh
+            apply "notation-kore-not"
+            apply "notation-reflexivity"
+            apply "notation-kore-next"
+            apply "notation-reflexivity"
+            apply "notation-kore-not"
+            apply "notation-reflexivity"
+            apply "kore-always-is-sugar", X = "Y"
+            positive
+        $)
+        ( X-is-element-var set-var-is-var var-is-pattern kore-always-is-pattern kore-not-is-pattern kore-all-path-next-is-pattern kore-next-is-pattern kore-circularity-is-pattern notation-reflexivity negative-disjoint notation-transitivity notation-positive positive-disjoint positive-in-var positive-in-kore-always negative-in-kore-not negative-in-kore-next positive-in-kore-not kore-all-path-next-is-sugar kore-circularity-is-sugar kore-mu-is-pattern in-sort-is-pattern kore-well-founded-is-pattern kore-mu-sorting-alt kore-well-founded-is-sugar notation-in-sort notation-proof ) AABCDIBAABCDEGABCDIBCAAAABCDEFHFAABCDEGBCAAAABCDEFHBCABCNAAABCDEFBCABCKAABCDEBCABCKABCDBCBCBCOPQRSAABCDEGAAAABCDEFHFAAAABCDEFHFAABCDETAAAABCDEFHFJLMABCDIAABCDEGAABCDEGABCDUAAABCDEGJLMUBAUCAUDAUCAABCDIBAABCDEGABCDIBCAAAABCDEFHFAABCDEGBCAAAABCDEFHBCABCNAAABCDEFBCABCKAABCDEBCABCKABCDBCBCBCOPQRSAABCDEGAAAABCDEFHFAAAABCDEFHFAABCDETAAAABCDEFHFJLMABCDIAABCDEGAABCDEGABCDUAAABCDEGJLMUEAUDAAABCDIBAABCDEGABCDIBCAAAABCDEFHFAABCDEGBCAAAABCDEFHBCABCNAAABCDEFBCABCKAABCDEBCABCKABCDBCBCBCOPQRSAABCDEGAAAABCDEFHFAAAABCDEFHFAABCDETAAAABCDEFHFJLMABCDIAABCDEGAABCDEGABCDUAAABCDEGJLMUBAABUFAJUGUH $.
+$}
+
 kore-one-path-reaches-star-sorting $p |- ( \imp ( \in-sort ph1 ph0 ) ( \in-sort ( \kore-one-path-reaches-star ph0 ph1 ph2 ) ph0 ) ) $=
     $(
         apply "proof-rule-mp"
@@ -404,4 +434,3 @@ kore-one-path-reaches-plus-sorting $p |- ( \imp ( \in-sort ph1 ph0 ) ( \in-sort 
         sorting
     $)
     ( in-sort-is-pattern kore-weak-evetually-is-pattern kore-next-is-pattern kore-one-path-reaches-plus-is-pattern kore-implies-is-pattern and-is-pattern imp-is-pattern top-is-pattern notation-reflexivity proof-rule-mp kore-implies-sorting kore-one-path-reaches-plus-is-sugar notation-transitivity notation-in-sort notation-imp notation-proof rule-curry premises-switch proof-rule-prop-1 kore-weak-eventually-sorting kore-next-sorting rule-imp-transitivity top-intro ) AACEFADBADABCGADJBADAACEFADABCGADBADAACEFADABCGADBADAACEFADIABAACEFHADJBADAACEFADIABCGADJABAACEFNBADAACEFADIABCGADBADAACEFADIABAACEFHADBADAACEFADILABCGAABAACEFHAABCGABAACEFHABAACEFHABCOABAACEFHLPALQRSTUAKAACEFADKACEADAACEFADACEADKACEADJACEADKUBACUCMAACEUDUEUFMM $.
-

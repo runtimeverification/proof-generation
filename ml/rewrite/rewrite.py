@@ -613,16 +613,6 @@ class RewriteProofGenerator(ProofGenerator):
 
         return theorem.as_proof()
 
-    # def get_equalities_in_constraint(self, constraint: kore.Pattern) -> Tuple[Tuple[kore.Pattern, kore.Pattern], ...]:
-    #     if KoreUtils.is_and(constraint):
-    #         left, right = KoreUtils.destruct_and(constraint)
-    #         return self.get_equalities_in_constraint(left) + self.get_equalities_in_constraint(right)
-    #     elif KoreUtils.is_equals(constraint):
-    #         left, right = KoreUtils.destruct_equals(constraint)
-    #         return (left, right),
-    #     else:
-    #         return ()
-
     def prove_symbolic_branch(
         self,
         reachability: ReachabilityType,

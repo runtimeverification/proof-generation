@@ -321,9 +321,10 @@ class PositiveTactic(Tactic):
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
-        assert len(
-            statement.terms
-        ) == 3 and statement.terms[0] == Application("#Positive"), f"not a #Positive or #Negative goal {statement}"
+        assert len(statement.terms) == 3 and \
+               (statement.terms[0] == Application("#Positive") or
+                statement.terms[0] == Application("#Negative")), \
+               f"not a #Positive or #Negative goal {statement}"
         self.proof = PositiveProver.prove_statement(state.composer, statement)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:

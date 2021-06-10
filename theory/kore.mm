@@ -129,7 +129,7 @@ $}
 kore-well-founded-is-pattern $a #Pattern ( \kore-well-founded ph0 ) $.
 ${
     $d X ph0 $.
-    kore-well-founded-is-sugar $a #Notation ( \kore-well-founded ph0 ) ( \kore-mu X ( \kore-circularity ph0 X ) ) $.
+    kore-well-founded-is-sugar $a #Notation ( \kore-well-founded ph0 ) ( \kore-mu ph0 X ( \kore-circularity ph0 X ) ) $.
 $}
 
 kore-rewrites-is-pattern $a #Pattern ( \kore-rewrites ph0 ph1 ph2 ) $.
