@@ -803,6 +803,10 @@ class Composer(Hookable):
 
         self.fresh_lemmas: Dict[str, Tuple[Theorem, Tuple[int, ...]]] = {}  # symbol -> [ (theorem, order of subterms) ]
 
+        self.positive_lemmas: Dict[Tuple[bool, str],
+                                   Tuple[Theorem,
+                                         Tuple[int, ...]]] = {}  # (sign, symbol) -> [ (theorem, order of subterms) ]
+
     def find_theorem(self, name: str) -> Optional[Theorem]:
         return self.theorems.get(name)
 

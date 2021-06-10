@@ -28,8 +28,8 @@ class EqualityProofGenerator(ProofGenerator):
         Universally quantify an indicated free variable
         """
 
-        assert variable in KoreUtils.get_free_variables(provable.claim), \
-               f"{variable} is not a free variable in {provable.claim}"
+        # assert variable in KoreUtils.get_free_variables(provable.claim), \
+        #        f"{variable} is not a free variable in {provable.claim}"
 
         goal = KoreUtils.construct_forall(variable, provable.claim.pattern)
 
@@ -51,17 +51,11 @@ class EqualityProofGenerator(ProofGenerator):
 
     def apply_forall_elim(self, provable: ProvableClaim) -> ProvableClaim:
         """
-        Remove the top level universal quantifier and let the
-        variable appear free
+        Remove the top level universal quantifier and let the variable appear free
         """
-        _, body = KoreUtils.destruct_forall(provable.claim.pattern)
-
-        # TODO: prove this
-
-        return self.composer.load_fresh_claim_placeholder(
-            "forall-elim",
-            body,
-        )
+        var, _ = KoreUtils.destruct_forall(provable.claim.pattern)
+        imp = self.apply_functional_substitution_as_implication(provable.claim.pattern, {var: var})
+        return PropositionalProofGenerator(self.composer).apply_mp(imp, provable)
 
     def eliminate_all_universal_quantifiers(self, provable: ProvableClaim) -> ProvableClaim:
         while KoreUtils.is_forall(provable.claim.pattern):
@@ -76,15 +70,37 @@ class EqualityProofGenerator(ProofGenerator):
         |- (forall x phi) -> (forall x psi)
         """
 
-        left, right = KoreUtils.destruct_implies(provable.claim.pattern)
+        lhs, _ = KoreUtils.destruct_implies(provable.claim.pattern)
 
-        goal = KoreUtils.construct_implies(
-            KoreUtils.construct_forall(variable, left),
-            KoreUtils.construct_forall(variable, right),
+        # |- ( \forall x phi ) -> phi
+        quantified_lhs = KoreUtils.construct_forall(variable, lhs)
+        forall_elim = self.apply_functional_substitution_as_implication(quantified_lhs, {variable: variable})
+
+        prop_gen = PropositionalProofGenerator(self.composer)
+
+        # |- ( \forall x phi ) -> psi
+        provable = prop_gen.apply_implies_transitivity(
+            forall_elim,
+            provable,
         )
 
-        # TODO: prove this
-        return self.composer.load_fresh_claim_placeholder("forall-compat", goal)
+        # |- ( \forall x ( \forall x phi ) -> psi )
+        provable = self.apply_forall_intro(provable, variable)
+
+        # |- ( \forall x phi ) -> ( \forall x psi )
+        provable = self.apply_prenex_implies_right(provable)
+
+        return provable
+
+        # left, right = KoreUtils.destruct_implies(provable.claim.pattern)
+
+        # goal = KoreUtils.construct_implies(
+        #     KoreUtils.construct_forall(variable, left),
+        #     KoreUtils.construct_forall(variable, right),
+        # )
+
+        # # TODO: prove this
+        # return self.composer.load_fresh_claim_placeholder("forall-compat", goal)
 
     def apply_prenex_implies_left(self, provable: ProvableClaim) -> ProvableClaim:
         """
