@@ -278,6 +278,26 @@ class SubstitutionProver:
                 ),
             )
 
+        if composer.are_terms_disjoint(before_pattern, subst_var):
+            # before_pattern is disjoint from subst_var
+            # this includes the case when before_pattern is a variable
+            # and is disjoint from subst_var
+            return SubstitutionProver.check_and_cache(
+                composer,
+                SubstitutionProver.modulo_notation(
+                    composer,
+                    after_pattern,
+                    before_pattern,
+                    subst_pattern,
+                    subst_var,
+                    proof=composer.get_theorem("substitution-disjoint").apply(
+                        xX=subst_var,
+                        ph0=before_pattern,
+                        ph1=subst_pattern,
+                    ),
+                ),
+            )
+
         if isinstance(before_pattern, Application) and \
            isinstance(after_pattern, Application):
             proof = SubstitutionProver.prove_application_substitution(
@@ -304,26 +324,6 @@ class SubstitutionProver:
                         xX=subst_var,
                         ph0=subst_pattern,
                         sg0=before_pattern,
-                    ),
-                ),
-            )
-
-        if composer.are_terms_disjoint(before_pattern, subst_var):
-            # before_pattern is disjoint from subst_var
-            # this includes the case when before_pattern is a variable
-            # and is disjoint from subst_var
-            return SubstitutionProver.check_and_cache(
-                composer,
-                SubstitutionProver.modulo_notation(
-                    composer,
-                    after_pattern,
-                    before_pattern,
-                    subst_pattern,
-                    subst_var,
-                    proof=composer.get_theorem("substitution-disjoint").apply(
-                        xX=subst_var,
-                        ph0=before_pattern,
-                        ph1=subst_pattern,
                     ),
                 ),
             )

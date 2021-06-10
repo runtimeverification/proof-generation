@@ -1,7 +1,7 @@
 from typing import List, Tuple, Mapping, Dict, Optional, Union
 
 from ml.kore import ast as kore
-from ml.kore.visitors import PatternVariableVisitor
+from ml.kore.visitors import PatternVariableVisitor, SortVariableVisitor
 from ml.kore.utils import KoreUtils, PatternPath
 
 from ml.metamath import ast as mm
@@ -10,6 +10,8 @@ from ml.metamath.utils import MetamathUtils
 from ml.metamath.auto.sorting import SortingProver
 from ml.metamath.auto.hypothesis import HypothesisProver
 from ml.metamath.auto.substitution import SubstitutionProver
+from ml.metamath.auto.fresh import FreshProver
+from ml.metamath.auto.predicate import PredicateProver
 
 from .env import ProofGenerator, ProvableClaim
 from .substitution import SingleSubstitutionProofGenerator
@@ -209,7 +211,59 @@ class EqualityProofGenerator(ProofGenerator):
             x=self.composer.encode_pattern(fresh_var),
         )
 
-    def prove_functional_pattern_substitution(
+    def apply_functional_substitution_as_implication(
+        self, pattern: kore.Pattern, substitution: Mapping[kore.Variable, kore.Pattern]
+    ) -> ProvableClaim:
+        """
+        Given a universally quantified pattern forall x. phi (at the kore level)
+        return a proof of
+        |- (forall x. phi) -> phi[psi/x]
+        """
+
+        free_vars = set()
+        for _, v in substitution.items():
+            free_vars.update(KoreUtils.get_free_variables(v))
+
+        fresh_var_substitution = {
+            free_var: kore.Variable(f"Fresh{free_var.name}", free_var.sort)
+            for free_var in free_vars
+        }
+
+        # replace all free variables in the substitutes by fresh variables
+        substitution = {
+            k: KoreUtils.copy_and_substitute_pattern(v, fresh_var_substitution)
+            for k, v in substitution.items()
+        }
+
+        claims = []
+
+        while len(substitution):
+            var, body = KoreUtils.destruct_forall(pattern)
+            assert var in substitution, \
+                   f"variable {var} not found in the substitution"
+
+            original_substitute = substitute = substitution[var]
+            del substitution[var]
+
+            functional_proof = self.composer.get_theorem("kore-functional").apply(
+                SortingProver.auto,
+                self.instantiate_claim_with_unit_sort(self.prove_functional(substitute)).proof,
+            )
+
+            claim = self.apply_functional_substitution_as_implication_raw(pattern, substitute, functional_proof)
+            claims.append(claim)
+
+            pattern = KoreUtils.copy_and_substitute_pattern(body, {var: original_substitute})
+
+        final_claim = PropositionalProofGenerator(self.composer).apply_implies_multiple_transitivity(*claims)
+
+        # restore the free variables
+        for k, v in fresh_var_substitution.items():
+            final_claim = self.rename_free_variable(final_claim, v, k.name)
+
+        return final_claim
+
+    def apply_functional_substitution(
         self, provable: ProvableClaim, substitution: Dict[kore.Variable, kore.Pattern]
     ) -> ProvableClaim:
         """
@@ -219,7 +273,7 @@ class EqualityProofGenerator(ProofGenerator):
 
         for k, v in sorted(substitution.items(), key=lambda t: t[0].name):
             functional_claim = self.prove_functional(v)
-            provable = self.apply_functional_substitution(
+            provable = self.apply_functional_substitution_raw(
                 provable,
                 k,
                 v,
@@ -231,7 +285,7 @@ class EqualityProofGenerator(ProofGenerator):
 
         return provable
 
-    def prove_sort_substitution(
+    def apply_sort_substitution(
         self, provable: ProvableClaim, substitution: Dict[kore.SortVariable, kore.Sort]
     ) -> ProvableClaim:
         """
@@ -250,7 +304,7 @@ class EqualityProofGenerator(ProofGenerator):
                 x=mm.Metavariable("x"),
             )
 
-            provable = self.apply_functional_substitution(
+            provable = self.apply_functional_substitution_raw(
                 provable,
                 sort_var,
                 sort,
@@ -301,7 +355,7 @@ class EqualityProofGenerator(ProofGenerator):
         # \forall{...}(X:<sort1>, ... = ...)
         # we need to substitute current_argument for X in the equation
         free_var, = KoreUtils.get_free_variables(inj_axiom_instance.claim)
-        inj_axiom_instance = self.prove_functional_pattern_substitution(inj_axiom_instance, {free_var: argument})
+        inj_axiom_instance = self.apply_functional_substitution(inj_axiom_instance, {free_var: argument})
 
         return EqualityProofGenerator(self.composer).replace_equal_subpattern(
             reduced_injection_is_functional,
@@ -345,7 +399,7 @@ class EqualityProofGenerator(ProofGenerator):
             for axiom_var, argument in zip(rhs.arguments, pattern.arguments):
                 assert isinstance(axiom_var, kore.Variable)
                 argument_is_functional = self.prove_functional(argument)
-                functional_axiom = self.apply_functional_substitution(
+                functional_axiom = self.apply_functional_substitution_raw(
                     functional_axiom,
                     axiom_var,
                     argument,
@@ -409,7 +463,7 @@ class EqualityProofGenerator(ProofGenerator):
             _,
         ) = self.composer.sort_injection_axiom.claim.sort_variables
 
-        return self.prove_sort_substitution(
+        return self.apply_sort_substitution(
             self.composer.sort_injection_axiom,
             {
                 sort_var1: sort1,
@@ -431,9 +485,111 @@ class EqualityProofGenerator(ProofGenerator):
 
         unit_sort_functional = self.composer.get_theorem("unit-sort-is-functional").apply(x=mm.Metavariable("x"))
 
-        return self.apply_functional_substitution(claim, sort_var, self.composer.unit_sort, unit_sort_functional)
+        return self.apply_functional_substitution_raw(claim, sort_var, self.composer.unit_sort, unit_sort_functional)
 
-    def apply_functional_substitution(
+    def rename_free_variable(self, claim: ProvableClaim, var: kore.Variable, new_name: str) -> ProvableClaim:
+        new_var = kore.Variable(new_name, var.sort)
+        new_claim = KoreUtils.copy_and_substitute_pattern(claim.claim, {var: new_var})
+
+        encoded_var = self.composer.encode_pattern(var)
+        encoded_new_var = self.composer.encode_pattern(new_var)
+        assert isinstance(encoded_var, mm.Metavariable) and \
+               isinstance(encoded_new_var, mm.Metavariable)
+
+        premise, _ = MetamathUtils.destruct_imp(self.composer.encode_pattern(claim.claim))
+        premise = premise.substitute({encoded_var.name: encoded_new_var})
+
+        _, encoded_new_claim_body = MetamathUtils.destruct_imp(self.composer.encode_pattern(new_claim))
+        encoded_new_claim = MetamathUtils.construct_imp(premise, encoded_new_claim_body)
+
+        proof = self.composer.get_theorem("fv-subst-left").apply(
+            claim.proof,
+            SubstitutionProver.auto,
+            FreshProver.auto,
+            x=encoded_var,
+            y=encoded_new_var,
+            ph1=encoded_new_claim,
+        )
+
+        return self.composer.construct_provable_claim(
+            new_claim,
+            proof,
+            sort_variables=list(KoreUtils.get_free_sort_variables(claim.claim)),
+        )
+
+    def apply_functional_substitution_as_implication_raw(
+        self,
+        pattern: kore.Pattern,
+        substitute: kore.Pattern,
+        functional_proof: Proof,
+    ) -> ProvableClaim:
+        """
+        Similar to apply_functional_substitution_raw but uses
+        a different implication form and only works for patterns
+        """
+
+        var, body = KoreUtils.destruct_forall(pattern)
+
+        assert var not in KoreUtils.get_free_variables(substitute), \
+               f"variable {var} is free in substitute {substitute}"
+
+        substituted_body = KoreUtils.copy_and_substitute_pattern(body, {var: substitute})
+
+        goal = self.composer.construct_claim(
+            KoreUtils.construct_implies(pattern, substituted_body),
+            sort_variables=list(KoreUtils.get_free_sort_variables(pattern)),
+        )
+
+        # th0
+        common_premise = MetamathUtils.construct_and(
+            KoreEncoder().encode_free_variable_premise(substitute),
+            KoreEncoder().encode_free_variable_premise(substituted_body),
+        )
+
+        # get the encoded goal WITHOUT the sorting premises
+        _, encoded_goal_body = MetamathUtils.destruct_imp(self.composer.encode_pattern(goal))
+
+        encoded_goal = MetamathUtils.construct_provable(
+            MetamathUtils.construct_imp(common_premise, encoded_goal_body),
+        )
+
+        functional_proof = self.composer.rearrange_sorting_premise(common_premise, functional_proof)
+
+        functional_proof_body = MetamathUtils.destruct_provable(functional_proof.conclusion)
+        if MetamathUtils.is_imp(functional_proof_body):
+            _, functional_proof_body = MetamathUtils.destruct_imp(functional_proof_body)
+
+        # get the kore level variable name to avoid conflict
+        functional_quant_var, _ = MetamathUtils.destruct_exists(functional_proof_body)
+        decoded_var = KoreDecoder(self.composer.module).decode_pattern(functional_quant_var, sort=var.sort)
+        assert isinstance(decoded_var, kore.Variable)
+        functional_var_name = decoded_var.name
+
+        free_vars = {var.name for var in PatternVariableVisitor().visit(goal)}
+        free_vars = free_vars.union({var.name for var in SortVariableVisitor().visit(goal)})
+        free_vars.add(functional_var_name)
+        fresh_var_name, = self.composer.gen_fresh_metavariables("#ElementVariable", 1, free_vars)
+
+        # z in the theorem
+        fresh_pattern_var = kore.Variable(fresh_var_name, var.sort)
+        dummy_claim = KoreUtils.copy_and_substitute_pattern(body, {var: fresh_pattern_var}, self.composer.module)
+        encoded_fresh_var = self.composer.encode_pattern(fresh_pattern_var)
+
+        proof = self.composer.get_theorem("functional-substitution-alt4").match_and_apply(
+            mm.StructuredStatement("", encoded_goal),
+            PredicateProver.auto,
+            functional_proof,
+            SortingProver.auto,
+            SortingProver.auto,
+            SubstitutionProver.auto,
+            SubstitutionProver.auto,
+            z=encoded_fresh_var,
+            ph3=self.composer.encode_pattern(dummy_claim),
+        )
+
+        return self.composer.construct_provable_claim(goal, proof)
+
+    def apply_functional_substitution_raw(
         self,
         original_claim: ProvableClaim,
         var: Union[kore.Variable, kore.SortVariable],

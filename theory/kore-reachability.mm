@@ -69,6 +69,12 @@ ${
 $}
 
 ${
+    kore-one-path-reaches-plus-ignore-ensures-alt.0 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
+    kore-one-path-reaches-plus-ignore-ensures-alt.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ( \kore-and ph0 ph2 ph3 ) ) ) ) ) $.
+    kore-one-path-reaches-plus-ignore-ensures-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ph3 ) ) ) ) $= ? $.
+$}
+
+${
     kore-rewrites-subsumption-lhs.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
     kore-rewrites-subsumption-lhs.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph2 ph3 ) ) ) $.
     kore-rewrites-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) ) $= ? $.
@@ -87,6 +93,13 @@ ${
     $( kore-rewrites-constraint-lemma.0 $e |- ( \kore-is-predicate ph0 ph1 ) $. $)
     kore-rewrites-constraint-lemma.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) $.
     kore-rewrites-constraint-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $= ? $.
+$}
+
+${
+    $( constraint before rewriting can be passed to the term after rewriting $)
+    $( kore-one-path-reaches-plus-constraint-lemma-alt.0 $e |- ( \kore-is-predicate ph0 ph1 ) $. $)
+    kore-one-path-reaches-plus-constraint-lemma-alt.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) ) $= ? $.
 $}
 
 ${
@@ -156,6 +169,13 @@ $}
 ${
     $d X ph0 $.
     $d X ph2 $.
+    kore-one-path-reaches-star-intro-alt3.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph3 ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ) ) $.
+    kore-one-path-reaches-star-intro-alt3   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph3 ( \kore-one-path-reaches-star ph0 ph1 ph2 ) ) ) ) $= ? $.
+$}
+
+${
+    $d X ph0 $.
+    $d X ph2 $.
     kore-one-path-reaches-plus-intro.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-plus ph0 ph1 ph2 ) ) ) $.
     kore-one-path-reaches-plus-intro   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ) $= ? $.
 $}
@@ -208,6 +228,18 @@ ${
 $}
 
 ${
+    kore-one-path-reaches-plus-subsumption-lhs-alt.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
+    kore-one-path-reaches-plus-subsumption-lhs-alt.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph2 ph3 ) ) ) ) $.
+    kore-one-path-reaches-plus-subsumption-lhs-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ph3 ) ) ) ) $= ? $.
+$}
+
+${
+    kore-one-path-reaches-plus-subsumption-rhs-alt.2 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ) ) $.
+    kore-one-path-reaches-plus-subsumption-rhs-alt.3 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph3 ) ) ) $.
+    kore-one-path-reaches-plus-subsumption-rhs-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ph3 ) ) ) ) $= ? $.
+$}
+
+${
     kore-one-path-reaches-star-branch.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-star ph0 ph1 ( \kore-or ph0 ph2 ph3 ) ) ) ) $.
     kore-one-path-reaches-star-branch.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-star ph0 ph2 ph4 ) ) ) $.
     kore-one-path-reaches-star-branch   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-star ph0 ph1 ( \kore-or ph0 ph4 ph3 ) ) ) ) $= ? $.
@@ -236,9 +268,9 @@ ${
     kore-reachability-one-path-circularity-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-well-founded ph0 ) ph1 ) ) ) $= ? $.
 $}
 
-${
-    kore-reachability-permits-non-wf $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-implies ph0 ( \kore-well-founded ph0 ) ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ) $= ? $.
-$}
+kore-reachability-permits-non-wf $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-implies ph0 ( \kore-well-founded ph0 ) ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ) $= ? $.
+
+kore-always-elim $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-always ph0 ph1 ) ph1 ) ) $= ? $.
 
 $( ${
     kore-implies-compat-in-kore-forall.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.

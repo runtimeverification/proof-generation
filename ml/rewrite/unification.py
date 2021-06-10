@@ -164,7 +164,7 @@ class InjectionCombine(Equation):
         free_var, = free_vars
 
         inj_axiom_instance = EqualityProofGenerator(self.composer) \
-            .prove_functional_pattern_substitution(inj_axiom_instance, { free_var: subsubpattern.arguments[0] })
+            .apply_functional_substitution(inj_axiom_instance, { free_var: subsubpattern.arguments[0] })
 
         return EqualityProofGenerator(self.composer).replace_equal_subpattern(provable, path, inj_axiom_instance)
 
@@ -202,7 +202,7 @@ class InjectionSplit(Equation):
         free_var, = free_vars
 
         inj_axiom_instance = EqualityProofGenerator(self.composer) \
-            .prove_functional_pattern_substitution(inj_axiom_instance, { free_var: argument })
+            .apply_functional_substitution(inj_axiom_instance, { free_var: argument })
 
         eq_proof_gen = EqualityProofGenerator(self.composer)
 
@@ -237,7 +237,7 @@ class MapCommutativity(Equation):
 
         subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
         axiom_instance = EqualityProofGenerator(self.composer) \
-            .prove_functional_pattern_substitution(comm_axiom, subst)
+            .apply_functional_substitution(comm_axiom, subst)
 
         return EqualityProofGenerator(self.composer).replace_equal_subpattern(
             provable,
@@ -297,7 +297,7 @@ class MapAssociativity(Equation):
             }
 
         axiom_instance = EqualityProofGenerator(self.composer) \
-            .prove_functional_pattern_substitution(assoc_axiom, subst)
+            .apply_functional_substitution(assoc_axiom, subst)
 
         eq_proof_gen = EqualityProofGenerator(self.composer)
 
@@ -349,7 +349,7 @@ class MapRightUnit(Equation):
             subst = {var: KoreTemplates.get_map_merge_left(subpattern)}
 
         axiom_instance = EqualityProofGenerator(self.composer) \
-            .prove_functional_pattern_substitution(right_unit_axiom, subst)
+            .apply_functional_substitution(right_unit_axiom, subst)
 
         eq_proof_gen = EqualityProofGenerator(self.composer)
 
@@ -516,7 +516,8 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         Losely following https://github.com/kframework/kore/blob/master/docs/2018-11-12-Unification.md
         """
         algorithms = (
-            # self.unify_additional_equations,
+            self.unify_same_patterns,
+            self.unify_unevaluated_functions,
             self.unify_vars,
             self.unify_applications,
             self.unify_ml_patterns,
@@ -525,13 +526,17 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
             self.unify_right_duplicate_conjunction,
             self.unify_distinct_inj,
             self.unify_concrete_map_patterns,
-            self.unify_unevaluated_functions,
         )
         for algo in algorithms:
             result = algo(pattern1, pattern2)
             if result is not None:
                 return result
 
+        return None
+
+    def unify_same_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        if pattern1 == pattern2:
+            return UnificationResult()
         return None
 
     def unify_vars(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
@@ -542,9 +547,6 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
 
         if not isinstance(pattern1, kore.Variable) and not isinstance(pattern2, kore.Variable):
             return None
-
-        if pattern1 == pattern2:
-            return UnificationResult()
 
         if self.disable_substitution:
             return None
