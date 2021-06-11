@@ -196,11 +196,10 @@ def gen_proof(args: argparse.Namespace) -> None:
             kprove_dir, = kprove_dirs
 
             tmp_spec_kore_file = os.path.join(kprove_dir, "spec.kore")
+            preprocess_spec_file(spec_module, tmp_spec_kore_file)
             shutil.move(tmp_spec_kore_file, spec_kore_file)
 
             os.chdir(original_cwd)
-
-        preprocess_spec_file(spec_module, spec_kore_file)
 
     ### Step 3. Run kore-exec --prove on the spec and produce hints
     kore_definition = os.path.join(kompiled_dir, "definition.kore")
