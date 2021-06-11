@@ -23,10 +23,6 @@ class SMTProofGenerator(ProofGenerator):
         "Lbl'UndsEqlsSlshEqls'K'Unds'": lambda a, b: z3.Not(a == b),
     }
 
-    def __init__(self, composer: KoreComposer):
-        super().__init__(composer)
-        self.smt_query_counter = 0
-
     def check_validity(self, predicate: Union[kore.Pattern, kore.Claim]) -> Optional[ProvableClaim]:
         """
         Check that the given predicate, when encoded in FOL, is valid
@@ -43,9 +39,7 @@ class SMTProofGenerator(ProofGenerator):
 
         if solver.check() == z3.unsat:
             print("smt query unsat:", encoded_predicate)
-            counter = self.smt_query_counter
-            self.smt_query_counter += 1
-            return self.composer.load_fresh_claim_placeholder(f"smt-query-{counter}", predicate)
+            return self.composer.load_fresh_claim_placeholder(f"smt-query", predicate)
         else:
             print("smt query sat:", encoded_predicate)
             return None

@@ -1225,75 +1225,100 @@ class RewriteProofGenerator(ProofGenerator):
 
     def prove_negation_requires(self, pattern: kore.Pattern) -> Optional[ProvableClaim]:
         r"""
-        Try to prove ( \kore-not <pattern> )
+        Try to prove |- ( \kore-not <pattern> )
         """
 
-        # TODO: prove this
-        return self.composer.load_fresh_claim_placeholder(
-            "disjointness",
-            self.composer.construct_claim(KoreUtils.construct_not(pattern)),
-        )
+        if KoreUtils.is_bottom(pattern):
+            return self.composer.apply_kore_lemma(
+                "kore-not-bot",
+                goal=self.composer.construct_claim(KoreUtils.construct_not(pattern)),
+            )
 
-        # if isinstance(pattern, kore.MLPattern):
-        #     if pattern.construct == kore.MLPattern.OR:
-        #         # reduce to proving each disjunct is bottom
-        #         left, right = pattern.arguments
+        elif KoreUtils.is_top(pattern):
+            return None
 
-        #         left_proof = self.prove_negation_requires(left)
-        #         right_proof = self.prove_negation_requires(right)
+        elif KoreUtils.is_or(pattern):
+            left, right = KoreUtils.destruct_or(pattern)
+            left_proof = self.prove_negation_requires(left)
+            if left_proof is None:
+                return None
 
-        #         if left_proof is None or right_proof is None:
-        #             return None
+            right_proof = self.prove_negation_requires(right)
+            if right_proof is None:
+                return None
 
-        #         return self.composer.get_theorem("kore-de-morgan-alt").apply(
-        #             left_proof,
-        #             right_proof,
-        #         )
+            return self.composer.apply_kore_lemma("kore-de-morgan-alt", left_proof, right_proof)
 
-        #     elif pattern.construct == kore.MLPattern.BOTTOM:
-        #         encoded_sort = self.composer.encode_pattern(pattern.sorts[0])
-        #         return self.composer.get_theorem("kore-not-bot").apply(ph0=encoded_sort, )
+        elif KoreUtils.is_and(pattern):
+            left, right = KoreUtils.destruct_and(pattern)
 
-        #     elif pattern.construct == kore.MLPattern.EXISTS:
-        #         # disjointness condition
-        #         # right now we only support one variable with no side condition
+            left_proof = self.prove_negation_requires(left)
+            if left_proof is not None:
+                return self.composer.apply_kore_lemma(
+                    "kore-or-intro-left-alt",
+                    left_proof,
+                    ph2=right,
+                )
 
-        #         _, body = pattern.arguments
+            right_proof = self.prove_negation_requires(right)
+            if right_proof is not None:
+                return self.composer.apply_kore_lemma(
+                    "kore-or-intro-right-alt",
+                    right_proof,
+                    ph1=left,
+                )
 
-        #         # the following chunk of nonsense basically
-        #         # checks that body is of the form
-        #         # top /\ (<inner condition> /\ top)
-        #         try:
-        #             top, right = KoreUtils.destruct_and(body)
-        #             assert KoreUtils.is_top(top)
-        #             condition, top = KoreUtils.destruct_and(right)
-        #             assert KoreUtils.is_top(top)
+            return None
 
-        #             if KoreUtils.is_ceil(condition):
-        #                 # ( \ceil ( \and <left> <right> ) )
-        #                 lemma = "owise-var-1-cond-0"
-        #                 condition, = KoreUtils.destruct_ceil(condition)
-        #                 left, right = KoreUtils.destruct_and(condition)
-        #             else:
-        #                 # ( \in <left> <right> )
-        #                 lemma = "owise-var-1-cond-0-alt"
-        #                 left, right = KoreUtils.destruct_in(condition)
+        elif KoreUtils.is_exists(pattern):
+            quantified_variables = []
+            stripped_pattern = pattern
 
-        #             claim = self.composer.construct_claim(KoreUtils.construct_not(pattern))
+            while KoreUtils.is_exists(stripped_pattern):
+                var, stripped_pattern = KoreUtils.destruct_exists(stripped_pattern)
+                quantified_variables.append(var)
 
-        #             print("> proving disjointness claim")
-        #             disjoint_proof = self.disjoint_gen.prove_disjointness(left, right)
+            # prove the free-var version
+            disjointness = self.prove_negation_requires(stripped_pattern)
+            if disjointness is None:
+                return None
 
-        #             return self.composer.get_theorem(lemma).match_and_apply(
-        #                 self.composer.encode_metamath_statement(claim),
-        #                 disjoint_proof,
-        #             )
-        #         except:
-        #             pass
+            # quantify all variables and convert to exists
+            for var in quantified_variables[::-1]:
+                disjointness = self.eq_gen.apply_forall_intro(disjointness, var)
+                disjointness = self.composer.apply_kore_lemma(
+                    "kore-forall-not-to-exists",
+                    disjointness,
+                )
 
-        #     print(f"!!! unable to prove the validity of the negation of {pattern}")
+            return disjointness
 
-        # return None
+        elif KoreUtils.is_in(pattern):
+            left, right = KoreUtils.destruct_in(pattern)
+            encoded_output_sort = self.composer.encode_pattern(KoreUtils.infer_sort(pattern))
+            encoded_input_sort = self.composer.encode_pattern(KoreUtils.infer_sort(left))
+
+            # |- ( \not ( \and ... ( \sorted-exists x ph0 ... ) ) )
+            try:
+                proof = self.disjoint_gen.prove_disjointness(left, right)
+            except Exception as e:
+                print(f"failed to prove the disjointness of {left} and {right}: {e}")
+                return None
+
+            # |- ( \imp ( \in-sort x ph0 ) ( \not ( \and ... ... ) ) )
+            proof = self.composer.get_theorem("disjointness-exists").apply(proof)
+
+            # |- ( \imp ( \in-sort x ph0 ) ( \kore-valid R ( \kore-not R ( \kore-in ph0 R ... ... ) ) ) )
+            proof = self.composer.get_theorem("disjointness-to-not-in").apply(
+                proof, ph0=encoded_input_sort, ph3=encoded_output_sort
+            )
+
+            return self.composer.construct_provable_claim(
+                claim=KoreUtils.construct_not(pattern),
+                proof=proof,
+            )
+
+        return None
 
     def prove_equality(self, pattern: kore.MLPattern) -> Optional[ProvableClaim]:
         """
