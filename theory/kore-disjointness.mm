@@ -1,6 +1,7 @@
 $[ theory/kore.mm $]
 
 ${
+    $d x ph1 $.
     disjointness-exists.0 $e |- ( \not ( \and ph1 ( \sorted-exists x ph2 ph3 ) ) ) $.
     disjointness-exists   $p |- ( \imp ( \in-sort x ph2 ) ( \not ( \and ph1 ph3 ) ) ) $= ? $.
 $}

@@ -4,6 +4,7 @@ import copy
 
 from typing import List, Tuple, NewType, Optional, Mapping, Dict, Union, Iterable
 from dataclasses import dataclass, field
+from abc import ABC, abstractmethod
 
 from ml.kore import ast as kore
 from ml.kore.visitors import FreePatternVariableVisitor
@@ -61,6 +62,12 @@ class UnificationResult:
 
     def prepend_equation(self, equation: Equation, path: PatternPath) -> UnificationResult:
         return UnificationResult(self.substitution, [(equation, path)] + self.applied_equations)
+
+    def append_equations(self, equations: List[Tuple[Equation, PatternPath]]) -> UnificationResult:
+        return UnificationResult(self.substitution, self.applied_equations + equations)
+
+    def prepend_equations(self, equations: List[Tuple[Equation, PatternPath]]) -> UnificationResult:
+        return UnificationResult(self.substitution, equations + self.applied_equations)
 
     def inverse_equations(self) -> UnificationResult:
         return UnificationResult(self.substitution, [(eqn.get_inverse(), path) for eqn, path in self.applied_equations])
@@ -363,12 +370,16 @@ class MapRightUnit(Equation):
         )
 
 
-class MapUnificationMixin:
+class MapUnificationMixin(ABC):
     """
     A mixin class for map unification
     """
 
     composer = None  # type: KoreComposer
+
+    @abstractmethod
+    def unify_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        ...
 
     def bubble_smallest_map_pattern(self,
                                     pattern: kore.Pattern) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
@@ -441,6 +452,50 @@ class MapUnificationMixin:
 
         return sorted_pattern, applied_eqs
 
+    def unify_concrete_map_pattern_children(self, pattern1: kore.Pattern,
+                                            pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        if KoreTemplates.is_map_unit_pattern(pattern1) and \
+           KoreTemplates.is_map_unit_pattern(pattern2):
+            return UnificationResult()
+
+        if KoreTemplates.is_map_mapsto_pattern(pattern1) and \
+           KoreTemplates.is_map_mapsto_pattern(pattern2):
+            assert isinstance(pattern1, kore.Application) and \
+                   isinstance(pattern2, kore.Application)
+            k1, v1 = pattern1.arguments
+            k2, v2 = pattern2.arguments
+
+            if k1 != k2:
+                return None
+
+            result = self.unify_patterns(v1, v2)
+            if result is None:
+                return result
+
+            return result.prepend_path(1)
+
+        if KoreTemplates.is_map_merge_pattern(pattern1) and \
+           KoreTemplates.is_map_merge_pattern(pattern2):
+            left1 = KoreTemplates.get_map_merge_left(pattern1)
+            left2 = KoreTemplates.get_map_merge_left(pattern2)
+
+            right1 = KoreTemplates.get_map_merge_right(pattern1)
+            right2 = KoreTemplates.get_map_merge_right(pattern2)
+
+            unification1 = self.unify_concrete_map_pattern_children(left1, left2)
+            if unification1 is None:
+                return None
+            unification1 = unification1.prepend_path(0)
+
+            unification2 = self.unify_concrete_map_pattern_children(right1, right2)
+            if unification2 is None:
+                return None
+            unification2 = unification2.prepend_path(1)
+
+            return unification1.merge(unification2)
+
+        return None
+
     def unify_concrete_map_patterns(self, pattern1: kore.Pattern,
                                     pattern2: kore.Pattern) -> Optional[UnificationResult]:
         """
@@ -454,26 +509,13 @@ class MapUnificationMixin:
         pattern1_sorted, applied_eqs1 = self.sort_map_pattern(pattern1)
         pattern2_sorted, applied_eqs2 = self.sort_map_pattern(pattern2)
 
-        if pattern1_sorted != pattern2_sorted:
+        unification = self.unify_concrete_map_pattern_children(pattern1_sorted, pattern2_sorted)
+        if unification is None:
             return None
 
-        return UnificationResult({}, applied_eqs1 + [(eq.get_inverse(), path) for eq, path in applied_eqs2[::-1]])
+        reversed_eqs2 = [(eq.get_inverse(), path) for eq, path in applied_eqs2[::-1]]
 
-
-# @dataclass
-# class AdditionalEquation(Equation):
-#     """
-#     This serves as an indicator to the caller
-#     of the unification generator where an
-#     additional equation (equations in the constraint)
-#     is applied during unification
-#     """
-#     def __init__(self, composer: KoreComposer, equation_index: int, reverse: bool):
-#         super().__init__(composer)
-#         self.equation_index = equation_index
-#         self.reverse = reverse
-#         # reverse = False: apply the equation from left to right
-#         # reverse = True: apply the equataion from right to left
+        return unification.prepend_equations(applied_eqs1).append_equations(reversed_eqs2)
 
 
 @dataclass
