@@ -577,6 +577,10 @@ class KoreUtils:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.FORALL
 
     @staticmethod
+    def is_exists(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.EXISTS
+
+    @staticmethod
     def is_equals(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.EQUALS
 

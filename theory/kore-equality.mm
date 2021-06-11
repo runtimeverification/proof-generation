@@ -688,3 +688,9 @@ ${
     kore-forall-prenex-implies-right.0 $e #Fresh x ph1 $.
     kore-forall-prenex-implies-right   $p |- ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-forall ph3 ph0 x ( \kore-implies ph0 ph1 ph2 ) ) ( \kore-implies ph0 ph1 ( \kore-forall ph3 ph0 x ph2 ) ) ) ) $= ? $.
 $}
+
+${
+    $d x ph0 $.
+    kore-forall-not-to-exists.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-forall ph1 ph0 x ( \kore-not ph0 ph2 ) ) ) ) $.
+    kore-forall-not-to-exists   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-not ph0 ( \kore-exists ph1 ph0 x ph2 ) ) ) ) $= ? $.
+$}
