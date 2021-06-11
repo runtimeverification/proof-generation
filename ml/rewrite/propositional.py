@@ -323,3 +323,17 @@ class PropositionalProofGenerator(ProofGenerator):
             implication,
             premise,
         )
+
+    def apply_and_elim_left(self, pattern: kore.Pattern) -> ProvableClaim:
+        left, _ = KoreUtils.destruct_and(pattern)
+        return self.composer.apply_kore_lemma(
+            "kore-and-elim-left-alt3",
+            goal=self.composer.construct_claim(KoreUtils.construct_implies(pattern, left)),
+        )
+
+    def apply_and_elim_right(self, pattern: kore.Pattern) -> ProvableClaim:
+        _, right = KoreUtils.destruct_and(pattern)
+        return self.composer.apply_kore_lemma(
+            "kore-and-elim-right-alt3",
+            goal=self.composer.construct_claim(KoreUtils.construct_implies(pattern, right)),
+        )

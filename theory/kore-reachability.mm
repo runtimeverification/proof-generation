@@ -62,17 +62,17 @@ ${
     kore-rewrites-plus-branch   $p |- ( \imp th0  ( \kore-valid ph0 ( \kore-rewrites-plus ph0 ph1 ( \kore-or ph0 ph4 ph3 ) ) ) ) $= ? $.
 $}
 
-${
+$( ${
     kore-rewrites-ignore-ensures.0 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
     kore-rewrites-ignore-ensures.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ( \kore-and ph0 ph2 ph3 ) ) ) ) $.
     kore-rewrites-ignore-ensures   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) ) $= ? $.
-$}
+$} $)
 
-${
+$( ${
     kore-one-path-reaches-plus-ignore-ensures-alt.0 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
     kore-one-path-reaches-plus-ignore-ensures-alt.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ( \kore-and ph0 ph2 ph3 ) ) ) ) ) $.
     kore-one-path-reaches-plus-ignore-ensures-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ph3 ) ) ) ) $= ? $.
-$}
+$} $)
 
 ${
     kore-rewrites-subsumption-lhs.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
@@ -93,6 +93,13 @@ ${
     $( kore-rewrites-constraint-lemma.0 $e |- ( \kore-is-predicate ph0 ph1 ) $. $)
     kore-rewrites-constraint-lemma.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) $.
     kore-rewrites-constraint-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $= ? $.
+$}
+
+${
+    $( constraint before rewriting can be passed to the term after rewriting $)
+    $( kore-one-path-reaches-plus-constraint-lemma-alt.0 $e |- ( \kore-is-predicate ph0 ph1 ) $. $)
+    kore-one-path-reaches-plus-constraint-lemma.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $= ? $.
 $}
 
 ${
@@ -157,8 +164,8 @@ $}
 ${
     $d X ph0 $.
     $d X ph2 $.
-    kore-one-path-reaches-star-intro-alt.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-plus ph0 ph1 ph2 ) ) ) $.
-    kore-one-path-reaches-star-intro-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ) $= ? $.
+    kore-one-path-reaches-star-intro-alt.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ph1 ph2 ) ) ) $.
+    kore-one-path-reaches-star-intro-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-star ph0 ph1 ph2 ) ) ) $= ? $.
 $}
 
 ${
