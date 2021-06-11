@@ -531,6 +531,9 @@ class ConstraintEquation(Equation):
         self.lhs = lhs
         self.rhs = rhs
 
+    def get_inverse(self) -> Equation:
+        return ConstraintEquation(self.composer, self.rhs, self.lhs)
+
 
 class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
     def __init__(

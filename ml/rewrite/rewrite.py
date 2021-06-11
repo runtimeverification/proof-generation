@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Mapping, Union, Set
+from typing import Optional, List, Tuple, Mapping, Union, Set, Dict
 from enum import Enum
 
 from traceback import print_exc
@@ -58,24 +58,79 @@ class RewriteProofGenerator(ProofGenerator):
         self.prop_gen = PropositionalProofGenerator(composer)
         self.eq_gen = EqualityProofGenerator(composer)
 
-    def is_claim_application(self, step: RewritingStep) -> bool:
-        if len(step.applied_rules) != 1:
-            return False
-
-        rule_id = step.applied_rules[0].rule_id
-        return rule_id is not None and rule_id.startswith("claim")
+        self.proved_claims: Dict[str, ProvableClaim] = {}
 
     def prove_one_path_reachability_claims(
         self,
         tasks: Tuple[ReachabilityTask, ...],
     ) -> None:
-        assert len(tasks) == 1, "not implemented"
-        self.prove_one_path_reachability_claim(tasks[0])
+        claim_to_task: Dict[str, ReachabilityTask] = {}
+        claim_dependency: Dict[str, List[str]] = {}
+
+        for task in tasks:
+            claim_dependency[task.claim_id] = []
+            claim_to_task[task.claim_id] = task
+
+            for step in task.steps:
+                for rule in step.applied_rules:
+                    if rule.rule_id is not None and rule.rule_id.startswith("claim-"):
+                        # ignore self-loops
+                        if task.claim_id != rule.rule_id:
+                            claim_dependency[task.claim_id].append(rule.rule_id)
+
+        sorted_claims = self.sort_dependency_graph(claim_dependency)
+        assert sorted_claims is not None, \
+               f"cycle in the claim dependency graph"
+
+        for claim_id in sorted_claims:
+            print(f"### proving {claim_id}")
+            proved_claim = self.prove_one_path_reachability_claim(claim_to_task[claim_id])
+            self.proved_claims[claim_id] = proved_claim
+
+    def sort_dependency_graph(self, dependency: Dict[str, List[str]]) -> Optional[List[str]]:
+        """
+        Do a topological sort
+
+        a -> b in dep if a depends on b
+        """
+        sources = []
+        sorted_list = []
+
+        dependency = dependency.copy()
+        inverse_dependency: Dict[str, List[str]] = {node: [] for node in dependency}
+
+        for node, deps in dependency.items():
+            for dep in deps:
+                inverse_dependency[dep].append(node)
+
+        for node, deps in dependency.items():
+            if len(deps) == 0:
+                sources.append(node)
+
+        sources.sort()  # make this more deterministic
+
+        while len(sources):
+            node = sources.pop()
+            sorted_list.append(node)
+
+            deps = inverse_dependency[node]
+            del inverse_dependency[node]
+
+            for dep in deps:
+                dependency[dep].remove(node)
+                if dependency[dep] == []:
+                    sources.append(dep)
+
+        if len(inverse_dependency) != 0:
+            return None
+
+        else:
+            return sorted_list
 
     def prove_one_path_reachability_claim(
         self,
         task: ReachabilityTask,
-    ) -> None:
+    ) -> ProvableClaim:
         """
         Prove a one-path reachability claim
         using the given cirularity claims
@@ -94,12 +149,12 @@ class RewriteProofGenerator(ProofGenerator):
         self.preprocess_steps(task.steps)
 
         print(f"### step 0")
-        symbolic_execution = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, 0, task.steps[0])
+        symbolic_execution = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, task.steps[0])
 
         circularity_steps = []
 
         for i, step in enumerate(task.steps[1:], 1):
-            if self.is_claim_application(step):
+            if len(step.applied_rules) == 1 and step.applied_rules[0].rule_id == task.claim_id:
                 # claims will be resolved in the end
                 print(f"### step {i} uses circularity, skipped")
                 circularity_steps.append(step)
@@ -107,7 +162,7 @@ class RewriteProofGenerator(ProofGenerator):
             else:
                 print(f"### step {i}")
                 # TODO: add support for using another claim
-            step_claim = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_STAR, i, step)
+            step_claim = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_STAR, step)
             symbolic_execution = self.connect_symbolic_steps(
                 kore.MLPattern.ONE_PATH_REACHES_PLUS, symbolic_execution, step_claim
             )
@@ -147,9 +202,11 @@ class RewriteProofGenerator(ProofGenerator):
 
         # apply circularity
         final_claim = self.prove_circularity(final_claim)
-        final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
+        final_claim = self.composer.load_provable_claim_as_theorem(f"goal-{task.claim_id}", final_claim)
 
         KoreUtils.pretty_print(final_claim.claim)
+
+        return final_claim
 
     def prove_circularity(
         self,
@@ -284,7 +341,7 @@ class RewriteProofGenerator(ProofGenerator):
 
                 # arrange the LHS to be initial
                 _, instantiated_reachability = KoreUtils.destruct_implies(axiom_instantiation.claim.pattern)
-                instantiated_lhs, _ = KoreUtils.destruct_one_path_reaches_plus(instantiated_reachability)
+                instantiated_lhs, instantiated_rhs = KoreUtils.destruct_one_path_reaches_plus(instantiated_reachability)
 
                 subsumption_lhs = self.prove_constrained_pattern_subsumption(
                     constrained_pattern1,
@@ -297,12 +354,16 @@ class RewriteProofGenerator(ProofGenerator):
                     axiom_instantiation,
                 )
 
+                # remove ensures clause
+                axiom_instantiation = self.composer.apply_kore_lemma(
+                    "kore-one-path-reaches-plus-subsumption-rhs-alt",
+                    axiom_instantiation,
+                    self.prop_gen.apply_and_elim_right(instantiated_rhs),
+                )
+
                 axiom_instantiation = self.composer.apply_kore_lemma(
                     "kore-one-path-reaches-plus-constraint-lemma-alt",
-                    self.composer.apply_kore_lemma(
-                        "kore-one-path-reaches-plus-ignore-ensures-alt",
-                        axiom_instantiation,
-                    ),
+                    axiom_instantiation,
                 )
 
                 # arrange the RHS to be goal
@@ -566,20 +627,31 @@ class RewriteProofGenerator(ProofGenerator):
 
         return self.composer.load_provable_claim_as_theorem(f"pattern-subsumption-{counter}", claim)
 
-    def remove_ensures(
-        self,
-        rewrite_claim: ProvableClaim,
-    ) -> ProvableClaim:
-        """
-        Removes the ensure clause from a rewrite claim
-        """
-        _, _, _, ensures = self.destruct_rewrite_axiom(rewrite_claim, separate_lhs=False)
-        assert ensures is not None
+    # def apply_reachability_ensure_removal(self, claim: ProvableClaim) -> ProvableClaim:
+    #     """
+    #     Removes the ensure clause from a rewrite claim
+    #     """
+    #     pass
 
-        if not KoreUtils.is_top(ensures):
-            print(f"> warning: non-top ensures clause ignored: {ensures}")
+    # def remove_ensures(
+    #     self,
+    #     rewrite_claim: ProvableClaim,
+    # ) -> ProvableClaim:
+    #     """
+    #     Removes the ensure clause from a rewrite claim
+    #     """
+    #     _, _, rhs, ensures = self.destruct_rewrite_axiom(rewrite_claim)
+    #     assert ensures is not None
 
-        return self.composer.apply_kore_lemma("kore-rewrites-ignore-ensures", rewrite_claim)
+    #     if not KoreUtils.is_top(ensures):
+    #         print(f"> warning: non-top ensures clause ignored: {ensures}")
+
+    #     self.prove_constrained_pattern_subsumption(
+    #         ConstrainedPattern(rhs),
+    #         ConstrainedPattern(rhs, ensures)
+    #     )
+
+    #     return self.composer.apply_kore_lemma("kore-rewrites-ignore-ensures", rewrite_claim)
 
     def prove_kore_is_predicate(
         self,
@@ -648,7 +720,11 @@ class RewriteProofGenerator(ProofGenerator):
         oriented_substitution = applied_rule.substitution.orient(config_free_vars)
         _, rule_substitution = oriented_substitution.split(config_free_vars)
 
-        rewrite_axiom = self.composer.rewrite_axioms[applied_rule.rule_id]
+        # applying either a claim or an axiom
+        if applied_rule.rule_id in self.proved_claims:
+            rewrite_axiom = self.proved_claims[applied_rule.rule_id]
+        else:
+            rewrite_axiom = self.composer.rewrite_axioms[applied_rule.rule_id]
 
         lhs, _, rhs, _ = self.destruct_rewrite_axiom(rewrite_axiom)
         lhs = KoreUtils.copy_and_substitute_pattern(lhs, rule_substitution.substitution)
@@ -669,12 +745,20 @@ class RewriteProofGenerator(ProofGenerator):
                 **lhs_unification_result.substitution
             },
         )
-        instantiated_axiom = self.remove_ensures(instantiated_axiom)
         instantiated_axiom = self.simplify_pattern(instantiated_axiom, [0, 1])  # rhs
         instantiated_axiom = self.simplify_pattern(instantiated_axiom, [0, 0, 0])  # requires clause
 
-        lhs, requires, rhs, _ = self.destruct_rewrite_axiom(instantiated_axiom)
-        assert requires is not None
+        lhs, requires, rhs, ensures = self.destruct_rewrite_axiom(instantiated_axiom)
+        assert requires is not None and ensures is not None
+
+        if not KoreUtils.is_top(ensures):
+            print(f"removing non-empty ensures clause {ensures}")
+
+        # remove ensures clause
+        instantiated_axiom = self.apply_reachability_subsumption_right(
+            instantiated_axiom,
+            self.prop_gen.apply_and_elim_right(KoreUtils.construct_and(ensures, rhs)),
+        )
 
         # TODO: simplify the requires clause here?
 
@@ -692,31 +776,20 @@ class RewriteProofGenerator(ProofGenerator):
 
         # TODO: support other reachability types as well
 
-        # requires /\ lhs -> rhs
+        # requires /\ lhs => rhs
         # ---------------------- (by simplification1)
-        # final_constraint /\ initial_term -> rhs
-        claim = self.composer.apply_kore_lemma(
-            "kore-rewrites-subsumption-lhs",
-            simplification1,
-            instantiated_axiom,
-        )
+        # final_constraint /\ initial_term => rhs
+        claim = self.apply_reachability_subsumption_left(simplification1, instantiated_axiom)
 
-        # final_constraint /\ initial_term -> rhs
+        # final_constraint /\ initial_term => rhs
         # --------------------------------------- (add constraint to RHS)
-        # final_constraint /\ initial_term -> final_constraint /\ rhs
-        claim = self.composer.apply_kore_lemma(
-            "kore-rewrites-constraint-lemma",
-            claim,
-        )
+        # final_constraint /\ initial_term => final_constraint /\ rhs
+        claim = self.apply_reachability_constraint_lemma(claim)
 
-        # final_constraint /\ initial_term -> final_constraint /\ rhs
+        # final_constraint /\ initial_term => final_constraint /\ rhs
         # ----------------------------------------------------------- (by simplification2)
-        # final_constraint /\ initial_term -> final_constraint /\ final_term
-        claim = self.composer.apply_kore_lemma(
-            "kore-rewrites-subsumption-rhs",
-            claim,
-            simplification2,
-        )
+        # final_constraint /\ initial_term => final_constraint /\ final_term
+        claim = self.apply_reachability_subsumption_right(claim, simplification2)
 
         return self.apply_reachability_intro(reachability, claim)
 
@@ -776,7 +849,6 @@ class RewriteProofGenerator(ProofGenerator):
     def prove_symbolic_step(
         self,
         reachability: ReachabilityType,
-        step_index: int,
         step: RewritingStep,
     ) -> ProvableClaim:
         """
@@ -824,7 +896,7 @@ class RewriteProofGenerator(ProofGenerator):
             self.prop_gen.apply_implies_reflexivity(lhs_term),
         )
 
-        theorem_name = f"symbolic-step-{step_index}"
+        theorem_name = self.composer.get_fresh_label("symbolic-step")
 
         final_claim = self.apply_reachability_subsumption_left(constraint_splitting, step_claim)
         final_claim = self.composer.load_provable_claim_as_theorem(theorem_name, final_claim)
@@ -853,10 +925,12 @@ class RewriteProofGenerator(ProofGenerator):
         branches1 = KoreUtils.destruct_nested_or(rhs1)
 
         # unify lhs2 with any of the branches
-        unification_gen = UnificationProofGenerator(self.composer)
+        unification_gen = UnificationProofGenerator(
+            self.composer, allow_unevaluated_functions=True, disable_substitution=True
+        )
         for i, branch in enumerate(branches1):
             branch_constraint, branch_term = KoreUtils.destruct_and(branch)
-            unification_result = unification_gen.unify_patterns(lhs2_term, branch_term)
+            unification_result = unification_gen.unify_patterns(branch_term, lhs2_term)
 
             if lhs2_constraint == branch_constraint and \
                unification_result is not None and \
@@ -864,9 +938,22 @@ class RewriteProofGenerator(ProofGenerator):
 
                 lhs2_index = i
 
-                for eqn, path in unification_result.applied_equations:
-                    step2 = eqn.replace_equal_subpattern(step2, [0, 0, 1] + path)
+                # construct a simplification from branch to lhs2
+                simplification = self.prop_gen.apply_implies_reflexivity(branch)
 
+                for eqn, path in unification_result.applied_equations:
+                    if isinstance(eqn, ConstraintEquation):
+                        _, current_rhs = KoreUtils.destruct_implies(simplification.claim.pattern)
+                        simplification = self.prop_gen.apply_implies_transitivity(
+                            simplification,
+                            self.apply_constraint_equation(current_rhs, path, eqn),
+                        )
+                    else:
+                        # apply the equation to branch_term at position 0, 1, 1
+                        simplification = eqn.replace_equal_subpattern(simplification, [0, 1, 1] + path)
+
+                # connect the simplification to step2
+                step2 = self.apply_reachability_subsumption_left(simplification, step2)
                 break
         else:
             assert False, f"unable to unify {lhs2} with any of the branches in {rhs1}"
@@ -990,7 +1077,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         for i, step in enumerate(task.steps):
             print(f"######## symbolic step {i} ########")
-            claim = self.prove_symbolic_step(kore.MLPattern.REWRITES_STAR, i, step)
+            claim = self.prove_symbolic_step(kore.MLPattern.REWRITES_STAR, step)
             step_claims.append(claim)
 
         # TODO: not using task.initial and task.final yet
@@ -1030,7 +1117,7 @@ class RewriteProofGenerator(ProofGenerator):
             kore.MLPattern.REWRITES_PLUS,
             kore.MLPattern.ONE_PATH_REACHES_STAR,
             kore.MLPattern.ONE_PATH_REACHES_PLUS,
-        }
+        }, f"unexpected top-level construct {construct}"
         return construct
 
     """
@@ -1083,6 +1170,13 @@ class RewriteProofGenerator(ProofGenerator):
         ("kore-one-path-reaches-star-subsumption-lhs", "kore-one-path-reaches-star-subsumption-rhs"),
         kore.MLPattern.ONE_PATH_REACHES_PLUS:
         ("kore-one-path-reaches-plus-subsumption-lhs", "kore-one-path-reaches-plus-subsumption-rhs"),
+    }
+    """
+    Propagate the constraint LHS to RHS
+    """
+    REACHABILITY_CONSTRAINT_LEMMA = {
+        kore.MLPattern.REWRITES: "kore-rewrites-constraint-lemma",
+        kore.MLPattern.ONE_PATH_REACHES_PLUS: "kore-one-path-reaches-plus-constraint-lemma",
     }
 
     def construct_reachability_claim(
@@ -1205,6 +1299,23 @@ class RewriteProofGenerator(ProofGenerator):
             theorem_name,
             claim,
             implication,
+        )
+
+    def apply_reachability_constraint_lemma(self, claim: ProvableClaim) -> ProvableClaim:
+        r"""
+        Given |- constraint /\ LHS => RHS
+        return |- constraint /\ LHS => constraint /\ RHS
+        """
+
+        given_type = self.get_reachability_type(claim)
+        assert given_type in RewriteProofGenerator.REACHABILITY_CONSTRAINT_LEMMA, \
+               f"{given_type} does not have a constraint lemma associated to it"
+
+        theorem_name = RewriteProofGenerator.REACHABILITY_CONSTRAINT_LEMMA[given_type]
+
+        return self.composer.apply_kore_lemma(
+            theorem_name,
+            claim,
         )
 
     def destruct_anywhere_axiom(

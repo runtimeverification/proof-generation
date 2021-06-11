@@ -22,6 +22,7 @@ class KorePreprocessor:
         "kseq",
         "dotk",
         "Lbl'Unds'Map'Unds'",
+        "Lbl'UndsSlsh'Int'Unds'",  # TODO: this probably doesn't make sense since /Int is not defined on 0
     ]
 
     MISSING_SUBSORT_AXIOMS = [
