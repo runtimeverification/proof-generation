@@ -6,6 +6,7 @@ from typing import Optional, Tuple, List, Union, Dict
 
 from ml.metamath.ast import Application, Term, Metavariable, StructuredStatement, Statement, ProvableStatement
 from ml.metamath.composer import Theorem, Proof
+from ml.metamath.utils import MetamathUtils
 
 from ml.metamath.auto.unification import Unification
 from ml.metamath.auto.notation import NotationProver
@@ -69,6 +70,13 @@ class SearchTactic(Tactic):
             if theorem.statement.label is None:
                 continue
 
+            # skip the theorems that have conclusion of the form |- ph0
+            # (ph0 being a metavariable)
+            if MetamathUtils.is_provable(theorem.statement.terms):
+                body = MetamathUtils.destruct_provable(theorem.statement.terms)
+                if isinstance(body, Metavariable):
+                    continue
+
             # TODO: this is a bit hacky
             old_schematic_vars = state.schematic_vars
 
@@ -82,8 +90,14 @@ class SearchTactic(Tactic):
 
             substitution, _ = result
 
+            theorem_metavars = preprocessed.conclusion.get_metavariables()
+
             distance = 0
             for var, term in substitution.items():
+                # only count the metavariables in the theorem statement
+                if var not in theorem_metavars:
+                    continue
+
                 if isinstance(term, Metavariable):
                     # if the typecode are the same then distance is 0, otherwise 1
                     t1 = SearchTactic.get_typecode_of_metavariable(state, Metavariable(var))
