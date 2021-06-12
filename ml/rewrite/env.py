@@ -288,59 +288,6 @@ class KoreComposer(Composer):
         claim.resolve(self.module)
         return claim
 
-    def rearrange_sorting_premise(self, target_premise: Optional[mm.Term], proof: Proof) -> Proof:
-        r"""
-        Rearrange the premise of the conclusion of the proof
-
-        If target_premise is not None,
-        - if proof is of the form |- ( \imp <old premise> ... ),
-          we return a new proof of the form |- ( \imp <target_premise> ... )
-        - if the proof is not an implication, we weakens it by adding the target premise
-
-        If target_premise is None,
-        - if the proof is of the form |- ( \imp <old premise> ... ),
-          we try to prove <old premise> directly and removes it
-        - otherwise we are done
-        """
-        conclusion = MetamathUtils.destruct_provable(proof.conclusion)
-
-        if target_premise is None:
-            if MetamathUtils.is_imp(conclusion):
-                conclusion_premise, _ = MetamathUtils.destruct_imp(conclusion)
-                premise_proof = SortingProver.prove_sorting_statement(
-                    self,
-                    mm.StructuredStatement(
-                        "",
-                        MetamathUtils.construct_provable(conclusion_premise),
-                    ),
-                )
-                return self.get_theorem("proof-rule-mp").apply(proof, premise_proof)
-            else:
-                return proof
-        else:
-            if MetamathUtils.is_imp(conclusion):
-                conclusion_premise, _ = MetamathUtils.destruct_imp(conclusion)
-
-                if conclusion_premise == target_premise:
-                    return proof
-
-                premise_imp = SortingProver.prove_sorting_statement(
-                    self,
-                    mm.StructuredStatement(
-                        "",
-                        MetamathUtils.construct_provable(
-                            MetamathUtils.construct_imp(target_premise, conclusion_premise),
-                        ),
-                    ),
-                )
-
-                return self.get_theorem("rule-imp-transitivity").apply(premise_imp, proof)
-            else:
-                return self.get_theorem("rule-weakening").apply(
-                    proof,
-                    ph0=target_premise,
-                )
-
     def construct_provable_claim(
         self,
         claim: Union[kore.Pattern, kore.Claim],
@@ -352,7 +299,7 @@ class KoreComposer(Composer):
             claim = self.construct_claim(claim, sort_variables)
 
         sorting_premise, _ = MetamathUtils.destruct_imp(self.encode_pattern(claim))
-        proof = self.rearrange_sorting_premise(sorting_premise, proof)
+        proof = SortingProver.rearrange_premise(self, sorting_premise, proof)
 
         if cache_key is not None:
             proof = self.cache_proof(cache_key, proof)
@@ -1065,27 +1012,12 @@ class KoreComposer(Composer):
                     sort1, sort2 = subsort_tuple
                     self.subsort_relation.add_subsort(sort1, sort2, theorem)
 
-    def destruct_premise(
-        self,
-        statement: Union[mm.StructuredStatement, mm.Terms],
-    ) -> Tuple[Optional[mm.Term], mm.Term]:
-        if isinstance(statement, mm.StructuredStatement):
-            statement = statement.terms
-
-        body = MetamathUtils.destruct_provable(statement)
-
-        if MetamathUtils.is_imp(body):
-            premise, conclusion = MetamathUtils.destruct_imp(body)
-            return premise, conclusion
-        else:
-            return None, body
-
     def infer_premise_metavar(self, theorem: Theorem) -> Optional[mm.Metavariable]:
         """
         Given a kore lemma, infer the metavariable for premise
         """
 
-        conclusion_premise, _ = self.destruct_premise(theorem.statement)
+        conclusion_premise, _ = MetamathUtils.destruct_premise(theorem.statement)
 
         premise: Optional[mm.Term] = conclusion_premise
 
@@ -1093,7 +1025,7 @@ class KoreComposer(Composer):
             if not MetamathUtils.is_provable(essential.terms):
                 continue
 
-            essential_premise, essential_conclusion = self.destruct_premise(essential)
+            essential_premise, essential_conclusion = MetamathUtils.destruct_premise(essential)
             if not MetamathUtils.is_kore_valid(essential_conclusion):
                 continue
 
@@ -1110,7 +1042,7 @@ class KoreComposer(Composer):
 
     def infer_weakest_common_premise(
         self,
-        provable_claims: Tuple[ProvableClaim, ...],
+        provable_claims: Tuple[Union[Proof, ProvableClaim], ...],
     ) -> mm.Term:
         """
         Infer the weakest common premise used in all the proofs given
@@ -1119,10 +1051,11 @@ class KoreComposer(Composer):
         common_premise = MetamathUtils.construct_top()
 
         for provable_claim in provable_claims:
-            premise = self.encode_axiom_premise(provable_claim.claim)
+            if isinstance(provable_claim, ProvableClaim):
+                premise = self.encode_axiom_premise(provable_claim.claim)
 
-            if premise is not None and not MetamathUtils.is_top(premise):
-                common_premise = MetamathUtils.construct_and(premise, common_premise)
+                if premise is not None and not MetamathUtils.is_top(premise):
+                    common_premise = MetamathUtils.construct_and(premise, common_premise)
 
         return common_premise
 
@@ -1130,7 +1063,7 @@ class KoreComposer(Composer):
         self,
         theorem: Theorem,
         common_premise: mm.Term,
-        essential_provable_claims: Tuple[ProvableClaim, ...],
+        essential_provable_claims: Tuple[Union[Proof, ProvableClaim], ...],
     ) -> List[Union[Proof, AutoProof]]:
         essential_claim_index = 0
         essential_proofs: List[Union[Proof, AutoProof]] = []
@@ -1143,28 +1076,31 @@ class KoreComposer(Composer):
                 essential_proofs.append(FreshProver.auto)
 
             elif MetamathUtils.is_provable(essential.terms):
-                premise, conclusion = self.destruct_premise(essential)
+                premise, conclusion = MetamathUtils.destruct_premise(essential)
 
-                if MetamathUtils.is_kore_valid(conclusion):
+                if MetamathUtils.is_in_sort(conclusion):
+                    essential_proofs.append(SortingProver.auto)
+
+                elif MetamathUtils.is_is_predicate(conclusion):
+                    essential_proofs.append(PredicateProver.auto)
+
+                else:  # MetamathUtils.is_kore_valid(conclusion):
                     # take from the given essential proofs
                     assert essential_claim_index < len(essential_provable_claims), \
                            f"not enough essential proofs are given"
                     essential_provable_claim = essential_provable_claims[essential_claim_index]
                     essential_claim_index += 1
 
+                    if isinstance(essential_provable_claim, ProvableClaim):
+                        essential_proof = essential_provable_claim.proof
+                    else:
+                        essential_proof = essential_provable_claim
+
                     # rearrange the premises of essential proofs to match the required form
-                    essential_proof = self.rearrange_sorting_premise(
-                        None if premise is None else common_premise, essential_provable_claim.proof
+                    essential_proof = SortingProver.rearrange_premise(
+                        self, None if premise is None else common_premise, essential_proof
                     )
                     essential_proofs.append(essential_proof)
-
-                elif MetamathUtils.is_is_predicate(conclusion):
-                    essential_proofs.append(PredicateProver.auto)
-
-                else:
-                    # try to automatically resolve
-                    # TODO: this might be too much
-                    essential_proofs.append(SortingProver.auto)
             else:
                 assert False, f"cannot infer which proof to assign for hypothesis {essential}"
 
@@ -1176,7 +1112,7 @@ class KoreComposer(Composer):
     def apply_kore_lemma(
         self,
         theorem_name: str,
-        *essential_provable_claims: ProvableClaim,
+        *essential_provable_claims: Union[Proof, ProvableClaim],
         goal: Optional[kore.Claim] = None,
         cache_key: Optional[str] = None,
         **substitution: Union[mm.Term, kore.Pattern, kore.Sort],
@@ -1217,8 +1153,8 @@ class KoreComposer(Composer):
 
         if goal is not None:
             encoded_goal = self.encode_pattern(goal)
-            _, goal_body = self.destruct_premise(MetamathUtils.construct_provable(encoded_goal))
-            conclusion_premise, _ = self.destruct_premise(theorem.statement)
+            _, goal_body = MetamathUtils.destruct_premise(MetamathUtils.construct_provable(encoded_goal))
+            conclusion_premise, _ = MetamathUtils.destruct_premise(theorem.statement)
             if conclusion_premise is not None:
                 goal_pattern: Optional[mm.StructuredStatement] = mm.StructuredStatement(
                     "",
@@ -1248,8 +1184,8 @@ class KoreComposer(Composer):
 
         if goal is not None:
             encoded_goal = self.encode_pattern(goal)
-            goal_premise, goal_body = self.destruct_premise(MetamathUtils.construct_provable(encoded_goal))
-            conclusion_premise, _ = self.destruct_premise(theorem.statement)
+            goal_premise, goal_body = MetamathUtils.destruct_premise(MetamathUtils.construct_provable(encoded_goal))
+            conclusion_premise, _ = MetamathUtils.destruct_premise(theorem.statement)
 
             # arrange the goal into the expected form
             if conclusion_premise is not None:
@@ -1263,7 +1199,7 @@ class KoreComposer(Composer):
             proof = theorem.match_and_apply(target, *essential_proofs, **metavar_substitution)
 
             # now we need massage the proof to the expected form of the goal
-            proof = self.rearrange_sorting_premise(goal_premise, proof)
+            proof = SortingProver.rearrange_premise(self, goal_premise, proof)
 
             if cache_key is not None:
                 proof = self.cache_proof(cache_key, proof)
@@ -1279,7 +1215,7 @@ class KoreComposer(Composer):
             claim = KoreDecoder(self.module).decode_claim(body)
             claim_premise = self.encode_axiom_premise(claim)
 
-            proof = self.rearrange_sorting_premise(claim_premise, proof)
+            proof = SortingProver.rearrange_premise(self, claim_premise, proof)
 
             if cache_key is not None:
                 proof = self.cache_proof(cache_key, proof)

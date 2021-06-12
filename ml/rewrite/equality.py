@@ -39,7 +39,8 @@ class EqualityProofGenerator(ProofGenerator):
         other_premises = KoreEncoder().encode_free_variable_premise(goal)
         variable_sorting = MetamathUtils.construct_in_sort(encoded_variable, encoded_sort)
 
-        premises_rearranged = self.composer.rearrange_sorting_premise(
+        premises_rearranged = SortingProver.rearrange_premise(
+            self.composer,
             MetamathUtils.construct_and(variable_sorting, other_premises),
             provable.proof,
         )
@@ -263,7 +264,7 @@ class EqualityProofGenerator(ProofGenerator):
 
             functional_proof = self.composer.get_theorem("kore-functional").apply(
                 SortingProver.auto,
-                self.instantiate_claim_with_unit_sort(self.prove_functional(substitute)).proof,
+                self.instantiate_claim_with_unit_sort(self.prove_kore_functional(substitute)).proof,
             )
 
             claim = self.apply_functional_substitution_as_implication_raw(pattern, substitute, functional_proof)
@@ -288,7 +289,7 @@ class EqualityProofGenerator(ProofGenerator):
         """
 
         for k, v in sorted(substitution.items(), key=lambda t: t[0].name):
-            functional_claim = self.prove_functional(v)
+            functional_claim = self.prove_kore_functional(v)
             provable = self.apply_functional_substitution_raw(
                 provable,
                 k,
@@ -361,7 +362,7 @@ class EqualityProofGenerator(ProofGenerator):
             [reduced_injection],
         )
         reduced_injection.resolve(self.composer.module)
-        reduced_injection_is_functional = self.prove_functional(reduced_injection)
+        reduced_injection_is_functional = self.prove_kore_functional(reduced_injection)
 
         # get an instance of the injection axiom
         # with sort variables replaced by S1, Sn-1, and Sn
@@ -383,7 +384,16 @@ class EqualityProofGenerator(ProofGenerator):
             inj_axiom_instance,
         )
 
-    def prove_functional(self, pattern: kore.Pattern) -> ProvableClaim:
+    def prove_functional(self, pattern: kore.Pattern) -> Proof:
+        r"""
+        Prove a ML level functional claim: |- ( \imp ... ( \exists x ( \eq x <pattern> ) ) )
+        """
+        return self.composer.get_theorem("kore-functional").apply(
+            SortingProver.auto,
+            self.instantiate_claim_with_unit_sort(self.prove_kore_functional(pattern)).proof,
+        )
+
+    def prove_kore_functional(self, pattern: kore.Pattern) -> ProvableClaim:
         r"""
         Return a proof of
         |- ( \imp <premise> ( \kore-valid R ( \kore-exists ph0 R x ( \kore-equals ph0 R x <pattern> ) ) )
@@ -414,7 +424,7 @@ class EqualityProofGenerator(ProofGenerator):
             # instantiate the axiom with arguments
             for axiom_var, argument in zip(rhs.arguments, pattern.arguments):
                 assert isinstance(axiom_var, kore.Variable)
-                argument_is_functional = self.prove_functional(argument)
+                argument_is_functional = self.prove_kore_functional(argument)
                 functional_axiom = self.apply_functional_substitution_raw(
                     functional_axiom,
                     axiom_var,
@@ -569,7 +579,7 @@ class EqualityProofGenerator(ProofGenerator):
             MetamathUtils.construct_imp(common_premise, encoded_goal_body),
         )
 
-        functional_proof = self.composer.rearrange_sorting_premise(common_premise, functional_proof)
+        functional_proof = SortingProver.rearrange_premise(self.composer, common_premise, functional_proof)
 
         functional_proof_body = MetamathUtils.destruct_provable(functional_proof.conclusion)
         if MetamathUtils.is_imp(functional_proof_body):
@@ -720,10 +730,11 @@ class EqualityProofGenerator(ProofGenerator):
         dummy_premise = affected_premise.substitute({encoded_var.name: encoded_fresh_var})
 
         # functional-substitution-alt.0
-        rearranged_functional_proof = self.composer.rearrange_sorting_premise(common_premise, functional_proof)
+        rearranged_functional_proof = SortingProver.rearrange_premise(self.composer, common_premise, functional_proof)
 
         # functional-substitution-alt.1
-        rearranged_original_proof = self.composer.rearrange_sorting_premise(
+        rearranged_original_proof = SortingProver.rearrange_premise(
+            self.composer,
             MetamathUtils.construct_and(common_premise, affected_premise),
             original_claim.proof,
         )

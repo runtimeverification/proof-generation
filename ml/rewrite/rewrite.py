@@ -11,6 +11,7 @@ from ml.kore.visitors import PatternVariableVisitor
 from ml.metamath import ast as mm
 from ml.metamath.composer import Theorem, Proof
 from ml.metamath.auto.sorting import SortingProver
+from ml.metamath.auto.predicate import PredicateProver
 
 from .encoder import KoreEncoder
 
@@ -1421,7 +1422,17 @@ class RewriteProofGenerator(ProofGenerator):
 
             # |- ( \imp ( \in-sort x ph0 ) ( \kore-valid R ( \kore-not R ( \kore-in ph0 R ... ... ) ) ) )
             proof = self.composer.get_theorem("disjointness-to-not-in").apply(
-                proof, ph0=encoded_input_sort, ph3=encoded_output_sort
+                PredicateProver.auto,
+                # some technical requirements: the left pattern has to be non-empty
+                SortingProver.auto_rearrange_premise(
+                    self.composer.get_theorem("functional-imp-nonempty-alt"
+                                              ).apply(self.eq_gen.prove_functional(left), ),
+                ),
+                SortingProver.auto,
+                SortingProver.auto,
+                proof,
+                ph0=encoded_input_sort,
+                ph3=encoded_output_sort
             )
 
             return self.composer.construct_provable_claim(

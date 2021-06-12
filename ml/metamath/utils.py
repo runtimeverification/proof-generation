@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence
+from typing import Tuple, Sequence, Union, Optional
 
 from .ast import *
 
@@ -199,3 +199,16 @@ class MetamathUtils:
     @staticmethod
     def destruct_nested_or(term: Term) -> Tuple[Term, ...]:
         return MetamathUtils.destruct_nested("\\or", term)
+
+    @staticmethod
+    def destruct_premise(statement: Union[StructuredStatement, Terms], ) -> Tuple[Optional[Term], Term]:
+        if isinstance(statement, StructuredStatement):
+            statement = statement.terms
+
+        body = MetamathUtils.destruct_provable(statement)
+
+        if MetamathUtils.is_imp(body):
+            premise, conclusion = MetamathUtils.destruct_imp(body)
+            return premise, conclusion
+        else:
+            return None, body

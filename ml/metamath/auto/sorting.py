@@ -1,4 +1,4 @@
-from typing import Mapping, Optional, Tuple, List, Dict
+from typing import Mapping, Optional, Tuple, List, Dict, Callable
 
 from ..ast import Metavariable, Term, Application, Statement, StructuredStatement, ProvableStatement
 from ..composer import Composer, Theorem, MethodAutoProof, ProofCache, Proof
@@ -393,21 +393,64 @@ class SortingProver:
 
         return SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion)
 
-    # @staticmethod
-    # def prove_sorting(composer: Composer, term: Term, sort: Term, free_var_sorts: Mapping[str, Term]) -> Proof:
-    #     # construct the hypotheses
-    #     hypotheses = [SortingProver.in_sort(Metavariable(var), sort) for var, sort in free_var_sorts.items()]
+    @staticmethod
+    def rearrange_premise(composer: Composer, target_premise: Optional[Term], proof: Proof) -> Proof:
+        r"""
+        Rearrange the premise of the conclusion of the proof
 
-    #     if len(hypotheses) == 0:
-    #         hypothesis = Application("\\top")
-    #     else:
-    #         hypothesis = hypotheses[-1]
-    #         for hyp in hypotheses[:-1][::-1]:
-    #             hypothesis = Application("\\and", (hyp, hypothesis))
+        If target_premise is not None,
+        - if proof is of the form |- ( \imp <old premise> ... ),
+          we return a new proof of the form |- ( \imp <target_premise> ... )
+        - if the proof is not an implication, we weakens it by adding the target premise
 
-    #     return SortingProver.prove_sorting_statement(
-    #         composer,
-    #         SortingProver.construct_imp_goal(hypothesis, SortingProver.in_sort(term, sort)),
-    #     )
+        If target_premise is None,
+        - if the proof is of the form |- ( \imp <old premise> ... ),
+          we try to prove <old premise> directly and removes it
+        - otherwise we are done
+        """
+        conclusion = MetamathUtils.destruct_provable(proof.conclusion)
+
+        if target_premise is None:
+            if MetamathUtils.is_imp(conclusion):
+                conclusion_premise, _ = MetamathUtils.destruct_imp(conclusion)
+                premise_proof = SortingProver.prove_sorting_statement(
+                    composer,
+                    StructuredStatement(
+                        "",
+                        MetamathUtils.construct_provable(conclusion_premise),
+                    ),
+                )
+                return composer.get_theorem("proof-rule-mp").apply(proof, premise_proof)
+            else:
+                return proof
+        else:
+            if MetamathUtils.is_imp(conclusion):
+                conclusion_premise, _ = MetamathUtils.destruct_imp(conclusion)
+
+                if conclusion_premise == target_premise:
+                    return proof
+
+                premise_imp = SortingProver.prove_sorting_statement(
+                    composer,
+                    StructuredStatement(
+                        "",
+                        MetamathUtils.construct_provable(
+                            MetamathUtils.construct_imp(target_premise, conclusion_premise),
+                        ),
+                    ),
+                )
+
+                return composer.get_theorem("rule-imp-transitivity").apply(premise_imp, proof)
+            else:
+                return composer.get_theorem("rule-weakening").apply(
+                    proof,
+                    ph0=target_premise,
+                )
+
+    # given a proof, automatically rearrange the premise to fit the form required
+    auto_rearrange_premise: Callable[[Proof], MethodAutoProof] = \
+        lambda proof: MethodAutoProof(
+            lambda composer, statement:
+                SortingProver.rearrange_premise(composer, MetamathUtils.destruct_premise(statement)[0], proof))
 
     auto = MethodAutoProof(prove_sorting_statement.__func__)  # type: ignore
