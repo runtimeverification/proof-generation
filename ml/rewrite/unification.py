@@ -15,7 +15,7 @@ from ml.metamath.composer import Proof
 from ml.metamath.auto.typecode import TypecodeProver
 
 from .env import ProofGenerator, KoreComposer, ProvableClaim
-from .equality import EqualityProofGenerator
+from .fol import FOLProofGenerator
 from .templates import KoreTemplates
 
 # AppliedEquation = List[Tuple[Equation, PatternPath]]
@@ -131,12 +131,12 @@ class DuplicateConjunction(Equation):
             goal=equality,
         )
 
-        eq_proof_gen = EqualityProofGenerator(self.composer)
+        fol_gen = FOLProofGenerator(self.composer)
 
         if self.inverse:
-            provable_equality = eq_proof_gen.apply_symmetry(provable_equality)
+            provable_equality = fol_gen.apply_symmetry(provable_equality)
 
-        return EqualityProofGenerator(self.composer).replace_equal_subpattern(provable, path, provable_equality)
+        return fol_gen.replace_equal_subpattern(provable, path, provable_equality)
 
 
 class InjectionCombine(Equation):
@@ -162,18 +162,19 @@ class InjectionCombine(Equation):
         sort_a, sort_b1 = subsubpattern.symbol.sort_arguments
         assert sort_b1 == sort_b, f"ill-sorted injection {subpattern}"
 
+        fol_gen = FOLProofGenerator(self.composer)
+
         # sort_a < sort_b < sort_c
-        inj_axiom_instance = EqualityProofGenerator(self.composer).get_inj_instance(sort_a, sort_b, sort_c)
+        inj_axiom_instance = fol_gen.get_inj_instance(sort_a, sort_b, sort_c)
 
         # the injection axiom should only have one free variable
         free_vars = list(KoreUtils.get_free_variables(inj_axiom_instance.claim))
         assert len(free_vars) == 1
         free_var, = free_vars
 
-        inj_axiom_instance = EqualityProofGenerator(self.composer) \
-            .apply_functional_substitution(inj_axiom_instance, { free_var: subsubpattern.arguments[0] })
+        inj_axiom_instance = fol_gen.apply_functional_substitution(inj_axiom_instance, { free_var: subsubpattern.arguments[0] })
 
-        return EqualityProofGenerator(self.composer).replace_equal_subpattern(provable, path, inj_axiom_instance)
+        return fol_gen.replace_equal_subpattern(provable, path, inj_axiom_instance)
 
 
 class InjectionSplit(Equation):
@@ -199,24 +200,22 @@ class InjectionSplit(Equation):
         sort_a, sort_c = subpattern.symbol.sort_arguments
         assert sort_a == self.sort_a and sort_c == self.sort_c
 
+        fol_gen = FOLProofGenerator(self.composer)
+
         # sort_a < sort_b < sort_c
-        inj_axiom_instance = EqualityProofGenerator(self.composer
-                                                    ).get_inj_instance(self.sort_a, self.sort_b, self.sort_c)
+        inj_axiom_instance = fol_gen.get_inj_instance(self.sort_a, self.sort_b, self.sort_c)
 
         # the injection axiom should only have one free variable
         free_vars = list(KoreUtils.get_free_variables(inj_axiom_instance.claim))
         assert len(free_vars) == 1
         free_var, = free_vars
 
-        inj_axiom_instance = EqualityProofGenerator(self.composer) \
-            .apply_functional_substitution(inj_axiom_instance, { free_var: argument })
-
-        eq_proof_gen = EqualityProofGenerator(self.composer)
+        inj_axiom_instance = fol_gen.apply_functional_substitution(inj_axiom_instance, { free_var: argument })
 
         # reverse the equation
-        inj_axiom_instance = eq_proof_gen.apply_symmetry(inj_axiom_instance)
+        inj_axiom_instance = fol_gen.apply_symmetry(inj_axiom_instance)
 
-        return eq_proof_gen.replace_equal_subpattern(provable, path, inj_axiom_instance)
+        return fol_gen.replace_equal_subpattern(provable, path, inj_axiom_instance)
 
 
 class MapCommutativity(Equation):
@@ -242,11 +241,12 @@ class MapCommutativity(Equation):
         var1, var2 = comm_axiom_body.arguments[0].arguments
         assert isinstance(var1, kore.Variable) and isinstance(var2, kore.Variable)
 
-        subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
-        axiom_instance = EqualityProofGenerator(self.composer) \
-            .apply_functional_substitution(comm_axiom, subst)
+        fol_gen = FOLProofGenerator(self.composer)
 
-        return EqualityProofGenerator(self.composer).replace_equal_subpattern(
+        subst = {var1: subpattern.arguments[0], var2: subpattern.arguments[1]}
+        axiom_instance = fol_gen.apply_functional_substitution(comm_axiom, subst)
+
+        return fol_gen.replace_equal_subpattern(
             provable,
             path,
             axiom_instance,
@@ -303,16 +303,15 @@ class MapAssociativity(Equation):
                 var3: subpattern.arguments[1].arguments[1],
             }
 
-        axiom_instance = EqualityProofGenerator(self.composer) \
-            .apply_functional_substitution(assoc_axiom, subst)
+        fol_gen = FOLProofGenerator(self.composer)
 
-        eq_proof_gen = EqualityProofGenerator(self.composer)
+        axiom_instance = fol_gen.apply_functional_substitution(assoc_axiom, subst)
 
         # apply symmetry
         if not self.rotate_right:
-            axiom_instance = eq_proof_gen.apply_symmetry(axiom_instance)
+            axiom_instance = fol_gen.apply_symmetry(axiom_instance)
 
-        return eq_proof_gen.replace_equal_subpattern(
+        return fol_gen.replace_equal_subpattern(
             provable,
             path,
             axiom_instance,
@@ -355,15 +354,14 @@ class MapRightUnit(Equation):
             assert KoreTemplates.is_map_unit_pattern(KoreTemplates.get_map_merge_right(subpattern))
             subst = {var: KoreTemplates.get_map_merge_left(subpattern)}
 
-        axiom_instance = EqualityProofGenerator(self.composer) \
-            .apply_functional_substitution(right_unit_axiom, subst)
+        fol_gen = FOLProofGenerator(self.composer)
 
-        eq_proof_gen = EqualityProofGenerator(self.composer)
+        axiom_instance = fol_gen.apply_functional_substitution(right_unit_axiom, subst)
 
         if self.inverse:
-            axiom_instance = eq_proof_gen.apply_symmetry(axiom_instance)
+            axiom_instance = fol_gen.apply_symmetry(axiom_instance)
 
-        return eq_proof_gen.replace_equal_subpattern(
+        return fol_gen.replace_equal_subpattern(
             provable,
             path,
             axiom_instance,
