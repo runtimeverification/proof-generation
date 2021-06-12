@@ -350,23 +350,64 @@ class SortingProver:
             )
 
         hypothesis, conclusion = term.subterms
+
+        if isinstance(hypothesis, Metavariable):
+            # if the hypotheses is a metavariable
+            # try to find sorting essentials that have the same hypotheses
+
+            actual_hypothesis = MetamathUtils.construct_top()
+            hyp_proof = composer.get_theorem("rule-weakening").apply(
+                composer.get_theorem("top-intro").apply(),
+                ph0=hypothesis,
+            )
+
+            for essential in composer.get_all_essentials():
+                if MetamathUtils.is_provable(essential.statement.terms):
+                    body = MetamathUtils.destruct_provable(essential.statement.terms)
+                    if MetamathUtils.is_imp(body):
+                        left, right = MetamathUtils.destruct_imp(body)
+                        if left == hypothesis and MetamathUtils.is_in_sort(right):
+                            actual_hypothesis = MetamathUtils.construct_and(
+                                right,
+                                actual_hypothesis,
+                            )
+
+                            # |- hypothesis -> actual hypothesis
+                            hyp_proof = composer.get_theorem("rule-and-intro-alt2-sugar").apply(
+                                essential.apply(),
+                                hyp_proof,
+                            )
+
+            proof = SortingProver.prove_multiple_sorting_judgements(composer, actual_hypothesis, conclusion)
+            proof = composer.get_theorem("proof-rule-mp").apply(
+                composer.get_theorem("rule-weakening-imp2").apply(
+                    proof,
+                    ph2=hypothesis,
+                ),
+                hyp_proof,
+            )
+            assert proof.conclusion == statement.terms, \
+                   f"unexpected proof {proof} for {statement}"
+
+            return proof
+
         return SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion)
 
-    @staticmethod
-    def prove_sorting(composer: Composer, term: Term, sort: Term, free_var_sorts: Mapping[str, Term]) -> Proof:
-        # construct the hypotheses
-        hypotheses = [SortingProver.in_sort(Metavariable(var), sort) for var, sort in free_var_sorts.items()]
+    # @staticmethod
+    # def prove_sorting(composer: Composer, term: Term, sort: Term, free_var_sorts: Mapping[str, Term]) -> Proof:
+    #     # construct the hypotheses
+    #     hypotheses = [SortingProver.in_sort(Metavariable(var), sort) for var, sort in free_var_sorts.items()]
 
-        if len(hypotheses) == 0:
-            hypothesis = Application("\\top")
-        else:
-            hypothesis = hypotheses[-1]
-            for hyp in hypotheses[:-1][::-1]:
-                hypothesis = Application("\\and", (hyp, hypothesis))
+    #     if len(hypotheses) == 0:
+    #         hypothesis = Application("\\top")
+    #     else:
+    #         hypothesis = hypotheses[-1]
+    #         for hyp in hypotheses[:-1][::-1]:
+    #             hypothesis = Application("\\and", (hyp, hypothesis))
 
-        return SortingProver.prove_sorting_statement(
-            composer,
-            SortingProver.construct_imp_goal(hypothesis, SortingProver.in_sort(term, sort)),
-        )
+    #     return SortingProver.prove_sorting_statement(
+    #         composer,
+    #         SortingProver.construct_imp_goal(hypothesis, SortingProver.in_sort(term, sort)),
+    #     )
 
     auto = MethodAutoProof(prove_sorting_statement.__func__)  # type: ignore

@@ -153,6 +153,10 @@ class MetamathUtils:
         return MetamathUtils.is_application_of_symbol("\\floor", 1, term)
 
     @staticmethod
+    def is_is_predicate(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\is-predicate", 1, term)
+
+    @staticmethod
     def is_imp(term: Term) -> bool:
         return MetamathUtils.is_application_of_symbol("\\imp", 2, term)
 
@@ -166,7 +170,7 @@ class MetamathUtils:
 
     @staticmethod
     def is_in_sort(term: Term) -> bool:
-        return MetamathUtils.is_application_of_symbol("\\kore-valid", 2, term)
+        return MetamathUtils.is_application_of_symbol("\\in-sort", 2, term)
 
     @staticmethod
     def is_exists(term: Term) -> bool:

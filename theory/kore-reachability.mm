@@ -2,6 +2,31 @@ $[ theory/kore.mm $]
 $[ theory/kore-predicate.mm $]
 
 ${
+    kore-implies-compat-in-kore-next.0 $e |- ( \is-predicate th0 ) $.
+    kore-implies-compat-in-kore-next.1 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-implies-compat-in-kore-next.2 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-implies-compat-in-kore-next.3 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
+    kore-implies-compat-in-kore-next   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-next ph0 ph1 ) ( \kore-next ph0 ph2 ) ) ) ) $=
+        $(
+            apply "kore-implies-intro-alt"
+            apply "kore-implies-compat-in-kore-next.0"
+            (sorting)+
+            apply "rule-curry"
+            apply "rule-imp-transitivity"
+            apply "rule-iff-elim-left"
+            apply "predicate-imp-propagate-in-app"
+            apply "kore-implies-compat-in-kore-next.0"
+            apply "frame-app-right"
+            apply "rule-uncurry"
+            apply "kore-implies-elim-alt"
+            apply "kore-implies-compat-in-kore-next.1"
+            apply "kore-implies-compat-in-kore-next.2"
+            apply "kore-implies-compat-in-kore-next.3"
+        $)
+        ( in-sort-is-pattern and-is-pattern kore-next-is-symbol symbol-is-pattern app-is-pattern kore-next-is-pattern top-is-pattern imp-is-pattern rule-imp-transitivity notation-reflexivity rule-and-intro-alt2-sugar and-elim-left-sugar imp-reflexivity kore-next-sorting rule-weakening-imp2 top-intro rule-weakening proof-rule-mp iff-is-pattern kore-next-is-sugar notation-transitivity notation-proof and-elim-right-sugar predicate-imp-propagate-in-app notation-and notation-iff rule-iff-elim-left kore-implies-elim-alt rule-uncurry frame-app-right notation-imp rule-curry kore-implies-intro-alt ) AABNACNDEDCAIBAIOJJPDABNAIPCAIBAIOJJABNAIDCAIBAIOJJBAIABNAICAIBAIOJJBAIOJBAICAIBAIOJUKBAIOJBAIBAIBAIOTBAIUAQQABUBQUCDCAIBAIOJGDBAIOFDOUDUESSUFDCAIBAIOJJPDACNAIPCAIBAIOJJACNAIDCAIBAIOJJCAIACNAICAIBAIOJJCAICAICAIBAIOJTCAIUAQACUBQUCDCAIBAIOJGDBAIOFDOUDUESSUFDABNACNDABNJKLDBJMACNDABNJKLDBJMDKLBMJKLDBJMUGDABNJKLDBJMUGDKLBEULDABNJKLDBJMDKLBMJKLDBJMDABNDKLBMDRABNKLBMKLBMABUHKLBMRUIUMKLDBJMRUNUJUOKLDBJMKLCMPKLDBJMACNPKLDBJCDBCABCDFGHUPUQURKLDBJMACNKLDBJMKLCMKLDBJMRACNKLCMKLCMACUHKLCMRUIUSUJQUTVA $.
+$}
+
+${
     kore-rewrites-star-reflexivity.0 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
     kore-rewrites-star-reflexivity   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph1 ) ) ) $= ? $.
 $}
@@ -87,11 +112,22 @@ ${
 $}
 
 ${
-    kore-rewrites-subsumption-rhs.0 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
-    kore-rewrites-subsumption-rhs.1 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
-    kore-rewrites-subsumption-rhs.2 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph2 ) ) ) $.
-    kore-rewrites-subsumption-rhs.3 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph3 ) ) ) $.
-    kore-rewrites-subsumption-rhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) ) $= ? $.
+    kore-rewrites-subsumption-rhs.0 $e |- ( \is-predicate th0 ) $.
+    kore-rewrites-subsumption-rhs.1 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-rewrites-subsumption-rhs.2 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
+    kore-rewrites-subsumption-rhs.3 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph2 ) ) ) $.
+    kore-rewrites-subsumption-rhs.4 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph2 ph3 ) ) ) $.
+    kore-rewrites-subsumption-rhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) ) $=
+        $(
+            apply "kore-implies-transitivity-alt"
+            apply "kore-rewrites-subsumption-rhs.3"
+            apply "kore-implies-compat-in-kore-next"
+            apply "kore-rewrites-subsumption-rhs.0"
+            sorting
+            sorting
+            apply "kore-rewrites-subsumption-rhs.4"
+        $)
+        ( in-sort-is-pattern kore-next-is-pattern kore-implies-is-pattern top-is-pattern and-is-pattern kore-rewrites-is-pattern kore-valid-is-pattern imp-is-pattern notation-reflexivity kore-rewrites-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof rule-imp-transitivity rule-and-intro-alt2-sugar notation-symmetry and-elim-right-sugar and-elim-left-sugar imp-reflexivity rule-weakening-imp2 top-intro rule-weakening proof-rule-mp kore-implies-compat-in-kore-next kore-implies-transitivity-alt ) EAABADLMQREAABDPQRABACLADLEEAABCPQREAABACLMQRIEAABACLMQEAABCPQESAABACLMAABCPASABACLMABACLMABCPABACLMSABCPABACLMABCTUGUAUBUCUDACDEFEDAKCAKNOORECAKRDAKCAKNOOCAKEDAKCAKNOOCAKNOCAKDAKCAKNOUHCAKNOCAKCAKCAKNUICAKUJUEUEUKEDAKCAKNOHECAKNGENULUMUFUFUNHJUOUPEAABDPQEAABADLMQESAABDPAABADLMASABDPABADLMABADLMABDTABADLMSUAUBUCUD $.
 $}
 
 ${
