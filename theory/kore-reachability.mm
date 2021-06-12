@@ -21,7 +21,13 @@ $}
 ${
     kore-rewrites-star-subsumption-lhs.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
     kore-rewrites-star-subsumption-lhs.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph2 ph3 ) ) ) $.
-    kore-rewrites-star-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph3 ) ) ) $= ? $.
+    kore-rewrites-star-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph3 ) ) ) $=
+        $(
+            apply "kore-implies-transitivity-alt"
+            apply "kore-rewrites-star-subsumption-lhs.0"
+            apply "kore-rewrites-star-subsumption-lhs.1"
+        $)
+        ( kore-evetually-is-pattern kore-implies-is-pattern kore-rewrites-star-is-pattern kore-valid-is-pattern notation-reflexivity imp-is-pattern kore-rewrites-star-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof notation-symmetry kore-implies-transitivity-alt ) EAABADHIKMEAABDJKMABCADHEFEAACDJKMEAACADHIKMGEAACADHIKEAACDJKELAACADHIAACDJALACADHIACADHIACDJACADHILACDJACADHIACDNSOPQRTEAABDJKEAABADHIKELAABDJAABADHIALABDJABADHIABADHIABDNABADHILOPQR $.
 $}
 
 ${
@@ -35,7 +41,13 @@ $}
 ${
     kore-rewrites-plus-subsumption-lhs.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
     kore-rewrites-plus-subsumption-lhs.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-plus ph0 ph2 ph3 ) ) ) $.
-    kore-rewrites-plus-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-plus ph0 ph1 ph3 ) ) ) $= ? $.
+    kore-rewrites-plus-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-plus ph0 ph1 ph3 ) ) ) $=
+        $(
+            apply "kore-implies-transitivity-alt"
+            apply "kore-rewrites-plus-subsumption-lhs.0"
+            apply "kore-rewrites-plus-subsumption-lhs.1"
+        $)
+        ( kore-evetually-is-pattern kore-next-is-pattern kore-implies-is-pattern kore-rewrites-plus-is-pattern kore-valid-is-pattern notation-reflexivity imp-is-pattern kore-rewrites-plus-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof notation-symmetry kore-implies-transitivity-alt ) EAABAADHIJLNEAABDKLNABCAADHIEFEAACDKLNEAACAADHIJLNGEAACAADHIJLEAACDKLEMAACAADHIJAACDKAMACAADHIJACAADHIJACDKACAADHIJMACDKACAADHIJACDOTPQRSUAEAABDKLEAABAADHIJLEMAABDKAABAADHIJAMABDKABAADHIJABAADHIJABDOABAADHIJMPQRS $.
 $}
 
 ${
@@ -62,22 +74,16 @@ ${
     kore-rewrites-plus-branch   $p |- ( \imp th0  ( \kore-valid ph0 ( \kore-rewrites-plus ph0 ph1 ( \kore-or ph0 ph4 ph3 ) ) ) ) $= ? $.
 $}
 
-$( ${
-    kore-rewrites-ignore-ensures.0 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
-    kore-rewrites-ignore-ensures.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ( \kore-and ph0 ph2 ph3 ) ) ) ) $.
-    kore-rewrites-ignore-ensures   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) ) $= ? $.
-$} $)
-
-$( ${
-    kore-one-path-reaches-plus-ignore-ensures-alt.0 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
-    kore-one-path-reaches-plus-ignore-ensures-alt.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ( \kore-and ph0 ph2 ph3 ) ) ) ) ) $.
-    kore-one-path-reaches-plus-ignore-ensures-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ph3 ) ) ) ) $= ? $.
-$} $)
-
 ${
     kore-rewrites-subsumption-lhs.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
     kore-rewrites-subsumption-lhs.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph2 ph3 ) ) ) $.
-    kore-rewrites-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) ) $= ? $.
+    kore-rewrites-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ph1 ph3 ) ) ) $=
+        $(
+            apply "kore-implies-transitivity-alt"
+            apply "kore-rewrites-subsumption-lhs.0"
+            apply "kore-rewrites-subsumption-lhs.1"
+        $)
+        ( kore-next-is-pattern kore-implies-is-pattern kore-rewrites-is-pattern kore-valid-is-pattern notation-reflexivity imp-is-pattern kore-rewrites-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof notation-symmetry kore-implies-transitivity-alt ) EAABADHIKMEAABDJKMABCADHEFEAACDJKMEAACADHIKMGEAACADHIKEAACDJKELAACADHIAACDJALACADHIACADHIACDJACADHILACDJACADHIACDNSOPQRTEAABDJKEAABADHIKELAABDJAABADHIALABDJABADHIABADHIABDNABADHILOPQR $.
 $}
 
 ${
@@ -213,7 +219,13 @@ $}
 ${
     kore-one-path-reaches-star-subsumption-lhs.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
     kore-one-path-reaches-star-subsumption-lhs.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-star ph0 ph2 ph3 ) ) ) $.
-    kore-one-path-reaches-star-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-star ph0 ph1 ph3 ) ) ) $= ? $.
+    kore-one-path-reaches-star-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-star ph0 ph1 ph3 ) ) ) $=
+        $(
+            apply "kore-implies-transitivity-alt"
+            apply "kore-one-path-reaches-star-subsumption-lhs.0"
+            apply "kore-one-path-reaches-star-subsumption-lhs.1"
+        $)
+        ( kore-weak-evetually-is-pattern kore-implies-is-pattern kore-one-path-reaches-star-is-pattern kore-valid-is-pattern notation-reflexivity imp-is-pattern kore-one-path-reaches-star-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof notation-symmetry kore-implies-transitivity-alt ) EAABADHIKMEAABDJKMABCADHEFEAACDJKMEAACADHIKMGEAACADHIKEAACDJKELAACADHIAACDJALACADHIACADHIACDJACADHILACDJACADHIACDNSOPQRTEAABDJKEAABADHIKELAABDJAABADHIALABDJABADHIABADHIABDNABADHILOPQR $.
 $}
 
 ${
@@ -225,7 +237,13 @@ $}
 ${
     kore-one-path-reaches-plus-subsumption-lhs.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
     kore-one-path-reaches-plus-subsumption-lhs.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ph2 ph3 ) ) ) $.
-    kore-one-path-reaches-plus-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ph1 ph3 ) ) ) $= ? $.
+    kore-one-path-reaches-plus-subsumption-lhs   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ph1 ph3 ) ) ) $=
+        $(
+            apply "kore-implies-transitivity-alt"
+            apply "kore-one-path-reaches-plus-subsumption-lhs.0"
+            apply "kore-one-path-reaches-plus-subsumption-lhs.1"
+        $)
+        ( kore-weak-evetually-is-pattern kore-next-is-pattern kore-implies-is-pattern kore-one-path-reaches-plus-is-pattern kore-valid-is-pattern notation-reflexivity imp-is-pattern kore-one-path-reaches-plus-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof notation-symmetry kore-implies-transitivity-alt ) EAABAADHIJLNEAABDKLNABCAADHIEFEAACDKLNEAACAADHIJLNGEAACAADHIJLEAACDKLEMAACAADHIJAACDKAMACAADHIJACAADHIJACDKACAADHIJMACDKACAADHIJACDOTPQRSUAEAABDKLEAABAADHIJLEMAABDKAABAADHIJAMABDKABAADHIJABAADHIJABDOABAADHIJMPQRS $.
 $}
 
 ${
@@ -235,9 +253,47 @@ ${
 $}
 
 ${
-    kore-one-path-reaches-plus-subsumption-lhs-alt.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
-    kore-one-path-reaches-plus-subsumption-lhs-alt.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph2 ph3 ) ) ) ) $.
-    kore-one-path-reaches-plus-subsumption-lhs-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ph3 ) ) ) ) $= ? $.
+    kore-one-path-reaches-plus-subsumption-lhs-alt.0 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-one-path-reaches-plus-subsumption-lhs-alt.1 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-one-path-reaches-plus-subsumption-lhs-alt.2 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
+    kore-one-path-reaches-plus-subsumption-lhs-alt.3 $e |- ( \imp th0 ( \in-sort ph4 ph0 ) ) $.
+    kore-one-path-reaches-plus-subsumption-lhs-alt.4 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
+    kore-one-path-reaches-plus-subsumption-lhs-alt.5 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph2 ph3 ) ) ) ) $.
+    kore-one-path-reaches-plus-subsumption-lhs-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ph1 ph3 ) ) ) ) $=
+        $(
+            apply "kore-mp-alt"
+            apply "kore-mp-alt"
+            apply "kore-weakening-imp3"
+            meh
+            meh
+            meh
+            apply "kore-implies-transitivity-alt2"
+            apply "kore-one-path-reaches-plus-subsumption-lhs-alt.0"
+            meh
+            apply "rule-weakening"
+            sorting
+            apply "kore-weakening"
+            apply "kore-one-path-reaches-plus-subsumption-lhs-alt.4"
+            apply "kore-one-path-reaches-plus-subsumption-lhs-alt.5"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "weakening-imp3"
+            meh
+            apply "kore-one-path-reaches-plus-subsumption-lhs-alt.0"
+            apply "kore-one-path-reaches-plus-subsumption-lhs-alt.1"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "weakening-imp2"
+            meh
+            apply "kore-one-path-reaches-plus-subsumption-lhs-alt.1"
+            apply "kore-one-path-reaches-plus-subsumption-lhs-alt.3"
+            apply "kore-one-path-reaches-plus-subsumption-lhs-alt.1"
+            apply "rule-curry"
+            sorting
+            sorting
+        $)
+        ( kore-implies-is-pattern in-sort-is-pattern kore-weak-evetually-is-pattern kore-next-is-pattern imp-is-pattern kore-one-path-reaches-plus-is-pattern notation-reflexivity proof-rule-mp kore-valid-is-pattern and-is-pattern rule-imp-transitivity top-is-pattern imp-reflexivity notation-kore-implies rule-and-intro-alt2-sugar kore-implies-sorting proof-rule-prop-1 kore-weak-eventually-sorting kore-next-sorting kore-one-path-reaches-plus-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof kore-mp-alt weakening-imp3 and-elim-left-sugar and-elim-right-sugar rule-curry weakening-imp2 top-intro rule-weakening kore-implies-transitivity-alt2 kore-weakening-imp3 kore-weakening notation-symmetry ) AAEACAADOPMMAEABDRMFAAEABCMMAAEACAADOPMMAEABDRMMFAABCMACAADOPMABDREFFCANQFABCMANQFBANQFCANQFABCMANQQBANCANABCMANQQFBANQFCANQFABCMANQQQBANCANABCMANFURBANCANABCMANBANCANUBBANCANUBABCMANBANCANUBBANCANBANCANUBBANBANBANCANUSBANUEUCBANCANUBCANCANBANCANUTCANUEUCUGABCUHUCVATGTHTFCANQFACAADOPMANQCANACAADOPMANQFCANQFACAADOPMANQQCANACAADOPMANFVBCANCANAADOPANUBACAADOPMANCANCANAADOPANCANUECANADOANAADOPANADOANCANADOANQADOANCANUIADUJTAADOUKUCUGACAADOPUHUCTHTJFAAABCMAACAADOPMABAADOPMMMUAQFAAABCMAACAADOPMABDRMMUAQABCAADOPFGHFAADOPANUDAADOPANUDADOANAADOPANADOANUDADOANQADOANUDUIADUJTAADOUKUCVCTVDVEFAAABCMAACAADOPMABDRMMUAFAAABCMAACAADOPMABAADOPMMMUAFSAAABCMAACAADOPMABDRMMAAABCMAACAADOPMABAADOPMMMASAABCMAACAADOPMABDRMAABCMAACAADOPMABAADOPMMASABCMSAACAADOPMABDRAACAADOPMABAADOPMASACAADOPMSABDRABAADOPMABAADOPMABDULABAADOPMSUMUFUFUNUOUPVFAEABCMFKVGUQFAAEACDRMUAQFAAEACAADOPMMUAQLFAAEACAADOPMMUAFAAEACDRMUAFSAAEACAADOPMMAAEACDRMASAEACAADOPMAEACDRASESACAADOPMACAADOPMACDRACAADOPMSACDRACAADOPMACDULVHUMUFUNUOUPUQ $.
 $}
 
 ${
