@@ -293,7 +293,32 @@ ${
 $}
 
 ${
-    kore-reachability-one-path-case-star.0 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-one-path-reaches-star ph0 ph2 ph4 ) ) ) ) $.
-    kore-reachability-one-path-case-star.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-one-path-reaches-star ph0 ph3 ph4 ) ) ) ) $.
-    kore-reachability-one-path-case-star   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-one-path-reaches-star ph0 ( \kore-or ph0 ph2 ph3 ) ph4 ) ) ) ) $= ? $.
+    kore-reachability-one-path-case-star.0 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-reachability-one-path-case-star.1 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-reachability-one-path-case-star.2 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
+    kore-reachability-one-path-case-star.3 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-one-path-reaches-star ph0 ph2 ph4 ) ) ) ) $.
+    kore-reachability-one-path-case-star.4 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-one-path-reaches-star ph0 ph3 ph4 ) ) ) ) $.
+    kore-reachability-one-path-case-star   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-one-path-reaches-star ph0 ( \kore-or ph0 ph2 ph3 ) ph4 ) ) ) ) $=
+        $(
+            apply "kore-mp-alt"
+            apply "kore-mp-alt"
+            apply "kore-weakening-imp3"
+            meh
+            meh
+            meh
+            apply "kore-or-elim-alt3"
+            meh
+            meh
+            meh
+            apply "kore-reachability-one-path-case-star.3"
+            apply "kore-reachability-one-path-case-star.4"
+            apply "proof-rule-mp" & apply "proof-rule-mp" & apply "proof-rule-mp" & apply "proof-rule-mp" & apply "weakening-imp4" & apply "rule-curry" & apply "rule-curry" & meh & apply "kore-reachability-one-path-case-star.0" & apply "kore-reachability-one-path-case-star.1" & apply "kore-reachability-one-path-case-star.2"
+            apply "proof-rule-mp" & apply "proof-rule-mp" & apply "proof-rule-mp" & apply "proof-rule-mp" & apply "weakening-imp4" & apply "rule-curry" & apply "rule-curry" & meh & apply "kore-reachability-one-path-case-star.0" & apply "kore-reachability-one-path-case-star.1" & apply "kore-reachability-one-path-case-star.2"
+            apply "kore-reachability-one-path-case-star.0"
+            apply "kore-reachability-one-path-case-star.1"
+            apply "kore-reachability-one-path-case-star.2"
+            apply "rule-weakening"
+            (sorting)+
+        $)
+        ( in-sort-is-pattern kore-implies-is-pattern kore-weak-evetually-is-pattern imp-is-pattern and-is-pattern kore-one-path-reaches-star-is-pattern kore-or-is-pattern notation-reflexivity kore-valid-is-pattern proof-rule-mp rule-imp-transitivity rule-curry notation-kore-implies kore-weak-eventually-sorting kore-one-path-reaches-star-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof weakening-imp4 and-elim-right-sugar imp-reflexivity proof-rule-prop-1 rule-and-intro-alt2-sugar kore-implies-sorting notation-symmetry kore-mp-alt and-elim-left-sugar rule-weakening kore-or-elim-alt3 kore-weakening-imp3 ) AABADAENMMABAACDREQMFAABACAENMMAABADAENMMABAACDREQMMFAACAENMADAENMAACDREQBFFDALOFACAENMALOFCALOFDALOFACAENMALOOFBALOFCALOFDALOFACAENMALOOOBALCALDALACAENMALOOOFBALOFCALOFDALOFACAENMALOOOOBALCALDALACAENMALFUKBALCALDALACAENMALOBALCALPDALACAENMALBALCALPDALPCALAENALPACAENMALBALCALPDALPCALAENALBALCALPDALPBALCALPCALBALCALPDALUSBALCALPCALCALBALCALULCALUMUBUBAENALBALCALPDALPAENALOAENALBALCALPDALPUNAEUEUAUOACAENUPUBUCUCUAGUAHUAIUAFDALOFADAENMALOFCALOFDALOFADAENMALOOFBALOFCALOFDALOFADAENMALOOOBALCALDALADAENMALOOOFBALOFCALOFDALOFADAENMALOOOOBALCALDALADAENMALFUKBALCALDALADAENMALOBALCALPDALADAENMALBALCALPDALPDALAENALPADAENMALBALCALPDALPDALAENALBALCALPDALPDALDALBALCALPDALULDALUMUBAENALBALCALPDALPAENALOAENALBALCALPDALPUNAEUEUAUOADAENUPUBUCUCUAGUAHUAIUAGFAAACAENMAADAENMAACDRAENMMMTOFAAACAENMAADAENMAACDREQMMTOACDAENFHIFAENALAEUEUTVAFAAACAENMAADAENMAACDREQMMTFAAACAENMAADAENMAACDRAENMMMTFSAAACAENMAADAENMAACDREQMMAAACAENMAADAENMAACDRAENMMMASAACAENMAADAENMAACDREQMAACAENMAADAENMAACDRAENMMASACAENMSAADAENMAACDREQAADAENMAACDRAENMASADAENMSAACDREQAACDRAENMAACDRAENMAACDREUFAACDRAENMSUGUDUDUHUIUJVBFAABACEQMTOFAABACAENMMTOJFAABACAENMMTFAABACEQMTFSAABACAENMMAABACEQMASABACAENMABACEQASBSACAENMACAENMACEQACAENMSACEQACAENMACEUFUQUGUDUHUIUJURFAABADEQMTOFAABADAENMMTOKFAABADAENMMTFAABADEQMTFSAABADAENMMAABADEQMASABADAENMABADEQASBSADAENMADAENMADEQADAENMSADEQADAENMADEUFUQUGUDUHUIUJUR $.
 $}
