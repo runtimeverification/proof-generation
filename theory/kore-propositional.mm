@@ -530,6 +530,26 @@ ${
         ( kore-implies-is-pattern kore-not-is-pattern in-sort-is-pattern kore-valid-is-pattern proof-rule-mp imp-is-pattern kore-contrapositive rule-kore-mp ) AABCGAACHABHGCAIAAABCGAACHABHGGJBAICAIAAABCGAACHABHGGJLABCMDKEKFN $.
 $}
 
+${
+    kore-contrapositive-alt.0 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-contrapositive-alt.1 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-contrapositive-alt.2 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ph2 ) ) ) $.
+    kore-contrapositive-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-not ph0 ph2 ) ( \kore-not ph0 ph1 ) ) ) ) $=
+        $(
+            apply "kore-mp-alt"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "weakening-imp3"
+            meh
+            apply "kore-contrapositive-alt.0"
+            apply "kore-contrapositive-alt.1"
+            apply "kore-contrapositive-alt.2"
+            apply "kore-contrapositive"
+        $)
+        ( kore-implies-is-pattern imp-is-pattern kore-not-is-pattern in-sort-is-pattern kore-valid-is-pattern proof-rule-mp weakening-imp3 kore-contrapositive kore-mp-alt ) AABCHAACJABJHDDCAKIDAAABCHAACJABJHHLIDBAKIDCAKIDAAABCHAACJABJHHLIIBAKCAKAAABCHAACJABJHHLIIDBAKIDCAKIDAAABCHAACJABJHHLIIIBAKCAKAAABCHAACJABJHHLDNABCOMEMFMGP $.
+$}
+
 kore-dn-intro $p |- ( \imp ( \in-sort ph1 ph0 ) ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-not ph0 ( \kore-not ph0 ph1 ) ) ) ) ) $=
     $(
         desugar-kore
