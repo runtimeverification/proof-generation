@@ -19,7 +19,11 @@ from .encoder import KoreEncoder, KoreDecoder
 from .propositional import PropositionalProofGenerator
 
 
-class EqualityProofGenerator(ProofGenerator):
+class FOLProofGenerator(ProofGenerator):
+    """
+    Generating proofs related to FOL and equality reasoning
+    """
+
     def apply_symmetry(self, equation: ProvableClaim) -> ProvableClaim:
         return self.composer.apply_kore_lemma("kore-equals-symmetry", equation)
 
@@ -92,16 +96,6 @@ class EqualityProofGenerator(ProofGenerator):
         provable = self.apply_prenex_implies_right(provable)
 
         return provable
-
-        # left, right = KoreUtils.destruct_implies(provable.claim.pattern)
-
-        # goal = KoreUtils.construct_implies(
-        #     KoreUtils.construct_forall(variable, left),
-        #     KoreUtils.construct_forall(variable, right),
-        # )
-
-        # # TODO: prove this
-        # return self.composer.load_fresh_claim_placeholder("forall-compat", goal)
 
     def apply_prenex_implies_left(self, provable: ProvableClaim) -> ProvableClaim:
         """
@@ -374,7 +368,7 @@ class EqualityProofGenerator(ProofGenerator):
         free_var, = KoreUtils.get_free_variables(inj_axiom_instance.claim)
         inj_axiom_instance = self.apply_functional_substitution(inj_axiom_instance, {free_var: argument})
 
-        return EqualityProofGenerator(self.composer).replace_equal_subpattern(
+        return self.replace_equal_subpattern(
             reduced_injection_is_functional,
             [
                 0,

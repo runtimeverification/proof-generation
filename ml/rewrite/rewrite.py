@@ -16,7 +16,7 @@ from ml.metamath.auto.predicate import PredicateProver
 from .encoder import KoreEncoder
 
 from .env import KoreComposer, ProofGenerator, ProvableClaim
-from .equality import EqualityProofGenerator
+from .fol import FOLProofGenerator
 from .unification import UnificationProofGenerator, InjectionCombine, UnificationResult, ConstraintEquation
 from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
@@ -57,7 +57,7 @@ class RewriteProofGenerator(ProofGenerator):
         self.disjoint_gen = DisjointnessProofGenerator(composer)
         self.smt_gen = SMTProofGenerator(composer)
         self.prop_gen = PropositionalProofGenerator(composer)
-        self.eq_gen = EqualityProofGenerator(composer)
+        self.fol_gen = FOLProofGenerator(composer)
 
         self.proved_claims: Dict[str, ProvableClaim] = {}
 
@@ -235,8 +235,8 @@ class RewriteProofGenerator(ProofGenerator):
         # quantify all free variables first
         for var in free_vars:
             # add a quantifer and then push it to the right of the implication
-            provable = self.eq_gen.apply_forall_intro(provable, var)
-            provable = self.eq_gen.apply_prenex_implies_right(provable)
+            provable = self.fol_gen.apply_forall_intro(provable, var)
+            provable = self.fol_gen.apply_prenex_implies_right(provable)
 
         # get a proof of |- WF -> forall ... phi
         provable = self.composer.apply_kore_lemma(
@@ -264,14 +264,14 @@ class RewriteProofGenerator(ProofGenerator):
         # add quantifies to both sides
         for var in free_vars:
             # (forall WF -> phi) -> forall phi
-            remove_wf = self.eq_gen.apply_implies_compat_in_forall(remove_wf, var)
+            remove_wf = self.fol_gen.apply_implies_compat_in_forall(remove_wf, var)
 
             lhs, rhs = KoreUtils.destruct_implies(remove_wf.claim.pattern)
             _, lhs = KoreUtils.destruct_forall(lhs)
             lhs_lhs, lhs_rhs = KoreUtils.destruct_implies(lhs)
 
             # (WF -> forall phi) -> (forall WF -> phi)
-            prenex = self.eq_gen.get_prenex_implies_left(var, lhs_lhs, lhs_rhs)
+            prenex = self.fol_gen.get_prenex_implies_left(var, lhs_lhs, lhs_rhs)
 
             # (WF -> forall phi) -> forall phi
             remove_wf = self.prop_gen.apply_implies_transitivity(prenex, remove_wf)
@@ -282,7 +282,7 @@ class RewriteProofGenerator(ProofGenerator):
             provable,
         )
 
-        provable = self.eq_gen.eliminate_all_universal_quantifiers(provable)
+        provable = self.fol_gen.eliminate_all_universal_quantifiers(provable)
 
         return provable
 
@@ -317,7 +317,7 @@ class RewriteProofGenerator(ProofGenerator):
                 # TODO: merge this with the usual process for instantiating axioms
 
                 substitution = step.applied_rules[0].get_substitution()
-                axiom_instantiation = self.eq_gen.apply_functional_substitution_as_implication(
+                axiom_instantiation = self.fol_gen.apply_functional_substitution_as_implication(
                     axiom.pattern, substitution
                 )
 
@@ -535,7 +535,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         return claim
 
-    # TODO: put this to EqualityProofGenerator
+    # TODO: put this to FOLProofGenerator
     def apply_constraint_equation(
         self,
         pattern: kore.Pattern,
@@ -739,7 +739,7 @@ class RewriteProofGenerator(ProofGenerator):
         assert lhs_unification_result is not None, \
                f"unable to unify the LHS of {applied_rule.rule_id} with the initial pattern {initial.pattern}"
 
-        instantiated_axiom = self.eq_gen.apply_functional_substitution(
+        instantiated_axiom = self.fol_gen.apply_functional_substitution(
             rewrite_axiom,
             {
                 **rule_substitution.substitution,
@@ -1397,7 +1397,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             # quantify all variables and convert to exists
             for var in quantified_variables[::-1]:
-                disjointness = self.eq_gen.apply_forall_intro(disjointness, var)
+                disjointness = self.fol_gen.apply_forall_intro(disjointness, var)
                 disjointness = self.composer.apply_kore_lemma(
                     "kore-forall-not-to-exists",
                     disjointness,
@@ -1426,7 +1426,7 @@ class RewriteProofGenerator(ProofGenerator):
                 # some technical requirements: the left pattern has to be non-empty
                 SortingProver.auto_rearrange_premise(
                     self.composer.get_theorem("functional-imp-nonempty-alt"
-                                              ).apply(self.eq_gen.prove_functional(left), ),
+                                              ).apply(self.fol_gen.prove_functional(left), ),
                 ),
                 SortingProver.auto,
                 SortingProver.auto,
@@ -1572,7 +1572,7 @@ class RewriteProofGenerator(ProofGenerator):
             return None
 
         # eliminate all universal quantifiers
-        instantiated_axiom = self.eq_gen \
+        instantiated_axiom = self.fol_gen \
             .apply_functional_substitution(axiom, unification_result.substitution)
 
         # apply equations used in unification
@@ -1706,7 +1706,7 @@ class RewriteProofGenerator(ProofGenerator):
                     axiom = self.find_anywhere_axiom_for_pattern(function_subpattern)
 
                 # finish up the rewriting by substituting in the rhs
-                provable = self.eq_gen.replace_equal_subpattern(provable, path + function_path, axiom)
+                provable = self.fol_gen.replace_equal_subpattern(provable, path + function_path, axiom)
                 continue
 
             break

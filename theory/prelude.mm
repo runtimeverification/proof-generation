@@ -1,6 +1,6 @@
 $( this file imports everything needed for the proof generator $)
 
-$[ theory/kore-equality.mm $]
+$[ theory/kore-fol.mm $]
 $[ theory/kore-reachability.mm $]
 $[ theory/kore-fresh.mm $]
 $[ theory/kore-disjointness.mm $]

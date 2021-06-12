@@ -1,5 +1,5 @@
 $[ theory/kore.mm $]
-$[ theory/kore-equality.mm $]
+$[ theory/kore-fol.mm $]
 
 ${
     $d x ph1 $.
