@@ -17,6 +17,7 @@ from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.context import ApplicationContextProver
 from ml.metamath.auto.sorting import SortingProver
 from ml.metamath.auto.fresh import FreshProver
+from ml.metamath.auto.predicate import PredicateProver
 
 from .encoder import KoreEncoder, KoreDecoder
 from .templates import KoreTemplates
@@ -1156,6 +1157,10 @@ class KoreComposer(Composer):
                         None if premise is None else common_premise, essential_provable_claim.proof
                     )
                     essential_proofs.append(essential_proof)
+
+                elif MetamathUtils.is_is_predicate(conclusion):
+                    essential_proofs.append(PredicateProver.auto)
+
                 else:
                     # try to automatically resolve
                     # TODO: this might be too much
