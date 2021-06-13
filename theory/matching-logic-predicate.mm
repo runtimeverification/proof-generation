@@ -633,3 +633,9 @@ ${
         $)
         ( definedness-is-symbol symbol-is-pattern app-is-pattern and-is-pattern ceil-is-pattern notation-reflexivity iff-is-pattern ceil-is-sugar notation-transitivity notation-proof imp-is-pattern predicate-imp-propagate-in-app notation-and notation-iff rule-iff-elim-left rule-uncurry frame-app-right notation-imp rule-imp-transitivity rule-curry ) ABJCJABJIFGABIHCJABJIFGABIHAFGBHIFGABIHLABJIFGABIHLAFGBDQABJIFGABIHAFGBHIFGABIHABJAFGBHAKBJFGBHFGBHBMFGBHKNRFGABIHKSOTFGABIHFGCHPFGABIHCJPFGABICABCEUAUBFGABIHCJFGABIHFGCHFGABIHKCJFGCHFGCHCMFGCHKNUCOUDUE $.
 $}
+
+${
+    predicate-not-ceil-elim.0 $e |- ( \is-predicate ph0 ) $.
+    predicate-not-ceil-elim.1 $e |- ( \imp ph0 ( \not ph1 ) ) $.
+    predicate-not-ceil-elim   $p |- ( \imp ph0 ( \not ( \ceil ph1 ) ) ) $= ? $.
+$}
