@@ -172,7 +172,9 @@ class InjectionCombine(Equation):
         assert len(free_vars) == 1
         free_var, = free_vars
 
-        inj_axiom_instance = fol_gen.apply_functional_substitution(inj_axiom_instance, { free_var: subsubpattern.arguments[0] })
+        inj_axiom_instance = fol_gen.apply_functional_substitution(
+            inj_axiom_instance, {free_var: subsubpattern.arguments[0]}
+        )
 
         return fol_gen.replace_equal_subpattern(provable, path, inj_axiom_instance)
 
@@ -210,7 +212,7 @@ class InjectionSplit(Equation):
         assert len(free_vars) == 1
         free_var, = free_vars
 
-        inj_axiom_instance = fol_gen.apply_functional_substitution(inj_axiom_instance, { free_var: argument })
+        inj_axiom_instance = fol_gen.apply_functional_substitution(inj_axiom_instance, {free_var: argument})
 
         # reverse the equation
         inj_axiom_instance = fol_gen.apply_symmetry(inj_axiom_instance)
