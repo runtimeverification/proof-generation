@@ -142,20 +142,72 @@ ${
         ( imp-is-pattern kore-valid-is-pattern element-var-is-var var-is-pattern in-sort-is-pattern forall-is-pattern sorted-forall-is-pattern rule-curry lemma-forall-intro sorted-forall-is-sugar notation-reflexivity notation-transitivity notation-proof kore-forall-intro ) ABCDEEIJCKDABHGGELCDABHGEMEIJCKDABHGGEEIJCKDABHFNOCDABHGEMEIJCKDABHGGELEIJCKDABHGGELCDABHGEPEIJCKDABHGGELQRST $.
 $}
 
-$( ${
-    kore-equality-in-constraint.0 $e #Substitution ph6 ph5 ph3 x $.
-    kore-equality-in-constraint.1 $e #Substitution ph7 ph5 ph4 x $.
-    kore-equality-in-constraint   $p
-        |- ( \imp th0 ( \kore-valid ph0 ( \kore-iff ph0
-            ( \kore-and ph0 ( \kore-and ph0 ph8 ( \kore-equals ph2 ph0 ph3 ph4 ) ) ph6 )
-            ( \kore-and ph0 ( \kore-and ph0 ph8 ( \kore-equals ph2 ph0 ph3 ph4 ) ) ph7 ) ) ) ) $= ? $.
-$} $)
-
 ${
-    kore-equality-in-constraint.0 $e #Substitution ph2 ph4 ph5 x $.
-    kore-equality-in-constraint.1 $e #Substitution ph3 ph4 ph6 x $.
-    kore-equality-in-constraint.2 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-equals ph7 ph0 ph5 ph6 ) ) ) ) $.
-    kore-equality-in-constraint   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $= ? $.
+    kore-equality-in-constraint.0 $e |- ( \is-predicate th0 ) $.
+    kore-equality-in-constraint.1 $e #Substitution ph2 ph4 ph5 x $.
+    kore-equality-in-constraint.2 $e #Substitution ph3 ph4 ph6 x $.
+    kore-equality-in-constraint.3 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-equality-in-constraint.4 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-equality-in-constraint.5 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
+    kore-equality-in-constraint.6 $e |- ( \imp th0 ( \in-sort ph5 ph7 ) ) $.
+    kore-equality-in-constraint.7 $e |- ( \imp th0 ( \in-sort ph6 ph7 ) ) $.
+    kore-equality-in-constraint.8 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph1 ( \kore-equals ph7 ph0 ph5 ph6 ) ) ) ) $.
+    kore-equality-in-constraint   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $=
+        $(
+            apply "kore-and-intro-alt2"
+            (sorting)+
+            apply "kore-and-elim-left-alt3"
+            (sorting)+
+            apply "kore-uncurry"
+            apply "kore-implies-transitivity-alt"
+            apply "kore-equality-in-constraint.8"
+            apply "kore-implies-intro-alt"
+            apply "kore-equality-in-constraint.0"
+            (sorting)+
+            apply "rule-curry"
+            apply "rule-imp-transitivity", ph1 = "( \and th0 ( \and ( \eq ph5 ph6 ) ( \inh ph0 ) ) )"
+            apply "rule-and-intro-alt2-sugar"
+            apply "and-elim-left"
+            apply "rule-uncurry"
+            apply "rule-imp-transitivity", ph1 = "( \eq ( \kore-equals ph7 ph0 ph5 ph6 ) ( \and ( \eq ph5 ph6 ) ( \inh ph0 ) ) )"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "weakening-imp3"
+            apply "rule-curry"
+            apply "kore-semantics-equals"
+            (sorting)+
+            apply "lemma-eq-imp"
+            apply "rule-uncurry"
+            apply "premises-switch"
+            apply "rule-imp-transitivity", ph1 = "( \imp th0 ( \and ( \imp ph2 ph3 ) ( \inh ph0 ) ) )"
+            meh
+            apply "proof-rule-mp"
+            apply "proof-rule-mp"
+            apply "weakening-imp3"
+            apply "rule-imp-transitivity", ph1 = "( \eq ( \kore-implies ph0 ph2 ph3 ) ( \and ( \imp ph2 ph3 ) ( \inh ph0 ) ) )"
+            apply "kore-semantics-implies"
+            apply "rule-imp-transitivity"
+            apply "eq-symmetry"
+            apply "lemma-eq-imp"
+            sorting
+            apply "rule-curry"
+            apply "rule-and-intro-alt2-sugar"
+            meh
+            apply "rule-imp-transitivity"
+            apply "and-elim-left"
+            apply "and-elim-right"
+            apply "rule-uncurry"
+            apply "premises-switch"
+            apply "rule-weakening"
+            apply "rule-uncurry"
+            apply "premises-switch"
+            apply "rule-weakening"
+            apply "eq-elim"
+            apply "kore-equality-in-constraint.1"
+            apply "kore-equality-in-constraint.2"
+        $)
+        ( and-is-pattern in-sort-is-pattern imp-is-pattern bot-is-pattern inh-is-pattern eq-is-pattern not-is-pattern top-is-pattern kore-equals-is-pattern kore-implies-is-pattern or-is-pattern rule-and-intro-alt2-sugar notation-transitivity rule-imp-transitivity notation-reflexivity not-is-sugar notation-imp proof-rule-mp and-elim-right-sugar rule-weakening rule-uncurry rule-weakening-imp2 top-intro and-is-sugar or-is-sugar notation-proof rule-curry premises-switch and-elim-left-sugar imp-reflexivity and-elim-left weakening-imp3 lemma-eq-imp kore-and-is-pattern kore-and-elim-left-alt3 proof-rule-prop-1 kore-equals-sorting kore-implies-sorting-alt kore-semantics-equals eq-elim and-elim-right kore-semantics-implies eq-symmetry kore-implies-intro-alt kore-implies-transitivity-alt kore-uncurry kore-and-intro-alt2 ) AABCVMBDIIGHUAFHUADAUACAUABAUAUGTTTTTUBIBAUAUBGHUAFHUADAUACAUABAUAUGTTTTTBAUAIGHUAFHUADAUACAUABAUAUGTTTTTFHUADAUACAUABAUAUGTTTTBAUAGHUAFHUADAUACAUABAUAUGTTTTURFHUADAUACAUABAUAUGTTTTDAUACAUABAUAUGTTTBAUAFHUADAUACAUABAUAUGTTTURDAUACAUABAUAUGTTTCAUABAUAUGTTBAUADAUACAUABAUAUGTTURCAUABAUAUGTTBAUAUGTBAUACAUABAUAUGTURBAUAUGTBAUABAUABAUAUGVHBAUAVIUMUMUMUMUMVAIGHUAFHUADAUACAUABAUAUGTTTTRIFHUADAUACAUABAUAUGTTTQIDAUACAUABAUAUGTTPICAUABAUAUGTOIBAUAUGNIUGVBUSUKUKUKUKUKUQPABCINOVNABCDIABHAFGUHACDUIISAHAFGUHACDUIIKIGHUAFHUADAUACAUABAUAUGTTTTTUBIHAFGUHAUAUBGHUAFHUADAUACAUABAUAUGTTTTTHAFGUHAUAIHAFGUHAUAGHUAFHUADAUACAUABAUAUGTTTTTHAFGUHAUAUBHAFGUHAUAGHUAFHUADAUACAUABAUAUGTTTTTVOHAFGVPUQVAIGHUAFHUADAUACAUABAUAUGTTTTRIFHUADAUACAUABAUAUGTTTQIDAUACAUABAUAUGTTPICAUABAUAUGTOIBAUAUGNIUGVBUSUKUKUKUKUKUQIGHUAFHUADAUACAUABAUAUGTTTTTUBIACDUIAUAUBGHUAFHUADAUACAUABAUAUGTTTTTACDUIAUAIGHUAFHUADAUACAUABAUAUGTTTTTDAUAACDUIAUAGHUAFHUADAUACAUABAUAUGTTTTTFHUADAUACAUABAUAUGTTTTDAUAGHUAFHUADAUACAUABAUAUGTTTTURFHUADAUACAUABAUAUGTTTTDAUACAUABAUAUGTTTDAUAFHUADAUACAUABAUAUGTTTURDAUACAUABAUAUGTTTDAUADAUADAUACAUABAUAUGTTVHDAUAVIUMUMUMACDVQUMVAIGHUAFHUADAUACAUABAUAUGTTTTRIFHUADAUACAUABAUAUGTTTQIDAUACAUABAUAUGTTPICAUABAUAUGTOIBAUAUGNIUGVBUSUKUKUKUKUKUQIHAFGUHACDUIIHAFGUHTIFGUEAUDTTACDUIIHAFGUHTIFGUEAUDTIUCUBUCUBHAFGUHUCUBUBUCUBIUBIHAFGUHTIUBIHAFGUHVJIHAFGUHTIIUCUBUCUBHAFGUHUCUBUBUCUBIIHAFGUHTIUFHAFGUHUFUJUCUBIUCUBUCUBHAFGUHUCUBUBUCUBIHAFGUHTIUFHAFGUHUFUJUFIUFHAFGUHUFUJUCUBIHAFGUHVCIUFHAFGUHUFUJUOULIUFHAFGUHUFUJUCIUCUBUCUBHAFGUHUCUBUBUCIUFHAFGUHUFUJIUFUFHAFGUHUFUBIUCUBUCUBHAFGUHUCUBUBIUFHAFGUHUFVDIUFUFHAFGUHUFIUCUBUCUBHAFGUHUCUBIUFUFIUFUCUBIUCUBUCUBIUFUOIUFUCIUCUBUCIUFIUCUBIUCUBIUOIUCUBUNULUCUNUPULHAFGUHUFHAFGUHUCUBHAFGUHUCUBHAFGUHUOHAFGUHUCUBUNULUPULUCUNUPULIUNUPVEIHAFGUHFGUEAUDTIHAFGUHFGUEAUDTUEHAFGUHFGUEAUDTUBIGHUAUBIHAFGUHFGUEAUDTUEUBIFHUAUBIGHUAUBIHAFGUHFGUEAUDTUEUBUBFHUAGHUAHAFGUHFGUEAUDTUEUBUBIFHUAUBIGHUAUBIHAFGUHFGUEAUDTUEUBUBUBFHUAGHUAHAFGUHFGUEAUDTUEIVKFHUAGHUAHAFGUHFGUEAUDTUEHAFGVRVFUQQUQRUQHAFGUHFGUEAUDTVLUMUTUKIFGUEAUDTACDUIFGUEAUDTIACDUIFGUEAUDTICDUBAUDTUBIACDUIUBFGUEAUDTICDUBAUDTFGUEAUDTITCDUBAUDFGUEAUDTICDUBIFGUEAUDTCDUBIFGUEAUDTCDUBUBFGUEAUDCDUBAUDFGUECDUBAUDFGUECDUBUBFGCDEJLMVSUSVGUTUSVGUTFGUEAUDTITFGUEAUDTAUDFGUEAUDTUCUBUCUBIUCUBUBUCUBFGUEAUDTUBFGUEAUDTITFGUEAUDTUBFGUEAUDTIVJFGUEAUDTITFGUEAUDTFGUEAUDTUCUBUCUBIUCUBUBUCUBFGUEAUDTFGUEAUDTITFGUEAUDTUFIUFUJUCUBFGUEAUDTUCUBUCUBIUCUBUBUCUBFGUEAUDTITFGUEAUDTUFIUFUJUFFGUEAUDTUFIUFUJUCUBFGUEAUDTIVCFGUEAUDTUFIUFUJUOULFGUEAUDTUFIUFUJUCFGUEAUDTUCUBUCUBIUCUBUBUCFGUEAUDTUFIUFUJFGUEAUDTUFUFIUFUBFGUEAUDTUCUBUCUBIUCUBUBFGUEAUDTUFIUFVDFGUEAUDTUFUFIUFFGUEAUDTUCUBUCUBIUCUBFGUEAUDTUFUFFGUEAUDTUFUCUBFGUEAUDTUCUBUCUBFGUEAUDTUFUOFGUEAUDTUFUCFGUEAUDTUCUBUCFGUEAUDTUFFGUEAUDTUCUBFGUEAUDTUCUBFGUEAUDTUOFGUEAUDTUCUBUNULUCUNUPULIUOUPULUCUNUPULFGUEAUDTUNUPVEFGUEUCUBUCUBAUDUCUBUBUCUBAUDUBFGUEAUDTAUDUBFGUEAUDVTFGUEAUDTAUDFGUEUCUBUCUBAUDUCUBUBUCUBAUDFGUEAUDTFGUEUFAUDUFUJUCUBFGUEUCUBUCUBAUDUCUBUBUCUBFGUEAUDTFGUEUFAUDUFUJUFFGUEUFAUDUFUJUCUBFGUEAUDVCFGUEUFAUDUFUJUOULFGUEUFAUDUFUJUCFGUEUCUBUCUBAUDUCUBUBUCFGUEUFAUDUFUJFGUEUFUFAUDUFUBFGUEUCUBUCUBAUDUCUBUBFGUEUFAUDUFVDFGUEUFUFAUDUFFGUEUCUBUCUBAUDUCUBFGUEUFUFFGUEUFUCUBFGUEUCUBUCUBFGUEUFUOFGUEUFUCFGUEUCUBUCFGUEUFFGUEUCUBFGUEUCUBFGUEUOFGUEUCUBUNULUCUNUPULAUDUFAUDUCUBAUDUCUBAUDUOAUDUCUBUNULUPULUCUNUPULAUDUNUPVEUMUKVFIDAUAUBICDUBAUDTUBIACDUIUBUBDAUACDUBAUDTACDUIUBUBIDAUAUBICDUBAUDTUBIACDUIUBUBUBDAUACDUBAUDTACDUIIVKDAUAACDUICDUBAUDTUECDUBAUDTACDUIUBACDWAACDUICDUBAUDTUECDUBAUDTACDUIUECDUBAUDTACDUIUBCDUBAUDTACDUIWBCDUBAUDTACDUIVLUMUMUQPUQUMVGUTUMVFWCWDWEWF $.
 $}
 
 unit-sort-is-kore-sort $p |- ( \kore-is-sort \unit-sort ) $=
