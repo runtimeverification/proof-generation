@@ -29,6 +29,10 @@ class PredicateProver:
             subterm, = MetamathUtils.destruct_floor(term)
             return composer.get_theorem("lemma-floor-is-predicate").apply(ph0=subterm)
 
+        if MetamathUtils.is_kore_is_sort(term):
+            assert isinstance(term, Application)
+            return composer.get_theorem("kore-is-sort-is-predicate").apply(ph0=term.subterms[0])
+
         # TODO: this is pretty incomplete
 
         assert isinstance(term, Application)
