@@ -637,5 +637,16 @@ $}
 ${
     predicate-not-ceil-elim.0 $e |- ( \is-predicate ph0 ) $.
     predicate-not-ceil-elim.1 $e |- ( \imp ph0 ( \not ph1 ) ) $.
-    predicate-not-ceil-elim   $p |- ( \imp ph0 ( \not ( \ceil ph1 ) ) ) $= ? $.
+    predicate-not-ceil-elim   $p |- ( \imp ph0 ( \not ( \ceil ph1 ) ) ) $=
+        $(
+            from "predicate-not-ceil-elim.0", "predicate-not-ceil-elim.1", "predicate-floor-intro"
+            apply "proof-rule-mp"
+            apply "rule-weakening-imp2"
+            meh
+            apply "hyp-0"
+            apply "rule-contrapositive"
+            apply "lemma-imp-compat-in-ceil"
+            apply "dn-intro-sugar"
+        $)
+        ( not-is-pattern ceil-is-pattern imp-is-pattern bot-is-pattern floor-is-pattern notation-transitivity not-is-sugar notation-reflexivity dn-intro-sugar lemma-imp-compat-in-ceil rule-contrapositive floor-is-sugar notation-imp notation-proof rule-weakening-imp2 predicate-floor-intro proof-rule-mp ) ABEIGABFEGBEIBFEABEEFHGBFHGGBEIBFEGBFBEEFBBEEBMNOBEIBFEBEEFHGBFHGBEIBEEFHGBEEFHGBEIBEEFEBEEFHGBEPBEEFKJBEEFHGLJBFEBFHGBFHGBFKBFHGLJQRSABECDTUA $.
 $}
