@@ -124,7 +124,7 @@ kore-always-is-pattern $a #Pattern ( \kore-always ph0 ph1 ) $.
 ${
     $d X ph0 $.
     $d X ph1 $.
-    kore-always-is-sugar $a #Notation ( \kore-always ph0 ph1 ) ( \kore-not ph0 ( \kore-mu ph0 X ( \kore-not ph0 ( \kore-and ph0 ph1 ( \kore-next ph0 ( \kore-not ph0 X ) ) ) ) ) ) $.
+    kore-always-is-sugar $a #Notation ( \kore-always ph0 ph1 ) ( \kore-not ph0 ( \kore-mu ph0 X ( \kore-not ph0 ( \kore-and ph0 ph1 ( \kore-all-path-next ph0 ( \kore-not ph0 X ) ) ) ) ) ) $.
 $}
 
 kore-well-founded-is-pattern $a #Pattern ( \kore-well-founded ph0 ) $.
