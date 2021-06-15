@@ -391,10 +391,25 @@ ${
     kore-well-founded-sorting $p |- ( \in-sort ( \kore-well-founded ph0 ) ph0 ) $=
         $(
             apply "notation-proof"
-            apply "kore-mu-sorting-alt"
             meh
             apply "notation-in-sort"
             apply "kore-well-founded-is-sugar", X = "X"
+            apply "notation-reflexivity"
+            apply "kore-mu-sorting-alt"
+            positive
+        $)
+        ( X-is-element-var set-var-is-var var-is-pattern kore-not-is-pattern kore-next-is-pattern kore-all-path-next-is-pattern negative-disjoint notation-reflexivity positive-disjoint positive-in-var negative-in-kore-not negative-in-kore-next positive-in-kore-not kore-all-path-next-is-sugar notation-transitivity notation-positive kore-mu-is-pattern in-sort-is-pattern kore-well-founded-is-pattern kore-mu-sorting-alt kore-well-founded-is-sugar notation-in-sort notation-proof ) AABCDGBAAABCDEFEABCDGBCAAABCDEFBCABCJAABCDEBCABCHABCDBCABCHBCBCKLMNABCDGAAABCDEFEAAABCDEFEABCDOAAABCDEFEIPQRASATASAABCDGBAAABCDEFEABCDGBCAAABCDEFBCABCJAABCDEBCABCHABCDBCABCHBCBCKLMNABCDGAAABCDEFEAAABCDEFEABCDOAAABCDEFEIPQUAATAAABCDGBAAABCDEFEABCDGBCAAABCDEFBCABCJAABCDEBCABCHABCDBCABCHBCBCKLMNABCDGAAABCDEFEAAABCDEFEABCDOAAABCDEFEIPQRAABUBAIUCUD $.
+$}
+
+${
+    $d X Y ph0 $.
+    kore-well-founded-alt-sorting $p |- ( \in-sort ( \kore-well-founded-alt ph0 ) ph0 ) $=
+        $(
+            apply "notation-proof"
+            apply "kore-mu-sorting-alt"
+            meh
+            apply "notation-in-sort"
+            apply "kore-well-founded-alt-is-sugar", X = "X"
             apply "notation-reflexivity"
             apply "notation-positive"
             meh
@@ -413,7 +428,7 @@ ${
             apply "kore-always-is-sugar", X = "Y"
             positive
         $)
-        ( X-is-element-var set-var-is-var var-is-pattern kore-always-is-pattern kore-not-is-pattern kore-all-path-next-is-pattern kore-next-is-pattern kore-circularity-is-pattern notation-reflexivity negative-disjoint notation-transitivity notation-positive positive-disjoint positive-in-var positive-in-kore-always negative-in-kore-not negative-in-kore-next positive-in-kore-not kore-all-path-next-is-sugar kore-circularity-is-sugar kore-mu-is-pattern in-sort-is-pattern kore-well-founded-is-pattern kore-mu-sorting-alt kore-well-founded-is-sugar notation-in-sort notation-proof ) AABCDIBAABCDEGABCDIBCAAAABCDEFHFAABCDEGBCAAAABCDEFHBCABCNAAABCDEFBCABCKAABCDEBCABCKABCDBCBCBCOPQRSAABCDEGAAAABCDEFHFAAAABCDEFHFAABCDETAAAABCDEFHFJLMABCDIAABCDEGAABCDEGABCDUAAABCDEGJLMUBAUCAUDAUCAABCDIBAABCDEGABCDIBCAAAABCDEFHFAABCDEGBCAAAABCDEFHBCABCNAAABCDEFBCABCKAABCDEBCABCKABCDBCBCBCOPQRSAABCDEGAAAABCDEFHFAAAABCDEFHFAABCDETAAAABCDEFHFJLMABCDIAABCDEGAABCDEGABCDUAAABCDEGJLMUEAUDAAABCDIBAABCDEGABCDIBCAAAABCDEFHFAABCDEGBCAAAABCDEFHBCABCNAAABCDEFBCABCKAABCDEBCABCKABCDBCBCBCOPQRSAABCDEGAAAABCDEFHFAAAABCDEFHFAABCDETAAAABCDEFHFJLMABCDIAABCDEGAABCDEGABCDUAAABCDEGJLMUBAABUFAJUGUH $.
+        ( X-is-element-var set-var-is-var var-is-pattern kore-always-is-pattern kore-not-is-pattern kore-next-is-pattern kore-all-path-next-is-pattern negative-disjoint notation-reflexivity positive-disjoint positive-in-var positive-in-kore-always negative-in-kore-not negative-in-kore-next positive-in-kore-not kore-all-path-next-is-sugar notation-transitivity notation-positive kore-mu-is-pattern in-sort-is-pattern kore-well-founded-alt-is-pattern kore-mu-sorting-alt kore-well-founded-alt-is-sugar notation-in-sort notation-proof ) AAABCDEHBAAAABCDEFGFAABCDEHBCAAAABCDEFGBCABCKAAABCDEFBCABCIAABCDEBCABCIABCDBCBCBCLMNOPAABCDEHAAAABCDEFGFAAAABCDEFGFAABCDEQAAAABCDEFGFJRSTAUAAUBAUAAAABCDEHBAAAABCDEFGFAABCDEHBCAAAABCDEFGBCABCKAAABCDEFBCABCIAABCDEBCABCIABCDBCBCBCLMNOPAABCDEHAAAABCDEFGFAAAABCDEFGFAABCDEQAAAABCDEFGFJRSUCAUBAAAABCDEHBAAAABCDEFGFAABCDEHBCAAAABCDEFGBCABCKAAABCDEFBCABCIAABCDEBCABCIABCDBCBCBCLMNOPAABCDEHAAAABCDEFGFAAAABCDEFGFAABCDEQAAAABCDEFGFJRSTAABUDAJUEUF $.
 $}
 
 kore-one-path-reaches-star-sorting $p |- ( \imp ( \in-sort ph1 ph0 ) ( \in-sort ( \kore-one-path-reaches-star ph0 ph1 ph2 ) ph0 ) ) $=
