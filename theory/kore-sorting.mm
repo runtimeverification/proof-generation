@@ -52,6 +52,10 @@ kore-or-sorting $p |- ( \imp ( \and ( \in-sort ph1 ph0 ) ( \in-sort ph2 ph0 ) ) 
     $)
     ( in-sort-is-pattern kore-or-is-pattern imp-is-pattern and-is-pattern lemma-curry-right kore-or-sorting-alt proof-rule-mp ) BADCADABCEADFFBADCADGABCEADFBADCADABCEADHABCIJ $.
 
+or-sorting $p |- ( \imp ( \and ( \in-sort ph1 ph0 ) ( \in-sort ph2 ph0 ) ) ( \in-sort ( \or ph1 ph2 ) ph0 ) ) $=
+    $( apply kore-or-sorting $)
+    ( in-sort-is-pattern or-is-pattern and-is-pattern kore-or-is-pattern notation-reflexivity imp-is-pattern kore-or-sorting kore-or-is-sugar notation-symmetry notation-transitivity notation-in-sort notation-imp notation-proof ) BADCADFABCGADIBADCADFBCEADIABCJBADCADFBCEADBADCADFABCGADBADCADFHBCEAABCGABCEBCEABCGBCEHABCGBCEABCKLMAHNOP $.
+
 kore-and-sorting-alt $p |- ( \imp ( \in-sort ph1 ph0 ) ( \imp ( \in-sort ph2 ph0 ) ( \in-sort ( \kore-and ph0 ph1 ph2 ) ph0 ) ) ) $=
     $(
         desugar "\in-sort"
