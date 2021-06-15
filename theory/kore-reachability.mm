@@ -988,6 +988,23 @@ ${
         ( in-sort-is-pattern kore-implies-is-pattern kore-all-path-next-is-pattern kore-and-is-pattern and-is-pattern kore-valid-is-pattern inh-is-pattern floor-is-pattern imp-is-pattern kore-top-is-pattern iff-is-pattern is-predicate-is-pattern notation-transitivity rule-imp-transitivity lemma-floor-is-predicate notation-reflexivity notation-is-predicate notation-proof and-elim-left-sugar imp-reflexivity rule-and-intro-alt2-sugar included-is-pattern in-sort-is-sugar included-is-sugar rule-predicate-intro-and and-elim-right-sugar kore-always-is-pattern eq-is-pattern kore-valid-is-sugar eq-is-sugar kore-always-kt ) DBAHCAHLAABACABJKIMLAABACUNIMDBAHCAHLAABACABJKIMDBAHCAHEFUHGUHABCBAHCAHLAABACABJKIMLBAHCAHLAABACABJKIMBAHCAHBANPOSBAHSBANPUBBAHBANPOBAHBANPOBANPOBAHBANUIBANPOBAUJBANUKTBANPOUCTUDUECANPOSCAHSCANPUBCAHCANPOCAHCANPOCANPOCAHCANUICANPOCAUJCANUKTCANPOUCTUDUEULABACABJKIAQROSAABACABJKIMSABACABJKIAQRUBAABACABJKIMABACABJKIAQROAABACABJKIMABACABJKIAQROABACABJKIAQROAABACABJKIMABACABJKIAQUOABACABJKIAQROAABACABJKIUPABACABJKIAQUQTABACABJKIAQROUCTUDUEULBAHCAHLAABACABJKIMLBAHCAHLBAHBAHCAHLAABACABJKIMUFBAHCAHLBAHBAHBAHCAHUFBAHUGUAUABAHCAHLAABACABJKIMLBAHCAHLCAHBAHCAHLAABACABJKIMUFBAHCAHLCAHCAHBAHCAHUMCAHUGUAUABAHCAHLAABACABJKIMLAABACABJKIMAABACABJKIMBAHCAHLAABACABJKIMUMAABACABJKIMUGUAURUA $.
 $}
 
+$( --------------------------------
+    Properties of well-foundedness
+   -------------------------------- $)
+
+${
+    kore-well-founded-prefixpoint-notation.0 $e #Notation ph1 ph2 $.
+    kore-well-founded-prefixpoint-notation   $p
+        #Notation ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-all-path-next ph0 ( \kore-always ph0 ph1 ) ) ph1 ) ) )
+                  ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-all-path-next ph0 ( \kore-always ph0 ph2 ) ) ph2 ) ) )
+    $= $( notation $) ( kore-always-is-pattern kore-not-is-pattern kore-all-path-next-is-pattern notation-reflexivity kore-next-is-pattern kore-implies-is-pattern kore-valid-is-pattern kore-all-path-next-is-sugar notation-kore-not notation-transitivity notation-kore-always notation-kore-next notation-symmetry notation-kore-implies notation-kore-valid notation-imp ) DAAAABFHBKLDAAAACFHCKLDIAAAABFHBKAAAACFHCKAIAAABFHBAAACFHCAIAABFHAAAABFGJGAACFHAABFMAAAABFGJGAAAACFGJGAACFHAAAABFGJAAAACFGJAIAAABFGAAACFGAIAABFAACFAIABACAIEPNQNAACFHAAAACFGJGAACFMROOESTUA $.
+$}
+
+${
+    $d X ph0 $.
+    kore-well-founded-prefixpoint $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-all-path-next ph0 ( \kore-always ph0 ( \kore-well-founded ph0 ) ) ) ( \kore-well-founded ph0 ) ) ) ) $= ? $.
+$}
+
 ${
     kore-rewrites-star-reflexivity.0 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
     kore-rewrites-star-reflexivity   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites-star ph0 ph1 ph1 ) ) ) $=
