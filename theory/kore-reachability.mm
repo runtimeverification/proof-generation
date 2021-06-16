@@ -1815,24 +1815,158 @@ ${
 $}
 
 ${
+    $d x th0 $.
+    $d x ph0 $.
+    $d x ph1 $.
+    $d x ph2 $.
+    kore-predicate-propagate-in-next.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
+    kore-predicate-propagate-in-next.1 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-predicate-propagate-in-next.2 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-predicate-propagate-in-next   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ph1 ( \kore-next ph0 ph2 ) ) ( \kore-next ph0 ( \kore-and ph0 ph1 ph2 ) ) ) ) ) $=
+        $(
+            apply "kore-is-predicate-elim", x = "x", ph2 = "( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 x ( \kore-next ph0 ph2 ) ) ( \kore-next ph0 ( \kore-and ph0 x ph2 ) ) ) ) )", ph3 = "( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ( \kore-bottom ph0 ) ( \kore-next ph0 ph2 ) ) ( \kore-next ph0 ( \kore-and ph0 ( \kore-bottom ph0 ) ph2 ) ) ) ) )", ph4 = "( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ( \kore-top ph0 ) ( \kore-next ph0 ph2 ) ) ( \kore-next ph0 ( \kore-and ph0 ( \kore-top ph0 ) ph2 ) ) ) ) )"
+            apply "kore-predicate-propagate-in-next.0"
+            (substitution)+
+            apply "kore-not-elim"
+            apply "rule-weakening"
+            apply "kore-not-bot"
+            apply "kore-implies-transitivity-alt"
+            apply "kore-and-elim-right-alt3"
+            (sorting)+
+            apply "kore-implies-compat-in-kore-next-alt"
+            (sorting)+
+            apply "kore-and-intro-alt2"
+            (sorting)+
+            apply "kore-weakening"
+            apply "rule-weakening"
+            apply "kore-top-valid"
+            apply "kore-implies-reflexivity-alt"
+            sorting
+        $)
+        ( in-sort-is-pattern x-is-element-var element-var-is-var kore-next-is-pattern kore-and-is-pattern kore-top-is-pattern and-is-pattern top-is-pattern kore-bottom-is-pattern var-is-pattern substitution-disjoint kore-implies-is-pattern imp-is-pattern kore-valid-is-pattern rule-and-intro-alt2-sugar proof-rule-mp substitution-var-same substitution-kore-and rule-weakening rule-weakening-imp2 top-intro substitution-kore-next substitution-kore-implies substitution-kore-valid substitution-imp proof-rule-prop-1 kore-top-sorting rule-imp-transitivity and-elim-left-sugar kore-not-is-pattern kore-not-bot kore-not-elim imp-reflexivity kore-next-sorting kore-and-elim-right-alt3 kore-and-sorting kore-top-valid kore-weakening kore-implies-reflexivity-alt kore-and-intro-alt2 kore-implies-compat-in-kore-next-alt kore-implies-transitivity-alt kore-is-predicate-elim ) ABDAAAIJQACKLAAIJQCLKSUATDAAAAPACKLAAAPCLKSUATDAAAAMACKLAAAMCLKSUATDAAABACKLAABCLKSUATIEAPDAAAAPACKLAAAPCLKSUADAAAIJQACKLAAIJQCLKSUAIJDAPIJRAAAAPACKLAAAPCLKSAAAIJQACKLAAIJQCLKSAPIJAAPIJRAAAPACKLAAAPCLKAAIJQACKLAAIJQCLKAPIJAAPIJRAAPACKAIJQACKAPIJAAPIJRAPIJUDACKAPIJRUEAAAPCLAAIJQCLAPIJAAPIJRAAPCAIJQCAPIJAAPIJRAPIJUDCAPIJRUEUIUJUKULAMDAAAAMACKLAAAMCLKSUADAAAIJQACKLAAIJQCLKSUAIJDAMIJRAAAAMACKLAAAMCLKSAAAIJQACKLAAIJQCLKSAMIJAAMIJRAAAMACKLAAAMCLKAAIJQACKLAAIJQCLKAMIJAAMIJRAAMACKAIJQACKAMIJAAMIJRAMIJUDACKAMIJRUEAAAMCLAAIJQCLAMIJAAMIJRAAMCAIJQCAMIJAAMIJRAMIJUDCAMIJRUEUIUJUKULBDAAABACKLAABCLKSUADAAAIJQACKLAAIJQCLKSUAIJDBIJRAAABACKLAABCLKSAAAIJQACKLAAIJQCLKSBIJABIJRAABACKLAABCLKAAIJQACKLAAIJQCLKBIJABIJRABACKAIJQACKBIJABIJRBIJUDACKBIJRUEAABCLAAIJQCLBIJABIJRABCAIJQCBIJABIJRBIJUDCBIJRUEUIUJUKULAAPACKAAAPCLKDDAAAPUQUAAURUFUSAAAMACKLACKAAAMCLKDAAMACKDDCAHBAHONNTDAMAHTCAHBAHONNAMAHDAMAHCAHBAHONNAMAHTAMAHCAHBAHONNUMAUNUCUGDCAHBAHONGDBAHOFDOUHUFUBUBUCDCAHBAHONNTDACKAHTCAHBAHONNACKAHDCAHBAHONNCAHACKAHCAHBAHONNCAHCAHCAHBAHONUPCAHUTUOACVAUOUGDCAHBAHONGDBAHOFDOUHUFUBUBUCVBACAAMCLDGDCAHBAHONNTDAAMCLAHTCAHBAHONNAAMCLAHDCAHBAHONNAMAHCAHNAAMCLAHCAHBAHONNAMAHCAHAMAHCAHBAHONNAMAHTAMAHCAHBAHONNUMAUNUCCAHBAHONUPUBAAMCVCUOUGDCAHBAHONGDBAHOFDOUHUFUBUBUCACAMCDDCAHBAHONNTDAMAHTCAHBAHONNAMAHDAMAHCAHBAHONNAMAHTAMAHCAHBAHONNUMAUNUCUGDCAHBAHONGDBAHOFDOUHUFUBUBUCGACAMDDAAMUAAVDUFVEACDGVFVGVHVIVJ $.
+$}
+
+${
+    $d x th0 $.
+    $d x ph0 $.
+    $d x ph1 $.
+    $d x ph2 $.
+    kore-predicate-propagate-in-weak-eventually.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
+    kore-predicate-propagate-in-weak-eventually.1 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-predicate-propagate-in-weak-eventually.2 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-predicate-propagate-in-weak-eventually   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ph1 ( \kore-weak-eventually ph0 ph2 ) ) ( \kore-weak-eventually ph0 ( \kore-and ph0 ph1 ph2 ) ) ) ) ) $=
+        $(
+            apply "kore-is-predicate-elim", x = "x", ph2 = "( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 x ( \kore-weak-eventually ph0 ph2 ) ) ( \kore-weak-eventually ph0 ( \kore-and ph0 x ph2 ) ) ) ) )", ph3 = "( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ( \kore-bottom ph0 ) ( \kore-weak-eventually ph0 ph2 ) ) ( \kore-weak-eventually ph0 ( \kore-and ph0 ( \kore-bottom ph0 ) ph2 ) ) ) ) )", ph4 = "( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ( \kore-and ph0 ( \kore-top ph0 ) ( \kore-weak-eventually ph0 ph2 ) ) ( \kore-weak-eventually ph0 ( \kore-and ph0 ( \kore-top ph0 ) ph2 ) ) ) ) )"
+            apply "kore-predicate-propagate-in-weak-eventually.0"
+            (substitution)+
+            apply "kore-not-elim"
+            apply "rule-weakening"
+            apply "kore-not-bot"
+            apply "kore-implies-transitivity-alt"
+            apply "kore-and-elim-right-alt3"
+            (sorting)+
+            apply "kore-implies-compat-in-kore-weak-eventually"
+            (sorting)+
+            apply "kore-and-intro-alt2"
+            (sorting)+
+            apply "kore-weakening"
+            apply "rule-weakening"
+            apply "kore-top-valid"
+            apply "kore-implies-reflexivity-alt"
+            sorting
+        $)
+        ( x-is-element-var element-var-is-var in-sort-is-pattern kore-weak-eventually-is-pattern kore-and-is-pattern kore-top-is-pattern and-is-pattern top-is-pattern kore-bottom-is-pattern var-is-pattern substitution-disjoint kore-implies-is-pattern imp-is-pattern kore-valid-is-pattern rule-and-intro-alt2-sugar proof-rule-mp substitution-var-same substitution-kore-and rule-weakening proof-rule-prop-1 rule-weakening-imp2 top-intro substitution-kore-weak-eventually substitution-kore-implies substitution-kore-valid substitution-imp kore-top-sorting kore-not-is-pattern kore-not-bot kore-not-elim kore-weak-eventually-sorting kore-and-elim-right-alt3 and-elim-left-sugar kore-and-sorting rule-imp-transitivity kore-top-valid kore-weakening kore-implies-reflexivity-alt kore-and-intro-alt2 kore-implies-compat-in-kore-weak-eventually kore-implies-transitivity-alt kore-is-predicate-elim ) ABDAAAHIQACKLAAHIQCLKSUATDAAAAPACKLAAAPCLKSUATDAAAAMACKLAAAMCLKSUATDAAABACKLAABCLKSUATHEAPDAAAAPACKLAAAPCLKSUADAAAHIQACKLAAHIQCLKSUAHIDAPHIRAAAAPACKLAAAPCLKSAAAHIQACKLAAHIQCLKSAPHIAAPHIRAAAPACKLAAAPCLKAAHIQACKLAAHIQCLKAPHIAAPHIRAAPACKAHIQACKAPHIAAPHIRAPHIUDACKAPHIRUEAAAPCLAAHIQCLAPHIAAPHIRAAPCAHIQCAPHIAAPHIRAPHIUDCAPHIRUEUJUKULUMAMDAAAAMACKLAAAMCLKSUADAAAHIQACKLAAHIQCLKSUAHIDAMHIRAAAAMACKLAAAMCLKSAAAHIQACKLAAHIQCLKSAMHIAAMHIRAAAMACKLAAAMCLKAAHIQACKLAAHIQCLKAMHIAAMHIRAAMACKAHIQACKAMHIAAMHIRAMHIUDACKAMHIRUEAAAMCLAAHIQCLAMHIAAMHIRAAMCAHIQCAMHIAAMHIRAMHIUDCAMHIRUEUJUKULUMBDAAABACKLAABCLKSUADAAAHIQACKLAAHIQCLKSUAHIDBHIRAAABACKLAABCLKSAAAHIQACKLAAHIQCLKSBHIABHIRAABACKLAABCLKAAHIQACKLAAHIQCLKBHIABHIRABACKAHIQACKBHIABHIRBHIUDACKBHIRUEAABCLAAHIQCLBHIABHIRABCAHIQCBHIABHIRBHIUDCBHIRUEUJUKULUMAAPACKAAAPCLKDDAAAPUOUAAUPUFUQAAAMACKLACKAAAMCLKDAAMACKDDCAJBAJONNTDAMAJTCAJBAJONNAMAJDAMAJCAJBAJONNAMAJTAMAJCAJBAJONNUGAUNUCUHDCAJBAJONGDBAJOFDOUIUFUBUBUCDCAJBAJONNTDACKAJTCAJBAJONNACKAJDACKAJCAJBAJONNACKAJTACKAJCAJBAJONNUGACURUCUHDCAJBAJONGDBAJOFDOUIUFUBUBUCUSACAAMCLDGDCAJBAJONNTDAAMCLAJTCAJBAJONNAAMCLAJDCAJBAJONNAMAJCAJNAAMCLAJCAJBAJONNAMAJCAJAMAJCAJBAJONNAMAJTAMAJCAJBAJONNUGAUNUCCAJBAJONUTUBAAMCVAVBUHDCAJBAJONGDBAJOFDOUIUFUBUBUCACAMCDDCAJBAJONNTDAMAJTCAJBAJONNAMAJDAMAJCAJBAJONNAMAJTAMAJCAJBAJONNUGAUNUCUHDCAJBAJONGDBAJOFDOUIUFUBUBUCGACAMDDAAMUAAVCUFVDACDGVEVFVGVHVI $.
+$}
+
+${
     $( constraint before rewriting can be passed to the term after rewriting $)
     kore-rewrites-constraint-lemma.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
-    kore-rewrites-constraint-lemma.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) $.
-    kore-rewrites-constraint-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $= ? $.
+    kore-rewrites-constraint-lemma.1 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-rewrites-constraint-lemma.2 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-rewrites-constraint-lemma.3 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
+    kore-rewrites-constraint-lemma.4 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) $.
+    kore-rewrites-constraint-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $=
+        $(
+            apply "kore-implies-transitivity-alt"
+            meh
+            apply "kore-predicate-propagate-in-next"
+            (sorting)+
+            apply "kore-and-intro-alt2"
+            (sorting)+
+            apply "kore-and-elim-left-alt3"
+            (sorting)+
+            apply "kore-rewrites-constraint-lemma.4"
+        $)
+        ( in-sort-is-pattern kore-and-is-pattern and-is-pattern top-is-pattern kore-next-is-pattern kore-implies-is-pattern imp-is-pattern kore-rewrites-is-pattern kore-valid-is-pattern rule-and-intro-alt2-sugar notation-reflexivity rule-imp-transitivity proof-rule-mp kore-is-predicate-is-pattern top-intro and-elim-right-sugar and-elim-left-sugar imp-reflexivity rule-weakening-imp2 rule-weakening kore-rewrites-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof kore-next-sorting kore-and-elim-left-alt3 notation-symmetry kore-and-intro-alt2 proof-rule-prop-1 kore-predicate-propagate-in-next kore-implies-transitivity-alt ) EAAABCLAABDLOPSQEAAABCLABDLRSQAABCLABADOLAABDLOEAABCLBADOEEDAKCAKBAKNMMMQEBAKQDAKCAKBAKNMMMBAKEDAKCAKBAKNMMMCAKBAKNMMBAKDAKCAKBAKNMMUFCAKBAKNMMBAKNMBAKCAKBAKNMUFBAKNMBAKBAKBAKNUGBAKUHUBUBUBUIEDAKCAKBAKNMMIECAKBAKNMHEBAKNGENUEUJTTTUCEDAKCAKBAKNMMMQEADOAKQDAKCAKBAKNMMMADOAKEDAKCAKBAKNMMMDAKADOAKDAKCAKBAKNMMMDAKDAKDAKCAKBAKNMMUGDAKUHUBADUPUBUIEDAKCAKBAKNMMIECAKBAKNMHEBAKNGENUEUJTTTUCABCEGHUQEAAABCLDRSQEAAABCLADOPSQJEAAABCLADOPSEAAABCLDRSEUAAAABCLADOPAAABCLDRAUAAABCLADOPAABCLADOPAABCLDRAABCLADOPUAAABCLDRAABCLADOPAABCLDUKURULUMUNUOUSABDENABUDABUDNABUDQABUDNUTFUCUEUCGIVAVBEAAABCLABDLRSEAAABCLAABDLOPSEUAAAABCLABDLRAAABCLAABDLOPAUAAABCLABDLRAABCLAABDLOPAABCLAABDLOPAABCLABDLUKAABCLAABDLOPUAULUMUNUO $.
 $}
 
 ${
     $( constraint before rewriting can be passed to the term after rewriting $)
     kore-one-path-reaches-plus-constraint-lemma.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
-    kore-one-path-reaches-plus-constraint-lemma.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) $.
-    kore-one-path-reaches-plus-constraint-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $= ? $.
+    kore-one-path-reaches-plus-constraint-lemma.1 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma.2 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma.3 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma.4 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $=
+        $(
+            apply "kore-implies-transitivity-alt"
+            meh
+            apply "kore-implies-compat-in-kore-next-alt"
+            meh
+            meh
+            apply "kore-predicate-propagate-in-weak-eventually"
+            apply "kore-one-path-reaches-plus-constraint-lemma.0"
+            (sorting)+
+            apply "kore-implies-transitivity-alt"
+            meh
+            apply "kore-predicate-propagate-in-next"
+            (sorting)+
+            apply "kore-and-intro-alt2"
+            (sorting)+
+            apply "kore-and-elim-left-alt3"
+            (sorting)+
+            apply "kore-one-path-reaches-plus-constraint-lemma.4"
+        $)
+        ( in-sort-is-pattern and-is-pattern top-is-pattern kore-and-is-pattern kore-weak-eventually-is-pattern kore-next-is-pattern imp-is-pattern rule-and-intro-alt2-sugar kore-implies-is-pattern proof-rule-mp kore-one-path-reaches-plus-is-pattern kore-valid-is-pattern rule-imp-transitivity top-intro notation-reflexivity rule-weakening-imp2 rule-weakening proof-rule-prop-1 and-elim-right-sugar kore-weak-eventually-sorting kore-is-predicate-is-pattern and-elim-left-sugar imp-reflexivity kore-one-path-reaches-plus-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof kore-implies-transitivity-alt kore-next-sorting kore-and-elim-left-alt3 notation-symmetry kore-and-intro-alt2 kore-predicate-propagate-in-next kore-and-sorting kore-predicate-propagate-in-weak-eventually kore-implies-compat-in-kore-next-alt ) EAAABCNAAABDNOPSUBQEAAABCNABDNUAUBQAABCNAABADONPAAABDNOPEAABCNABAADOPNAABADONPEAABCNBAADOPEEDAKCAKBAKMLLLQEBAKQDAKCAKBAKMLLLBAKEDAKCAKBAKMLLLCAKBAKMLLBAKDAKCAKBAKMLLUICAKBAKMLLBAKMLBAKCAKBAKMLUIBAKMLBAKBAKBAKMULBAKUMUCUCUCUFEDAKCAKBAKMLLIECAKBAKMLHEBAKMGEMUDUGRRRTEDAKCAKBAKMLLLQEAADOPAKQDAKCAKBAKMLLLAADOPAKEDAKCAKBAKMLLLADOAKAADOPAKADOAKDAKCAKBAKMLLLADOAKQADOAKDAKCAKBAKMLLLUHADUJTAADOUTUCUFEDAKCAKBAKMLLIECAKBAKMLHEBAKMGEMUDUGRRRTABCEGHVAEAAABCNDUAUBQEAAABCNAADOPSUBQJEAAABCNAADOPSUBEAAABCNDUAUBEUEAAABCNAADOPSAAABCNDUAAUEAABCNAADOPSAABCNAADOPSAABCNDUAAABCNAADOPSUEAABCNDUAAABCNAADOPSAABCNDUNVBUOUPUQURVCABADOEMABUKABUKMABUKQABUKMUHFTUDTGEDAKCAKBAKMLLLQEADOAKQDAKCAKBAKMLLLADOAKEADOAKDAKCAKBAKMLLLADOAKQADOAKDAKCAKBAKMLLLUHADUJTUFEDAKCAKBAKMLLIECAKBAKMLHEBAKMGEMUDUGRRRTVDUSAABADONAABDNOEEDAKCAKBAKMLLLQEABADONAKQDAKCAKBAKMLLLABADONAKEDAKCAKBAKMLLLBAKADOAKLABADONAKDAKCAKBAKMLLLBAKADOAKDAKCAKBAKMLLLCAKBAKMLLBAKDAKCAKBAKMLLUICAKBAKMLLBAKMLBAKCAKBAKMLUIBAKMLBAKBAKBAKMULBAKUMUCUCUCADOAKDAKCAKBAKMLLLADOAKQADOAKDAKCAKBAKMLLLUHADUJTRABADOVEUCUFEDAKCAKBAKMLLIECAKBAKMLHEBAKMGEMUDUGRRRTEDAKCAKBAKMLLLQEAABDNOAKQDAKCAKBAKMLLLAABDNOAKEAABDNOAKDAKCAKBAKMLLLAABDNOAKQAABDNOAKDAKCAKBAKMLLLUHAABDNUJTUFEDAKCAKBAKMLLIECAKBAKMLHEBAKMGEMUDUGRRRTABDEFGIVFVGUSEAAABCNABDNUAUBEAAABCNAAABDNOPSUBEUEAAABCNABDNUAAAABCNAAABDNOPSAUEAABCNABDNUAAABCNAAABDNOPSAABCNAAABDNOPSAABCNABDNUNAABCNAAABDNOPSUEUOUPUQUR $.
 $}
 
 ${
     $( constraint before rewriting can be passed to the term after rewriting $)
     kore-one-path-reaches-plus-constraint-lemma-alt.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
-    kore-one-path-reaches-plus-constraint-lemma-alt.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) ) $.
-    kore-one-path-reaches-plus-constraint-lemma-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) ) $= ? $.
+    kore-one-path-reaches-plus-constraint-lemma-alt.1 $e |- ( \imp th0 ( \in-sort ph1 ph0 ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma-alt.2 $e |- ( \imp th0 ( \in-sort ph2 ph0 ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma-alt.3 $e |- ( \imp th0 ( \in-sort ph3 ph0 ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma-alt.4 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) ) $.
+    kore-one-path-reaches-plus-constraint-lemma-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) ) $=
+        $(
+            apply "kore-mp-alt"
+            meh
+            apply "kore-one-path-reaches-plus-constraint-lemma-alt.4"
+            apply "kore-weakening-imp2"
+            apply "kore-implies-transitivity-alt"
+            apply "kore-mp-alt"
+            apply "kore-weakening-imp3"
+            meh
+            meh
+            meh
+            meh
+            apply "kore-and-elim-left-alt3"
+            (sorting)+
+            meh
+            (sorting)+
+            apply "kore-curry"
+            apply "kore-implies-reflexivity-alt"
+            sorting
+            apply "kore-weakening-imp2"
+            apply "kore-implies-transitivity-alt"
+            apply "kore-predicate-propagate-in-next"
+            (sorting)+
+            apply "kore-implies-compat-in-kore-next-alt"
+            (sorting)+
+            apply "kore-predicate-propagate-in-weak-eventually"
+            (sorting)+
+        $)
+        ( in-sort-is-pattern and-is-pattern kore-and-is-pattern top-is-pattern kore-weak-eventually-is-pattern kore-implies-is-pattern kore-next-is-pattern imp-is-pattern rule-and-intro-alt2-sugar rule-imp-transitivity kore-one-path-reaches-plus-is-pattern proof-rule-mp notation-reflexivity and-elim-right-sugar kore-valid-is-pattern top-intro rule-weakening-imp2 rule-weakening proof-rule-prop-1 and-elim-left-sugar imp-reflexivity kore-weak-eventually-sorting kore-is-predicate-is-pattern kore-and-sorting notation-kore-implies kore-next-sorting kore-one-path-reaches-plus-is-sugar notation-transitivity notation-kore-valid notation-imp notation-proof kore-mp-alt kore-implies-transitivity-alt kore-weakening-imp2 kore-implies-reflexivity-alt kore-curry kore-weakening-imp3 kore-and-elim-left-alt3 kore-predicate-propagate-in-next kore-predicate-propagate-in-weak-eventually kore-implies-compat-in-kore-next-alt ) AAEAABCNDUBQAEAABCNABDNUBQFAAABCNDUBAABCNABDNUBEFAAABCNDUBAABCNABAADPRNQAABCNABDNUBFAAABCNBQAAABCNDUBAABCNABAADPRNQQFFAAAABCNBQAAABCNAADPRQAABCNABAADPRNQQQUFSFAAAABCNBQAAABCNDUBAABCNABAADPRNQQQUFSABAADPRABAADPRNABCNFFDALCALBALOMMMSFBALSDALCALBALOMMMBALFDALCALBALOMMMCALBALOMMBALDALCALBALOMMUECALBALOMMBALOMBALCALBALOMUEBALOMBALBALBALOUKBALULUAUAUAUHFDALCALBALOMMJFCALBALOMIFBALOHFOUGUITTTUCFDALCALBALOMMMSFAADPRALSDALCALBALOMMMAADPRALFDALCALBALOMMMADPALAADPRALADPALDALCALBALOMMMADPALSADPALDALCALBALOMMMUJADUMUCAADPUQUAUHFDALCALBALOMMJFCALBALOMIFBALOHFOUGUITTTUCFDALCALBALOMMMSFABCNALSDALCALBALOMMMABCNALFDALCALBALOMMMBALCALMABCNALDALCALBALOMMMBALCALDALCALBALOMMMCALBALOMMBALDALCALBALOMMUECALBALOMMBALOMBALCALBALOMUEBALOMBALBALBALOUKBALULUAUAUADALCALBALOMMMCALBALOMMCALDALCALBALOMMUECALBALOMMCALCALCALBALOMUKCALULUAUATABCUOUAUHFDALCALBALOMMJFCALBALOMIFBALOHFOUGUITTTUCABAADPRABAADPRNFAABAADPRNFFDALCALBALOMMMSFABAADPRNALSDALCALBALOMMMABAADPRNALFDALCALBALOMMMBALAADPRALMABAADPRNALDALCALBALOMMMBALAADPRALDALCALBALOMMMCALBALOMMBALDALCALBALOMMUECALBALOMMBALOMBALCALBALOMUEBALOMBALBALBALOUKBALULUAUAUADALCALBALOMMMADPALAADPRALADPALDALCALBALOMMMADPALSADPALDALCALBALOMMMUJADUMUCAADPUQUATABAADPRUOUAUHFDALCALBALOMMJFCALBALOMIFBALOHFOUGUITTTUCVFVGVHFAAAABCNBQAAABCNDUBAABCNABAADPRNQQQUFFAAAABCNBQAAABCNAADPRQAABCNABAADPRNQQQUFFUDAAAABCNBQAAABCNDUBAABCNABAADPRNQQQAAAABCNBQAAABCNAADPRQAABCNABAADPRNQQQAUDAAABCNBQAAABCNDUBAABCNABAADPRNQQAAABCNBQAAABCNAADPRQAABCNABAADPRNQQAUDAABCNBQUDAAABCNDUBAABCNABAADPRNQAAABCNAADPRQAABCNABAADPRNQAUDAABCNDUBAABCNAADPRQAABCNAADPRQAABCNDURAABCNAADPRQUDUSAABCNABAADPRNQUDUPUPUTVAVBABCFHIVIVCFAAAABCNABAADPRNQAABCNAAABDNPRQQUFSFAAAABCNABAADPRNQAABCNABDNUBQUFSAABAADPRNAAABDNPRABCNFAABAADPRNAABADPNRAAABDNPRFABADPFOABUNABUNOABUNSABUNOUJGUCUGUCHFDALCALBALOMMMSFADPALSDALCALBALOMMMADPALFADPALDALCALBALOMMMADPALSADPALDALCALBALOMMMUJADUMUCUHFDALCALBALOMMJFCALBALOMIFBALOHFOUGUITTTUCVJAABADPNAABDNPFFDALCALBALOMMMSFABADPNALSDALCALBALOMMMABADPNALFDALCALBALOMMMBALADPALMABADPNALDALCALBALOMMMBALADPALDALCALBALOMMMCALBALOMMBALDALCALBALOMMUECALBALOMMBALOMBALCALBALOMUEBALOMBALBALBALOUKBALULUAUAUAADPALDALCALBALOMMMADPALSADPALDALCALBALOMMMUJADUMUCTABADPUOUAUHFDALCALBALOMMJFCALBALOMIFBALOHFOUGUITTTUCFDALCALBALOMMMSFAABDNPALSDALCALBALOMMMAABDNPALFAABDNPALDALCALBALOMMMAABDNPALSAABDNPALDALCALBALOMMMUJAABDNUMUCUHFDALCALBALOMMJFCALBALOMIFBALOHFOUGUITTTUCABDFGHJVKVLVDVEFAAAABCNABAADPRNQAABCNABDNUBQUFFAAAABCNABAADPRNQAABCNAAABDNPRQQUFFUDAAAABCNABAADPRNQAABCNABDNUBQAAAABCNABAADPRNQAABCNAAABDNPRQQAUDAAABCNABAADPRNQAABCNABDNUBAAABCNABAADPRNQAABCNAAABDNPRQAUDAABCNABAADPRNQUDAABCNABDNUBAABCNAAABDNPRQAABCNAAABDNPRQAABCNABDNURAABCNAAABDNPRQUDUSUPUTVAVBVDVEKVC $.
 $}
 
 ${

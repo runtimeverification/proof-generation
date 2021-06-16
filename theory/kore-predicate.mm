@@ -140,3 +140,37 @@ kore-is-predicate-top $p |- ( \kore-is-predicate ph0 ( \kore-top ph0 ) ) $=
         apply "kore-top-valid"
     $)
     ( kore-top-is-pattern kore-valid-is-pattern is-bot-is-pattern or-is-pattern kore-is-predicate-is-pattern imp-is-pattern notation-reflexivity or-intro-left-sugar kore-is-predicate-is-sugar notation-transitivity notation-imp notation-proof kore-top-valid proof-rule-mp ) AABCAABFAABCAABCABDEGAABCAABFGAABCABDIAABCAABFAABCAABCABDEAABCHAABFAABCABDEAABCABDEAABJAABCABDEHKLMANO $.
+
+
+${
+    kore-is-predicate-elim.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
+    kore-is-predicate-elim.1 $e #Substitution ph3 ph2 ( \kore-bottom ph0 ) x $.
+    kore-is-predicate-elim.2 $e #Substitution ph4 ph2 ( \kore-top ph0 ) x $.
+    kore-is-predicate-elim.3 $e #Substitution ph5 ph2 ph1 x $.
+    kore-is-predicate-elim.4 $e |- ph3 $.
+    kore-is-predicate-elim.5 $e |- ph4 $.
+    kore-is-predicate-elim   $p |- ph5 $=
+        $(
+            apply "proof-rule-mp"
+            meh
+            apply "kore-is-predicate-elim.0"
+            apply "rule-or-elim"
+            apply "weakened-mp"
+            apply "rule-imp-transitivity"
+            apply "eq-symmetry"
+            apply "eq-elim"
+            apply "kore-is-predicate-elim.2"
+            apply "kore-is-predicate-elim.3"
+            apply "rule-weakening"
+            apply "kore-is-predicate-elim.5"
+            apply "rule-imp-transitivity"
+            apply "eq-symmetry"
+            apply "weakened-mp"
+            apply "eq-elim"
+            apply "kore-is-predicate-elim.1"
+            apply "kore-is-predicate-elim.3"
+            apply "rule-weakening"
+            apply "kore-is-predicate-elim.4"
+        $)
+        ( bot-is-pattern eq-is-pattern kore-valid-is-pattern imp-is-pattern is-bot-is-pattern kore-top-is-pattern notation-reflexivity notation-transitivity kore-is-predicate-is-pattern notation-imp not-is-pattern notation-proof kore-bottom-is-pattern eq-symmetry eq-elim rule-imp-transitivity rule-weakening weakened-mp kore-valid-is-sugar is-bot-is-sugar element-var-is-var kore-bottom-is-sugar notation-symmetry notation-substitution rule-or-elim or-is-pattern kore-is-predicate-is-sugar or-is-sugar not-is-sugar proof-rule-mp ) ABUBFABPNQBRQFQABUBFQABPBRFABPEFABPASBOEFQBASOASBOQABPASBOQASBUGABPASBOBASOASBOABPBASOBASOABULBASOTUAASBOTUCUEASBEFCGJKUHUIABPEMUJUKBRNBOFBNONBOQBRNBOQNBUGBRNBOBNONBOBRBNOBNOBUMBNOTUANBOTUCUENBODFNBDFCGDCAUFDCNGUNIDTCTNNAUFNTAUFNAUOUPUAUQKUHNBODLUJUKUIURABUBFABPNQBRQFABUBABPUDBRQABPNQBRQABUBABPBRUSABPUDBRQABUTABPBRVAUAABPUDBRABPNQBRABPUDABPNQABPNQABPVBABPNQTUABRTUCUAFTUCUEHVC $.
+$}
