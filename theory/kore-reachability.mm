@@ -1816,21 +1816,21 @@ $}
 
 ${
     $( constraint before rewriting can be passed to the term after rewriting $)
-    $( kore-rewrites-constraint-lemma.0 $e |- ( \kore-is-predicate ph0 ph1 ) $. $)
+    kore-rewrites-constraint-lemma.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
     kore-rewrites-constraint-lemma.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) $.
     kore-rewrites-constraint-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-rewrites ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $= ? $.
 $}
 
 ${
     $( constraint before rewriting can be passed to the term after rewriting $)
-    $( kore-one-path-reaches-plus-constraint-lemma-alt.0 $e |- ( \kore-is-predicate ph0 ph1 ) $. $)
+    kore-one-path-reaches-plus-constraint-lemma.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
     kore-one-path-reaches-plus-constraint-lemma.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) $.
     kore-one-path-reaches-plus-constraint-lemma   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) $= ? $.
 $}
 
 ${
     $( constraint before rewriting can be passed to the term after rewriting $)
-    $( kore-one-path-reaches-plus-constraint-lemma-alt.0 $e |- ( \kore-is-predicate ph0 ph1 ) $. $)
+    kore-one-path-reaches-plus-constraint-lemma-alt.0 $e |- ( \kore-is-predicate ph0 ph1 ) $.
     kore-one-path-reaches-plus-constraint-lemma-alt.1 $e |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ph3 ) ) ) ) $.
     kore-one-path-reaches-plus-constraint-lemma-alt   $p |- ( \imp th0 ( \kore-valid ph0 ( \kore-implies ph0 ph4 ( \kore-one-path-reaches-plus ph0 ( \kore-and ph0 ph1 ph2 ) ( \kore-and ph0 ph1 ph3 ) ) ) ) ) $= ? $.
 $}

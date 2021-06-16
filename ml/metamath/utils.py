@@ -86,6 +86,26 @@ class MetamathUtils:
         return MetamathUtils.destruct_metamath_application("\\is-predicate", 1, term)
 
     @staticmethod
+    def destruct_kore_is_predicate(term: Term) -> Terms:
+        return MetamathUtils.destruct_metamath_application("\\kore-is-predicate", 2, term)
+
+    @staticmethod
+    def destruct_kore_and(term: Term) -> Terms:
+        return MetamathUtils.destruct_metamath_application("\\kore-and", 3, term)
+
+    @staticmethod
+    def destruct_kore_not(term: Term) -> Terms:
+        return MetamathUtils.destruct_metamath_application("\\kore-not", 2, term)
+
+    @staticmethod
+    def destruct_kore_top(term: Term) -> Terms:
+        return MetamathUtils.destruct_metamath_application("\\kore-top", 1, term)
+
+    @staticmethod
+    def destruct_kore_floor(term: Term) -> Terms:
+        return MetamathUtils.destruct_metamath_application("\\kore-floor", 3, term)
+
+    @staticmethod
     def destruct_floor(term: Term) -> Terms:
         return MetamathUtils.destruct_metamath_application("\\floor", 1, term)
 
@@ -165,8 +185,28 @@ class MetamathUtils:
         return MetamathUtils.is_application_of_symbol("\\kore-valid", 2, term)
 
     @staticmethod
+    def is_kore_and(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\kore-and", 3, term)
+
+    @staticmethod
+    def is_kore_not(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\kore-not", 2, term)
+
+    @staticmethod
+    def is_kore_top(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\kore-top", 1, term)
+
+    @staticmethod
+    def is_kore_floor(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\kore-floor", 3, term)
+
+    @staticmethod
     def is_kore_is_sort(term: Term) -> bool:
         return MetamathUtils.is_application_of_symbol("\\kore-is-sort", 1, term)
+
+    @staticmethod
+    def is_kore_is_predicate(term: Term) -> bool:
+        return MetamathUtils.is_application_of_symbol("\\kore-is-predicate", 2, term)
 
     @staticmethod
     def is_in_sort(term: Term) -> bool:

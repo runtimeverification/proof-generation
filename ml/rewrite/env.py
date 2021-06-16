@@ -1081,7 +1081,8 @@ class KoreComposer(Composer):
                 if MetamathUtils.is_in_sort(conclusion):
                     essential_proofs.append(SortingProver.auto)
 
-                elif MetamathUtils.is_is_predicate(conclusion):
+                elif MetamathUtils.is_is_predicate(conclusion) or \
+                     MetamathUtils.is_kore_is_predicate(conclusion):
                     essential_proofs.append(PredicateProver.auto)
 
                 else:  # MetamathUtils.is_kore_valid(conclusion):
