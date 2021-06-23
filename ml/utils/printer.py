@@ -1,4 +1,4 @@
-from typing import TextIO, Generator
+from typing import TextIO, Generator, List
 
 from contextlib import contextmanager
 
@@ -9,17 +9,17 @@ class Printer:
     """
     def __init__(self, output: TextIO, tab: str = "  "):
         super().__init__()
-        self.depth = 0
         self.output = output
         self.tab = tab
-        self.line_buffer = ""
+        self.current_indentation = ""
+        self.line_buffer: List[str] = []
 
     def indent(self) -> None:
-        self.depth += 1
+        self.current_indentation += self.tab
 
     def deindent(self) -> None:
-        assert self.depth != 0, "cannot de-indent further"
-        self.depth -= 1
+        assert len(self.current_indentation) >= len(self.tab), "cannot de-indent further"
+        self.current_indentation = self.current_indentation[:-len(self.tab)]
 
     @contextmanager
     def indentation(self) -> Generator[None, None, None]:
@@ -28,21 +28,25 @@ class Printer:
         self.deindent()
 
     def flush(self) -> None:
-        self.output.write(self.line_buffer.rstrip())
-        self.line_buffer = ""
+        for i, s in enumerate(self.line_buffer):
+            if i == len(self.line_buffer) - 1:
+                s = s.rstrip()
+            self.output.write(s)
+        self.line_buffer = []
+
+    def is_line_buffer_empty(self) -> bool:
+        for s in self.line_buffer:
+            if not s.isspace():
+                return False
+        return True
 
     def write(self, msg: str) -> None:
-        tab = self.depth * self.tab
-        lines = msg.split("\n")
-
-        for i, line in enumerate(lines):
+        for i, line in enumerate(msg.split("\n")):
             if i != 0:
                 self.flush()
                 self.output.write("\n")
 
-            if self.line_buffer.strip() == "" and \
-               not self.line_buffer.startswith(tab) and \
-               line.strip() != "":
-                self.line_buffer = tab
+            if self.is_line_buffer_empty():
+                self.line_buffer = [self.current_indentation]
 
-            self.line_buffer += line
+            self.line_buffer.append(line)

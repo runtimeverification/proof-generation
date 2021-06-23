@@ -1169,12 +1169,17 @@ class KoreComposer(Composer):
         else:
             goal_pattern = None
 
+        # figure out the form of the final claim
         tmp_substitution = theorem.infer_metavariable_substitution(
-            goal_pattern, tuple(essential_proofs), metavar_substitution
+            goal_pattern,
+            tuple(essential_proofs),
+            metavar_substitution,
         )
-
         final_claim = KoreDecoder(self.module).decode_claim(theorem.get_conclusion_instance(tmp_substitution))
-        common_premise = MetamathUtils.construct_and(self.encode_axiom_premise(final_claim), common_premise)
+        final_claim_premise = self.encode_axiom_premise(final_claim)
+
+        if not MetamathUtils.is_top(final_claim_premise):
+            common_premise = MetamathUtils.construct_and(final_claim_premise, common_premise)
 
         # construct the final essential proofs
         essential_proofs = self.infer_essential_proofs(theorem, common_premise, essential_provable_claims)

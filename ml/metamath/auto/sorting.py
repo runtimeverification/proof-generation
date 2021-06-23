@@ -394,6 +394,24 @@ class SortingProver:
         return SortingProver.prove_multiple_sorting_judgements(composer, hypothesis, conclusion)
 
     @staticmethod
+    def lookup_rearrange_cache(composer: Composer, target_premise: Optional[Term], proof: Proof) -> Optional[Proof]:
+        conclusion = MetamathUtils.destruct_provable(proof.conclusion)
+
+        if target_premise is None:
+            if MetamathUtils.is_imp(conclusion):
+                goal = MetamathUtils.construct_provable(conclusion)
+            else:
+                return None
+        else:
+            if MetamathUtils.is_imp(conclusion):
+                _, conclusion_body = MetamathUtils.destruct_imp(conclusion)
+                goal = MetamathUtils.construct_provable(MetamathUtils.construct_imp(target_premise, conclusion_body))
+            else:
+                goal = MetamathUtils.construct_provable(MetamathUtils.construct_imp(target_premise, conclusion))
+
+        return composer.lookup_proof_cache("sorting-rearrange", goal)
+
+    @staticmethod
     def rearrange_premise(composer: Composer, target_premise: Optional[Term], proof: Proof) -> Proof:
         r"""
         Rearrange the premise of the conclusion of the proof
@@ -410,6 +428,10 @@ class SortingProver:
         """
         conclusion = MetamathUtils.destruct_provable(proof.conclusion)
 
+        cached_proof = SortingProver.lookup_rearrange_cache(composer, target_premise, proof)
+        if cached_proof is not None:
+            return cached_proof
+
         if target_premise is None:
             if MetamathUtils.is_imp(conclusion):
                 conclusion_premise, _ = MetamathUtils.destruct_imp(conclusion)
@@ -420,12 +442,15 @@ class SortingProver:
                         MetamathUtils.construct_provable(conclusion_premise),
                     ),
                 )
-                return composer.get_theorem("proof-rule-mp").apply(proof, premise_proof)
+                return composer.cache_proof(
+                    "sorting-rearrange",
+                    composer.get_theorem("proof-rule-mp").apply(proof, premise_proof),
+                )
             else:
                 return proof
         else:
             if MetamathUtils.is_imp(conclusion):
-                conclusion_premise, _ = MetamathUtils.destruct_imp(conclusion)
+                conclusion_premise, conclusion_body = MetamathUtils.destruct_imp(conclusion)
 
                 if conclusion_premise == target_premise:
                     return proof
@@ -440,11 +465,17 @@ class SortingProver:
                     ),
                 )
 
-                return composer.get_theorem("rule-imp-transitivity").apply(premise_imp, proof)
+                return composer.cache_proof(
+                    "sorting-rearrange",
+                    composer.get_theorem("rule-imp-transitivity").apply(premise_imp, proof),
+                )
             else:
-                return composer.get_theorem("rule-weakening").apply(
-                    proof,
-                    ph0=target_premise,
+                return composer.cache_proof(
+                    "sorting-rearrange",
+                    composer.get_theorem("rule-weakening").apply(
+                        proof,
+                        ph0=target_premise,
+                    ),
                 )
 
     # given a proof, automatically rearrange the premise to fit the form required
