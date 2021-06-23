@@ -36,15 +36,24 @@ class WithSchema:
 
 @dataclass
 class Substitution(WithSchema):
-    substitution: Dict[kore.Variable, kore.Pattern] = field(default_factory=lambda: {})
+    substitution: Tuple[Tuple[kore.Variable, kore.Pattern], ...] = ()
+
+    # substitution: Dict[kore.Variable, kore.Pattern] = field(default_factory=lambda: {})
 
     def is_empty(self) -> bool:
         return len(self.substitution) == 0
 
     def resolve(self, module: kore.Module) -> None:
-        for k, v in self.substitution.items():
+        for k, v in self.substitution:
             k.resolve(module)
             v.resolve(module)
+
+    def as_dict(self) -> Dict[kore.Variable, kore.Pattern]:
+        subst = {}
+        for k, v in self.substitution:
+            assert k not in subst, f"duplicate key {k}"
+            subst[k] = v
+        return subst
 
     def as_predicate(self, sort: kore.Sort) -> kore.Pattern:
         r"""
@@ -54,7 +63,7 @@ class Substitution(WithSchema):
         k = v /\ ...
         """
 
-        items = list(self.substitution.items())
+        items = list(self.substitution)
         items.sort(key=lambda t: t[0], reverse=True)
 
         constraint = KoreUtils.construct_top(sort)
@@ -66,21 +75,6 @@ class Substitution(WithSchema):
             )
 
         return constraint
-
-    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
-        new_substitution = {}
-
-        for k, v in self.substitution.items():
-            new_value = KoreUtils.copy_and_substitute_pattern(v, concretization)
-            if k in concretization:
-                assert isinstance(new_value, kore.Variable), \
-                       f"unable to concretize {k} |-> {v}"
-                new_key, new_value = new_value, concretization[k]
-            else:
-                new_key = k
-            new_substitution[new_key] = new_value
-
-        self.substitution = new_substitution
 
     @staticmethod
     def from_predicate(predicate: kore.Pattern) -> Substitution:
@@ -94,31 +88,31 @@ class Substitution(WithSchema):
             left, right = KoreUtils.destruct_equals(predicate)
             assert isinstance(left, kore.Variable), \
                    f"{predicate} is not a substitution constraint"
-            return Substitution({left: right})
+            return Substitution(((left, right), ))
         elif KoreUtils.is_top(predicate):
-            return Substitution({})
+            return Substitution()
         else:
             assert False, f"unexpected predicate {predicate}"
 
     def merge(self, other: Substitution) -> Substitution:
-        return Substitution({**self.substitution, **other.substitution})
+        return Substitution(tuple(set(self.substitution + other.substitution)))
 
-    def orient(self, preferable_value: Set[kore.Variable]) -> Substitution:
+    def orient(self, preferable_var: Set[kore.Variable]) -> Substitution:
         """
         Orient mappings in the substitution such that if we have
         v1 |-> v2 in substitution
-        if v1 is in <preferable_value> but v2 is not in <preferable_value>
+        if v1 is not in <preferable_var> but v2 is in <preferable_var>
         then we switch it to v2 |-> v1
         """
-        subst: Dict[kore.Variable, kore.Pattern] = {}
+        subst: List[Tuple[kore.Variable, kore.Pattern]] = []
 
-        for k, v in self.substitution.items():
-            if isinstance(v, kore.Variable) and k in preferable_value and v not in preferable_value:
-                subst[v] = k
+        for k, v in self.substitution:
+            if isinstance(v, kore.Variable) and k not in preferable_var and v in preferable_var:
+                subst.append((v, k))
             else:
-                subst[k] = v
+                subst.append((k, v))
 
-        return Substitution(subst)
+        return Substitution(tuple(subst))
 
     def split(self, variables: Set[kore.Variable]) -> Tuple[Substitution, Substitution]:
         """
@@ -127,16 +121,16 @@ class Substitution(WithSchema):
         - sigma2 where the variables are not in <variables>
         """
 
-        subst1 = {}
-        subst2 = {}
+        subst1 = []
+        subst2 = []
 
-        for k, v in self.substitution.items():
+        for k, v in self.substitution:
             if k in variables:
-                subst1[k] = v
+                subst1.append((k, v))
             else:
-                subst2[k] = v
+                subst2.append((k, v))
 
-        return Substitution(subst1), Substitution(subst2)
+        return Substitution(tuple(subst1)), Substitution(tuple(subst2))
 
     @staticmethod
     def get_raw_schema() -> Any:
@@ -150,15 +144,19 @@ class Substitution(WithSchema):
     @staticmethod
     def parse_from_object(obj: Any) -> Substitution:
         assert isinstance(obj, list)
-        substitution: Dict[kore.Variable, kore.Pattern] = {}
+        substitution: List[Tuple[kore.Variable, kore.Pattern]] = []
 
         for item in obj:
             assert isinstance(item, dict)
             assert "key" in item and isinstance(item["key"], kore.Variable)
             assert "value" in item and isinstance(item["value"], kore.Pattern)
-            substitution[item["key"]] = item["value"]
+            substitution.append((item["key"], item["value"]))
 
-        return Substitution(substitution)
+        return Substitution(tuple(substitution))
+
+    def __str__(self) -> str:
+        items = [f"{k} |-> {v}" for k, v in self.substitution]
+        return f"{{ {', '.join(items)} }}"
 
 
 @dataclass
@@ -189,10 +187,6 @@ class ConstrainedPattern(WithSchema):
         Encode as a kore pattern
         """
         return KoreUtils.construct_and(self.get_constraint(), self.pattern)
-
-    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
-        self.pattern = KoreUtils.copy_and_substitute_pattern(self.pattern, concretization)
-        self.constraint = KoreUtils.copy_and_substitute_pattern(self.constraint, concretization)
 
     @staticmethod
     def from_pattern(pattern: kore.Pattern) -> ConstrainedPattern:
@@ -236,6 +230,9 @@ class ConstrainedPattern(WithSchema):
             obj["term"], KoreUtils.construct_and(obj["constraint"], obj["substitution"].as_predicate(sort))
         )
 
+    def __str__(self) -> str:
+        return str(self.as_pattern())
+
 
 @dataclass
 class AppliedRule(WithSchema):
@@ -244,7 +241,7 @@ class AppliedRule(WithSchema):
     substitution: Optional[Substitution] = None
 
     def get_substitution(self) -> Mapping[kore.Variable, kore.Pattern]:
-        return self.substitution.substitution if self.substitution is not None else {}
+        return self.substitution.as_dict() if self.substitution is not None else {}
 
     def resolve(self, module: kore.Module) -> None:
         for result in self.results:
@@ -252,13 +249,6 @@ class AppliedRule(WithSchema):
 
         if self.substitution is not None:
             self.substitution.resolve(module)
-
-    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
-        for result in self.results:
-            result.concretize(concretization)
-
-        if self.substitution is not None:
-            self.substitution.concretize(concretization)
 
     @staticmethod
     def get_raw_schema() -> Any:
@@ -287,6 +277,9 @@ class AppliedRule(WithSchema):
 
         return AppliedRule(obj["results"], rule_id, substitution)
 
+    def __str__(self) -> str:
+        return f"applied rule: {self.rule_id}, substitution: {self.substitution}"
+
 
 @dataclass
 class RewritingStep(WithSchema):
@@ -312,15 +305,6 @@ class RewritingStep(WithSchema):
         for remainder in self.remainders:
             remainder.resolve(module)
 
-    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
-        self.initial.concretize(concretization)
-
-        for rule in self.applied_rules:
-            rule.concretize(concretization)
-
-        for remainder in self.remainders:
-            remainder.concretize(concretization)
-
     @staticmethod
     def get_raw_schema() -> Any:
         return {
@@ -336,6 +320,10 @@ class RewritingStep(WithSchema):
         assert "applied-rules" in obj and isinstance(obj["applied-rules"], tuple)
         assert "remainders" in obj and isinstance(obj["remainders"], tuple)
         return RewritingStep(obj["initial"], obj["applied-rules"], obj["remainders"])
+
+    def __str__(self) -> str:
+        rules = "\n".join([f"- {rule}" for rule in self.applied_rules])
+        return f"applied rules:\n{rules}"
 
 
 @dataclass
@@ -401,15 +389,6 @@ class RewritingTask(WithSchema):
 
     def get_final_patterns(self) -> Tuple[ConstrainedPattern, ...]:
         return self.finals
-
-    def concretize(self, concretization: Dict[kore.Variable, kore.Application]) -> None:
-        self.initial.concretize(concretization)
-
-        for final in self.finals:
-            final.concretize(concretization)
-
-        for step in self.steps:
-            step.concretize(concretization)
 
     def resolve(self, module: kore.Module) -> None:
         """

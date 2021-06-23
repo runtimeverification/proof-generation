@@ -30,6 +30,16 @@ ReachabilityType = str
 
 class RewriteProofGenerator(ProofGenerator):
     """
+    These functions can accept symbolic arguments
+    """
+    SYMBOLIC_FUNCTIONS = {
+        "LblisKResult",
+
+        # for top cell initialization
+        "Lblproject'Coln'Pgm",
+        "LblMap'Coln'lookup",
+    }
+    """
     Generate proofs for rewriting related claims
     """
     def __init__(self, composer: KoreComposer):
@@ -82,6 +92,15 @@ class RewriteProofGenerator(ProofGenerator):
         sorted_claims = self.sort_dependency_graph(claim_dependency)
         assert sorted_claims is not None, \
                f"cycle in the claim dependency graph"
+
+        # self.proved_claims["claim-1"] = self.composer.load_fresh_claim_placeholder(
+        #     "claim",
+        #     KoreUtils.construct_one_path_reaches_plus(
+        #         claim_to_task["claim-1"].lhs.as_pattern(),
+        #         claim_to_task["claim-1"].rhs.as_pattern(),
+        #     ),
+        # )
+        # self.prove_one_path_reachability_claim(claim_to_task["claim-0"])
 
         for claim_id in sorted_claims:
             print(f"### proving {claim_id}")
@@ -705,31 +724,40 @@ class RewriteProofGenerator(ProofGenerator):
         We try to prove and return
         phi /\ psi' /\ sigma' => phi' /\ psi' /\ sigma'
         """
+
         assert applied_rule.substitution is not None and \
                applied_rule.rule_id is not None, \
                f"symbolic execution requires backend hints"
 
         assert len(applied_rule.results) == 1, \
                f"splitting in equations is currently not supported"
-
         final = applied_rule.results[0]
-
-        config_free_vars = KoreUtils.get_free_variables(initial.pattern)
-
-        # TODO: the hint sometimes prefers rule variables as keys
-        # we need to revert them
-        oriented_substitution = applied_rule.substitution.orient(config_free_vars)
-        _, rule_substitution = oriented_substitution.split(config_free_vars)
 
         # applying either a claim or an axiom
         if applied_rule.rule_id in self.proved_claims:
             rewrite_axiom = self.proved_claims[applied_rule.rule_id]
         else:
             rewrite_axiom = self.composer.rewrite_axioms[applied_rule.rule_id]
-
         lhs, _, rhs, _ = self.destruct_rewrite_axiom(rewrite_axiom)
-        lhs = KoreUtils.copy_and_substitute_pattern(lhs, rule_substitution.substitution)
-        rhs = KoreUtils.copy_and_substitute_pattern(rhs, rule_substitution.substitution)
+
+        axiom_free_vars = KoreUtils.get_free_variables(rewrite_axiom.claim.pattern)
+
+        # TODO: the hint sometimes prefers rule variables as keys
+        # we need to revert them
+        oriented_substitution = applied_rule.substitution.orient(axiom_free_vars)
+        rule_substitution, _ = oriented_substitution.split(axiom_free_vars)
+        # print(applied_rule.rule_id)
+        # print("oriented_substitution")
+        # print("\n".join(list(map(lambda t: f"({t[0]}, {t[1]})", oriented_substitution.substitution))))
+        # print("rule_substitution")
+        # print("\n".join(list(map(lambda t: f"({t[0]}, {t[1]})", rule_substitution.substitution))))
+        # print("axiom_free_vars")
+        # print("\n".join(list(map(str, axiom_free_vars))))
+
+        rule_substitution_dict = rule_substitution.as_dict()
+
+        lhs = KoreUtils.copy_and_substitute_pattern(lhs, rule_substitution_dict)
+        rhs = KoreUtils.copy_and_substitute_pattern(rhs, rule_substitution_dict)
 
         # we also consider a extra set of equalities in the constraint
         unification_gen = UnificationProofGenerator(self.composer, allow_unevaluated_functions=True)
@@ -742,7 +770,7 @@ class RewriteProofGenerator(ProofGenerator):
         instantiated_axiom = self.fol_gen.apply_functional_substitution(
             rewrite_axiom,
             {
-                **rule_substitution.substitution,
+                **rule_substitution_dict,
                 **lhs_unification_result.substitution
             },
         )
@@ -762,6 +790,9 @@ class RewriteProofGenerator(ProofGenerator):
         )
 
         # TODO: simplify the requires clause here?
+
+        # KoreUtils.pretty_print(initial.pattern)
+        # KoreUtils.pretty_print(lhs)
 
         # prove final_constraint /\ initial_term -> requires /\ lhs
         simplification1 = self.prove_constrained_pattern_subsumption(
@@ -1415,7 +1446,10 @@ class RewriteProofGenerator(ProofGenerator):
                 proof = self.disjoint_gen.prove_disjointness(left, right)
             except Exception as e:
                 print(f"failed to prove the disjointness of {left} and {right}: {e}")
-                return None
+                return self.composer.load_fresh_claim_placeholder(
+                    "disjointness",
+                    KoreUtils.construct_not(pattern),
+                )
 
             # |- ( \imp ( \in-sort x ph0 ) ( \not ( \and ... ... ) ) )
             proof = self.composer.get_theorem("disjointness-exists").apply(proof)
@@ -1642,6 +1676,9 @@ class RewriteProofGenerator(ProofGenerator):
 
         raise Exception(f"unable to find anywhere/function rule to rewrite term {pattern}")
 
+    def get_concrete_function_symbols(self) -> Set[str]:
+        return set(self.hooked_symbol_evaluators.keys()).difference(RewriteProofGenerator.SYMBOLIC_FUNCTIONS)
+
     def is_simplifiable(self, pattern: kore.Pattern) -> bool:
         """
         Checks if the given pattern is "simplifiable", that is, if
@@ -1652,7 +1689,8 @@ class RewriteProofGenerator(ProofGenerator):
         if nested_inj_path is not None:
             return True
 
-        function_path = InnermostFunctionPathVisitor(self.composer).visit(pattern)
+        concrete_functions = self.get_concrete_function_symbols()
+        function_path = InnermostFunctionPathVisitor(self.composer, concrete_functions).visit(pattern)
         if function_path is not None:
             return True
 
@@ -1692,7 +1730,8 @@ class RewriteProofGenerator(ProofGenerator):
                 continue
 
             # resolve unresolved functions
-            function_path = InnermostFunctionPathVisitor(self.composer).visit(subpattern)
+            concrete_functions = self.get_concrete_function_symbols()
+            function_path = InnermostFunctionPathVisitor(self.composer, concrete_functions).visit(subpattern)
             if function_path is not None:
                 function_subpattern = KoreUtils.get_subpattern_by_path(subpattern, function_path)
                 assert isinstance(function_subpattern, kore.Application)
@@ -1753,20 +1792,10 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
     Return a path of an application subpattern with a function-like head such that
     it doesn't have any (sub-)subpattern with a function-like head
     """
-    """
-    These functions can accept symbolic arguments
-    """
-    SYMBOLIC_FUNCTIONS = {
-        "LblisKResult",
-
-        # for top cell initialization
-        "Lblproject'Coln'Pgm",
-        "LblMap'Coln'lookup",
-    }
-
-    def __init__(self, composer: KoreComposer):
+    def __init__(self, composer: KoreComposer, concrete_functions: Set[str]):
         super().__init__()
         self.composer = composer
+        self.concrete_functions = concrete_functions
 
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
         return None
@@ -1786,13 +1815,11 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
             symbol_name = application.symbol.get_symbol_name()
 
             # do not find symbolic instances of concrete functions
-            # (unless it's an initializer)
             # TODO: slightly hacky
             is_symbolic = len(KoreUtils.get_free_variables(application)) != 0
 
-            if symbol_name not in InnermostFunctionPathVisitor.SYMBOLIC_FUNCTIONS and \
-               is_symbolic and \
-               application.symbol.definition.get_attribute_by_symbol("initializer") is None:
+            if is_symbolic and \
+               symbol_name in self.concrete_functions:
                 return None
 
             return []

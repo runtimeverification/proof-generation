@@ -91,7 +91,7 @@ def preprocess_spec_file(spec_module: str, file_path: str) -> None:
 
                         free_vars = KoreUtils.get_free_variables(sentence)
                         substitution = {
-                            free_var: kore.Variable(f"ClaimVar{free_var.name}", free_var.sort)
+                            free_var: kore.Variable(f"Claim{claim_index}Var{free_var.name}", free_var.sort)
                             for free_var in free_vars
                         }
 
