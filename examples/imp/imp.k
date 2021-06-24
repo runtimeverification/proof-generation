@@ -4,6 +4,7 @@ module IMP-SYNTAX
                  | "-" Int                    [format(%1%2)]
                  | AExp "/" AExp              [left, seqstrict, color(pink)]
                  | "(" AExp ")"               [bracket]
+                 | AExp "*" AExp              [left, seqstrict]
                  > AExp "+" AExp              [left, seqstrict, color(pink)]
   syntax BExp  ::= Bool
                  | AExp "<=" AExp             [seqstrict, latex({#1}\leq{#2}), color(pink)]
@@ -20,6 +21,7 @@ module IMP-SYNTAX
                  > Stmt Stmt                  [left, format(%1%n%2)]
   syntax Pgm ::= "int" Ids ";" Stmt           [format(%1 %2%3%n%4), colors(yellow,pink)]
   syntax Ids ::= List{Id,","}                 [format(%1%2 %3)]
+
 endmodule
 
 module IMP
@@ -34,25 +36,26 @@ module IMP
 
   rule <k> X:Id => I ...</k> <state>... X |-> I ...</state>
   rule I1 / I2 => I1 /Int I2  requires I2 =/=Int 0
+  rule I1 * I2 => I1 *Int I2
   rule I1 + I2 => I1 +Int I2
   rule - I1 => 0 -Int I1
 
   rule I1 <= I2 => I1 <=Int I2
   rule ! T => notBool T
-  rule true && B => B
-  rule false && _ => false
+  rule C:Bool && B => B requires C
+  rule C:Bool && _ => false requires notBool C
 
   rule {} => .   [structural]
   rule {S} => S  [structural]
 
   rule <k> X = I:Int; => . ...</k> <state>... X |-> (_ => I) ...</state>
   rule S1:Stmt S2:Stmt => S1 ~> S2  [structural]
-  rule if (true)  S else _ => S
-  rule if (false) _ else S => S
+  rule if (true)  S else _ => S // requires C
+  rule if (false) _ else S => S // requires notBool C
 
   rule while (B) S => if (B) {S while (B) S} else {}  [structural]
 
-  rule <k> int (X,Xs => Xs);_ </k> <state> Rho:Map (.Map => X|->0) </state>
+  rule <k> int (X,Xs => Xs);_ </k> <state> _:Map (.Map => X|->0) </state>
     // requires notBool (X in keys(Rho))
   rule int .Ids; S => S  [structural]
 endmodule
