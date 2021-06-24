@@ -565,6 +565,14 @@ class KoreUtils:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.IMPLIES
 
     @staticmethod
+    def is_always(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.ALWAYS
+
+    @staticmethod
+    def is_circularity(pattern: Pattern) -> bool:
+        return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.CIRCULARITY
+
+    @staticmethod
     def is_not(pattern: Pattern) -> bool:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.NOT
 

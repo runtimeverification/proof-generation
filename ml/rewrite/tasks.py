@@ -51,8 +51,12 @@ class Substitution(WithSchema):
     def as_dict(self) -> Dict[kore.Variable, kore.Pattern]:
         subst = {}
         for k, v in self.substitution:
-            assert k not in subst, f"duplicate key {k}"
-            subst[k] = v
+            if k not in subst:
+                subst[k] = v
+            elif isinstance(v, kore.Variable) and v not in subst:
+                subst[v] = k
+            else:
+                assert False, f"duplicate key {k} or {v}"
         return subst
 
     def as_predicate(self, sort: kore.Sort) -> kore.Pattern:
