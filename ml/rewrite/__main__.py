@@ -72,9 +72,14 @@ def prove_rewriting(
 def prove_reachability(
     composer: KoreComposer,
     tasks: Tuple[ReachabilityTask, ...],
+    smt_prelude: Optional[str],
 ) -> None:
     print("proving one-path reachability")
-    gen = RewriteProofGenerator(composer)
+
+    if smt_prelude is not None:
+        print(f"using SMT prelude file {smt_prelude}")
+
+    gen = RewriteProofGenerator(composer, smt_prelude)
     gen.prove_one_path_reachability_claims(tasks)
 
 
@@ -143,6 +148,10 @@ def set_additional_flags(parser: argparse.ArgumentParser) -> None:
         default=False,
         help=
         "Compress the output proof object using the LZMA algorithm, currently only applicable in the standalone mode",
+    )
+    parser.add_argument(
+        "--smt-prelude",
+        help="SMT prelude file",
     )
 
 
@@ -236,7 +245,7 @@ def run_on_arguments(args: argparse.Namespace) -> None:
             else:
                 assert len(reachability_tasks) != 0
                 with stopwatch.start("rewrite"), env.in_segment("rewrite"):
-                    prove_reachability(env, reachability_tasks)
+                    prove_reachability(env, reachability_tasks, args.smt_prelude)
 
     if args.benchmark:
         module_elapsed = stopwatch.get_elapsed("module")

@@ -24,9 +24,19 @@ module IMP-SYNTAX
 
 endmodule
 
+module VERIFICAITON
+
+imports DOMAINS
+
+syntax Int ::= exp(Int, Int) [function, functional, smt-hook((^ #1 #2))]
+
+endmodule
+
 module IMP
   imports IMP-SYNTAX
   imports DOMAINS
+  imports VERIFICAITON
+
   syntax KResult ::= Int | Bool
 
   configuration <T color="yellow">
