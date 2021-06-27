@@ -50,3 +50,14 @@ Once that's done, you can use Metamath to verify the proof:
     ..................................................
     MM>
 
+
+Reachability Examples
+---
+
+```
+pypy3 -m scripts.prove_reachability examples/imp/imp.k IMP examples/imp/sum-spec.k SUM-SPEC --output tmp
+pypy3 -m scripts.prove_reachability examples/imp/imp.k IMP examples/imp/collatz-spec.k COLLATZ-SPEC --output tmp
+pypy3 -m scripts.prove_reachability examples/imp/imp.k IMP examples/imp/exp-spec.k EXP-SPEC --smt-prelude examples/imp/prelude.smt2 --output tmp
+pypy3 -m scripts.prove_reachability examples/reg/reg.k REG examples/reg/sum-spec.k SUM-SPEC --output tmp
+pypy3 -m scripts.prove_reachability examples/pcf/pcf.k PCF examples/pcf/sum-spec.k SUM-SPEC --output tmp
+```

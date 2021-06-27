@@ -42,7 +42,7 @@ class RewriteProofGenerator(ProofGenerator):
     """
     Generate proofs for rewriting related claims
     """
-    def __init__(self, composer: KoreComposer):
+    def __init__(self, composer: KoreComposer, smt_prelude_file: Optional[str] = None):
         super().__init__(composer)
         self.owise_assumption_counter = 0
         self.rewrite_claim_counter = 0
@@ -57,6 +57,8 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'UndsSlsh'Int'Unds'": IntegerDivisionEvaluator(composer),
             "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(composer),
             "Lbl'Unds-LT-Eqls'Int'Unds'": IntegerLessThanOrEqualToEvaluator(composer),
+            "Lbl'Unds-GT-'Int'Unds'": IntegerGreaterThanEvaluator(composer),
+            "Lbl'Unds-LT-'Int'Unds'": IntegerLessThanEvaluator(composer),
             "Lbl'UndsEqlsEqls'Int'Unds'": IntegerEqualityEvaluator(composer),
             "Lbl'Unds'andBool'Unds'": BooleanAndEvaluator(composer),
             "LblnotBool'Unds'": BooleanNotEvaluator(composer),
@@ -65,7 +67,7 @@ class RewriteProofGenerator(ProofGenerator):
             "LblMap'Coln'lookup": MapLookupEvaluator(composer),
         }
         self.disjoint_gen = DisjointnessProofGenerator(composer)
-        self.smt_gen = SMTProofGenerator(composer)
+        self.smt_gen = SMTProofGenerator(composer, smt_prelude_file)
         self.prop_gen = PropositionalProofGenerator(composer)
         self.fol_gen = FOLProofGenerator(composer)
 
@@ -1851,6 +1853,12 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
            isinstance(application.symbol.definition, kore.SymbolDefinition):
             symbol_name = application.symbol.get_symbol_name()
 
+            has_smt_hook = isinstance(application.symbol.definition, kore.SymbolDefinition) and \
+                           application.symbol.definition.has_attribute("smt-hook")
+
+            if has_smt_hook:
+                return None
+
             # do not find symbolic instances of concrete functions
             # TODO: slightly hacky
             is_symbolic = len(KoreUtils.get_free_variables(application)) != 0
@@ -1972,6 +1980,18 @@ class IntegerLessThanOrEqualToEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) <= self.parse_int(b))
+
+
+class IntegerGreaterThanEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, self.parse_int(a) > self.parse_int(b))
+
+
+class IntegerLessThanEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, self.parse_int(a) < self.parse_int(b))
 
 
 class IntegerEqualityEvaluator(BuiltinFunctionEvaluator):

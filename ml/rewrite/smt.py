@@ -16,12 +16,36 @@ class SMTProofGenerator(ProofGenerator):
         "Lbl'UndsSlsh'Int'Unds'": lambda a, b: a / b,
         "Lbl'Unds-GT-Eqls'Int'Unds'": lambda a, b: a >= b,
         "Lbl'Unds-LT-Eqls'Int'Unds'": lambda a, b: a <= b,
+        "Lbl'Unds-GT-'Int'Unds'": lambda a, b: a > b,
+        "Lbl'Unds-LT-'Int'Unds'": lambda a, b: a < b,
         "Lbl'UndsEqlsEqls'Int'Unds'": lambda a, b: a == b,
+        "Lbl'UndsEqlsSlshEqls'Int'Unds'": lambda a, b: a != b,
         "Lbl'Unds'andBool'Unds'": lambda a, b: z3.And(a, b),
         "LblnotBool'Unds'": lambda a: z3.Not(a),
         "Lbl'UndsEqlsEqls'K'Unds'": lambda a, b: a == b,
         "Lbl'UndsEqlsSlshEqls'K'Unds'": lambda a, b: z3.Not(a == b),
     }
+
+    SMT_HOOK_TO_SMT_FUNCTION: Dict[str, Callable[..., z3.AstRef]] = {
+        "(^ #1 #2)": lambda x, y: x**y,
+        "distinct": lambda *args: z3.Distinct(*args),
+    }
+
+    def __init__(
+        self,
+        composer: KoreComposer,
+        prelude_file: Optional[str] = None,
+        tactic: z3.Tactic = z3.AndThen(z3.Tactic("qfnra-nlsat"), z3.Tactic("default")),
+    ):
+        super().__init__(composer)
+
+        self.tactic = tactic
+        self.prelude_formulas = []
+
+        # TODO: this only supports formulas (but no declarations and options)
+        if prelude_file is not None:
+            for formula in z3.parse_smt2_file(prelude_file):
+                self.prelude_formulas.append(formula)
 
     def check_validity(self, predicate: Union[kore.Pattern, kore.Claim]) -> Optional[ProvableClaim]:
         """
@@ -34,14 +58,18 @@ class SMTProofGenerator(ProofGenerator):
 
         encoded_predicate = self.encode_predicate(predicate)
 
-        solver = z3.Solver()
+        solver = self.tactic.solver()
+
+        for formula in self.prelude_formulas:
+            solver.add(formula)
         solver.add(z3.Not(encoded_predicate))
 
-        if solver.check() == z3.unsat:
-            print("smt query unsat:", encoded_predicate)
+        result = solver.check()
+        print(f"smt query {result}:", encoded_predicate)
+
+        if result == z3.unsat:
             return self.composer.load_fresh_claim_placeholder(f"smt-query", predicate)
         else:
-            print("smt query sat:", encoded_predicate)
             return None
 
     def encode_predicate(self, predicate: kore.Pattern) -> z3.BoolRef:
@@ -105,6 +133,24 @@ class SMTProofGenerator(ProofGenerator):
                 function = SMTProofGenerator.HOOKED_FUNCTION_TO_SMT_FUNCTION[symbol_name]
                 subterms = tuple(self.encode_term(argument) for argument in term.arguments)
                 return function(*subterms)
+
+            definition = term.symbol.definition
+
+            # TODO: hacky, fix this
+            if isinstance(definition, kore.SymbolDefinition) and definition.has_attribute("smt-hook"):
+                smt_hook = definition.get_attribute_by_symbol("smt-hook")
+                assert smt_hook is not None
+
+                smt_hook_arg = smt_hook.arguments[0]
+                assert isinstance(smt_hook_arg, kore.StringLiteral)
+                template = smt_hook_arg.content
+
+                assert template in SMTProofGenerator.SMT_HOOK_TO_SMT_FUNCTION, \
+                       f"unsupported SMT hook {template} for {term}"
+
+                return SMTProofGenerator.SMT_HOOK_TO_SMT_FUNCTION[template](
+                    *(self.encode_term(arg) for arg in term.arguments)
+                )
 
         elif isinstance(term, kore.Variable):
             assert isinstance(term.sort, kore.SortInstance)

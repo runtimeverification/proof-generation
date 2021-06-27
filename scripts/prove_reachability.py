@@ -218,7 +218,7 @@ def gen_proof(args: argparse.Namespace) -> None:
                 spec_kore_file,
                 "--trace-rewrites",
                 task_path,
-            ],
+            ] + (["--smt-prelude", args.smt_prelude] if args.smt_prelude is not None else []),
             stdout=subprocess.DEVNULL,
         )
         exit_code = proc.wait()
