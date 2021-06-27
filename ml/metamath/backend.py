@@ -43,7 +43,7 @@ class StandaloneFileBackend(Backend):
         self.path = path
         self.compression = compression
 
-        assert not os.path.exists(path), f"file {path} already exists"
+        # assert not os.path.exists(path), f"file {path} already exists"
 
         if compression:
             self.file_handle: TextIO = lzma.open(path, "wt")

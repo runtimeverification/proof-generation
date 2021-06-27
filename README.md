@@ -55,9 +55,10 @@ Reachability Examples
 ---
 
 ```
-pypy3 -m scripts.prove_reachability examples/imp/imp.k IMP examples/imp/sum-spec.k SUM-SPEC --output tmp
-pypy3 -m scripts.prove_reachability examples/imp/imp.k IMP examples/imp/collatz-spec.k COLLATZ-SPEC --output tmp
-pypy3 -m scripts.prove_reachability examples/imp/imp.k IMP examples/imp/exp-spec.k EXP-SPEC --smt-prelude examples/imp/prelude.smt2 --output tmp
-pypy3 -m scripts.prove_reachability examples/reg/reg.k REG examples/reg/sum-spec.k SUM-SPEC --output tmp
-pypy3 -m scripts.prove_reachability examples/pcf/pcf.k PCF examples/pcf/sum-spec.k SUM-SPEC --output tmp
+EV=/media/rodlin/ext4/popl22-evaluation
+/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/imp/imp.k IMP $EV/imp/sum-spec.k SUM-SPEC --output $EV/imp/sum-proof.mm --standalone
+/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/imp/imp.k IMP $EV/imp/collatz-spec.k COLLATZ-SPEC --output $EV/imp/collatz-proof.mm --standalone
+/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/imp/imp.k IMP $EV/imp/exp-spec.k EXP-SPEC --output $EV/imp/exp-proof.mm --standalone --smt-prelude $EV/imp/prelude.smt2 --z3-tactic "(and-then qfnra-nlsat default)" --unknown-as-sat
+/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/reg/reg.k REG $EV/reg/sum-spec.k SUM-SPEC --output $EV/reg/sum-proof.mm --standalone
+/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/pcf/pcf.k PCF $EV/pcf/sum-spec.k SUM-SPEC --output $EV/pcf/sum-proof.mm --standalone
 ```

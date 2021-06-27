@@ -1,4 +1,5 @@
 from typing import Dict, Callable, Optional, Union
+from dataclasses import dataclass, field
 
 import z3  # type: ignore
 
@@ -6,6 +7,12 @@ from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
 
 from .env import KoreComposer, ProofGenerator, ProvableClaim
+
+
+@dataclass
+class SMTOption:
+    prelude_file: Optional[str] = None
+    tactic: str = "default"
 
 
 class SMTProofGenerator(ProofGenerator):
@@ -31,20 +38,29 @@ class SMTProofGenerator(ProofGenerator):
         "distinct": lambda *args: z3.Distinct(*args),
     }
 
+    # TODO: actually write a parser
+    TACTIC_MAP = {
+        "default": z3.Tactic("default"),
+        "(and-then qfnra-nlsat default)": z3.AndThen(z3.Tactic("qfnra-nlsat"), z3.Tactic("default")),
+    }
+
     def __init__(
         self,
         composer: KoreComposer,
-        prelude_file: Optional[str] = None,
-        tactic: z3.Tactic = z3.AndThen(z3.Tactic("qfnra-nlsat"), z3.Tactic("default")),
+        option: SMTOption = SMTOption(),
     ):
         super().__init__(composer)
 
-        self.tactic = tactic
+        assert option.tactic in SMTProofGenerator.TACTIC_MAP, \
+               f"unsupported tactic {option.tactic}"
+        tactic = SMTProofGenerator.TACTIC_MAP[option.tactic]
+
+        self.solver = tactic.solver()
         self.prelude_formulas = []
 
         # TODO: this only supports formulas (but no declarations and options)
-        if prelude_file is not None:
-            for formula in z3.parse_smt2_file(prelude_file):
+        if option.prelude_file is not None:
+            for formula in z3.parse_smt2_file(option.prelude_file):
                 self.prelude_formulas.append(formula)
 
     def check_validity(self, predicate: Union[kore.Pattern, kore.Claim]) -> Optional[ProvableClaim]:
@@ -58,14 +74,16 @@ class SMTProofGenerator(ProofGenerator):
 
         encoded_predicate = self.encode_predicate(predicate)
 
-        solver = self.tactic.solver()
+        self.solver.push()
 
         for formula in self.prelude_formulas:
-            solver.add(formula)
-        solver.add(z3.Not(encoded_predicate))
+            self.solver.add(formula)
+        self.solver.add(z3.Not(encoded_predicate))
 
-        result = solver.check()
+        result = self.solver.check()
         print(f"smt query {result}:", encoded_predicate)
+
+        self.solver.pop()
 
         if result == z3.unsat:
             return self.composer.load_fresh_claim_placeholder(f"smt-query", predicate)

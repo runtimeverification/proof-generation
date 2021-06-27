@@ -206,23 +206,29 @@ def gen_proof(args: argparse.Namespace) -> None:
     task_path = os.path.join(cache_dir, f"reachability-task-{spec_name}.yml")
 
     if check_dependency_change([task_path], [spec_kore_file, kompile_timestamp]):
-        proc = run_command(
-            [
-                "kore-exec",
-                kore_definition,
-                "--module",
-                module,
-                "--spec-module",
-                spec_module,
-                "--prove",
-                spec_kore_file,
-                "--trace-rewrites",
-                task_path,
-            ] + (["--smt-prelude", args.smt_prelude] if args.smt_prelude is not None else []),
-            stdout=subprocess.DEVNULL,
-        )
-        exit_code = proc.wait()
-        assert exit_code == 0, f"kore-exec --prove failed with exit code {exit_code}"
+        try:
+            proc = run_command(
+                [
+                    "kore-exec",
+                    kore_definition,
+                    "--module",
+                    module,
+                    "--spec-module",
+                    spec_module,
+                    "--prove",
+                    spec_kore_file,
+                    "--trace-rewrites",
+                    task_path,
+                ] + (["--smt-prelude", args.smt_prelude] if args.smt_prelude is not None else []) +
+                (["--z3-tactic", args.z3_tactic] if args.z3_tactic is not None else []) +
+                (["--unknown-as-sat"] if args.unknown_as_sat else []),
+                stdout=subprocess.DEVNULL,
+            )
+            exit_code = proc.wait()
+            assert exit_code == 0, f"kore-exec --prove failed with exit code {exit_code}"
+        except:
+            os.remove(task_path)
+            raise
 
     ### Step 4. Pass the hints and definition to ml.rewrite
     print(f"- generating proof")
@@ -242,6 +248,13 @@ def main() -> None:
     parser.add_argument("module", help="Input main module name")
     parser.add_argument("spec", help="Specification")
     parser.add_argument("spec_module", help="Spec module name")
+    parser.add_argument(
+        "--unknown-as-sat",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Treat unknown results from SMT solver as satisfiable"
+    )
     set_additional_flags(parser)
     args = parser.parse_args()
     gen_proof(args)

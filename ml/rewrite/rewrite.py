@@ -22,7 +22,7 @@ from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
 from .propositional import PropositionalProofGenerator
 from .substitution import SingleSubstitutionProofGenerator
-from .smt import SMTProofGenerator
+from .smt import SMTProofGenerator, SMTOption
 from .tasks import RewritingStep, RewritingTask, ReachabilityTask, ConstrainedPattern, Substitution, AppliedRule
 
 ReachabilityType = str
@@ -42,7 +42,7 @@ class RewriteProofGenerator(ProofGenerator):
     """
     Generate proofs for rewriting related claims
     """
-    def __init__(self, composer: KoreComposer, smt_prelude_file: Optional[str] = None):
+    def __init__(self, composer: KoreComposer, smt_option: SMTOption = SMTOption()):
         super().__init__(composer)
         self.owise_assumption_counter = 0
         self.rewrite_claim_counter = 0
@@ -67,7 +67,7 @@ class RewriteProofGenerator(ProofGenerator):
             "LblMap'Coln'lookup": MapLookupEvaluator(composer),
         }
         self.disjoint_gen = DisjointnessProofGenerator(composer)
-        self.smt_gen = SMTProofGenerator(composer, smt_prelude_file)
+        self.smt_gen = SMTProofGenerator(composer, smt_option)
         self.prop_gen = PropositionalProofGenerator(composer)
         self.fol_gen = FOLProofGenerator(composer)
 
@@ -1729,7 +1729,11 @@ class RewriteProofGenerator(ProofGenerator):
             return True
 
         concrete_functions = self.get_concrete_function_symbols()
-        function_path = InnermostFunctionPathVisitor(self.composer, concrete_functions).visit(pattern)
+        function_path = InnermostFunctionPathVisitor(
+            self.composer,
+            concrete_functions,
+            set(self.hooked_symbol_evaluators.keys()),
+        ).visit(pattern)
         if function_path is not None:
             return True
 
@@ -1770,7 +1774,11 @@ class RewriteProofGenerator(ProofGenerator):
 
             # resolve unresolved functions
             concrete_functions = self.get_concrete_function_symbols()
-            function_path = InnermostFunctionPathVisitor(self.composer, concrete_functions).visit(subpattern)
+            function_path = InnermostFunctionPathVisitor(
+                self.composer,
+                concrete_functions,
+                set(self.hooked_symbol_evaluators.keys()),
+            ).visit(subpattern)
             if function_path is not None:
                 function_subpattern = KoreUtils.get_subpattern_by_path(subpattern, function_path)
                 assert isinstance(function_subpattern, kore.Application)
@@ -1831,10 +1839,11 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
     Return a path of an application subpattern with a function-like head such that
     it doesn't have any (sub-)subpattern with a function-like head
     """
-    def __init__(self, composer: KoreComposer, concrete_functions: Set[str]):
+    def __init__(self, composer: KoreComposer, concrete_functions: Set[str], builtin_functions: Set[str]):
         super().__init__()
         self.composer = composer
         self.concrete_functions = concrete_functions
+        self.builtin_functions = builtin_functions
 
     def postvisit_variable(self, variable: kore.Variable) -> Optional[PatternPath]:
         return None
@@ -1853,18 +1862,18 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
            isinstance(application.symbol.definition, kore.SymbolDefinition):
             symbol_name = application.symbol.get_symbol_name()
 
+            # if a function does not have associated equations but have a SMT hook,
+            # we ignore it and leave it to the SMT solver
+            cannot_evaluate = application.symbol not in self.composer.equational_axioms and symbol_name not in self.builtin_functions
             has_smt_hook = isinstance(application.symbol.definition, kore.SymbolDefinition) and \
                            application.symbol.definition.has_attribute("smt-hook")
-
-            if has_smt_hook:
+            if cannot_evaluate and has_smt_hook:
                 return None
 
             # do not find symbolic instances of concrete functions
             # TODO: slightly hacky
             is_symbolic = len(KoreUtils.get_free_variables(application)) != 0
-
-            if is_symbolic and \
-               symbol_name in self.concrete_functions:
+            if is_symbolic and symbol_name in self.concrete_functions:
                 return None
 
             return []
@@ -1896,7 +1905,8 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         return int(value.arguments[0].content)
 
     def parse_bool(self, value: kore.Pattern) -> bool:
-        assert (isinstance(value, kore.MLPattern) and value.construct == kore.MLPattern.DV)
+        assert (isinstance(value, kore.MLPattern) and value.construct == kore.MLPattern.DV), \
+               f"expecting a domain value, got {value}"
         assert (isinstance(value.sorts[0], kore.SortInstance) and value.sorts[0].get_sort_id() == "SortBool")
         assert isinstance(value.arguments[0], kore.StringLiteral)
         return {"true": True, "false": False}[value.arguments[0].content]
