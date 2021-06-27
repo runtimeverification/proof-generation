@@ -30,6 +30,7 @@ from .rewrite import RewriteProofGenerator
 from .preprocessor import KorePreprocessor
 from .disjointness import DisjointnessProofGenerator
 from .tasks import RewritingTask, ReachabilityTask
+from .smt import SMTOption
 
 
 def load_tasks(module: Module, task_path: str) -> Tuple[Tuple[RewritingTask, ...], Tuple[ReachabilityTask, ...]]:
@@ -60,26 +61,27 @@ def load_tasks(module: Module, task_path: str) -> Tuple[Tuple[RewritingTask, ...
         return tuple(rewriting_tasks), tuple(reachability_tasks)
 
 
+def parse_smt_option(args: argparse.Namespace) -> SMTOption:
+    return SMTOption(args.smt_prelude, args.z3_tactic or "default")
+
+
 def prove_rewriting(
     composer: KoreComposer,
     task: RewritingTask,
+    smt_option: SMTOption,
 ) -> None:
     print("proving symbolic execution")
-    gen = RewriteProofGenerator(composer)
+    gen = RewriteProofGenerator(composer, smt_option)
     gen.prove_symbolic_rewriting_task(task)
 
 
 def prove_reachability(
     composer: KoreComposer,
     tasks: Tuple[ReachabilityTask, ...],
-    smt_prelude: Optional[str],
+    smt_option: SMTOption,
 ) -> None:
     print("proving one-path reachability")
-
-    if smt_prelude is not None:
-        print(f"using SMT prelude file {smt_prelude}")
-
-    gen = RewriteProofGenerator(composer, smt_prelude)
+    gen = RewriteProofGenerator(composer, smt_option)
     gen.prove_one_path_reachability_claims(tasks)
 
 
@@ -152,6 +154,10 @@ def set_additional_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--smt-prelude",
         help="SMT prelude file",
+    )
+    parser.add_argument(
+        "--z3-tactic",
+        help="Tactic to use for z3",
     )
 
 
@@ -237,15 +243,17 @@ def run_on_arguments(args: argparse.Namespace) -> None:
         if args.task is not None:
             rewriting_tasks, reachability_tasks = load_tasks(module, args.task)
 
+            smt_option = parse_smt_option(args)
+
             if len(rewriting_tasks) != 0:
                 assert len(reachability_tasks) == 0 and len(rewriting_tasks) == 1
                 with stopwatch.start("rewrite"), env.in_segment("rewrite"):
-                    prove_rewriting(env, rewriting_tasks[0])
+                    prove_rewriting(env, rewriting_tasks[0], smt_option)
 
             else:
                 assert len(reachability_tasks) != 0
                 with stopwatch.start("rewrite"), env.in_segment("rewrite"):
-                    prove_reachability(env, reachability_tasks, args.smt_prelude)
+                    prove_reachability(env, reachability_tasks, smt_option)
 
     if args.benchmark:
         module_elapsed = stopwatch.get_elapsed("module")
