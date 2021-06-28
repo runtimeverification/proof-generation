@@ -209,6 +209,14 @@ class KoreTemplates:
         )
 
     @staticmethod
+    def destruct_mapsto(pattern: kore.Pattern) -> Tuple[kore.Pattern, kore.Pattern]:
+        assert isinstance(pattern, kore.Application) and \
+               pattern.symbol.get_symbol_name() == "Lbl'UndsPipe'-'-GT-Unds'" and \
+               len(pattern.arguments) == 2, \
+               f"unexpected pattern {pattern}"
+        return pattern.arguments[0], pattern.arguments[1]
+
+    @staticmethod
     def is_map_unit_pattern(pattern: kore.Pattern) -> bool:
         return (
             isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'Stop'Map"
@@ -231,6 +239,24 @@ class KoreTemplates:
                    KoreTemplates.is_map_pattern(KoreTemplates.get_map_merge_right(pattern))
 
         return False
+
+    @staticmethod
+    def destruct_map_pattern(pattern: kore.Pattern) -> Tuple[Tuple[kore.Pattern, kore.Pattern], ...]:
+        """
+        Destruct the map to a list of (k, v) pairs
+        """
+
+        if KoreTemplates.is_map_unit_pattern(pattern):
+            return ()
+
+        if KoreTemplates.is_map_mapsto_pattern(pattern):
+            return KoreTemplates.destruct_mapsto(pattern),
+
+        if KoreTemplates.is_map_merge_pattern(pattern):
+            return KoreTemplates.destruct_map_pattern(KoreTemplates.get_map_merge_left(pattern)) + \
+                   KoreTemplates.destruct_map_pattern(KoreTemplates.get_map_merge_right(pattern))
+
+        assert False, f"not a map pattern {pattern}"
 
     @staticmethod
     def get_map_merge_left(pattern: kore.Pattern) -> kore.Pattern:
@@ -270,6 +296,35 @@ class KoreTemplates:
         pattern.arguments[1] = left
         left.arguments[0] = left_right
         left.arguments[1] = right
+
+    @staticmethod
+    def get_path_to_nth_item_in_map(pattern: kore.Pattern, n: int) -> PatternPath:
+        """
+        Get the path to the ith item in a map pattern
+        """
+
+        assert not KoreTemplates.is_map_unit_pattern(pattern), "empty map"
+
+        if KoreTemplates.is_map_mapsto_pattern(pattern):
+            assert n == 0, f"map {pattern} index out of bound {n}"
+            return []  # root
+
+        if KoreTemplates.is_map_merge_pattern(pattern):
+            left = KoreTemplates.get_map_merge_left(pattern)
+            right = KoreTemplates.get_map_merge_right(pattern)
+
+            left_items = KoreTemplates.destruct_map_pattern(left)
+            right_items = KoreTemplates.destruct_map_pattern(right)
+
+            if n < len(left_items):
+                return [0] + KoreTemplates.get_path_to_nth_item_in_map(left, n)
+
+            if n - len(left_items) < len(right_items):
+                return [1] + KoreTemplates.get_path_to_nth_item_in_map(right, n - len(left_items))
+
+            assert False, f"map {pattern} index out of bound {n}"
+
+        assert False, f"not a map {pattern}"
 
     @staticmethod
     def get_path_to_smallest_key_in_map_pattern(pattern: kore.Pattern) -> Tuple[kore.Pattern, PatternPath]:
