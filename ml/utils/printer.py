@@ -36,7 +36,7 @@ class Printer:
 
     def is_line_buffer_empty(self) -> bool:
         for s in self.line_buffer:
-            if not s.isspace():
+            if len(s) != 0 and not s.isspace() and s != self.tab:
                 return False
         return True
 
