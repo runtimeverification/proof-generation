@@ -381,17 +381,17 @@ class MapUnificationMixin(ABC):
     def unify_patterns(self, pattern1: kore.Pattern, pattern2: kore.Pattern) -> Optional[UnificationResult]:
         ...
 
-    def bubble_smallest_map_pattern(self,
-                                    pattern: kore.Pattern) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
+    def bubble_item(self, pattern: kore.Pattern,
+                    path: PatternPath) -> Tuple[kore.Pattern, List[Tuple[Equation, PatternPath]]]:
         """
-        Swap the smallest element to the leftmost topmost node
+        Swap item at the given path to the leftmost, topmost node
         """
-
-        if KoreTemplates.is_map_mapsto_pattern(pattern):
-            return pattern, []
-
-        _, path = KoreTemplates.get_path_to_smallest_key_in_map_pattern(pattern)
         equations: List[Tuple[Equation, PatternPath]] = []
+
+        if KoreTemplates.is_map_mapsto_pattern(pattern) or \
+           KoreTemplates.is_map_unit_pattern(pattern):
+            assert path == []
+            return pattern, []
 
         # swap branch where the smallest element is located, to the leftmost branch
         copied = KoreUtils.copy_pattern(pattern)
@@ -431,7 +431,8 @@ class MapUnificationMixin(ABC):
         # swap & rotate such that the resulting map is of the form
         # merge(a, rest)
         # where a is the item with the smallest key
-        pattern_bubbled, applied_eqs_bubbled = self.bubble_smallest_map_pattern(pattern)
+        _, smallest_path = KoreTemplates.get_path_to_smallest_key_in_map_pattern(pattern)
+        pattern_bubbled, applied_eqs_bubbled = self.bubble_item(pattern, smallest_path)
         assert isinstance(pattern_bubbled, kore.Application)
 
         pattern_bubbled_right = KoreTemplates.get_map_merge_right(pattern_bubbled)
@@ -496,16 +497,8 @@ class MapUnificationMixin(ABC):
 
         return None
 
-    def unify_concrete_map_patterns(self, pattern1: kore.Pattern,
-                                    pattern2: kore.Pattern) -> Optional[UnificationResult]:
-        """
-        Unify two concrete map patterns.
-        """
-
-        if not KoreTemplates.is_map_pattern(pattern1) or \
-           not KoreTemplates.is_map_pattern(pattern2):
-            return None
-
+    def unify_concrete_map_patterns_with_sort(self, pattern1: kore.Pattern,
+                                              pattern2: kore.Pattern) -> Optional[UnificationResult]:
         pattern1_sorted, applied_eqs1 = self.sort_map_pattern(pattern1)
         pattern2_sorted, applied_eqs2 = self.sort_map_pattern(pattern2)
 
@@ -513,6 +506,87 @@ class MapUnificationMixin(ABC):
         if unification is None:
             return None
 
+        reversed_eqs2 = [(eq.get_inverse(), path) for eq, path in applied_eqs2[::-1]]
+
+        return unification.prepend_equations(applied_eqs1).append_equations(reversed_eqs2)
+
+    def unify_concrete_map_patterns(self, pattern1: kore.Pattern,
+                                    pattern2: kore.Pattern) -> Optional[UnificationResult]:
+        """
+        Unify two concrete map patterns.
+        """
+
+        # KoreUtils.pretty_print(pattern1)
+        # KoreUtils.pretty_print(pattern2)
+
+        if not KoreTemplates.is_map_pattern(pattern1) or \
+           not KoreTemplates.is_map_pattern(pattern2):
+            return None
+
+        if KoreTemplates.is_map_unit_pattern(pattern1) and \
+           KoreTemplates.is_map_unit_pattern(pattern2):
+            return UnificationResult()
+
+        if KoreTemplates.is_map_mapsto_pattern(pattern1) and \
+           KoreTemplates.is_map_mapsto_pattern(pattern2):
+            return self.unify_concrete_map_pattern_children(pattern1, pattern2)
+
+        if not KoreTemplates.is_map_merge_pattern(pattern1) or \
+           not KoreTemplates.is_map_merge_pattern(pattern2):
+            # fall back to the dumb strategy
+            # TODO: simplify this
+            # print("fallback!")
+            # KoreUtils.pretty_print(pattern1)
+            # KoreUtils.pretty_print(pattern2)
+            return self.unify_concrete_map_patterns_with_sort(pattern1, pattern2)
+
+        left1 = KoreTemplates.get_map_merge_left(pattern1)
+
+        # if the left most item is not at the top level, we shuffle it up
+        if not KoreTemplates.is_map_mapsto_pattern(left1):
+            path = KoreTemplates.get_path_to_nth_item_in_map(pattern1, 0)
+            pattern1, applied_eqs1 = self.bubble_item(pattern1, path)
+            left1 = KoreTemplates.get_map_merge_left(pattern1)
+        else:
+            applied_eqs1 = []
+
+        key, _ = KoreTemplates.destruct_mapsto(left1)
+
+        # find an item with the same key in pattern2
+        pattern2_items = KoreTemplates.destruct_map_pattern(pattern2)
+
+        for i, (k, _) in enumerate(pattern2_items):
+            if k == key:
+                break
+        else:
+            return None
+
+        path = KoreTemplates.get_path_to_nth_item_in_map(pattern2, i)
+        pattern2, applied_eqs2 = self.bubble_item(pattern2, path)
+        left2 = KoreTemplates.get_map_merge_left(pattern2)
+
+        # KoreUtils.pretty_print(pattern1)
+        # KoreUtils.pretty_print(pattern2)
+
+        left_unification = self.unify_concrete_map_pattern_children(left1, left2)
+        if left_unification is None:
+            return None
+
+        # then recursively unify the RHS of both maps
+        right1 = KoreTemplates.get_map_merge_right(pattern1)
+        right2 = KoreTemplates.get_map_merge_right(pattern2)
+
+        right_unification = self.unify_concrete_map_patterns(right1, right2)
+        if right_unification is None:
+            return None
+
+        unification = left_unification.prepend_path(0).merge(right_unification.prepend_path(1))
+        if unification is None:
+            return None
+
+        # we want to first apply applied_eqs1 to make pattern1 into the form <left1> * <right1>
+        # then apply the sub-unification results to transform left1 and right1
+        # then we apply applied_eqs2 in reverse to make it the same form as pattern2
         reversed_eqs2 = [(eq.get_inverse(), path) for eq, path in applied_eqs2[::-1]]
 
         return unification.prepend_equations(applied_eqs1).append_equations(reversed_eqs2)
