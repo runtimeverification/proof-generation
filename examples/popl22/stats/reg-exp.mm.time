@@ -1,0 +1,23 @@
+	Command being timed: "pypy3 -m scripts.prove_reachability --standalone --smt-prelude /home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/popl22//prelude.smt2 --z3-tactic (and-then qfnra-nlsat default) --unknown-as-sat /home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/popl22//definitions/reg.k REG /home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/popl22//specs/reg-exp-spec.k REG-EXP-SPEC --output /home/rodlin/Desktop/illinois/research/matching-logic-prover/matching-logic-proof-checker/examples/popl22//proofs/reg-exp.mm"
+	User time (seconds): 133.93
+	System time (seconds): 1.30
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:15.41
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 784772
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 262477
+	Voluntary context switches: 215
+	Involuntary context switches: 468
+	Swaps: 0
+	File system inputs: 12264
+	File system outputs: 942656
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
