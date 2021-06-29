@@ -8,17 +8,30 @@ EXP_OPTIONS := --smt-prelude $(MAKEFILE_DIR)/prelude.smt2 --z3-tactic "(and-then
 
 SPLIT_DASH = $(word $2,$(subst -, ,$1))
 
-# $(DEFINITIONS_DIR)/$(call SPLIT_DASH,%,1).k
+ALL_TARGETS := \
+	proofs/imp-sum.mm \
+	proofs/imp-exp.mm \
+	proofs/imp-collatz.mm \
+	proofs/reg-sum.mm \
+	proofs/reg-exp.mm \
+	proofs/reg-collatz.mm \
+	proofs/pcf-sum.mm \
+	proofs/pcf-exp.mm \
+	proofs/pcf-collatz.mm
 
 DEFINITION_NAME = $(call SPLIT_DASH,$*,1)
 MODULE_NAME = $(shell echo $(DEFINITION_NAME) | tr '[:lower:]' '[:upper:]')
 DEFINITION_PATH = $(DEFINITIONS_DIR)/$(DEFINITION_NAME).k
 
-%-exp.mm: $(SPECS_DIR)/%-exp-spec.k
+.PHONY: all
+all: $(ALL_TARGETS)
+
+proofs/%-exp.mm: $(SPECS_DIR)/%-exp-spec.k
 	$(PROVE_REACHABILITY) $(EXP_OPTIONS) $(DEFINITION_PATH) $(MODULE_NAME) $< $(MODULE_NAME)-EXP-SPEC --output $(MAKEFILE_DIR)/$@
 
-%.mm: $(SPECS_DIR)/%-spec.k
+proofs/%.mm: $(SPECS_DIR)/%-spec.k
 	$(PROVE_REACHABILITY) $(DEFINITION_PATH) $(MODULE_NAME) $< $(shell echo $* | tr '[:lower:]' '[:upper:]')-SPEC --output $(MAKEFILE_DIR)/$@
 
+.PHONY: clean
 clean:
 	rm -f *.mm

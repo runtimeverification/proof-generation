@@ -146,6 +146,8 @@ def gen_proof(args: argparse.Namespace) -> None:
         os.mkdir(cache_dir)
     cache_dir = os.path.realpath(cache_dir)
 
+    assert os.path.isfile(kdef), f"k definition {kdef} not found"
+
     ### step 1. kompile the given k definition
     print(f"- kompiling {kdef}")
 
