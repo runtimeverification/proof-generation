@@ -32,6 +32,9 @@ all: $(ALL_TARGETS)
 .PHONY: verify
 verify: $(subst proofs/,stats/,$(addsuffix .verify.time,$(ALL_TARGETS)))
 
+.PHONY: verify
+compressed-verify: $(subst proofs/,stats/,$(addsuffix .compressed-verify.time,$(ALL_TARGETS)))
+
 .PHONY: compress
 compress: $(addsuffix .xz,$(ALL_TARGETS))
 	du -sh proofs/*.mm.xz
@@ -48,6 +51,9 @@ proofs/%.mm: $(SPECS_DIR)/%-spec.k
 
 stats/%.mm.verify.time: proofs/%.mm
 	\time -v -o $@ $(MMVERIFY) < $<
+
+stats/%.mm.compressed-verify.time: proofs/%.mm.xz
+	xz -dc $< | \time -v -o $@ $(MMVERIFY)
 
 proofs/%.mm.xz: proofs/%.mm
 	xz -zk -6 < $< > $@
