@@ -123,9 +123,21 @@ def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
     }
 
 
-def gen_task(kompiled_dir: str, output_task_path: str, pgm: str) -> None:
-    proc = run_command(
-        [
+def gen_task(kompiled_dir: str, output_task_path: str, pgm: str, kore_definition: str, module_name: str) -> None:
+    if pgm.endswith(".kore"):
+        cmd = [
+            "kore-exec",
+            kore_definition,
+            "--module",
+            module_name,
+            # to print logs about rewriting and substitutions
+            "--trace-rewrites",
+            output_task_path,
+            "--pattern",
+            pgm,
+        ]
+    else:
+        cmd = [
             "krun",
             "--directory",
             kompiled_dir,
@@ -135,10 +147,11 @@ def gen_task(kompiled_dir: str, output_task_path: str, pgm: str) -> None:
             "--output",
             "none",
             pgm,
-        ],
-    )
+        ]
+
+    proc = run_command(cmd, stdout=subprocess.DEVNULL)
     exit_code = proc.wait()
-    assert exit_code == 0, f"krun failed with exit code {exit_code}"
+    assert exit_code == 0, f"krun/kore-exec failed with exit code {exit_code}"
 
 
 def gen_proof(args: argparse.Namespace) -> None:
@@ -202,7 +215,7 @@ def gen_proof(args: argparse.Namespace) -> None:
             with open(task_path, "w") as f:
                 yaml.dump(task_obj, f)
         else:
-            gen_task(cache_dir, task_path, pgm)
+            gen_task(cache_dir, task_path, pgm, kore_definition, module)
 
     ### step 3. generate proof object
     print(f"- generating proof")
