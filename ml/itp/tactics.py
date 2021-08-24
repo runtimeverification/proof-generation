@@ -193,6 +193,7 @@ class SetSchematicVariableTactic(Tactic):
         pass
 
 
+@ProofState.register_tactic("shuffle")
 @ProofState.register_tactic("meh")
 class ShuffleTactic(Tactic):
     """
