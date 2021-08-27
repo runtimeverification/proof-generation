@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import chain, combinations
-from typing import Dict, FrozenSet, Iterable, Iterator, List, Tuple, TypeVar
+from typing import Any, Dict, FrozenSet, Iterable, Iterator, List, Tuple, TypeVar
+from subprocess import check_output
+import re
 
 from aml import *
 
@@ -10,8 +12,11 @@ T = TypeVar('T')
 def powerset(s: List[T]) -> Iterator[Iterable[T]]:
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-def definition_list(p: Pattern, def_list: List[Pattern]) -> List[Pattern]:
-    if isinstance(p, (SVar, EVar, Symbol)):
+DefList = List[Pattern]
+def definition_list(p: Pattern, def_list: DefList) -> DefList:
+    if def_list is None: def_list = []
+
+    if isinstance(p, (SVar, EVar, Symbol, Bottom, Top)):
         return def_list
     elif isinstance(p, Not) and (isinstance(p.subpattern, (SVar, EVar, Symbol))):
         return def_list
@@ -27,105 +32,97 @@ def definition_list(p: Pattern, def_list: List[Pattern]) -> List[Pattern]:
     else:
         raise RuntimeError("Unsupported pattern: " + str(p))
 
+class Assertion:
+    pass
+
 @dataclass(frozen=True)
-class TracedPattern:
-    pattern: Pattern
+class Matches(Assertion):
+    variable: EVar
+    pattern:  Pattern
 
-    "A list of definition constant indices"
-    regenerated: Tuple[int, ...] = ()
-    trace_prefix: Tuple[int, ...] = ()
+@dataclass(frozen=True)
+class AllOf(Assertion):
+    assertions: FrozenSet[Assertion]
 
-    def left(self) -> TracedPattern:
-        assert isinstance(self.pattern, (App, DApp, Or, And))
-        return TracedPattern(self.pattern.left, self.regenerated, self.trace_prefix + (0,))
+@dataclass(frozen=True)
+class AnyOf(Assertion):
+    assertions: FrozenSet[Assertion]
 
-    def right(self) -> TracedPattern:
-        assert isinstance(self.pattern, (App, DApp, Or, And))
-        return TracedPattern(self.pattern.right, self.regenerated, self.trace_prefix + (1,))
+@dataclass(frozen=True)
+class PGNode():
+    assertion: Assertion
+    closure: FrozenSet[Assertion]
 
-def is_inconsistant(gamma: FrozenSet[TracedPattern]) -> bool:
-    atoms         = frozenset([p.pattern            for p in gamma if isinstance(p.pattern, (Symbol, EVar, SVar))])
-    negated_atoms = frozenset([p.pattern.subpattern for p in gamma if isinstance(p.pattern, Not)])
-    return bool(negated_atoms.intersection(atoms))
+ParityGame = Dict[PGNode, FrozenSet[PGNode]]
+SerializedParityGameEntry = Tuple[int, int, int, List[int]]
+SerializedParityGame = List[SerializedParityGameEntry]
+def print_parity_game(root: PGNode, edges: ParityGame, def_list: DefList) -> SerializedParityGame:
+    ret = []
+    keys = list(edges.keys())
+
+    def ident(node: PGNode) -> int:
+        return keys.index(node)
+
+    def priority(node: PGNode, def_list: DefList) -> int:
+        if isinstance(node.assertion, Matches):
+            if isinstance(node.assertion.pattern, Nu):
+                return 2 * def_list.index(node.assertion.pattern)
+            if isinstance(node.assertion.pattern, Mu):
+                return 2 * def_list.index(node.assertion.pattern) + 1
+            if isinstance(node.assertion.pattern, Bottom):
+                return 2 * len(def_list) + 1
+            else:
+                return 2 * len(def_list)
+        else:
+            return 2 * len(def_list)
+
+    def player(node: PGNode) -> int:
+        if isinstance(node.assertion, Matches):
+            if isinstance(node.assertion.pattern, (Top, And, Forall, DApp, Mu, Nu, SVar, EVar, Symbol)):
+                return 1
+            if isinstance(node.assertion.pattern, (Bottom, Or, Exists, App)):
+                return 0
+        if isinstance(node.assertion, AllOf):
+            return 1
+        if isinstance(node.assertion, AnyOf):
+            return 0
+        raise RuntimeError("Unimplemented: " + str(node))
+
+    for source, destinations in edges.items():
+        ret += [(ident(source), priority(source, def_list), player(source), sorted(list(map(ident, destinations))))]
+    return ret
+
+def build_parity_game( node         : PGNode
+                     , def_list     : DefList
+                     , edges        : ParityGame
+                     ) -> ParityGame:
+    if isinstance(node.assertion, Matches):
+        if isinstance(node.assertion.pattern, (Bottom, Top)):
+            edges[node] = frozenset([node])
+        else:
+            raise RuntimeError("Unimplemented: " + str(node))
+    else:
+        raise RuntimeError("Unimplemented: " + str(node))
+    return edges
+
+def run_pgsolver(game: SerializedParityGame) -> bool:
+    def entry_to_string(entry : SerializedParityGameEntry) -> str:
+        source, priority, player, dests = entry
+        return " ".join([str(source), str(priority), str(player), ",".join(map(str, dests))])
+    input = "; \n".join(map(entry_to_string, game)) + ';'
+    output = check_output(['pgsolver', '-local',  'stratimprloc2', '0'], input=input, text=True)
+    match = re.search(r'Winner of initial node is player (\d)\n', output)
+    if match is None:
+        raise RuntimeError("PGGame not well formed?\n" + output)
+
+    return match.group(1) == '0'
+
+def build_closure(a: Assertion) -> FrozenSet[Assertion]:
+    return frozenset([a])
 
 def is_sat(p: Pattern) -> bool:
-    p = p.to_positive_normal_form()
-    return is_satisfiable(frozenset([TracedPattern(p)]), frozenset(), definition_list(p, []), {})
-
-def is_prefix(prefix: Tuple[int, ...], t: Tuple[int, ...]) -> bool:
-    return prefix == t[0:len(prefix)]
-
-def all_traces_are_nu_traces( prevs: FrozenSet[TracedPattern]
-                            , currs: FrozenSet[TracedPattern]
-                            , def_list: List[Pattern]
-                            ) -> bool:
-    for prev in prevs:
-        for curr in currs:
-            if not is_prefix(prev.trace_prefix, curr.trace_prefix): continue
-
-            assert len(curr.regenerated)  >= len(prev.regenerated)
-            regenerated = curr.regenerated[len(prev.regenerated):]
-            if not regenerated: continue
-
-            oldest_regenerated = min(regenerated)
-            if isinstance(def_list[oldest_regenerated], Mu): return False
-    return True
-
-def is_satisfiable( gamma: FrozenSet[TracedPattern]
-                  , processed: FrozenSet[TracedPattern]
-                  , def_list: List[Pattern]
-                  , path: Dict[FrozenSet[Pattern], FrozenSet[TracedPattern]]
-                  ) -> bool:
-
-    while gamma:
-        # tp, *gamma = gamma, but for sets
-        gamma_iter = iter(gamma)
-        tp = next(gamma_iter)
-        gamma = frozenset(gamma_iter)
-        p = tp.pattern
-
-        if   isinstance(p, (Symbol, App, DApp)):
-            processed = processed.union(set([tp]))
-        elif isinstance(p, Not) and isinstance(p.subpattern, (Symbol)):
-            processed = processed.union(set([tp]))
-        elif isinstance(p, And):
-            gamma = gamma.union([tp.left(), tp.right()])
-        elif isinstance(p, SVar) and isinstance(p.name, int): # Definitional Constant
-            return is_satisfiable( gamma.union([TracedPattern(def_list[p.name], tp.regenerated)])
-                                 , processed
-                                 , def_list
-                                 , path)
-        elif isinstance(p, (Mu, Nu)):
-            # TODO: We should handle `Nu X . X`
-            fp_index = def_list.index(p)
-            return is_satisfiable( gamma.union([TracedPattern( p.subpattern.substitute(p.bound, SVar(fp_index))
-                                                             , tp.regenerated + (fp_index,) )
-                                               ])
-                                 , processed, def_list, path)
-        elif isinstance(p, Or):
-            return is_satisfiable(gamma.union([tp.left()]),  processed, def_list, path) \
-                or is_satisfiable(gamma.union([tp.right()]), processed, def_list, path)
-        else:
-            raise RuntimeError("Unsupported pattern: " + str(p))
-
-    if is_inconsistant(processed): return False
-
-    processed_patterns = frozenset(tp.pattern for tp in processed)
-    if processed_patterns in path:
-        return all_traces_are_nu_traces(path[processed_patterns], processed, def_list)
-    path = { **path, processed_patterns : processed }
-
-    apps  = [phi for phi in processed if isinstance(phi.pattern, App)]
-    dapps = [phi for phi in processed if isinstance(phi.pattern, DApp)]
-    partition_lefts = list(powerset(dapps))
-
-    def partition_is_satisfiable(app: TracedPattern, partition_left: Iterable[TracedPattern]) -> bool:
-        assert isinstance(app.pattern, App)
-        left_gamma  = frozenset([app.left()]).union(map(lambda p: p.left(), partition_left))
-        right_gamma = frozenset([app.right()]).union(map(lambda p: p.right(), set(dapps) - set(partition_left)))
-        if not is_satisfiable(left_gamma, frozenset(), def_list, path): return False
-        if not is_satisfiable(right_gamma, frozenset(), def_list, path): return False
-        return True
-
-    ret = all(any(partition_is_satisfiable(app, partition_left) for partition_left in partition_lefts) for app in apps)
-    return ret
+    def_list : DefList = definition_list(p, def_list = [])
+    root = PGNode(Matches(EVar('$w'), p), build_closure(Matches(EVar('$w'), p)))
+    pg = build_parity_game(root, def_list, edges = {})
+    serialized = print_parity_game(root, pg, def_list)
+    return run_pgsolver(serialized)

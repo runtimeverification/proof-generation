@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-mypy --strict ml/aml
-mypy ml scripts tests
+mypy --show-column-numbers --strict ml/aml
+mypy --show-column-numbers ml scripts tests
 pytest "$@"
-pylint ml/aml

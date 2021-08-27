@@ -156,13 +156,13 @@ class App(Pattern):
         return self.left.free_variables().union(self.right.free_variables())
 
     def substitute(self, x: Var, v: Pattern) -> 'App':
-        return App(self.left.substitute(x, v), self.right.substitute(x, v))
+        return App(self.left, self.right.substitute(x, v))
 
     def negate(self) -> 'DApp':
-        return DApp(self.left.negate(), self.right.negate())
+        return DApp(self.left, self.right.negate())
 
     def to_positive_normal_form(self) -> 'App':
-        return App(self.left.to_positive_normal_form(), self.right.to_positive_normal_form())
+        return App(self.left, self.right.to_positive_normal_form())
 
 @dataclass(frozen=True)
 class DApp(Pattern):
@@ -173,13 +173,13 @@ class DApp(Pattern):
         return self.left.free_variables().union(self.right.free_variables())
 
     def substitute(self, x: Var, v: Pattern) -> 'DApp':
-        return DApp(self.left.substitute(x, v), self.right.substitute(x, v))
+        return DApp(self.left, self.right.substitute(x, v))
 
     def negate(self) -> App:
-        return App(self.left.negate(), self.right.negate())
+        return App(self.left, self.right.negate())
 
     def to_positive_normal_form(self) -> 'DApp':
-        return DApp(self.left.to_positive_normal_form(), self.right.to_positive_normal_form())
+        return DApp(self.left, self.right.to_positive_normal_form())
 
 @dataclass(frozen=True)
 class Exists(Pattern):
