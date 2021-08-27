@@ -1,4 +1,4 @@
-from aml import *
+from pml import *
 
 x = EVar("x")
 y = EVar("y")
@@ -12,7 +12,6 @@ Y = SVar("y")
 def test_free_variables() -> None:
     assert x.free_variables() == set([x])
     assert SVar("x").free_variables() == set([SVar("x")])
-    assert Symbol("s").free_variables() == set()
 
     assert And(x, SVar("x")).free_variables() == set([x, SVar("x")])
     assert And(x, SVar("y")).free_variables() == set([x, SVar("y")])
@@ -22,6 +21,9 @@ def test_free_variables() -> None:
 
     assert App(s, SVar("x")).free_variables() == set([SVar("x")])
     assert App(s, SVar("y")).free_variables() == set([SVar("y")])
+
+    assert DApp(s, SVar("x")).free_variables() == set([SVar("x")])
+    assert DApp(s, SVar("y")).free_variables() == set([SVar("y")])
 
     assert Not(And(x, SVar("x"))).free_variables() == set([x, SVar("x")])
     assert Not(And(x, SVar("y"))).free_variables() == set([x, SVar("y")])

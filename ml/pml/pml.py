@@ -1,6 +1,8 @@
-from dataclasses import dataclass
-from typing import FrozenSet, Hashable, Iterable, Union
 from abc import abstractmethod
+from dataclasses import dataclass
+from itertools import accumulate
+from functools import reduce
+from typing import FrozenSet, Hashable, Iterable, Tuple, Union
 
 Var = Union['SVar', 'EVar']
 
@@ -44,21 +46,6 @@ class Bottom(Pattern):
 
     def negate(self) -> Top:
         return Top()
-
-    def to_positive_normal_form(self) -> Pattern:
-        return self
-
-@dataclass(frozen=True)
-class Symbol(Pattern):
-    name: str
-    def free_variables(self) -> FrozenSet[Var]:
-        return frozenset()
-
-    def substitute(self, _x: Var, _v: Pattern) -> 'Symbol':
-        return self
-
-    def negate(self) -> 'Not':
-        return Not(self)
 
     def to_positive_normal_form(self) -> Pattern:
         return self
@@ -147,39 +134,49 @@ class Not(Pattern):
     def to_positive_normal_form(self) -> Pattern:
         return self.subpattern.negate()
 
+Symbol = str
+
 @dataclass(frozen=True)
 class App(Pattern):
-    left: Pattern
-    right: Pattern
+    symbol:    Symbol
+    arguments: Tuple[Pattern, ...]
+
+    def __init__(self, symbol: Symbol, *args: Pattern) -> None:
+        object.__setattr__(self, 'symbol', symbol)
+        object.__setattr__(self, 'arguments', args)
 
     def free_variables(self) -> FrozenSet[Var]:
-        return self.left.free_variables().union(self.right.free_variables())
+        return reduce(frozenset.union, map(lambda p: p.free_variables(), self.arguments), frozenset())
 
     def substitute(self, x: Var, v: Pattern) -> 'App':
-        return App(self.left, self.right.substitute(x, v))
+        return App(self.symbol, *map(lambda p: p.substitute(x, v), self.arguments))
 
     def negate(self) -> 'DApp':
-        return DApp(self.left, self.right.negate())
+        return DApp(self.symbol, *map(lambda p: p.negate(), self.arguments))
 
     def to_positive_normal_form(self) -> 'App':
-        return App(self.left, self.right.to_positive_normal_form())
+        return App(self.symbol, *map(lambda p: p.to_positive_normal_form(), self.arguments))
 
 @dataclass(frozen=True)
 class DApp(Pattern):
-    left: Pattern
-    right: Pattern
+    symbol:    Symbol
+    arguments: Tuple[Pattern, ...]
+
+    def __init__(self, symbol: Symbol, *args: Pattern) -> None:
+        object.__setattr__(self, 'symbol', symbol)
+        object.__setattr__(self, 'arguments', args)
 
     def free_variables(self) -> FrozenSet[Var]:
-        return self.left.free_variables().union(self.right.free_variables())
+        return reduce(frozenset.union, map(lambda p: p.free_variables(), self.arguments), frozenset())
 
     def substitute(self, x: Var, v: Pattern) -> 'DApp':
-        return DApp(self.left, self.right.substitute(x, v))
+        return DApp(self.symbol, *map(lambda p: p.substitute(x, v), self.arguments))
 
     def negate(self) -> App:
-        return App(self.left, self.right.negate())
+        return App(self.symbol, *map(lambda p: p.negate(), self.arguments))
 
     def to_positive_normal_form(self) -> 'DApp':
-        return DApp(self.left, self.right.to_positive_normal_form())
+        return DApp(self.symbol, *map(lambda p: p.to_positive_normal_form(), self.arguments))
 
 @dataclass(frozen=True)
 class Exists(Pattern):

@@ -6,7 +6,7 @@ from typing import Any, Dict, FrozenSet, Iterable, Iterator, List, Tuple, TypeVa
 from subprocess import check_output
 import re
 
-from aml import *
+from pml import *
 
 T = TypeVar('T')
 def powerset(s: List[T]) -> Iterator[Iterable[T]]:
@@ -20,9 +20,13 @@ def definition_list(p: Pattern, def_list: DefList) -> DefList:
         return def_list
     elif isinstance(p, Not) and (isinstance(p.subpattern, (SVar, EVar, Symbol))):
         return def_list
-    elif isinstance(p, (App, DApp, And, Or)):
+    elif isinstance(p, (And, Or)):
         def_list = definition_list(p.left,  def_list)
         def_list = definition_list(p.right, def_list)
+        return def_list
+    elif isinstance(p, (App, DApp)):
+        for arg in p.arguments:
+            def_list = definition_list(arg,  def_list)
         return def_list
     elif isinstance(p, (Mu, Nu)):
         if p not in def_list:
@@ -78,7 +82,7 @@ def print_parity_game(root: PGNode, edges: ParityGame, def_list: DefList) -> Ser
 
     def player(node: PGNode) -> int:
         if isinstance(node.assertion, Matches):
-            if isinstance(node.assertion.pattern, (Top, And, Forall, DApp, Mu, Nu, SVar, EVar, Symbol)):
+            if isinstance(node.assertion.pattern, (Top, And, Forall, DApp, Mu, Nu, SVar, EVar)):
                 return 1
             if isinstance(node.assertion.pattern, (Bottom, Or, Exists, App)):
                 return 0

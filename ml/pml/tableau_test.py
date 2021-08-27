@@ -1,4 +1,4 @@
-from aml import *
+from pml import *
 from tableau import *
 
 S = Symbol("S")
@@ -70,16 +70,16 @@ def test_is_satisfiable() -> None:
 
 def test_print_parity_game() -> None:
     p0  = Matches(e, Mu(X, App(S, x)))
-    p1  = Matches(e, App(S,  x))
-    p21 = Matches(e, App(e1, x))
-    p22 = Matches(e1, S)
+    p1  = Matches(e, App(S, App(C), x))
+    p21 = Matches(e, App(S, e1, x))
+    p22 = Matches(e1, App(C))
     p2  = AllOf(frozenset([ p21 , p22 ]))
     closure = frozenset( [ p0
-                      , p1
-                      , p2
-                      , p21
-                      , p22
-                      ] )
+                         , p1
+                         , p2
+                         , p21
+                         , p22
+                         ] )
     assert print_parity_game( PGNode(p0, closure)
                             , { PGNode(p0, closure)  : frozenset([ PGNode(p1, closure) ])
                               , PGNode(p1, closure)  : frozenset([ PGNode(p2, closure) ])
@@ -93,5 +93,5 @@ def test_print_parity_game() -> None:
                             , (1, 2, 0, [2])
                             , (2, 2, 1, [3, 4])
                             , (3, 2, 0, [])
-                            , (4, 2, 1, [])
+                            , (4, 2, 0, [])
                             ]
