@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import chain, combinations
+from itertools import chain, combinations, combinations_with_replacement, count, islice
 from typing import Any, Dict, FrozenSet, Iterable, Iterator, List, Tuple, TypeVar
 from subprocess import check_output
 import re
 
 from pml import *
-
-T = TypeVar('T')
-def powerset(s: List[T]) -> Iterator[Iterable[T]]:
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
 DefList = List[Pattern]
 def definition_list(p: Pattern, def_list: DefList) -> DefList:
@@ -52,10 +48,12 @@ class AllOf(Assertion):
 class AnyOf(Assertion):
     assertions: FrozenSet[Assertion]
 
+Closure = FrozenSet[Assertion]
+
 @dataclass(frozen=True)
 class PGNode():
     assertion: Assertion
-    closure: FrozenSet[Assertion]
+    closure: Closure
 
 ParityGame = Dict[PGNode, FrozenSet[PGNode]]
 SerializedParityGameEntry = Tuple[int, int, int, List[int]]
@@ -100,9 +98,36 @@ def build_parity_game( node         : PGNode
                      , def_list     : DefList
                      , edges        : ParityGame
                      ) -> ParityGame:
-    if isinstance(node.assertion, Matches):
-        if isinstance(node.assertion.pattern, (Bottom, Top)):
+    assertion = node.assertion
+    if isinstance(assertion, Matches):
+        p = assertion.pattern
+        if isinstance(p, (Bottom, Top)):
             edges[node] = frozenset([node])
+        elif isinstance(p, DApp):
+            if all(map(lambda arg: isinstance(arg, EVar), p.arguments)):
+                if Matches(assertion.variable, p.negate()) not in node.closure:
+                    next_node = PGNode(Matches(assertion.variable, Top()), node.closure)
+                    edges[node] = frozenset([next_node])
+                    build_parity_game(next_node, def_list, edges)
+                else:
+                    next_node = PGNode(Matches(assertion.variable, Bottom()), node.closure)
+                    edges[node] = frozenset([next_node])
+                    build_parity_game(next_node, def_list, edges)
+            else:
+                raise RuntimeError("XXXUnimplemented: " + str(node))
+        elif isinstance(p, App):
+            if all(map(lambda arg: isinstance(arg, EVar), p.arguments)):
+                edges[node] = frozenset([node])
+            else:
+                for tuple in combinations_with_replacement(p.free_variables().union([assertion.variable]), len(p.arguments)):
+                    raise RuntimeError("YYYUnimplemented: " + str(node))
+        elif isinstance(p, And):
+            left_node = PGNode(Matches(assertion.variable, p.left), node.closure)
+            right_node = PGNode(Matches(assertion.variable, p.right), node.closure)
+            edges[node] = frozenset([left_node, right_node])
+            build_parity_game(left_node,  def_list, edges)
+            build_parity_game(right_node, def_list, edges)
+
         else:
             raise RuntimeError("Unimplemented: " + str(node))
     else:
@@ -121,12 +146,75 @@ def run_pgsolver(game: SerializedParityGame) -> bool:
 
     return match.group(1) == '0'
 
-def build_closure(a: Assertion) -> FrozenSet[Assertion]:
-    return frozenset([a])
+fresh_evar = map(lambda i : EVar('$' + str(i)), count())
+
+def build_closures(a: Assertion) -> List[FrozenSet[Assertion]]:
+    return build_closures_internal(a, frozenset())
+
+def build_closures_internal(assertion: Assertion, partialClosure: FrozenSet[Assertion]) -> List[FrozenSet[Assertion]]:
+    if isinstance(assertion, Matches):
+        p = assertion.pattern
+        if   isinstance(p, (Bottom)):
+            return []
+        elif isinstance(p, (Top)):
+            return [partialClosure.union([assertion])]
+        elif isinstance(p, EVar):
+            if Matches(assertion.variable, p.negate()) in partialClosure:
+                return build_closures_internal(Matches(assertion.variable, Bottom()), partialClosure.union([assertion]))
+            return build_closures_internal(Matches(assertion.variable, Top()), partialClosure.union([assertion]))
+        elif isinstance(p, Not):
+            assert isinstance(p.subpattern, EVar)
+            if Matches(assertion.variable, p.negate()) in partialClosure:
+                return build_closures_internal(Matches(assertion.variable, Bottom()), partialClosure.union([assertion]))
+            return build_closures_internal(Matches(assertion.variable, Top()), partialClosure.union([assertion]))
+        elif isinstance(p, DApp):
+            ret : List[FrozenSet[Assertion]] = [partialClosure.union([assertion])]
+            for p1 in partialClosure:
+                if  isinstance(p1, App) and p1.symbol == p.symbol and all(map(lambda arg: isinstance(arg, EVar), p1.arguments)):
+                    for ci, phii in zip(p1.arguments, p.arguments):
+                        assert isinstance(ci, EVar)
+                        ret += build_closures_internal(Matches(ci, phii), partialClosure)
+            return ret
+        elif isinstance(p, App):
+            return [partialClosure.union([assertion])]
+        elif isinstance(p, And):
+            ret = []
+            for closure in build_closures_internal(Matches(assertion.variable, p.left),  partialClosure):
+                ret += build_closures_internal(Matches(assertion.variable, p.right), closure)
+            return ret
+        else:
+            raise RuntimeError("Unimplemented: ")
+    else:
+        raise RuntimeError("Unimplemented: ")
+
+Tableau = Dict[Closure, FrozenSet[Closure]]
+
+def build_tableau(currentNode: Closure, partialTableau: Tableau) -> Tableau:
+    for p in currentNode:
+        if not isinstance(p, App):
+            continue
+        if all(map(lambda arg: isinstance(arg, EVar), p.arguments)):
+            continue
+    return {currentNode : frozenset()} 
+
+def build_tableaux(assertion : Matches) -> List[Tableau]:
+    def_list : DefList = definition_list(assertion.pattern, def_list = [])
+    ret : List[Tableau] = []
+    for closure in build_closures(assertion):
+        root = closure
+        ret += [build_tableau(root, {})]
+    return ret
+
+def tableau_to_parity_game(tableau: Tableau) -> ParityGame:
+    pass
 
 def is_sat(p: Pattern) -> bool:
-    def_list : DefList = definition_list(p, def_list = [])
-    root = PGNode(Matches(EVar('$w'), p), build_closure(Matches(EVar('$w'), p)))
-    pg = build_parity_game(root, def_list, edges = {})
-    serialized = print_parity_game(root, pg, def_list)
-    return run_pgsolver(serialized)
+    return False
+#def is_sat(p: Pattern) -> bool:
+#    assertion = Matches(fresh_evar.__next__(), p)
+#    for tableau in build_tableaux(assertion):
+#        pg = tableau_to_parity_game(tableau)
+#        if run_pgsolver(pg):
+#            return True
+#    return False
+#

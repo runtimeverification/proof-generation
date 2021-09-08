@@ -2,6 +2,6 @@
 
 set -euo pipefail
 
-mypy --show-column-numbers --strict ml/aml
+mypy --show-column-numbers --strict ml/pml
 mypy --show-column-numbers ml scripts tests
 pytest "$@"

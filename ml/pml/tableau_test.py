@@ -9,6 +9,7 @@ Y = SVar("Y")
 e  = EVar("E")
 e1 = EVar("E1")
 x = EVar("x")
+c = EVar("c")
 
 def test_definition_list() -> None:
     assert definition_list(X, []) == []
@@ -18,13 +19,81 @@ def test_definition_list() -> None:
            , Nu(Y, App(S, SVar(0)))
            ]
 
-def test_is_satisfiable() -> None:
-    assert not  is_sat(Bottom())
-    assert      is_sat(Top())
+def test_build_tableaux() -> None:
+    assertion = Matches(c, Bottom())
+    closure = build_closures(assertion)
+    assert closure == []
+    tableaux = build_tableaux(assertion)
+    assert tableaux == []
 
-#     assert     is_sat(S)
-#     assert     is_sat(Not(S))
-#
+    assertion = Matches(c, Top())
+    closure = build_closures(assertion)
+    assert closure == [frozenset([assertion])]
+    tableaux = build_tableaux(assertion)
+    root = closure[0]
+    assert tableaux == [ { root : frozenset() } ]
+
+    assertion = Matches(c, App(S))
+    closure = build_closures(assertion)
+    assert closure == [frozenset([assertion])]
+    tableaux = build_tableaux(assertion)
+    root = closure[0]
+    assert build_tableaux(assertion) == [ { root : frozenset() } ]
+
+    assertion = Matches(c, DApp(S))
+    closure = build_closures(assertion)
+    assert closure == [frozenset([assertion])]
+    tableaux = build_tableaux(assertion)
+    root = closure[0]
+    assert build_tableaux(assertion) == [ { root : frozenset() } ]
+
+    assertion = Matches(c, App(S, App(C)))
+    closure = build_closures(assertion)
+    assert closure == [frozenset([assertion])]
+    tableaux = build_tableaux(assertion)
+    root = closure[0]
+    assert build_tableaux(assertion) == [ { root : frozenset() } ]
+
+    assertion = Matches(c, And(App(S), DApp(S)))
+    closure = build_closures(assertion)
+    assert closure == [frozenset([ assertion
+                                 , Matches(c, DApp(S))
+                                 , Matches(c,  App(S))
+                                 ])]
+    tableaux = build_tableaux(assertion)
+    root = closure[0]
+    assert build_tableaux(assertion) == [ { root : frozenset() } ]
+
+    assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
+    closure = build_closures(assertion)
+    assert closure == [frozenset([ assertion
+                                 , Matches(c,  App(S,  App(C)))
+                                 , Matches(c, DApp(S, DApp(C)))
+                                 ])]
+    tableaux = build_tableaux(assertion)
+    root = closure[0]
+    assert build_tableaux(assertion) == [ { root : frozenset([Closure([ Matches(EVar("c1"), DApp(S))
+                                                                      , Matches(EVar("c1"),  App(S))
+                                                                      ])]) }
+                                        ]
+
+def xtest_is_satisfiable() -> None:
+    assert not is_sat(Bottom())
+    assert     is_sat(Top())
+
+    assert not is_sat(And(EVar('c'), Not(EVar('c'))))
+    assert not is_sat(And(Not(EVar('c')), EVar('c')))
+
+    assert     is_sat(App(S))
+    assert     is_sat(DApp(S))
+    assert not is_sat(And(App(S),DApp(S)))
+
+    assert     is_sat(App(S, App(C)))
+
+#    assert not is_sat(And(App(S, App(C)), DApp(S, DApp(C))))
+
+
+
 #     assert     is_sat(App(S, C))
 #     assert     is_sat(DApp(S, Not(C)))
 #
@@ -66,7 +135,6 @@ def test_is_satisfiable() -> None:
 #     assert not is_sat(Mu(X, And( Nu(Y, Or(C, App(NEXT , Y)) )
 #                                        , App(NEXT , X)
 #                                        )))
-#
 
 def test_print_parity_game() -> None:
     p0  = Matches(e, Mu(X, App(S, x)))
