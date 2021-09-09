@@ -11,6 +11,9 @@ class Pattern:
     def free_variables(self) -> FrozenSet[Var]:
         raise NotImplementedError
 
+    def free_evars(self) -> FrozenSet['EVar']:
+        return frozenset({ x for x in self.free_variables() if isinstance(x, EVar)})
+
     @abstractmethod
     def substitute(self, x: 'Var', v: 'Pattern') -> 'Pattern':
         raise NotImplementedError

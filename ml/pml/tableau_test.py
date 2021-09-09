@@ -20,62 +20,65 @@ def test_definition_list() -> None:
            ]
 
 def test_build_tableaux() -> None:
+    constants = [EVar('c'), EVar('c1'), EVar('c2'), EVar('c3'), EVar('c4')]
+
     assertion = Matches(c, Bottom())
-    closure = build_closures(assertion)
+    closure = build_closures(assertion, constants)
     assert closure == []
-    tableaux = build_tableaux(assertion)
+    tableaux = build_tableaux(assertion, constants)
     assert tableaux == []
 
     assertion = Matches(c, Top())
-    closure = build_closures(assertion)
+    closure = build_closures(assertion, constants)
     assert closure == [frozenset([assertion])]
-    tableaux = build_tableaux(assertion)
+    tableaux = build_tableaux(assertion, constants)
     root = closure[0]
     assert tableaux == [ { root : frozenset() } ]
 
     assertion = Matches(c, App(S))
-    closure = build_closures(assertion)
+    closure = build_closures(assertion, constants)
     assert closure == [frozenset([assertion])]
-    tableaux = build_tableaux(assertion)
+    tableaux = build_tableaux(assertion, constants)
     root = closure[0]
-    assert build_tableaux(assertion) == [ { root : frozenset() } ]
+    assert tableaux == [ { root : frozenset() } ]
 
     assertion = Matches(c, DApp(S))
-    closure = build_closures(assertion)
+    closure = build_closures(assertion, constants)
     assert closure == [frozenset([assertion])]
-    tableaux = build_tableaux(assertion)
+    tableaux = build_tableaux(assertion, constants)
     root = closure[0]
-    assert build_tableaux(assertion) == [ { root : frozenset() } ]
+    assert tableaux == [ { root : frozenset() } ]
 
     assertion = Matches(c, App(S, App(C)))
-    closure = build_closures(assertion)
+    closure = build_closures(assertion, constants)
     assert closure == [frozenset([assertion])]
-    tableaux = build_tableaux(assertion)
+    tableaux = build_tableaux(assertion, constants)
     root = closure[0]
-    assert build_tableaux(assertion) == [ { root : frozenset() } ]
+    print(tableaux)
+    assert tableaux == [ { root : frozenset() } ]
 
     assertion = Matches(c, And(App(S), DApp(S)))
-    closure = build_closures(assertion)
+    closure = build_closures(assertion, constants)
     assert closure == [frozenset([ assertion
                                  , Matches(c, DApp(S))
                                  , Matches(c,  App(S))
                                  ])]
-    tableaux = build_tableaux(assertion)
+    tableaux = build_tableaux(assertion, constants)
     root = closure[0]
-    assert build_tableaux(assertion) == [ { root : frozenset() } ]
+    assert tableaux == [ { root : frozenset() } ]
 
     assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
-    closure = build_closures(assertion)
+    closure = build_closures(assertion, constants)
     assert closure == [frozenset([ assertion
                                  , Matches(c,  App(S,  App(C)))
                                  , Matches(c, DApp(S, DApp(C)))
                                  ])]
-    tableaux = build_tableaux(assertion)
+    tableaux = build_tableaux(assertion, constants)
     root = closure[0]
-    assert build_tableaux(assertion) == [ { root : frozenset([Closure([ Matches(EVar("c1"), DApp(S))
-                                                                      , Matches(EVar("c1"),  App(S))
-                                                                      ])]) }
-                                        ]
+    assert tableaux == [ { root : frozenset([Closure([ Matches(EVar("c1"), DApp(S))
+                                                     , Matches(EVar("c1"),  App(S))
+                                                     ])]) }
+                       ]
 
 def xtest_is_satisfiable() -> None:
     assert not is_sat(Bottom())
