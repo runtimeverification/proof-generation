@@ -23,23 +23,23 @@ class KorePreprocessor:
         "dotk",
         "Lbl'Unds'Map'Unds'",
         "Lbl'UndsSlsh'Int'Unds'",  # TODO: this probably doesn't make sense since /Int is not defined on 0
-        
+
         # "Lbl'Stop'ThreadCellMap", # TODO: hacky
         # "LblThreadCellMapItem",
     ]
     MISSING_SUBSORT_AXIOMS = [
         ("SortKConfigVar", "SortKItem"),
     ]
-    
+
     HOOKED_CONSTRUCTOR_SYMBOLS = [
         "MAP.element",
         "MAP.unit",
         "MAP.concat",
-        
         "LIST.element",
         "LIST.unit",
         "LIST.concat",
     ]
+
     # HOOKED_CONSTRUCTOR_SYMBOLS = [
     #     "Lbl'UndsPipe'-'-GT-Unds'",
     #     "Lbl'Unds'Map'Unds'",

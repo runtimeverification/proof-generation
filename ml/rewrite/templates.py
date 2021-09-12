@@ -216,7 +216,7 @@ class KoreTemplates:
                KoreTemplates.get_hook_function(pattern.symbol) == "MAP.element" and \
                len(pattern.arguments) == 2, \
                f"unexpected pattern {pattern}"
-               # pattern.symbol.get_symbol_name() == "Lbl'UndsPipe'-'-GT-Unds'" and \
+        # pattern.symbol.get_symbol_name() == "Lbl'UndsPipe'-'-GT-Unds'" and \
         return pattern.arguments[0], pattern.arguments[1]
 
     @staticmethod
@@ -409,7 +409,7 @@ class KoreTemplates:
 
         if hook is None:
             return None
-            
+
         assert len(hook.arguments) == 1 and isinstance(hook.arguments[0], kore.StringLiteral), \
                f"invalid hook attribute {hook}"
 

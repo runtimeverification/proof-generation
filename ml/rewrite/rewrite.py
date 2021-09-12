@@ -2072,7 +2072,8 @@ class MapUpdateEvaluator(BuiltinFunctionEvaluator):
     """
     Implements the K builtin function MAP.update
     """
-    def update_existing(self, map_pattern: kore.Application, key_pattern: kore.Pattern, value_pattern: kore.Pattern) -> Tuple[kore.Pattern, bool]:
+    def update_existing(self, map_pattern: kore.Application, key_pattern: kore.Pattern,
+                        value_pattern: kore.Pattern) -> Tuple[kore.Pattern, bool]:
         if KoreTemplates.is_map_unit_pattern(map_pattern):
             return map_pattern, False
         elif KoreTemplates.is_map_merge_pattern(map_pattern):
@@ -2083,13 +2084,13 @@ class MapUpdateEvaluator(BuiltinFunctionEvaluator):
             left, left_updated = self.update_existing(left, key_pattern, value_pattern)
             right, right_updated = self.update_existing(right, key_pattern, value_pattern)
 
-            return kore.Application(map_pattern.symbol, [ left, right ]), left_updated or right_updated
+            return kore.Application(map_pattern.symbol, [left, right]), left_updated or right_updated
         else:
             assert KoreTemplates.is_map_mapsto_pattern(map_pattern)
             key, _ = map_pattern.arguments
 
             if key == key_pattern:
-                return kore.Application(map_pattern.symbol, [ key, value_pattern ]), True
+                return kore.Application(map_pattern.symbol, [key, value_pattern]), True
 
             return map_pattern, False
 
@@ -2098,7 +2099,7 @@ class MapUpdateEvaluator(BuiltinFunctionEvaluator):
         assert isinstance(map_pattern, kore.Application)
 
         new_map, has_updated = self.update_existing(map_pattern, key_pattern, value_pattern)
-        
+
         if not has_updated:
             # TODO: this doesn't work for custom map sorts
             mapsto_symbol = self.composer.module.get_symbol_by_name("Lbl'UndsPipe'-'-GT-Unds'")
@@ -2108,17 +2109,14 @@ class MapUpdateEvaluator(BuiltinFunctionEvaluator):
             # append a new element
             new_map = kore.Application(
                 kore.SymbolInstance(merge_symbol, []),
-                [
-                    new_map,
-                    kore.Application(
-                        kore.SymbolInstance(mapsto_symbol, []),
-                        [
-                            key_pattern,
-                            value_pattern,
-                        ],
-                    )
-                ]
+                [new_map,
+                 kore.Application(
+                     kore.SymbolInstance(mapsto_symbol, []),
+                     [
+                         key_pattern,
+                         value_pattern,
+                     ],
+                 )]
             )
 
         return self.build_equation(application, new_map)
-
