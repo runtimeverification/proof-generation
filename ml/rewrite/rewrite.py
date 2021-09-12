@@ -65,6 +65,7 @@ class RewriteProofGenerator(ProofGenerator):
             "Lbl'UndsEqlsEqls'K'Unds'": KEqualityEvaluator(composer),
             "Lbl'UndsEqlsSlshEqls'K'Unds'": KNotEqualityEvaluator(composer),
             "LblMap'Coln'lookup": MapLookupEvaluator(composer),
+            "LblMap'Coln'update": MapUpdateEvaluator(composer),
         }
         self.disjoint_gen = DisjointnessProofGenerator(composer)
         self.smt_gen = SMTProofGenerator(composer, smt_option)
@@ -1893,8 +1894,8 @@ class BuiltinFunctionEvaluator(ProofGenerator):
     """
     Common base class for evaluator of the builtin sort SortInt{}
     """
-    def __init__(self, env: KoreComposer):
-        super().__init__(env)
+    def __init__(self, composer: KoreComposer):
+        super().__init__(composer)
         self.axiom_counter = 0
 
     def parse_int(self, value: kore.Pattern) -> int:
@@ -2065,3 +2066,59 @@ class MapLookupEvaluator(BuiltinFunctionEvaluator):
         assert found is not None, f"key {key_pattern} does not exist in map pattern {map_pattern}"
 
         return self.build_equation(application, found)
+
+
+class MapUpdateEvaluator(BuiltinFunctionEvaluator):
+    """
+    Implements the K builtin function MAP.update
+    """
+    def update_existing(self, map_pattern: kore.Application, key_pattern: kore.Pattern, value_pattern: kore.Pattern) -> Tuple[kore.Pattern, bool]:
+        if KoreTemplates.is_map_unit_pattern(map_pattern):
+            return map_pattern, False
+        elif KoreTemplates.is_map_merge_pattern(map_pattern):
+            left = KoreTemplates.get_map_merge_left(map_pattern)
+            right = KoreTemplates.get_map_merge_right(map_pattern)
+            assert isinstance(left, kore.Application) and isinstance(right, kore.Application)
+
+            left, left_updated = self.update_existing(left, key_pattern, value_pattern)
+            right, right_updated = self.update_existing(right, key_pattern, value_pattern)
+
+            return kore.Application(map_pattern.symbol, [ left, right ]), left_updated or right_updated
+        else:
+            assert KoreTemplates.is_map_mapsto_pattern(map_pattern)
+            key, _ = map_pattern.arguments
+
+            if key == key_pattern:
+                return kore.Application(map_pattern.symbol, [ key, value_pattern ]), True
+
+            return map_pattern, False
+
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        map_pattern, key_pattern, value_pattern = application.arguments
+        assert isinstance(map_pattern, kore.Application)
+
+        new_map, has_updated = self.update_existing(map_pattern, key_pattern, value_pattern)
+        
+        if not has_updated:
+            # TODO: this doesn't work for custom map sorts
+            mapsto_symbol = self.composer.module.get_symbol_by_name("Lbl'UndsPipe'-'-GT-Unds'")
+            merge_symbol = self.composer.module.get_symbol_by_name("Lbl'Unds'Map'Unds'")
+            assert mapsto_symbol is not None and merge_symbol is not None
+
+            # append a new element
+            new_map = kore.Application(
+                kore.SymbolInstance(merge_symbol, []),
+                [
+                    new_map,
+                    kore.Application(
+                        kore.SymbolInstance(mapsto_symbol, []),
+                        [
+                            key_pattern,
+                            value_pattern,
+                        ],
+                    )
+                ]
+            )
+
+        return self.build_equation(application, new_map)
+

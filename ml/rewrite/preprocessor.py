@@ -23,21 +23,28 @@ class KorePreprocessor:
         "dotk",
         "Lbl'Unds'Map'Unds'",
         "Lbl'UndsSlsh'Int'Unds'",  # TODO: this probably doesn't make sense since /Int is not defined on 0
+        
+        # "Lbl'Stop'ThreadCellMap", # TODO: hacky
+        # "LblThreadCellMapItem",
     ]
-
     MISSING_SUBSORT_AXIOMS = [
         ("SortKConfigVar", "SortKItem"),
     ]
-    """
-    These symbols are marked as hooked function symbols
-    but for the purpose of proof generation they should
-    be constructors
-    """
-    REMOVE_FUNCTION_ATTRIBUTES = [
-        "Lbl'UndsPipe'-'-GT-Unds'",
-        "Lbl'Unds'Map'Unds'",
-        "Lbl'Stop'Map",
+    
+    HOOKED_CONSTRUCTOR_SYMBOLS = [
+        "MAP.element",
+        "MAP.unit",
+        "MAP.concat",
+        
+        "LIST.element",
+        "LIST.unit",
+        "LIST.concat",
     ]
+    # HOOKED_CONSTRUCTOR_SYMBOLS = [
+    #     "Lbl'UndsPipe'-'-GT-Unds'",
+    #     "Lbl'Unds'Map'Unds'",
+    #     "Lbl'Stop'Map",
+    # ]
 
     def preprocess(self, definition: kore.Definition) -> None:
         self.remove_function_attributes(definition)
@@ -50,7 +57,9 @@ class KorePreprocessor:
     def remove_function_attributes(self, definition: kore.Definition) -> None:
         for module in definition.module_map.values():
             for symbol_def in module.symbol_map.values():
-                if symbol_def.symbol in KorePreprocessor.REMOVE_FUNCTION_ATTRIBUTES:
+                hook = KoreTemplates.get_hook_function(symbol_def)
+
+                if hook is not None and hook in KorePreprocessor.HOOKED_CONSTRUCTOR_SYMBOLS:
                     symbol_def.remove_attribute_by_symbol("function")
 
     def add_missing_functional_axioms(self, definition: kore.Definition) -> None:

@@ -170,7 +170,7 @@ def gen_proof(args: argparse.Namespace) -> None:
 
     # get kdef file name (without extension)
     kdef_basename = os.path.basename(kdef)
-    assert kdef_basename.endswith(".k"), f"{kdef} should have .k suffix"
+    # assert kdef_basename.endswith(".k"), f"{kdef} should have .k suffix"
     kdef_name = kdef_basename[:-2]
     pgm_name, _ = os.path.splitext(os.path.basename(pgm))
 
@@ -182,27 +182,34 @@ def gen_proof(args: argparse.Namespace) -> None:
         os.mkdir(cache_dir)
 
     ### step 1. kompile the given k definition
-    print(f"- kompiling {kdef}")
+    if args.kompiled_dir is None:
+        print(f"- kompiling {kdef}")
 
-    kompiled_dir = os.path.join(cache_dir, f"{kdef_name}-kompiled")
-    kompile_timestamp = os.path.join(kompiled_dir, "timestamp")
+        kompiled_dir = os.path.join(cache_dir, f"{kdef_name}-kompiled")
+        kompile_timestamp = os.path.join(kompiled_dir, "timestamp")
 
-    if check_dependency_change([kompile_timestamp], [kdef]):
-        proc = run_command(
-            [
-                "kompile",
-                "--backend",
-                "haskell",
-                "--directory",
-                cache_dir,
-                "--main-module",
-                module,
-                "--debug",
-                kdef,
-            ]
-        )
-        exit_code = proc.wait()
-        assert exit_code == 0, f"kompiled failed with exit code {exit_code}"
+        if check_dependency_change([kompile_timestamp], [kdef]):
+            proc = run_command(
+                [
+                    "kompile",
+                    "--backend",
+                    "haskell",
+                    "--directory",
+                    cache_dir,
+                    "--main-module",
+                    module,
+                    "--debug",
+                    kdef,
+                ]
+            )
+            exit_code = proc.wait()
+            assert exit_code == 0, f"kompiled failed with exit code {exit_code}"
+    else:
+        print(f"- using an existing kompiled dir {args.kompiled_dir}")
+        kompiled_dir = args.kompiled_dir
+        if kompiled_dir.endswith("/"):
+            kompiled_dir = kompiled_dir[:-1]
+        kompile_timestamp = os.path.join(kompiled_dir, "timestamp")
 
     ### step 2. generate snapshots and rewriting information
     print(f"- generating snapshots")
@@ -211,11 +218,11 @@ def gen_proof(args: argparse.Namespace) -> None:
 
     if check_dependency_change([task_path], [kompile_timestamp, pgm]):
         if no_backend_hints:
-            task_obj = gen_task_legacy(cache_dir, pgm)
+            task_obj = gen_task_legacy(os.path.dirname(kompiled_dir), pgm)
             with open(task_path, "w") as f:
                 yaml.dump(task_obj, f)
         else:
-            gen_task(cache_dir, task_path, pgm, kore_definition, module)
+            gen_task(os.path.dirname(kompiled_dir), task_path, pgm, kore_definition, module)
 
     ### step 3. generate proof object
     print(f"- generating proof")
@@ -240,6 +247,10 @@ def main() -> None:
         const=True,
         default=False,
         help="Do not use/expect hints from the backend but generate snapshots using well-defined interface",
+    )
+    parser.add_argument(
+        "--kompiled-dir",
+        help="Use an existing compiled directory instead of rekompiling",
     )
     set_additional_flags(parser)
     args = parser.parse_args()

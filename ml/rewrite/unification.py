@@ -634,6 +634,7 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         """
         Losely following https://github.com/kframework/kore/blob/master/docs/2018-11-12-Unification.md
         """
+
         algorithms = (
             self.unify_same_patterns,
             self.unify_unevaluated_functions,
@@ -650,6 +651,11 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
             result = algo(pattern1, pattern2)
             if result is not None:
                 return result
+
+        # print("pattern1")
+        # KoreUtils.pretty_print(pattern1)
+        # print("pattern2")
+        # KoreUtils.pretty_print(pattern2)
 
         return None
 

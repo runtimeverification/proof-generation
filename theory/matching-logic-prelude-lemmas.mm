@@ -2039,13 +2039,9 @@ ${
             apply "lemma-floor-intro"
             apply "rule-iff-compat-in-or"
             apply "lemma-floor-elim"
-            apply "notation-proof"
             apply "rule-eq-compat-in-or.0"
-            notation
             apply "lemma-floor-elim"
-            apply "notation-proof"
             apply "rule-eq-compat-in-or.1"
-            notation
         $)
         ( iff-is-pattern not-is-pattern ceil-is-pattern or-is-pattern floor-is-pattern bot-is-pattern imp-is-pattern notation-symmetry notation-transitivity eq-is-pattern floor-is-sugar not-is-sugar eq-is-sugar notation-reflexivity notation-proof lemma-floor-elim rule-iff-compat-in-or lemma-floor-intro ) ACJBDJGKACJBDJPACJBDJGABCDABGABPABGKEABGKABGHIHABPABGQABPABGHIHABPABGKABGHIHABSABGHIHABGKABGHIHABGHILMABGKABGHIRABGKABGHILMABGKABGHIHABGHILMABGQABGHILMABGHIHABGHIHABGHILMABGHIHABGHILMABGHILMABGHIRABGHILMABGHILMABGHILMTNONNONONONOUAUBCDGCDPCDGKFCDGKCDGHIHCDPCDGQCDPCDGHIHCDPCDGKCDGHIHCDSCDGHIHCDGKCDGHIHCDGHILMCDGKCDGHIRCDGKCDGHILMCDGKCDGHIHCDGHILMCDGQCDGHILMCDGHIHCDGHIHCDGHILMCDGHIHCDGHILMCDGHILMCDGHIRCDGHILMCDGHILMCDGHILMTNONNONONONOUAUBUCUDACJBDJPACJBDJGKACJBDJGKACJBDJSACJBDJGKACJBDJGKACJBDJGKTNOUA $.
 $}

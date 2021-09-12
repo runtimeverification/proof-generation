@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union
 
 import ml.kore.ast as kore
 from ml.kore.utils import KoreUtils, PatternPath
@@ -197,29 +197,33 @@ class KoreTemplates:
     @staticmethod
     def is_map_merge_pattern(pattern: kore.Pattern) -> bool:
         return (
-            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'Unds'Map'Unds'"
+            isinstance(pattern, kore.Application) and KoreTemplates.get_hook_function(pattern.symbol) == "MAP.concat"
+            # pattern.symbol.get_symbol_name() == "Lbl'Unds'Map'Unds'"
             and len(pattern.arguments) == 2
         )
 
     @staticmethod
     def is_map_mapsto_pattern(pattern: kore.Pattern) -> bool:
         return (
-            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'UndsPipe'-'-GT-Unds'"
+            isinstance(pattern, kore.Application) and KoreTemplates.get_hook_function(pattern.symbol) == "MAP.element"
+            # pattern.symbol.get_symbol_name() == "Lbl'UndsPipe'-'-GT-Unds'"
             and len(pattern.arguments) == 2
         )
 
     @staticmethod
     def destruct_mapsto(pattern: kore.Pattern) -> Tuple[kore.Pattern, kore.Pattern]:
         assert isinstance(pattern, kore.Application) and \
-               pattern.symbol.get_symbol_name() == "Lbl'UndsPipe'-'-GT-Unds'" and \
+               KoreTemplates.get_hook_function(pattern.symbol) == "MAP.element" and \
                len(pattern.arguments) == 2, \
                f"unexpected pattern {pattern}"
+               # pattern.symbol.get_symbol_name() == "Lbl'UndsPipe'-'-GT-Unds'" and \
         return pattern.arguments[0], pattern.arguments[1]
 
     @staticmethod
     def is_map_unit_pattern(pattern: kore.Pattern) -> bool:
         return (
-            isinstance(pattern, kore.Application) and pattern.symbol.get_symbol_name() == "Lbl'Stop'Map"
+            isinstance(pattern, kore.Application) and KoreTemplates.get_hook_function(pattern.symbol) == "MAP.unit"
+            # pattern.symbol.get_symbol_name() == "Lbl'Stop'Map"
             and len(pattern.arguments) == 0
         )
 
@@ -388,3 +392,25 @@ class KoreTemplates:
             return False
 
         return pattern.symbol.definition.get_attribute_by_symbol("function") is not None
+
+    @staticmethod
+    def get_hook_function(symbol: Union[kore.SymbolDefinition, kore.SymbolInstance]) -> Optional[str]:
+        """
+        Each hooked symbol has an attribute hook{}(<name>)
+        This util function returns <name>
+        """
+
+        if isinstance(symbol, kore.SymbolInstance):
+            assert isinstance(symbol.definition, kore.SymbolDefinition), \
+                   f"unresolved symbol {symbol}"
+            symbol = symbol.definition
+
+        hook = symbol.get_attribute_by_symbol("hook")
+
+        if hook is None:
+            return None
+            
+        assert len(hook.arguments) == 1 and isinstance(hook.arguments[0], kore.StringLiteral), \
+               f"invalid hook attribute {hook}"
+
+        return hook.arguments[0].content
