@@ -51,21 +51,42 @@ class RewriteProofGenerator(ProofGenerator):
         self.kore_is_predicate_counter = 0
         self.sorting_hypotheses_counter = 0
         self.hooked_symbol_evaluators = {
-            "Lbl'UndsPlus'Int'Unds'": IntegerAdditionEvaluator(composer),
-            "Lbl'Unds'-Int'Unds'": IntegerSubtractionEvaluator(composer),
-            "Lbl'UndsStar'Int'Unds'": IntegerMultiplicationEvaluator(composer),
-            "Lbl'UndsSlsh'Int'Unds'": IntegerDivisionEvaluator(composer),
-            "Lbl'Unds-GT-Eqls'Int'Unds'": IntegerGreaterThanOrEqualToEvaluator(composer),
-            "Lbl'Unds-LT-Eqls'Int'Unds'": IntegerLessThanOrEqualToEvaluator(composer),
-            "Lbl'Unds-GT-'Int'Unds'": IntegerGreaterThanEvaluator(composer),
-            "Lbl'Unds-LT-'Int'Unds'": IntegerLessThanEvaluator(composer),
-            "Lbl'UndsEqlsEqls'Int'Unds'": IntegerEqualityEvaluator(composer),
-            "Lbl'Unds'andBool'Unds'": BooleanAndEvaluator(composer),
-            "LblnotBool'Unds'": BooleanNotEvaluator(composer),
-            "Lbl'UndsEqlsEqls'K'Unds'": KEqualityEvaluator(composer),
-            "Lbl'UndsEqlsSlshEqls'K'Unds'": KNotEqualityEvaluator(composer),
-            "LblMap'Coln'lookup": MapLookupEvaluator(composer),
-            "LblMap'Coln'update": MapUpdateEvaluator(composer),
+            "Lbl'UndsPlus'Int'Unds'":
+            IntegerAdditionEvaluator(composer),
+            "Lbl'Unds'-Int'Unds'":
+            IntegerSubtractionEvaluator(composer),
+            "Lbl'UndsStar'Int'Unds'":
+            IntegerMultiplicationEvaluator(composer),
+            "Lbl'UndsSlsh'Int'Unds'":
+            IntegerDivisionEvaluator(composer),
+            "Lbl'Unds-GT-Eqls'Int'Unds'":
+            IntegerGreaterThanOrEqualToEvaluator(composer),
+            "Lbl'Unds-LT-Eqls'Int'Unds'":
+            IntegerLessThanOrEqualToEvaluator(composer),
+            "Lbl'Unds-GT-'Int'Unds'":
+            IntegerGreaterThanEvaluator(composer),
+            "Lbl'Unds-LT-'Int'Unds'":
+            IntegerLessThanEvaluator(composer),
+            "Lbl'UndsEqlsEqls'Int'Unds'":
+            IntegerEqualityEvaluator(composer),
+            "Lbl'Unds'andBool'Unds'":
+            BooleanAndEvaluator(composer),
+            "LblnotBool'Unds'":
+            BooleanNotEvaluator(composer),
+            "Lbl'UndsEqlsEqls'K'Unds'":
+            KEqualityEvaluator(composer),
+            "Lbl'UndsEqlsSlshEqls'K'Unds'":
+            KNotEqualityEvaluator(composer),
+            "LblMap'Coln'lookup":
+            MapLookupEvaluator(composer),
+            "LblMap'Coln'update":
+            MapUpdateEvaluator(composer),
+            "Lbl'Unds'in'Unds'keys'LParUndsRParUnds'MAP'Unds'Bool'Unds'KItem'Unds'Map":
+            MapInKeysEvaluator(composer),
+            "Lbl'Stop'Bytes'Unds'BYTES-HOOKED'Unds'Bytes":
+            BytesUnitEvaluator(composer),
+            "Lbl'Hash'if'UndsHash'then'UndsHash'else'UndsHash'fi'Unds'K-EQUAL-SYNTAX'Unds'Sort'Unds'Bool'Unds'Sort'Unds'Sort":
+            IfEvaluator(composer),
         }
         self.disjoint_gen = DisjointnessProofGenerator(composer)
         self.smt_gen = SMTProofGenerator(composer, smt_option)
@@ -2120,3 +2141,54 @@ class MapUpdateEvaluator(BuiltinFunctionEvaluator):
             )
 
         return self.build_equation(application, new_map)
+
+
+class MapInKeysEvaluator(BuiltinFunctionEvaluator):
+    def find_key(self, map_pattern: kore.Application, key_pattern: kore.Application) -> bool:
+        """
+        Check if the given key is in the map pattern or not
+        """
+        if KoreTemplates.is_map_unit_pattern(map_pattern):
+            return False
+        elif KoreTemplates.is_map_merge_pattern(map_pattern):
+            left = KoreTemplates.get_map_merge_left(map_pattern)
+            right = KoreTemplates.get_map_merge_right(map_pattern)
+            assert isinstance(left, kore.Application) and \
+                   isinstance(right, kore.Application)
+            return self.find_key(left, key_pattern) or self.find_key(right, key_pattern)
+        else:
+            assert KoreTemplates.is_map_mapsto_pattern(map_pattern)
+            key, _ = map_pattern.arguments
+            return key == key_pattern
+
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        key_pattern, map_pattern = application.arguments
+        assert isinstance(key_pattern, kore.Application) and \
+               isinstance(map_pattern, kore.Application)
+        return self.build_arithmetic_equation(application, self.find_key(map_pattern, key_pattern))
+
+
+class BytesUnitEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        sort = KoreUtils.infer_sort(application)
+        dv = kore.MLPattern(kore.MLPattern.DV, [sort], [kore.StringLiteral("")])
+        return self.build_equation(application, dv)
+
+
+class IfEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        condition, true_branch, false_branch = application.arguments
+
+        assert isinstance(condition, kore.MLPattern) and \
+               condition.construct == kore.MLPattern.DV, \
+               f"non-concrete condition {condition}"
+
+        literal, = condition.arguments
+        assert isinstance(literal, kore.StringLiteral)
+
+        if literal.content == "true":
+            return self.build_equation(application, true_branch)
+        elif literal.content == "false":
+            return self.build_equation(application, false_branch)
+        else:
+            assert False, f"unexpected condition {condition}"

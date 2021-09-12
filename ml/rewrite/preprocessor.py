@@ -38,6 +38,7 @@ class KorePreprocessor:
         "LIST.element",
         "LIST.unit",
         "LIST.concat",
+        "SET.unit",
     ]
 
     # HOOKED_CONSTRUCTOR_SYMBOLS = [

@@ -35,6 +35,7 @@ class SMTProofGenerator(ProofGenerator):
 
     SMT_HOOK_TO_SMT_FUNCTION: Dict[str, Callable[..., z3.AstRef]] = {
         "(^ #1 #2)": lambda x, y: x**y,
+        "(ite (< #1 0) (- 0 #1) #1)": lambda x: z3.If(x < 0, -x, x),
         "distinct": lambda *args: z3.Distinct(*args),
     }
 
