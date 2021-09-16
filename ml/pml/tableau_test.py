@@ -1,5 +1,6 @@
 from pml import *
 from tableau import *
+from typing import Dict, List
 
 S = Symbol("S")
 C = Symbol("C")
@@ -10,6 +11,10 @@ e  = EVar("E")
 e1 = EVar("E1")
 x = EVar("x")
 c = EVar("c")
+c1 = EVar("c1")
+c2 = EVar("c2")
+c3 = EVar("c3")
+c4 = EVar("c4")
 
 def test_definition_list() -> None:
     assert definition_list(X, []) == []
@@ -19,66 +24,144 @@ def test_definition_list() -> None:
            , Nu(Y, App(S, SVar(0)))
            ]
 
+def test_add_to_closure() -> None:
+    K = [c, c1]
+    closure_1 : List[Closure] = [] 
+    for closure in add_to_closure(Matches(c1, DApp(S, App(C))), frozenset(), K):
+        closure_1 += add_to_closure(Matches(c1, App(S, c1)), closure, K)
+
+    closure_2 : List[Closure] = [] 
+    for closure in add_to_closure(Matches(c1, App(S, c1)), frozenset(), K):
+        closure_2 += add_to_closure(Matches(c1, DApp(S, App(C))), closure, K)
+
+#    print('====', closure_1)
+    assert(closure_1 == closure_2)
+
 def test_build_tableaux() -> None:
-    constants = [EVar('c'), EVar('c1'), EVar('c2'), EVar('c3'), EVar('c4')]
+    constants = [c, c1, c2, c3, c4]
 
-    assertion = Matches(c, Bottom())
-    closure = build_closures(assertion, constants)
-    assert closure == []
-    tableaux = build_tableaux(assertion, constants)
-    assert tableaux == []
-
-    assertion = Matches(c, Top())
-    closure = build_closures(assertion, constants)
-    assert closure == [frozenset([assertion])]
-    tableaux = build_tableaux(assertion, constants)
-    root = closure[0]
-    assert tableaux == [ { root : frozenset() } ]
-
-    assertion = Matches(c, App(S))
-    closure = build_closures(assertion, constants)
-    assert closure == [frozenset([assertion])]
-    tableaux = build_tableaux(assertion, constants)
-    root = closure[0]
-    assert tableaux == [ { root : frozenset() } ]
-
-    assertion = Matches(c, DApp(S))
-    closure = build_closures(assertion, constants)
-    assert closure == [frozenset([assertion])]
-    tableaux = build_tableaux(assertion, constants)
-    root = closure[0]
-    assert tableaux == [ { root : frozenset() } ]
+#    assertion = Matches(c, Bottom())
+#    signature : Dict[Symbol, int] = {} 
+#    closure = set(build_closures(assertion, constants, signature))
+#    assert closure == set()
+#    tableaux = build_tableaux(assertion, constants, signature)
+#    assert tableaux == []
+#
+#    assertion = Matches(c, Top())
+#    signature = {}
+#    closure = set(build_closures(assertion, constants, signature))
+#    assert closure == {frozenset([assertion])}
+#    tableaux = build_tableaux(assertion, constants, signature)
+#    assert tableaux == [ { frozenset([assertion]) : frozenset() } ]
+#
+#    assertion = Matches(c, App(C))
+#    signature = { C : 0 }
+#    closure = set(build_closures(assertion, constants, signature))
+#    assert closure == {frozenset([assertion])}
+#    tableaux = build_tableaux(assertion, constants, signature)
+#    assert tableaux == [ { frozenset([assertion]) : frozenset() } ]
+#
+#    assertion = Matches(c, DApp(C))
+#    signature = { C : 0 }
+#    closure = set(build_closures(assertion, constants, signature))
+#    assert closure == {frozenset([assertion])}
+#    tableaux = build_tableaux(assertion, constants, signature)
+#    assert tableaux == [ { frozenset([assertion]) : frozenset() } ]
 
     assertion = Matches(c, App(S, App(C)))
-    closure = build_closures(assertion, constants)
-    assert closure == [frozenset([assertion])]
-    tableaux = build_tableaux(assertion, constants)
-    root = closure[0]
-    print(tableaux)
-    assert tableaux == [ { root : frozenset() } ]
+    signature = { S : 1, C : 0 }
 
-    assertion = Matches(c, And(App(S), DApp(S)))
-    closure = build_closures(assertion, constants)
-    assert closure == [frozenset([ assertion
-                                 , Matches(c, DApp(S))
-                                 , Matches(c,  App(S))
-                                 ])]
-    tableaux = build_tableaux(assertion, constants)
-    root = closure[0]
-    assert tableaux == [ { root : frozenset() } ]
 
-    assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
-    closure = build_closures(assertion, constants)
-    assert closure == [frozenset([ assertion
-                                 , Matches(c,  App(S,  App(C)))
-                                 , Matches(c, DApp(S, DApp(C)))
-                                 ])]
-    tableaux = build_tableaux(assertion, constants)
-    root = closure[0]
-    assert tableaux == [ { root : frozenset([Closure([ Matches(EVar("c1"), DApp(S))
-                                                     , Matches(EVar("c1"),  App(S))
-                                                     ])]) }
-                       ]
+    m_0_____ = Matches(c,   App(S,     c))
+    m_1_____ = Matches(c,  DApp(S, Not(c)))
+    m__0____ = Matches(c,   App(C))
+    m__1____ = Matches(c,  DApp(C))
+    m___0___ = Matches(c,   App(S, c1))
+    m____0__ = Matches(c1, App(S, c1))
+    m____1__ = Matches(c1, DApp(S, Not(c1)))
+    m_____0_ = Matches(c1, App(S, c))
+    m_____1_ = Matches(c1, DApp(S, Not(c)))
+    m______0 = Matches(c1, App(C))
+    m______1 = Matches(c1, DApp(C))
+
+    cl_00___ = frozenset([assertion, m_0_____,  m__0____])
+    cl_10___ = frozenset([assertion, m_1_____,  m__0____])
+    cl_01___ = frozenset([assertion, m_0_____,  m__1____])
+    cl_11___ = frozenset([assertion, m_1_____,  m__1____])
+
+    closure = set(build_closures(assertion, constants, signature))
+    assert closure == { cl_00___, cl_10___, cl_01___, cl_11___ }
+    print('=====')
+    tableaux = build_tableaux(assertion, [c, c1], signature)
+
+    cl_next___0000 = frozenset([m___0___, m____0__, m_____0_, m______0])
+    cl_next___0010 = frozenset([m___0___, m____0__, m_____1_, m______0])
+    cl_next___0100 = frozenset([m___0___, m____1__, m_____0_, m______0])
+    cl_next___0110 = frozenset([m___0___, m____1__, m_____1_, m______0])
+    cl_next___0001 = frozenset([m___0___, m____0__, m_____0_, m______1])
+    cl_next___0011 = frozenset([m___0___, m____0__, m_____1_, m______1])
+    cl_next___0101 = frozenset([m___0___, m____1__, m_____0_, m______1])
+    cl_next___0111 = frozenset([m___0___, m____1__, m_____1_, m______1])
+    cl_next = [ cl_next___0000, cl_next___0010, cl_next___0100, cl_next___0110 ]
+
+    assert tableaux[0] == { cl_00___ :  frozenset([cl_00___]) }
+    print('=====' , tableaux[1][cl_01___])
+    assert cl_01___.union(cl_next___0000) in tableaux[1][cl_01___]
+    assert cl_01___.union(cl_next___0010) in tableaux[1][cl_01___]
+    assert cl_01___.union(cl_next___0100) in tableaux[1][cl_01___]
+    assert cl_01___.union(cl_next___0110) in tableaux[1][cl_01___]
+    assert tableaux[1][cl_01___] == frozenset([ cl_01___.union(cl_next___0000)
+                                              , cl_01___.union(cl_next___0010)
+                                              , cl_01___.union(cl_next___0100)
+                                              , cl_01___.union(cl_next___0110)
+                                              ])
+
+#    assert tableaux == [ { cl_00___ : frozenset([cl_00___]) }
+#                       , { cl_10___ : frozenset([cl_10___.union(next) for next in cl_next]) } | dict([(cl_10___.union(next), frozenset()) for next in cl_next])
+#                       , { cl_01___ : frozenset([cl_01___.union(next) for next in cl_next]) } | dict([(cl_01___.union(next), frozenset()) for next in cl_next])
+#                       , { cl_11___ : frozenset([cl_11___.union(next) for next in cl_next]) } | dict([(cl_11___.union(next), frozenset()) for next in cl_next])
+#                       ]
+
+#    assertion = Matches(c, And(App(C), DApp(C)))
+#    closure = set(build_closures(assertion, constants, { C : 0 }))
+#    assert closure == set()
+#    tableaux = build_tableaux(assertion, constants, signature)
+#    root = closure[0]
+#    assert tableaux == [ { root : frozenset() } ]
+
+#    assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
+#    closure = set(build_closures(assertion, constants, { S : 1, C : 0 }))
+#    assert closure == { frozenset([ assertion
+#                                  , Matches(c,  App(S,  App(C)))
+#                                  , Matches(c, DApp(S, DApp(C)))
+#                                  , Matches(c,  App(S, c))
+#                                  , Matches(c,  App(C))
+#                                  ])
+#                      , frozenset([ assertion
+#                                  , Matches(c,  App(S,  App(C)))
+#                                  , Matches(c, DApp(S, DApp(C)))
+#                                  , Matches(c, DApp(S, Not(c)))
+#                                  , Matches(c,  App(C))
+#                                  ])
+#                      , frozenset([ assertion
+#                                  , Matches(c,  App(S,  App(C)))
+#                                  , Matches(c, DApp(S, DApp(C)))
+#                                  , Matches(c,  App(S, c))
+#                                  , Matches(c, DApp(C))
+#                                  ])
+#                      , frozenset([ assertion
+#                                  , Matches(c,  App(S,  App(C)))
+#                                  , Matches(c, DApp(S, DApp(C)))
+#                                  , Matches(c, DApp(S, Not(c)))
+#                                  , Matches(c, DApp(C))
+#                                  ])
+#                      }
+#    tableaux = build_tableaux(assertion, constants)
+#    root = closure[0]
+#    assert tableaux == [ { root : frozenset([Closure([ Matches(EVar("c1"), DApp(S))
+#                                                     , Matches(EVar("c1"),  App(S))
+#                                                     ])]) }
+#                       ]
 
 def xtest_is_satisfiable() -> None:
     assert not is_sat(Bottom())
