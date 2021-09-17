@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from itertools import chain, combinations, combinations_with_replacement, count, islice, product
+from itertools import chain, count, islice, product
 from typing import Any, Dict, FrozenSet, Iterable, Iterator, List, Tuple, TypeVar
 from subprocess import check_output
 import re
@@ -86,7 +86,6 @@ def free_evars(cl: Closure) -> FrozenSet[EVar]:
         ret = ret.union(assertion.free_evars())
     return ret
 
-
 @dataclass(frozen=True)
 class PGNode():
     assertion: Assertion
@@ -156,7 +155,7 @@ def build_parity_game( node         : PGNode
             if all(map(lambda arg: isinstance(arg, EVar), p.arguments)):
                 edges[node] = frozenset([node])
             else:
-                for tuple in combinations_with_replacement(p.free_variables().union([assertion.variable]), len(p.arguments)):
+                for tuple in product(p.free_variables().union([assertion.variable]), repeat = len(p.arguments)):
                     raise RuntimeError("YYYUnimplemented: " + str(node))
         elif isinstance(p, And):
             left_node = PGNode(Matches(assertion.variable, p.left), node.closure)
@@ -264,16 +263,16 @@ def add_to_closure(assertion: Assertion, partialClosure: Closure, K: List[EVar])
         raise RuntimeError("Unimplemented: ")
 
 def complete_closure_for_signature(closures: List[Closure], C: FrozenSet[EVar], K: List[EVar], signature: Dict[Symbol, int]) -> List[Closure]:
-
+    # TODO: This should be replaced by some form of resulution
     for (symbol, arity) in signature.items():
-        print('xxx', symbol, C, list(combinations_with_replacement(C, arity + 1)))
-        for tuple in combinations_with_replacement(C, arity + 1):
+        for tuple in product(C, repeat = arity + 1):
             new_closures = []
             for closure in closures:
                 first, *rest = tuple
-                print('complete_closure_for_signature', symbol, tuple)
-                new_closures += add_to_closure(Matches(first, App(symbol, *rest)),          closure, K)
-                new_closures += add_to_closure(Matches(first, App(symbol, *rest).negate()), closure, K)
+                x = add_to_closure(Matches(first, App(symbol, *rest)),          closure, K)
+                y = add_to_closure(Matches(first, App(symbol, *rest).negate()), closure, K)
+                new_closures += x
+                new_closures += y
             closures = new_closures
     return closures
 
@@ -298,33 +297,23 @@ def build_tableau(currentNode: Closure, partialTableau: Tableau, K: List[EVar], 
         if all(map(lambda arg: isinstance(arg, EVar), p.arguments)):
             continue
 
-
         new_closure = frozenset({ a for a in currentNode if p.free_evars() <= p.free_evars().union({assertion.variable}) })
 
         failed_instantiations : List[Assertion] = []
         potential_variables = list(assertion.free_evars()) + take(len(p.arguments), diff(K, free_evars(currentNode)))
-        print('potential_variables', assertion)
-        print('potential_variables', currentNode)
-        print('potential_variables', potential_variables)
-        print('                   ', assertion.free_evars())
-        print('                   ', list(diff(K, free_evars(currentNode))))
-        print('                   ', K)
-        print('                   ', list(take(len(p.arguments), diff(K, free_evars(currentNode)))))
 
-        for instantiation in combinations_with_replacement(potential_variables, len(p.arguments)):
+        for instantiation in product(potential_variables, repeat = len(p.arguments)):
             new_assertion = AllOf(frozenset( failed_instantiations
                                            + [ Matches(assertion.variable,  App(p.symbol, *instantiation)) ]
                                            + [ Matches(inst, arg) for (inst, arg) in zip(instantiation, p.arguments) ]
                                            ))
-            print('failed_instantiations', failed_instantiations)
             new_closures = add_to_closure(new_assertion, new_closure, K)
-            print('instantiation', assertion.free_evars().union(frozenset(instantiation)), instantiation)
-            print('             ', free_evars(new_closure).union(frozenset(instantiation)))
             new_closures = complete_closure_for_signature(new_closures, free_evars(new_closure).union(frozenset(instantiation)), K, signature)
             next_nodes += new_closures
             failed_instantiations += [new_assertion.negate()]
 
     partialTableau[currentNode] = frozenset(next_nodes)
+
     for node in next_nodes:
         build_tableau(node, partialTableau, K, signature)
     return partialTableau
