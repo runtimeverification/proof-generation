@@ -285,6 +285,14 @@ class SortDefinition(Sentence):
     def __str__(self) -> str:
         return "sort {}({})".format(self.sort_id, ", ".join(map(str, self.sort_variables)))
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, SortDefinition): return False
+        return self.sort_id == other.sort_id and \
+               self.sort_variables == other.sort_variables
+
+    def __hash__(self) -> int:
+        return hash(self.sort_id) ^ hash(tuple(self.sort_variables))
+
 
 class SortInstance(BaseAST[Module]):
     def __init__(self, definition: Union[str, SortDefinition], arguments: List[Sort]):
@@ -405,6 +413,17 @@ class SymbolDefinition(Sentence):
 
     def __str__(self) -> str:
         return "symbol {}({}): {}".format(self.symbol, ", ".join(map(str, self.input_sorts)), self.output_sort)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, SymbolDefinition): return False
+        return self.symbol == other.symbol and \
+               self.sort_variables == other.sort_variables and \
+               self.input_sorts == other.input_sorts and \
+               self.output_sort == other.output_sort
+
+    def __hash__(self) -> int:
+        return hash(self.symbol) ^ hash(tuple(self.sort_variables)) ^ hash(tuple(self.input_sorts)
+                                                                           ) ^ hash(self.output_sort)
 
 
 class SymbolInstance(BaseAST[Module]):

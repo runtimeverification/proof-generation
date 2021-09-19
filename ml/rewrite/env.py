@@ -133,6 +133,10 @@ class KoreComposer(Composer):
         # symbol definitions
         self.constructors: List[kore.SymbolDefinition] = []
 
+        # metamath label prefixes of sorts and symbols
+        self.sort_labels: Dict[kore.SortDefinition, str] = {}
+        self.symbol_labels: Dict[kore.SymbolDefinition, str] = {}
+
         self.functional_axioms: Dict[kore.SymbolInstance, ProvableClaim] = {}  # symbol instance -> provable claim
         self.domain_value_functional_axioms: Dict[Tuple[kore.SortInstance, kore.StringLiteral],
                                                   ProvableClaim] = {}  # (sort, string literal) -> provable claim
@@ -152,10 +156,11 @@ class KoreComposer(Composer):
         self.sort_to_constructors: Dict[kore.SortInstance,
                                         List[kore.SymbolDefinition]] = {}  # sort instance -> [ symbol definitions ]
         self.hooked_sorts: List[kore.SortDefinition] = []
-        self.no_confusion_same_constructor: Dict[str, Theorem] = {}  # constant symbol -> theorem
-        self.no_confusion_diff_constructor: Dict[Tuple[str, str], Theorem] = {}  # (symbol, symbol) -> theorem
-        self.no_confusion_with_dv: Dict[str, Theorem] = {}  # symbol -> theorem
-        self.no_confusion_hooked_sort: Dict[Tuple[str, kore.SortInstance],
+        self.no_confusion_same_constructor: Dict[kore.SymbolDefinition, Theorem] = {}  # constant symbol -> theorem
+        self.no_confusion_diff_constructor: Dict[Tuple[kore.SymbolDefinition, kore.SymbolDefinition],
+                                                 Theorem] = {}  # (symbol, symbol) -> theorem
+        self.no_confusion_with_dv: Dict[kore.SymbolDefinition, Theorem] = {}  # symbol -> theorem
+        self.no_confusion_hooked_sort: Dict[Tuple[kore.SortInstance, kore.SymbolDefinition],
                                             Theorem] = {}  # (kore symbol string, kore sort) -> theorem
         # (sort symbol, sort symbol) -> theorem, different hooked sorts are disjoint
         self.hooked_sort_disjoint_axioms: Dict[Tuple[str, str], Theorem] = {}
@@ -351,7 +356,7 @@ class KoreComposer(Composer):
 
         return self.load(stmt, **kwargs)
 
-    def load_symbol_sorting_lemma(self, symbol_definition: kore.SymbolDefinition, label: str) -> None:
+    def load_symbol_sorting_lemma(self, symbol_definition: kore.SymbolDefinition) -> None:
         encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
         arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
 
@@ -404,7 +409,7 @@ class KoreComposer(Composer):
 
         self.sorting_lemmas[encoded_symbol] = self.load(
             mm.AxiomaticStatement(
-                f"{label}-sorting",
+                f"{self.get_symbol_label(symbol_definition)}-sorting",
                 (
                     mm.Application("|-"),
                     sorting_axiom_term,
@@ -412,51 +417,57 @@ class KoreComposer(Composer):
             )
         )
 
-    def load_symbol_constructor_axioms(self, symbol_definition: kore.SymbolDefinition, label: str) -> None:
+    def load_no_confusion_same_constructor(self, symbol_definition: kore.SymbolDefinition) -> Theorem:
         """
-        Generate constructor axioms for symbols marked with `constructor{}()` attribute
+        Generate an axiom saying that a constructor should be injective
         """
-
-        # skip if not a constructor
-        if symbol_definition.get_attribute_by_symbol("constructor") is None:
-            return
 
         encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
         num_sort_vars = len(symbol_definition.sort_variables)
         num_arguments = len(symbol_definition.input_sorts)
 
-        # generate no confusion axiom for the same symbol
-        if num_arguments != 0:
-            pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments * 2)
-            pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
+        assert num_arguments != 0
 
-            sort_pattern_vars = pattern_vars[:num_sort_vars]
-            arg_pattern_vars_left = pattern_vars[num_sort_vars:num_sort_vars + num_arguments]
-            arg_pattern_vars_right = pattern_vars[num_sort_vars + num_arguments:]
+        pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments * 2)
+        pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
-            left_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_left)
-            right_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_right)
+        sort_pattern_vars = pattern_vars[:num_sort_vars]
+        arg_pattern_vars_left = pattern_vars[num_sort_vars:num_sort_vars + num_arguments]
+        arg_pattern_vars_right = pattern_vars[num_sort_vars + num_arguments:]
 
-            left_conj_pattern = mm.Application("\\and", (left_pattern, right_pattern))
+        left_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_left)
+        right_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_right)
 
-            conjunctions = tuple(
-                mm.Application("\\and", (left_arg, right_arg))
-                for left_arg, right_arg in zip(arg_pattern_vars_left, arg_pattern_vars_right)
-            )
+        left_conj_pattern = mm.Application("\\and", (left_pattern, right_pattern))
 
-            right_conj_pattern = mm.Application(encoded_symbol, sort_pattern_vars + conjunctions)
+        conjunctions = tuple(
+            mm.Application("\\and", (left_arg, right_arg))
+            for left_arg, right_arg in zip(arg_pattern_vars_left, arg_pattern_vars_right)
+        )
 
-            statement = mm.AxiomaticStatement(
-                f"{label}-no-confusion",
-                (
-                    mm.Application("|-"),
-                    mm.Application("\\imp", (left_conj_pattern, right_conj_pattern)),
-                ),
-            )
+        right_conj_pattern = mm.Application(encoded_symbol, sort_pattern_vars + conjunctions)
 
-            self.no_confusion_same_constructor[encoded_symbol] = self.load(statement)
+        statement = mm.AxiomaticStatement(
+            f"{self.get_symbol_label(symbol_definition)}-no-confusion",
+            (
+                mm.Application("|-"),
+                mm.Application("\\imp", (left_conj_pattern, right_conj_pattern)),
+            ),
+        )
 
-        # generate no confusion axiom for \kore-dv
+        theorem = self.load(statement)
+        self.no_confusion_same_constructor[symbol_definition] = theorem
+
+        return theorem
+
+    def load_no_confusion_with_dv(self, symbol_definition: kore.SymbolDefinition) -> Theorem:
+        """
+        Generate an axiom saying that the constructor term is not overlapping with any domain value
+        """
+        encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
+        num_sort_vars = len(symbol_definition.sort_variables)
+        num_arguments = len(symbol_definition.input_sorts)
+
         pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments + 2)
         pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
         dv_sort_var, dv_body_var = pattern_vars[:2]
@@ -466,42 +477,101 @@ class KoreComposer(Composer):
         conj_pattern = mm.Application("\\and", (left_pattern, right_pattern))
         not_conj_pattern = mm.Application("\\not", (conj_pattern, ))
         statement = mm.AxiomaticStatement(
-            f"{label}-no-confusion-with-dv",
+            f"{self.get_symbol_label(symbol_definition)}-no-confusion-with-dv",
             (
                 mm.Application("|-"),
                 not_conj_pattern,
             ),
         )
-        self.no_confusion_with_dv[encoded_symbol] = self.load(statement)
+
+        theorem = self.load(statement)
+        self.no_confusion_with_dv[symbol_definition] = theorem
+
+        return theorem
+
+    def load_no_confusion_diff_constructor(
+        self, constructor1: kore.SymbolDefinition, constructor2: kore.SymbolDefinition
+    ) -> Theorem:
+        constructor_symbol1 = KoreEncoder.encode_symbol(constructor1.symbol)
+        num_sort_vars1 = len(constructor1.sort_variables)
+        num_arguments1 = len(constructor1.input_sorts)
+
+        constructor_symbol2 = KoreEncoder.encode_symbol(constructor2.symbol)
+        num_sort_vars2 = len(constructor2.sort_variables)
+        num_arguments2 = len(constructor2.input_sorts)
+
+        pattern_var_names = self.gen_metavariables(
+            "#Pattern",
+            num_sort_vars1 + num_arguments1 + num_sort_vars2 + num_arguments2,
+        )
+        pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
+
+        left_pattern = mm.Application(constructor_symbol1, pattern_vars[:num_sort_vars1 + num_arguments1])
+        right_pattern = mm.Application(constructor_symbol2, pattern_vars[num_sort_vars1 + num_arguments1:])
+
+        statement = mm.AxiomaticStatement(
+            f"{self.get_symbol_label(constructor1)}-no-confusion-with-{self.sanitize_label_name(constructor_symbol2)}",
+            (
+                mm.Application("|-"),
+                mm.Application(
+                    "\\not",
+                    (mm.Application("\\and", (left_pattern, right_pattern)), ),
+                ),
+            ),
+        )
+
+        theorem = self.load(statement)
+        self.no_confusion_diff_constructor[constructor1, constructor2] = theorem
+
+        return theorem
+
+    def get_no_confusion_same_constructor(self, symbol_definition: kore.SymbolDefinition) -> Optional[Theorem]:
+        if symbol_definition not in self.constructors:
+            return None
+
+        if symbol_definition in self.no_confusion_same_constructor:
+            return self.no_confusion_same_constructor[symbol_definition]
+
+        return self.load_no_confusion_same_constructor(symbol_definition)
+
+    def get_no_confusion_with_dv(self, symbol_definition: kore.SymbolDefinition) -> Optional[Theorem]:
+        if symbol_definition not in self.constructors:
+            return None
+
+        if symbol_definition in self.no_confusion_with_dv:
+            return self.no_confusion_with_dv[symbol_definition]
+
+        return self.load_no_confusion_with_dv(symbol_definition)
+
+    def get_no_confusion_diff_constructor(
+        self, constructor1: kore.SymbolDefinition, constructor2: kore.SymbolDefinition
+    ) -> Optional[Theorem]:
+        if constructor2 not in self.constructors:
+            return None
+
+        if (constructor1, constructor2) in self.no_confusion_diff_constructor:
+            return self.no_confusion_diff_constructor[constructor1, constructor2]
+
+        return self.load_no_confusion_diff_constructor(constructor1, constructor2)
+
+    def load_symbol_constructor_axioms(self, symbol_definition: kore.SymbolDefinition) -> None:
+        """
+        Generate constructor axioms for symbols marked with `constructor{}()` attribute
+        """
+
+        # skip if not a constructor
+        if symbol_definition.get_attribute_by_symbol("constructor") is None:
+            return
+
+        # generate no confusion axiom for the same symbol
+        # self.load_no_confusion_same_constructor(symbol_definition)
+
+        # generate no confusion axiom for \kore-dv
+        # self.load_no_confusion_with_dv(symbol_definition)
 
         # generate no confusion axioms for different symbols
-        for other_constructor in self.constructors:
-            other_encoded_symbol = KoreEncoder.encode_symbol(other_constructor.symbol)
-            other_num_sort_vars = len(other_constructor.sort_variables)
-            other_num_arguments = len(other_constructor.input_sorts)
-
-            pattern_var_names = self.gen_metavariables(
-                "#Pattern",
-                num_sort_vars + num_arguments + other_num_sort_vars + other_num_arguments,
-            )
-            pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
-
-            left_pattern = mm.Application(encoded_symbol, pattern_vars[:num_sort_vars + num_arguments])
-            right_pattern = mm.Application(other_encoded_symbol, pattern_vars[num_sort_vars + num_arguments:])
-
-            statement = mm.AxiomaticStatement(
-                f"{label}-no-confusion-with-{self.sanitize_label_name(other_encoded_symbol)}",
-                (
-                    mm.Application("|-"),
-                    mm.Application(
-                        "\\not",
-                        (mm.Application("\\and", (left_pattern, right_pattern)), ),
-                    ),
-                ),
-            )
-
-            theorem = self.load(statement)
-            self.no_confusion_diff_constructor[encoded_symbol, other_encoded_symbol] = theorem
+        # for other_constructor in self.constructors:
+        #     self.load_no_confusion_diff_constructor(symbol_definition, other_constructor)
 
         self.constructors.append(symbol_definition)
 
@@ -514,21 +584,25 @@ class KoreComposer(Composer):
                 self.sort_to_constructors[symbol_definition.output_sort] = []
             self.sort_to_constructors[symbol_definition.output_sort].append(symbol_definition)
 
-    def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition, label: str) -> None:
+    def load_symbol_definition(self, symbol_definition: kore.SymbolDefinition) -> None:
         encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
         arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
+
+        label = self.get_symbol_label(symbol_definition)
 
         self.load_comment(str(symbol_definition))
         self.load_constant(encoded_symbol, arity, label)
 
-        self.load_symbol_sorting_lemma(symbol_definition, label)
-        self.load_symbol_constructor_axioms(symbol_definition, label)
+        self.load_symbol_sorting_lemma(symbol_definition)
+        self.load_symbol_constructor_axioms(symbol_definition)
 
-    def load_sort_definition(self, sort_definition: kore.SortDefinition, label: str) -> None:
+    def load_sort_definition(self, sort_definition: kore.SortDefinition) -> None:
         encoded_sort = KoreEncoder.encode_sort(sort_definition.sort_id)
         arity = len(sort_definition.sort_variables)
 
         assert arity == 0, "parametric sort not supported"
+
+        label = self.get_sort_label(sort_definition)
 
         self.load_comment(str(sort_definition))
         self.load_constant(encoded_sort, arity, label)
@@ -546,7 +620,7 @@ class KoreComposer(Composer):
         self.all_sorts.append(sort_definition)
 
         # add axioms saying that hooked sorts are disjoint
-        if (sort_definition.hooked or sort_definition.sort_id == "SortId") \
+        if (sort_definition.hooked or sort_definition.get_attribute_by_symbol("token") is not None) \
            and len(sort_definition.sort_variables) == 0:
             # TODO: could there be hooked sorts with sort variables?
             for other_hooked_sort in self.hooked_sorts:
@@ -844,6 +918,53 @@ class KoreComposer(Composer):
 
         return encoded_pattern
 
+    def load_no_confusion_hooked_sort(
+        self, sort_instance: kore.SortInstance, symbol_definition: kore.SymbolDefinition
+    ) -> Theorem:
+        num_sort_vars = len(symbol_definition.sort_variables)
+        num_arguments = len(symbol_definition.input_sorts)
+
+        encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
+
+        pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments)
+        pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
+
+        left_pattern = mm.Application(encoded_symbol, pattern_vars[:num_sort_vars + num_arguments])
+        right_pattern = mm.Application("\\inh", (self.encode_pattern(sort_instance), ))
+
+        assert isinstance(sort_instance.definition, kore.SortDefinition)
+
+        sort_label = self.get_sort_label(sort_instance.definition)
+        symbol_label = self.get_symbol_label(symbol_definition)
+
+        axiom = mm.AxiomaticStatement(
+            f"hooked-sort-no-confusion-{sort_label}-{symbol_label}",
+            (
+                mm.Application("|-"),
+                mm.Application(
+                    "\\not",
+                    (mm.Application("\\and", (left_pattern, right_pattern)), ),
+                ),
+            ),
+        )
+
+        theorem = self.load(axiom)
+        self.no_confusion_hooked_sort[sort_instance, symbol_definition] = theorem
+
+        return theorem
+
+    def get_no_confusion_hooked_sort(self, sort_instance: kore.SortInstance,
+                                     symbol_definition: kore.SymbolDefinition) -> Optional[Theorem]:
+        assert isinstance(sort_instance.definition, kore.SortDefinition)
+
+        if not sort_instance.definition.hooked or symbol_definition not in self.constructors:
+            return None
+
+        if (sort_instance, symbol_definition) in self.no_confusion_hooked_sort:
+            return self.no_confusion_hooked_sort[sort_instance, symbol_definition]
+
+        return self.load_no_confusion_hooked_sort(sort_instance, symbol_definition)
+
     def load_sort_constructor_axioms(self) -> None:
         """
         Add no-junk axioms for sorts
@@ -914,32 +1035,17 @@ class KoreComposer(Composer):
             # since we don't have information on any hooked sort
             # we will assume that any constructor is disjoint from
             # their domain
-            if sort_definition.hooked:
-                for j, symbol_definition in enumerate(self.constructors):
-                    num_sort_vars = len(symbol_definition.sort_variables)
-                    num_arguments = len(symbol_definition.input_sorts)
+            # if sort_definition.hooked:
+            #     for j, symbol_definition in enumerate(self.constructors):
+            #         self.load_no_confusion_hooked_sort(sort_instance, symbol_definition)
 
-                    encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
+    def get_sort_label(self, sort: kore.SortDefinition) -> str:
+        assert sort in self.sort_labels
+        return self.sort_labels[sort]
 
-                    pattern_var_names = self.gen_metavariables("#Pattern", num_sort_vars + num_arguments)
-                    pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
-
-                    left_pattern = mm.Application(encoded_symbol, pattern_vars[:num_sort_vars + num_arguments])
-                    right_pattern = mm.Application("\\inh", (self.encode_pattern(sort_instance), ))
-
-                    axiom = mm.AxiomaticStatement(
-                        f"hooked-sort-no-confusion-{i}-{j}",
-                        (
-                            mm.Application("|-"),
-                            mm.Application(
-                                "\\not",
-                                (mm.Application("\\and", (left_pattern, right_pattern)), ),
-                            ),
-                        ),
-                    )
-
-                    theorem = self.load(axiom)
-                    self.no_confusion_hooked_sort[symbol_definition.symbol, sort_instance] = theorem
+    def get_symbol_label(self, symbol: kore.SymbolDefinition) -> str:
+        assert symbol in self.symbol_labels
+        return self.symbol_labels[symbol]
 
     def load_module_sentences(self, module: kore.Module) -> None:
         """
@@ -957,11 +1063,13 @@ class KoreComposer(Composer):
 
         with self.in_segment("sort"):
             for index, (_, sort_definition) in enumerate(module.sort_map.items()):
-                self.load_sort_definition(sort_definition, f"{module.name}-sort-{index}")
+                self.sort_labels[sort_definition] = f"{module.name}-sort-{index}"
+                self.load_sort_definition(sort_definition)
 
         with self.in_segment("symbol"):
             for index, (_, symbol_definition) in enumerate(module.symbol_map.items()):
-                self.load_symbol_definition(symbol_definition, f"{module.name}-symbol-{index}")
+                self.symbol_labels[symbol_definition] = f"{module.name}-symbol-{index}"
+                self.load_symbol_definition(symbol_definition)
 
         for index, axiom in enumerate(module.axioms):
             functional_symbol = KoreTemplates.get_symbol_of_functional_axiom(axiom)

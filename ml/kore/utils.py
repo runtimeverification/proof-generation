@@ -55,6 +55,7 @@ class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisito
     """
     def __init__(self, alias_definitions: Iterable[AliasDefinition]):
         super().__init__()
+        self.changed = False
         self.alias_map: Dict[str, AliasDefinition] = {}
 
         for alias_def in alias_definitions:
@@ -93,6 +94,7 @@ class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisito
             if isinstance(arg, Application):
                 symbol_name = arg.symbol.get_symbol_name()
                 if symbol_name in self.alias_map:
+                    self.changed = True
                     pattern.arguments[i] = AliasDefinitionExpander.expand_alias_def(arg, self.alias_map[symbol_name])
 
     def postvisit_application(self, application: Application, *args: Any) -> None:
@@ -199,8 +201,14 @@ class KoreUtils:
         and remove all alias definitions
         """
         alias_defs = list(module.alias_map.values())
+        expander = AliasDefinitionExpander(alias_defs)
 
-        AliasDefinitionExpander(alias_defs).visit(module)
+        # keep expanding until no further change is made
+        while True:
+            expander.changed = False
+            expander.visit(module)
+            if not expander.changed:
+                break
 
         for alias_def in alias_defs:
             module.remove_sentence(alias_def)

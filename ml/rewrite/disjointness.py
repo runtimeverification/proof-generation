@@ -303,12 +303,9 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
         # now we can apply no confusion
-        encoded_symbol = KoreEncoder.encode_symbol(left.symbol)
-        assert (
-            encoded_symbol in self.composer.no_confusion_same_constructor
-        ), f"cannot find no confusion axiom for symbol {encoded_symbol}"
-
-        no_confusion_axiom = self.composer.no_confusion_same_constructor[encoded_symbol]
+        assert isinstance(left.symbol.definition, kore.SymbolDefinition)
+        no_confusion_axiom = self.composer.get_no_confusion_same_constructor(left.symbol.definition)
+        assert no_confusion_axiom is not None, f"cannot find no confusion axiom for symbol {no_confusion_axiom}"
 
         no_confusion_instance = no_confusion_axiom.match_and_apply(
             mm.ProvableStatement(
@@ -351,27 +348,28 @@ class DisjointnessProofGenerator(ProofGenerator):
     """
 
     def prove_diff_constructor_disjointness(self, left: kore.Application, right: kore.Application) -> Proof:
-        encoded_left_symbol = KoreEncoder.encode_symbol(left.symbol)
-        encoded_right_symbol = KoreEncoder.encode_symbol(right.symbol)
-
         # symmetry
-        if (
-                encoded_right_symbol,
-                encoded_left_symbol,
-        ) in self.composer.no_confusion_diff_constructor:
-            disjointness_proof = self.composer.get_theorem("disjointness-symmetry").apply(
-                self.prove_diff_constructor_disjointness(right, left)
-            )
-        else:
-            assert (
-                encoded_left_symbol,
-                encoded_right_symbol,
-            ) in self.composer.no_confusion_diff_constructor, f"unable to find no confusion axiom for {encoded_left_symbol} and {encoded_right_symbol}"
+        # self.composer.get_no_confusion_diff_constructor(left.symbol.definition, right.symbol.definition)
+        assert isinstance(left.symbol.definition, kore.SymbolDefinition) and \
+               isinstance(right.symbol.definition, kore.SymbolDefinition)
+        no_confusion = self.composer.get_no_confusion_diff_constructor(left.symbol.definition, right.symbol.definition)
+        assert no_confusion is not None, f"unable to find no confusion axiom for {left.symbol} and {right.symbol}"
 
-            no_confusion = self.composer.no_confusion_diff_constructor[encoded_left_symbol, encoded_right_symbol]
-            disjointness_proof = no_confusion.match_and_apply(
-                self.get_disjointness_statement(left, right, quantify=False)
-            )
+        # if (
+        #         encoded_right_symbol,
+        #         encoded_left_symbol,
+        # ) in self.composer.no_confusion_diff_constructor:
+        #     disjointness_proof = self.composer.get_theorem("disjointness-symmetry").apply(
+        #         self.prove_diff_constructor_disjointness(right, left)
+        #     )
+        # else:
+        #     assert (
+        #         encoded_left_symbol,
+        #         encoded_right_symbol,
+        #     ) in self.composer.no_confusion_diff_constructor, f"unable to find no confusion axiom for {encoded_left_symbol} and {encoded_right_symbol}"
+
+        # no_confusion = self.composer.no_confusion_diff_constructor[encoded_left_symbol, encoded_right_symbol]
+        disjointness_proof = no_confusion.match_and_apply(self.get_disjointness_statement(left, right, quantify=False))
 
         # need to quantify all free vars in the rhs
         for var in self.get_free_vars_in_pattern(right):
@@ -469,13 +467,11 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
     def prove_hooked_sort_disjointness(self, left: kore.Application, var: kore.Variable) -> Proof:
-        assert (
-            left.symbol.get_symbol_name(),
-            var.sort,
-        ) in self.composer.no_confusion_hooked_sort
-        assert isinstance(var.sort, kore.SortInstance)
+        assert isinstance(var.sort, kore.SortInstance) and \
+               isinstance(left.symbol.definition, kore.SymbolDefinition)
 
-        no_confusion = self.composer.no_confusion_hooked_sort[left.symbol.get_symbol_name(), var.sort]
+        no_confusion = self.composer.get_no_confusion_hooked_sort(var.sort, left.symbol.definition)
+        assert no_confusion is not None
 
         encoded_left = self.composer.encode_pattern(left)
         encoded_sort = self.composer.encode_pattern(var.sort)
@@ -600,10 +596,9 @@ class DisjointnessProofGenerator(ProofGenerator):
             assert isinstance(left, kore.Application), f"left pattern {left} should be an application"
 
             # right is a variable of a hooked sort
-            if (
-                    left.symbol.get_symbol_name(),
-                    right.sort,
-            ) in self.composer.no_confusion_hooked_sort:
+            assert isinstance(right.sort, kore.SortInstance) and \
+                   isinstance(left.symbol.definition, kore.SymbolDefinition)
+            if self.composer.get_no_confusion_hooked_sort(right.sort, left.symbol.definition) is not None:
                 return self.prove_hooked_sort_disjointness(left, right)
 
             # TODO: handle parametric sorts
