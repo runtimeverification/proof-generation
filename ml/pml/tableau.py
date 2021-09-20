@@ -183,7 +183,6 @@ def run_pgsolver(game: SerializedParityGame) -> bool:
     return match.group(1) == '0'
 
 # fresh_evar = map(lambda i : EVar('$' + str(i)), count())
-
 def build_closures(a: Matches, K: List[EVar], signature: Dict[Symbol, int]) -> List[Closure]:
     closures = add_to_closure(a, frozenset(), K)
     C = a.free_evars().union([a.variable])
@@ -193,6 +192,7 @@ def add_app_dapp_to_closure(pairs : List[Tuple[Matches, Matches]] , partialClosu
     def is_atomic_application(app : App) -> bool:
         return all(map(lambda arg: isinstance(arg, EVar), app.arguments))
 
+    curr_closures = [partialClosure]
     all_of : List[Assertion] = []
     for (app, dapp) in pairs:
         assert isinstance(app.pattern, App)
@@ -203,11 +203,15 @@ def add_app_dapp_to_closure(pairs : List[Tuple[Matches, Matches]] , partialClosu
             if Matches(app.variable, app.pattern.negate()) == dapp:
                 return add_to_closure(Matches(app.variable, Bottom()), partialClosure, K)
 
-            for ci, phii in zip(app.pattern.arguments, dapp.pattern.arguments):
-                assert isinstance(ci, EVar)
-                all_of += [Matches(ci, phii)]
-
-    return add_to_closure(AllOf(frozenset(all_of)), partialClosure, K)
+            new_closures = []
+            for curr_closure in curr_closures:
+                any_of : List[Assertion] = []
+                for ci, phii in zip(app.pattern.arguments, dapp.pattern.arguments):
+                    assert isinstance(ci, EVar)
+                    any_of += [Matches(ci, phii)]
+                new_closures += add_to_closure(AllOf(frozenset(all_of)), curr_closure, K)
+            curr_closures = new_closures
+    return curr_closures
 
 def add_to_closure(assertion: Assertion, partialClosure: Closure, K: List[EVar]) -> List[Closure]:
     if isinstance(assertion, Matches):

@@ -120,6 +120,12 @@ def test_build_tableaux() -> None:
 
     assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
     closures = set(build_closures(assertion, [c], { C : 0, S : 1 }))
+    cl_00 =  frozenset( [ assertion
+                        , Matches(c, App(S, App(C)))
+                        , Matches(c, DApp(S, DApp(C)))
+                        , Matches(c,  App(S, c))
+                        , Matches(c,  App(C))
+                        ])
     cl_01 =  frozenset([ assertion
                        , Matches(c,  App(S,  App(C)))
                        , Matches(c, DApp(S, DApp(C)))
@@ -139,18 +145,16 @@ def test_build_tableaux() -> None:
                        , Matches(c, DApp(C))
                        ])
 
-    assert closures == { # frozenset( [ assertion
-                         #            , Matches(c, App(S, App(C)))
-                         #            , Matches(c, DApp(S, DApp(C)))  ---- implies Matches(c, DApp('C')) 
-                         #            , Matches(c,  App(S, c))
-                         #            , Matches(c,  App(C))
-                         #            ])
-                         #
-                         cl_01, cl_10, cl_11
-                       }
-    tableaux = build_tableaux(assertion, constants, signature)
-    print(tableaux)
-    assert(len(tableaux)) == 3
+    assert closures == { cl_00,  cl_01, cl_10, cl_11 }
+    tableaux = build_tableaux(assertion, [c], signature)
+    # Tableaux size grows quickly for larger constant lists
+    # 1 --> 0.28s
+    # 2 --> 0.36s
+    # 3 --> 0.56s
+    # 4 --> 25s
+    # Tests for larger set of constants gets cumbersome, so we will test more complicated tests using `is_sat`.
+    assert(len(tableaux)) == 4
+    assert { cl_00 : frozenset([cl_00]) } in tableaux
     assert { cl_01 : frozenset() } in tableaux
     assert { cl_10 : frozenset() } in tableaux
     assert { cl_11 : frozenset() } in tableaux
