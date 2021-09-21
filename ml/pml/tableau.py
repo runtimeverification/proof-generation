@@ -200,11 +200,12 @@ def add_app_dapp_to_closure(pairs : List[Tuple[Matches, Matches]] , partialClosu
         assert app.pattern.symbol == dapp.pattern.symbol
 
         if is_atomic_application(app.pattern):
-            if Matches(app.variable, app.pattern.negate()) == dapp:
-                return add_to_closure(Matches(app.variable, Bottom()), partialClosure, K)
-
             new_closures = []
             for curr_closure in curr_closures:
+                if Matches(app.variable, app.pattern.negate()) == dapp:
+                    return add_to_closure(Matches(app.variable, Bottom()), curr_closure, K)
+
+
                 any_of : List[Assertion] = []
                 for ci, phii in zip(app.pattern.arguments, dapp.pattern.arguments):
                     assert isinstance(ci, EVar)
