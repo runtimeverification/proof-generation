@@ -3,8 +3,6 @@
 set -euo pipefail
 
 mypy --show-column-numbers --strict ml/pml
-mypy --show-column-numbers ml scripts tests
-
 export PYTHONHASHSEED=1 # Avoid non-deterministic issues with sets.
                         # It might make sense to test with a few different seeds
 echo $PYTHONHASHSEED

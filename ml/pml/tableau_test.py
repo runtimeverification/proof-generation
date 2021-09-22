@@ -24,25 +24,12 @@ def test_definition_list() -> None:
            , Nu(Y, App(S, SVar(0)))
            ]
 
-def test_add_to_closure() -> None:
-    closure = frozenset([ Matches(c, DApp(S, Not(c)))
-                        , Matches(c, App(S, c1))
-                        , Matches(c, DApp(C))
-                        , Matches(c1, App(C))
-                        , Matches(c1, DApp(S, Not(c1)))
-                        , Matches(c, App(S, App(C)))
-                        ])
-    closures = set(complete_closure_for_signature([closure], frozenset([c, c1]), [c, c1], { S : 1, C : 0 }))
-    assert closures == { closure.union(frozenset([Matches(c1, DApp(S, Not(c)))]))
-                       , closure.union(frozenset([Matches(c1,  App(S, c))]))
-                       }
-
 def test_build_tableaux() -> None:
     constants = [c, c1, c2, c3, c4]
 
     assertion = Matches(c, Bottom())
-    signature : Dict[Symbol, int] = {} 
-    closures = set(build_closures(assertion, constants, signature))
+    signature : Dict[Symbol, int] = {}
+    closures = set(build_closures(assertion, constants, signature, {}))
     assert closures == set()
     game = build_tableaux(assertion, constants, signature)
     root : PGNodeGeneralized = Root(assertion)
@@ -51,17 +38,16 @@ def test_build_tableaux() -> None:
 
     assertion = Matches(c, Top())
     signature = {}
-    closures = set(build_closures(assertion, constants, signature))
+    closures = set(build_closures(assertion, constants, signature, {}))
     assert closures == {frozenset([assertion])}
     game = build_tableaux(assertion, constants, signature)
-    print(game)
     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
                    , PGNode(assertion, frozenset([assertion])) : frozenset([PGNode(assertion, frozenset([assertion]))])
                    }
 
     assertion = Matches(c, App(C))
     signature = { C : 0 }
-    closures = set(build_closures(assertion, constants, signature))
+    closures = set(build_closures(assertion, constants, signature, {}))
     assert closures == {frozenset([assertion])}
     game = build_tableaux(assertion, constants, signature)
     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
@@ -70,9 +56,10 @@ def test_build_tableaux() -> None:
 
     assertion = Matches(c, DApp(C))
     signature = { C : 0 }
-    closures = set(build_closures(assertion, constants, signature))
+    closures = set(build_closures(assertion, constants, signature, {}))
     assert closures == {frozenset([assertion])}
     game = build_tableaux(assertion, constants, signature)
+    print(game)
     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
                    , PGNode(assertion, frozenset([assertion])) : frozenset([PGNode(assertion, frozenset([assertion]))])
                    }
@@ -98,7 +85,7 @@ def test_build_tableaux() -> None:
     cl_01___ = frozenset([assertion, m_0_____,  m__1____])
     cl_11___ = frozenset([assertion, m_1_____,  m__1____])
 
-    closures = set(build_closures(assertion, constants, signature))
+    closures = set(build_closures(assertion, constants, signature, {}))
     assert closures == { cl_00___, cl_10___, cl_01___, cl_11___ }
 
     cl_next___0000 = frozenset([m___0___, m____0__, m_____0_, m______0])
@@ -128,13 +115,13 @@ def test_build_tableaux() -> None:
                                               ])
 
     assertion = Matches(c, And(App(C), DApp(C)))
-    closures = set(build_closures(assertion, constants, { C : 0 }))
+    closures = set(build_closures(assertion, constants, { C : 0 }, {}))
     assert closures == set()
     tableaux = build_tableaux(assertion, constants, signature)
     assert tableaux == [ ]
 
     assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
-    closures = set(build_closures(assertion, [c], { C : 0, S : 1 }))
+    closures = set(build_closures(assertion, [c], { C : 0, S : 1 }, {}))
     cl_00 =  frozenset( [ assertion
                         , Matches(c, App(S, App(C)))
                         , Matches(c, DApp(S, DApp(C)))
