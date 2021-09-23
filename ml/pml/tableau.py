@@ -109,7 +109,7 @@ SerializedParityGame = List[SerializedParityGameEntry]
 
 Tableau = Dict[Closure, FrozenSet[Closure]]
 
-def print_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: DefList) -> SerializedParityGame:
+def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: DefList) -> SerializedParityGame:
     ret = []
     keys = list(edges.keys())
 
@@ -138,14 +138,19 @@ def print_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: DefL
             return 2 * len(def_list)
 
     def player(node: PGNodeGeneralized) -> int:
-        if isinstance(node, (Root, Unsat, Top, Bottom, Mu, Nu, SVar, EVar)):
+        if isinstance(node, (Root, Unsat)):
             # There is no choice to be made here, so it does not matter whose turn it is.
             return 0 
         if isinstance(node.assertion, Matches):
+            if isinstance(node.assertion.pattern, (Top, Bottom, Mu, Nu, SVar, EVar)) or \
+               (isinstance(node.assertion.pattern, Not) and isinstance(node.assertion.pattern.subpattern, EVar)):
+                # There is no choice to be made here, so it does not matter whose turn it is.
+                return 0 
             if isinstance(node.assertion.pattern, (And, Forall, DApp)):
                 return 1
             if isinstance(node.assertion.pattern, (Or,  Exists, App)):
                 return 0
+            raise RuntimeError("Unimplemented: " + str(node.assertion.pattern))
         if isinstance(node.assertion, AllOf):
             return 1
         if isinstance(node.assertion, AnyOf):
@@ -159,6 +164,7 @@ def print_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: DefL
 def run_pgsolver(game: SerializedParityGame) -> bool:
     def entry_to_string(entry : SerializedParityGameEntry) -> str:
         source, priority, player, dests = entry
+        assert len(dests) > 0
         return " ".join([str(source), str(priority), str(player), ",".join(map(str, dests))])
     input = "; \n".join(map(entry_to_string, game)) + ';'
     output = check_output(['pgsolver', '-local',  'stratimprloc2', '0'], input=input, text=True)
@@ -392,19 +398,10 @@ def build_tableaux(assertion : Matches, K: List[EVar], signature: Signature) -> 
         build_tableau(closure, tableau, game, K, signature)
     return game
 
-def tableau_to_parity_game(tableau: Tableau) -> ParityGame:
-    pass
-
 def is_sat(p: Pattern, K: List[EVar], signature: Signature) -> bool:
-    tableaux = build_tableaux(Matches(K[0], p), K, signature)
-    for tableau in tableaux:
-        return True
-    return False
-#def is_sat(p: Pattern) -> bool:
-#    assertion = Matches(fresh_evar.__next__(), p)
-#    for tableau in build_tableaux(assertion):
-#        pg = tableau_to_parity_game(tableau)
-#        if run_pgsolver(pg):
-#            return True
-#    return False
-#
+    p = p.to_positive_normal_form()
+    game = build_tableaux(Matches(K[0], p), K, signature)
+    game[Unsat()] = frozenset({Unsat()})
+    serialized = serialize_parity_game(Root(Matches(K[0], p)), game, definition_list(p, []))
+    return run_pgsolver(serialized)
+

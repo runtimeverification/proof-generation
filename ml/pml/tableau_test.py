@@ -165,7 +165,7 @@ def test_build_tableaux() -> None:
     assert game[PGNode(Matches(c, App(S, App(C))), cl_01)] == frozenset({Unsat()})
     assert game[PGNode(Matches(c, DApp(S, DApp(C))), cl_01)] == frozenset({Unsat()})
 
-def xtest_is_satisfiable() -> None:
+def test_is_satisfiable() -> None:
     signature = {C: 0, S: 1}
 
     assert not is_sat(Bottom(), [c], signature)
@@ -173,26 +173,24 @@ def xtest_is_satisfiable() -> None:
 
     assert not is_sat(And(EVar('c'), Not(EVar('c'))), [c], signature)
     assert not is_sat(And(Not(EVar('c')), EVar('c')), [c], signature)
-#
-#    assert     is_sat(App(S))
-#    assert     is_sat(DApp(S))
-#    assert not is_sat(And(App(S),DApp(S)))
-#
-#    assert     is_sat(App(S, App(C)))
 
-#    assert not is_sat(And(App(S, App(C)), DApp(S, DApp(C))))
+    assert     is_sat(App(S),              [c, c1], signature)
+    assert     is_sat(DApp(S),             [c, c1], signature)
+    assert not is_sat(And(App(S),DApp(S)), [c, c1], signature)
+    assert     is_sat(App(S, App(C)),      [c, c1], signature)
+    assert not is_sat( And(App(S, App(C)), DApp(S, DApp(C)))
+                     , [c, c1, c2], signature
+                     )
 
+    assert     is_sat(App(S, App(C)),        [c, c1], signature)
+    assert     is_sat(DApp(S, Not(App(C))),  [c, c1], signature)
 
-
-#     assert     is_sat(App(S, C))
-#     assert     is_sat(DApp(S, Not(C)))
-#
-#     assert     is_sat(And(S, Not(C)))
-#     assert not is_sat(And(S, Not(S)))
-#     assert not is_sat(And(  App(S, C)
-#                          , DApp(S, Not(C))
-#                          )
-#                       )
+     assert     is_sat(And(S, Not(C)))
+     assert not is_sat(And(S, Not(S)))
+     assert not is_sat(And(  App(S, C)
+                          , DApp(S, Not(C))
+                          )
+                       )
 #
 #     assert     is_sat(And(S, Not(C)))
 #     assert not is_sat(And(S, Not(S)))
@@ -226,7 +224,7 @@ def xtest_is_satisfiable() -> None:
 #                                        , App(NEXT , X)
 #                                        )))
 
-#def test_print_parity_game() -> None:
+#def test_serialize_parity_game() -> None:
 #    p0  = Matches(e, Mu(X, App(S, x)))
 #    p1  = Matches(e, App(S, App(C), x))
 #    p21 = Matches(e, App(S, e1, x))
@@ -238,7 +236,7 @@ def xtest_is_satisfiable() -> None:
 #                         , p21
 #                         , p22
 #                         ] )
-#    assert print_parity_game( PGNode(p0, closure)
+#    assert serialize_parity_game( PGNode(p0, closure)
 #                            , { PGNode(p0, closure)  : frozenset([ PGNode(p1, closure) ])
 #                              , PGNode(p1, closure)  : frozenset([ PGNode(p2, closure) ])
 #                              , PGNode(p2, closure)  : frozenset([ PGNode(p21, closure), PGNode(p22, closure) ])
