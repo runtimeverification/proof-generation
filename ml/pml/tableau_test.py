@@ -59,11 +59,9 @@ def test_build_tableaux() -> None:
     closures = set(build_closures(assertion, constants, signature, {}))
     assert closures == {frozenset([assertion])}
     game = build_tableaux(assertion, constants, signature)
-    print(game)
     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
                    , PGNode(assertion, frozenset([assertion])) : frozenset([PGNode(assertion, frozenset([assertion]))])
                    }
-    return
 
     assertion = Matches(c, App(S, App(C)))
     signature = { S : 1, C : 0 }
@@ -99,26 +97,35 @@ def test_build_tableaux() -> None:
     cl_next = [ cl_next___0000, cl_next___0010, cl_next___0100, cl_next___0110 ]
 
     game = build_tableaux(assertion, [c, c1], signature)
+    assert game[Root(assertion)] == frozenset([PGNode(assertion, cl) for cl in closures])
 
-    assert game[Root(assertion)]             == frozenset([cl_00___, cl_01___, cl_10___, cl_11___])
-#    assert game[PGNode(assertion, cl_00__))] == frozenset([])
+    allof_c  = AllOf(frozenset([Matches(c,  App(C)), Matches(c, App(S, c ))]))
+    allof_c1 = AllOf(frozenset([ Matches(c1, App(C))
+                               , Matches(c, App(S, c1))
+                               , allof_c.negate()
+                               ]))
 
-    assert tableaux[0] == { cl_00___ :  frozenset([cl_00___]) }
-    assert cl_01___.union(cl_next___0000) in tableaux[1][cl_01___]
-    assert cl_01___.union(cl_next___0010) in tableaux[1][cl_01___]
-    assert cl_01___.union(cl_next___0100) in tableaux[1][cl_01___]
-    assert cl_01___.union(cl_next___0110) in tableaux[1][cl_01___]
-    assert tableaux[1][cl_01___] == frozenset([ cl_01___.union(cl_next___0000)
-                                              , cl_01___.union(cl_next___0010)
-                                              , cl_01___.union(cl_next___0100)
-                                              , cl_01___.union(cl_next___0110)
-                                              ])
+    assert game[PGNode(assertion, cl_00___)] == frozenset({PGNode(allof_c, cl_00___)})
+    assert game[PGNode(allof_c, cl_00___)] == frozenset({ PGNode(Matches(c, App(C)),    cl_00___)
+                                                      , PGNode(Matches(c, App(S, c)), cl_00___)
+                                                      })
+    assert game[PGNode(Matches(c, App(C)), cl_00___)] == frozenset({PGNode(Matches(c, App(C)), cl_00___)})
+    assert game[PGNode(Matches(c, App(S, c)), cl_00___)] == frozenset({PGNode(Matches(c, App(S, c)), cl_00___)})
+
+
+    for cl_xx___ in [cl_01___, cl_10___, cl_11___]:
+        assert len(game[PGNode(assertion, cl_xx___)]) == 4
+        for cl_next___0xx0 in cl_next:
+            assert PGNode(allof_c1, cl_xx___.union(cl_next___0xx0)) in game[PGNode(assertion, cl_xx___)]
+            # TODO: There's more to check here.
 
     assertion = Matches(c, And(App(C), DApp(C)))
     closures = set(build_closures(assertion, constants, { C : 0 }, {}))
     assert closures == set()
-    tableaux = build_tableaux(assertion, constants, signature)
-    assert tableaux == [ ]
+    game = build_tableaux(assertion, constants, signature)
+    assert game == {Root(assertion) : frozenset({Unsat()})}
+
+    return
 
     assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
     closures = set(build_closures(assertion, [c], { C : 0, S : 1 }, {}))

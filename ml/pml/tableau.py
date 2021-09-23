@@ -305,8 +305,8 @@ def complete_closures_for_signature( closures: List[Tuple[Closure, PartialEdges]
     ret : List[Closure] = []
     for (closure, partial_edges) in closures:
         for (source, dest) in partial_edges:
-            from_node = PGNode(source, closure)
-            parity_game[from_node] = parity_game.get(from_node, frozenset()).union([PGNode(dest, closure)])
+            source_node = PGNode(source, closure)
+            parity_game[source_node] = parity_game.get(source_node, frozenset()).union([PGNode(dest, closure)])
         ret += [closure]
     return ret
 
@@ -333,6 +333,7 @@ def build_tableau( currentNode: Closure
         if all(map(lambda arg: isinstance(arg, EVar), p.arguments)):
             continue
 
+        # TODO: Fixme: We need new_clousre == currentNode if instantiation does not bring in new variables.
         new_closure = frozenset({ a for a in currentNode if p.free_evars() <= p.free_evars().union({assertion.variable}) })
 
         failed_instantiations : List[Assertion] = []
@@ -349,7 +350,10 @@ def build_tableau( currentNode: Closure
                                                           , signature
                                                           , partial_game
                                                           )
-
+            for new_closure in new_closures:
+                source_node = PGNode(assertion, currentNode)
+                dest_node = PGNode(new_assertion, new_closure)
+                partial_game[source_node] = partial_game.get(source_node, frozenset()).union([dest_node])
             next_nodes += new_closures
             # TODO: add game edges
             failed_instantiations += [new_assertion.negate()]
