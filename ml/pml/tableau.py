@@ -264,17 +264,16 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
         else:
             raise RuntimeError("Unimplemented: ")
     elif isinstance(assertion, AllOf):
-        if len(assertion.assertions) == 0:
-            return [(partial_closure, partial_edges)]
-        first, *rest = assertion.assertions
-        new_closures = add_to_closure( first
-                                     , partial_closure
-                                     , partial_edges + [(assertion, first)]
-                                     , K)
-        ret = []
-        for (new_closure, new_edges) in new_closures:
-            ret += add_to_closure(AllOf(frozenset(rest)), new_closure, new_edges, K)
-        return ret
+        curr_closures = [(partial_closure, partial_edges)]
+        for a in assertion.assertions:
+            new_closures = []
+            for (closure, edges) in curr_closures:
+                new_closures += add_to_closure( a
+                                              , closure
+                                              , edges + [(assertion, a)]
+                                              , K)
+            curr_closures = new_closures
+        return curr_closures
     elif isinstance(assertion, AnyOf):
         if len(assertion.assertions) == 0:
             return []
