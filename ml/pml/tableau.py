@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from dataclasses import dataclass
 from itertools import chain, count, islice, product
-from typing import Any, Dict, FrozenSet, Iterable, Iterator, List, Tuple, TypeVar, Union, cast
+from typing import Any, Container, Dict, FrozenSet, Iterable, Iterator, List, Tuple, TypeVar, Union, cast
 from subprocess import check_output
 import re
 
@@ -175,7 +175,6 @@ def is_atomic_application(app : App) -> bool:
 
 def add_app_dapp_to_closure(pairs : List[Tuple[Matches, Matches]] , partial_closure: Closure, partial_edges: PartialEdges, K: List[EVar]) -> List[Tuple[Closure, PartialEdges]]:
     curr_closures = [(partial_closure, partial_edges)]
-    all_of : List[Assertion] = []
     for (app, dapp) in pairs:
         assert isinstance(app.pattern, App)
         assert isinstance(dapp.pattern, DApp)
@@ -198,7 +197,10 @@ def add_app_dapp_to_closure(pairs : List[Tuple[Matches, Matches]] , partial_clos
                 for ci, phii in zip(app.pattern.arguments, dapp.pattern.arguments):
                     assert isinstance(ci, EVar)
                     any_of += [Matches(ci, phii)]
-                new_closures += add_to_closure(AllOf(frozenset(all_of)), curr_closure, curr_edges, K)
+                new_closures += add_to_closure( AnyOf(frozenset(any_of))
+                                              , curr_closure
+                                              , curr_edges + [ (dapp, AnyOf(frozenset(any_of))) ]
+                                              , K)
             curr_closures = new_closures
     return curr_closures
 
@@ -275,8 +277,6 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
             curr_closures = new_closures
         return curr_closures
     elif isinstance(assertion, AnyOf):
-        if len(assertion.assertions) == 0:
-            return []
         ret = []
         for a in assertion.assertions:
             ret += add_to_closure(a, partial_closure, partial_edges + [(assertion, a)], K)
@@ -303,28 +303,35 @@ def complete_closures_for_signature( closures: List[Tuple[Closure, PartialEdges]
             closures = new_closures
 
     ret : List[Closure] = []
+    sources : List[PGNode] = []
+    dests : List[PGNode] = []
     for (closure, partial_edges) in closures:
         for (source, dest) in partial_edges:
             source_node = PGNode(source, closure)
+            sources += [source_node]
             parity_game[source_node] = parity_game.get(source_node, frozenset()).union([PGNode(dest, closure)])
+            dests += [PGNode(dest, closure)]
         ret += [closure]
+    for node in diff(dests, sources):
+        parity_game[node] = frozenset({Unsat()})
     return ret
 
-def diff(l1: List[EVar] , l2_set: FrozenSet[EVar]) -> List[EVar]:
+T = TypeVar('T')
+def diff(l1: List[T] , l2_set: Container[T]) -> List[T]:
     # Preserves order
     return [item for item in l1 if item not in l2_set]
 
 def take(n: int, l: List[EVar]) -> List[EVar]:
   return list(islice(l, n))
 
-def build_tableau( currentNode: Closure
+def build_tableau( curr_node: Closure
                  , partial_tableau: Tableau
                  , partial_game : ParityGame
                  , K: List[EVar]
                  , signature: Signature) -> None:
-    if currentNode in partial_tableau.keys(): return
+    if curr_node in partial_tableau.keys(): return
     next_nodes : List[Closure] = []
-    for assertion in currentNode:
+    for assertion in curr_node:
         if not isinstance(assertion, Matches):
             continue
         p = assertion.pattern
@@ -333,13 +340,15 @@ def build_tableau( currentNode: Closure
         if all(map(lambda arg: isinstance(arg, EVar), p.arguments)):
             continue
 
-        # TODO: Fixme: We need new_clousre == currentNode if instantiation does not bring in new variables.
-        new_closure = frozenset({ a for a in currentNode if p.free_evars() <= p.free_evars().union({assertion.variable}) })
+        # TODO: Fixme: We need new_clousre == curr_node if instantiation does not bring in new variables.
+        new_closure = frozenset({ a for a in curr_node if p.free_evars() <= p.free_evars().union({assertion.variable}) })
 
         failed_instantiations : List[Assertion] = []
-        potential_variables = list(assertion.free_evars()) + take(len(p.arguments), diff(K, free_evars(currentNode)))
+        potential_variables = list(assertion.free_evars()) + take(len(p.arguments), diff(K, free_evars(curr_node)))
 
+        source_node = PGNode(assertion, curr_node)
         for instantiation in product(potential_variables, repeat = len(p.arguments)):
+
             new_assertion = AllOf(frozenset( failed_instantiations
                                            + [ Matches(assertion.variable,  App(p.symbol, *instantiation)) ]
                                            + [ Matches(inst, arg) for (inst, arg) in zip(instantiation, p.arguments) ]
@@ -351,14 +360,16 @@ def build_tableau( currentNode: Closure
                                                           , partial_game
                                                           )
             for new_closure in new_closures:
-                source_node = PGNode(assertion, currentNode)
                 dest_node = PGNode(new_assertion, new_closure)
                 partial_game[source_node] = partial_game.get(source_node, frozenset()).union([dest_node])
+
             next_nodes += new_closures
             # TODO: add game edges
             failed_instantiations += [new_assertion.negate()]
+        if not source_node in partial_game.keys():
+            partial_game[source_node] = frozenset([Unsat()])
 
-    partial_tableau[currentNode] = frozenset(next_nodes)
+    partial_tableau[curr_node] = frozenset(next_nodes)
 
     for node in next_nodes:
         build_tableau(node, partial_tableau, partial_game, K, signature)
@@ -387,7 +398,6 @@ def tableau_to_parity_game(tableau: Tableau) -> ParityGame:
 def is_sat(p: Pattern, K: List[EVar], signature: Signature) -> bool:
     tableaux = build_tableaux(Matches(K[0], p), K, signature)
     for tableau in tableaux:
-        print(tableau)
         return True
     return False
 #def is_sat(p: Pattern) -> bool:
