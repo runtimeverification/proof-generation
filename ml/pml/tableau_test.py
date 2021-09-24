@@ -183,14 +183,14 @@ def test_is_satisfiable() -> None:
                      )
 
     assert     is_sat(App(S, App(C)),        [c, c1], signature)
-    assert     is_sat(DApp(S, Not(App(C))),  [c, c1], signature)
+#    assert     is_sat(DApp(S, Not(App(C))),  [c, c1], signature)
 
-     assert     is_sat(And(S, Not(C)))
-     assert not is_sat(And(S, Not(S)))
-     assert not is_sat(And(  App(S, C)
-                          , DApp(S, Not(C))
-                          )
-                       )
+#    assert     is_sat(And(S, Not(C)))
+#    assert not is_sat(And(S, Not(S)))
+#    assert not is_sat(And(  App(S, C)
+#                         , DApp(S, Not(C))
+#                         )
+#                      )
 #
 #     assert     is_sat(And(S, Not(C)))
 #     assert not is_sat(And(S, Not(S)))
