@@ -276,6 +276,17 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
                                      , edges + [(assertion, Matches(assertion.variable, p.right))]
                                      , K)
             return ret
+        elif isinstance(p, Or):
+            ret = []
+            partial_closure = partial_closure.union([assertion])
+            for next in [p.left, p.right]:
+                ret += add_to_closure( Matches(assertion.variable, next)
+                                     , partial_closure
+                                     , partial_edges + [(assertion, Matches(assertion.variable, next))]
+                                     , K
+                                     )
+            return ret
+
         else:
             raise RuntimeError("Unimplemented: ")
     elif isinstance(assertion, AllOf):
