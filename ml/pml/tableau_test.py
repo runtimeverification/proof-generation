@@ -176,7 +176,7 @@ def test_is_satisfiable() -> None:
 
     assert     is_sat(App(S),              [c, c1], signature)
     assert     is_sat(DApp(S),             [c, c1], signature)
-    assert not is_sat(And(App(S),DApp(S)), [c, c1], signature)
+    assert not is_sat(And(App(C),DApp(C)), [c, c1], signature)
     assert     is_sat(App(S, App(C)),      [c, c1], signature)
     assert not is_sat( And(App(S, App(C)), DApp(S, DApp(C)))
                      , [c, c1, c2], signature
