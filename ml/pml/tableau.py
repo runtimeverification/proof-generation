@@ -121,23 +121,30 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
         return 3 + keys.index(node)
 
     def priority(node: PGNodeGeneralized, def_list: DefList) -> int:
+        # If the lowest-priority infinitly recurring node has even priority, player 0  wins (pattern is sat).
+        # Otherwise player 1 wins (pattern is unsat).
         if isinstance(node, Root):
-            return 0 # Cannot repeat on any trace, so value doesn't matter.
+            return 0 # Cannot repeat infinitly on any trace, so value doesn't matter.
         if isinstance(node, Unsat):
             return 1
         if isinstance(node.assertion, Matches):
+            if isinstance(node.assertion.pattern, (Top, Bottom)):
+                return 0 # Cannot repeat infinitly on any trace, so value doesn't matter.
             if isinstance(node.assertion.pattern, Nu):
                 return 2 * def_list.index(node.assertion.pattern)
             if isinstance(node.assertion.pattern, Mu):
                 return 2 * def_list.index(node.assertion.pattern) + 1
-            if isinstance(node.assertion.pattern, Bottom):
+            if isinstance(node.assertion.pattern, (Exists)):
                 return 2 * len(def_list) + 1
-            else:
-                return 2 * len(def_list)
+            if     isinstance(node.assertion.pattern, App) \
+               and not is_atomic_application(node.assertion.pattern):
+                return 2 * len(def_list) + 1
+            return 2 * len(def_list) + 2
         else:
             return 2 * len(def_list)
 
     def player(node: PGNodeGeneralized) -> int:
+        # If a node has player N, then that player can make a move
         if isinstance(node, (Root, Unsat)):
             # There is no choice to be made here, so it does not matter whose turn it is.
             return 0 
