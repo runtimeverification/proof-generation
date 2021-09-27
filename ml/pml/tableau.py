@@ -192,6 +192,9 @@ def run_pgsolver(game: SerializedParityGame) -> bool:
     if match is None:
         raise RuntimeError("PGGame not well formed?\n" + output)
 
+    # Dot output only works for global strategies for some reason
+    check_output(['pgsolver', '-global',  'recursive', '-d', '/tmp/out.dot'], input=input, text=True)
+
     return match.group(1) == '0'
 
 PartialEdges = List[Tuple[Assertion, Assertion]]
