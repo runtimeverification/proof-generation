@@ -258,24 +258,26 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
                                      , K)
             return [(partial_closure, partial_edges)]
         elif isinstance(p, DApp):
+            partial_closure = partial_closure.union([assertion])
             if (is_atomic_application(p.negate())):
                 partial_edges = partial_edges + [(assertion, assertion)]
             apps = [a for a in partial_closure if    isinstance(a, Matches)
                                                 and isinstance(a.pattern, App)
                                                 and a.pattern.symbol == p.symbol]
             return add_app_dapp_to_closure( list(product(apps, [assertion]))
-                                          , partial_closure.union(frozenset([assertion]))
+                                          , partial_closure
                                           , partial_edges
                                           , K
                                           )
         elif isinstance(p, App):
+            partial_closure = partial_closure.union([assertion])
             if (is_atomic_application(p)):
                 partial_edges = partial_edges + [(assertion, assertion)]
             dapps = [a for a in partial_closure if   isinstance(a, Matches)
                                                 and isinstance(a.pattern, DApp)
                                                 and a.pattern.symbol == p.symbol]
             return add_app_dapp_to_closure( list(product([assertion], dapps))
-                                          , partial_closure.union(frozenset([assertion]))
+                                          , partial_closure
                                           , partial_edges
                                           , K
                                           )
