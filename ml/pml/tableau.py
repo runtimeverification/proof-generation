@@ -144,7 +144,9 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
             return 0
         if isinstance(node, Unsat):
             return 2
-        return 3 + keys.index(node)
+        if node in keys:
+            return 3 + keys.index(node)
+        return 0 # This shouldn't happen!
 
     def priority(node: PGNodeGeneralized, def_list: DefList) -> int:
         # If the lowest-priority infinitly recurring node has even priority, player 0  wins (pattern is sat).

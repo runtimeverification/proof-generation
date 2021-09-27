@@ -149,8 +149,7 @@ def test_build_tableaux() -> None:
 
     closures = set(build_closures(assertion, [c], { C : 0, S : 1 }, {}))
     assert closures == { cl_01, cl_10, cl_11 }
-    print('---------------------------------------')
-    game = build_tableaux(assertion, [c], signature)
+    game = build_tableaux(assertion, [c, c1], signature)
     # Tableaux size grows quickly for larger constant lists
     # 1 --> 0.28s
     # 2 --> 0.36s
@@ -184,7 +183,7 @@ def test_is_satisfiable() -> None:
                      )
 
     assert     is_sat(App(S, App(C)),        [c, c1], signature)
-#    assert     is_sat(DApp(S, Not(App(C))),  [c, c1], signature)
+    assert     is_sat(DApp(S, Not(App(C))),  [c, c1], signature)
 
     assert     is_sat(And(App(D), Not(App(C))), [c, c1], signature)
     assert not is_sat(And(App(C), Not(App(C))), [c, c1], signature)
