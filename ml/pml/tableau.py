@@ -44,6 +44,14 @@ class Assertion:
     def free_evars(self) -> FrozenSet[EVar]:
         raise NotImplementedError
 
+    @abstractmethod
+    def to_latex(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_utf(self) -> str:
+        raise NotImplementedError
+
 @dataclass(frozen=True)
 class Matches(Assertion):
     variable: EVar
@@ -54,6 +62,12 @@ class Matches(Assertion):
 
     def free_evars(self) -> FrozenSet[EVar]:
         return self.pattern.free_evars().union([self.variable])
+
+    def to_latex(self) -> str:
+        return self.variable.to_latex() + ' \\vDash ' + self.pattern.to_latex()
+
+    def to_utf(self) -> str:
+        return self.variable.to_utf() + ' |= ' + self.pattern.to_utf()
 
 @dataclass(frozen=True)
 class AllOf(Assertion):
@@ -68,6 +82,12 @@ class AllOf(Assertion):
             ret = ret.union(assertion.free_evars())
         return ret
 
+    def to_latex(self) -> str:
+        return ' \\bigwedge '.join(map(lambda a: a.to_latex(), self.assertions))
+
+    def to_utf(self) -> str:
+        return ' and '.join(map(lambda a: a.to_utf(), self.assertions))
+
 @dataclass(frozen=True)
 class AnyOf(Assertion):
     assertions: FrozenSet[Assertion]
@@ -80,6 +100,12 @@ class AnyOf(Assertion):
         for assertion in self.assertions:
             ret = ret.union(assertion.free_evars())
         return ret
+
+    def to_latex(self) -> str:
+        return ' \\bigvee '.join(map(lambda a: a.to_latex(), self.assertions))
+
+    def to_utf(self) -> str:
+        return ' or '.join(map(lambda a: a.to_utf(), self.assertions))
 
 Closure = FrozenSet[Assertion]
 def free_evars(cl: Closure) -> FrozenSet[EVar]:
@@ -168,9 +194,9 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
         if isinstance(node, Unsat):
             return "Unsat"
         elif isinstance(node, Root):
-            return str(node.assertion)
+            return node.assertion.to_utf()
         else:
-            return str(node.assertion)
+            return node.assertion.to_utf()
 
     for source, destinations in edges.items():
         ret += [(ident(source),

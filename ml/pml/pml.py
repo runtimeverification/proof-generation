@@ -22,7 +22,16 @@ class Pattern:
     def negate(self) -> 'Pattern':
         raise NotImplementedError
 
+    @abstractmethod
     def to_positive_normal_form(self) -> 'Pattern':
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_latex(self) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def to_utf(self) -> str:
         raise NotImplementedError
 
 @dataclass(frozen=True)
@@ -39,6 +48,13 @@ class Top(Pattern):
     def to_positive_normal_form(self) -> Pattern:
         return self
 
+    def to_latex(self) -> str:
+        return '\\top{}'
+
+    def to_utf(self) -> str:
+        return '⊤'
+
+
 @dataclass(frozen=True)
 class Bottom(Pattern):
     def free_variables(self) -> FrozenSet[Var]:
@@ -52,6 +68,12 @@ class Bottom(Pattern):
 
     def to_positive_normal_form(self) -> Pattern:
         return self
+
+    def to_latex(self) -> str:
+        return '\\bot{}'
+
+    def to_utf(self) -> str:
+        return '⊥'
 
 @dataclass(frozen=True)
 class EVar(Pattern):
@@ -70,6 +92,12 @@ class EVar(Pattern):
     def to_positive_normal_form(self) -> Pattern:
         return self
 
+    def to_latex(self) -> str:
+        return '\\$' + self.name
+
+    def to_utf(self) -> str:
+        return '$' + self.name
+
 @dataclass(frozen=True)
 class SVar(Pattern):
     name: Hashable
@@ -86,6 +114,12 @@ class SVar(Pattern):
 
     def to_positive_normal_form(self) -> Pattern:
         return self
+
+    def to_latex(self) -> str:
+        return str(self.name)
+
+    def to_utf(self) -> str:
+        return str(self.name)
 
 @dataclass(frozen=True)
 class And(Pattern):
@@ -104,6 +138,12 @@ class And(Pattern):
     def to_positive_normal_form(self) -> 'And':
         return And(self.left.to_positive_normal_form(), self.right.to_positive_normal_form())
 
+    def to_latex(self) -> str:
+        return self.left.to_latex() + '\\land' + self.right.to_latex()
+
+    def to_utf(self) -> str:
+        return self.left.to_utf() + ' ⋀ ' + self.right.to_utf()
+
 @dataclass(frozen=True)
 class Or(Pattern):
     left: Pattern
@@ -121,6 +161,12 @@ class Or(Pattern):
     def to_positive_normal_form(self) -> 'Or':
         return Or(self.left.to_positive_normal_form(), self.right.to_positive_normal_form())
 
+    def to_latex(self) -> str:
+        return self.left.to_latex() + '\\lor' + self.right.to_latex()
+
+    def to_utf(self) -> str:
+        return self.left.to_utf() + ' ⋁ ' + self.right.to_utf()
+
 @dataclass(frozen=True)
 class Not(Pattern):
     subpattern: Pattern
@@ -136,6 +182,12 @@ class Not(Pattern):
 
     def to_positive_normal_form(self) -> Pattern:
         return self.subpattern.negate()
+
+    def to_latex(self) -> str:
+        return '\\lnot' + self.subpattern.to_latex()
+
+    def to_utf(self) -> str:
+        return '¬' + self.subpattern.to_utf()
 
 Symbol = str
 
@@ -160,6 +212,12 @@ class App(Pattern):
     def to_positive_normal_form(self) -> 'App':
         return App(self.symbol, *map(lambda p: p.to_positive_normal_form(), self.arguments))
 
+    def to_latex(self) -> str:
+        return self.symbol + '(' + ','.join(map(lambda p: p.to_latex(), self.arguments)) + ')'
+
+    def to_utf(self) -> str:
+        return self.symbol + '(' + ','.join(map(lambda p: p.to_utf(), self.arguments)) + ')'
+
 @dataclass(frozen=True)
 class DApp(Pattern):
     symbol:    Symbol
@@ -180,6 +238,12 @@ class DApp(Pattern):
 
     def to_positive_normal_form(self) -> 'DApp':
         return DApp(self.symbol, *map(lambda p: p.to_positive_normal_form(), self.arguments))
+
+    def to_latex(self) -> str:
+        return '\\bar{' + self.symbol + '}' + '(' + ','.join(map(lambda p: p.to_latex(), self.arguments)) + ')'
+
+    def to_utf(self) -> str:
+        return '[' + self.symbol + ']' + '(' + ','.join(map(lambda p: p.to_utf(), self.arguments)) + ')'
 
 @dataclass(frozen=True)
 class Exists(Pattern):
@@ -213,6 +277,12 @@ class Exists(Pattern):
     def to_positive_normal_form(self) -> Pattern:
         return Exists(self.bound, self.subpattern.to_positive_normal_form(), guard=self.guard.to_positive_normal_form())
 
+    def to_latex(self) -> str:
+        return '\\exists ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + ' \\ldotp ' + self.subpattern.to_latex()
+
+    def to_utf(self) -> str:
+        return '∃ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + ' . ' + self.subpattern.to_utf()
+
 @dataclass(frozen=True)
 class Forall(Pattern):
     bound: frozenset[EVar]
@@ -245,6 +315,12 @@ class Forall(Pattern):
     def to_positive_normal_form(self) -> Pattern:
         return Forall(self.bound, self.subpattern.to_positive_normal_form(), guard=self.guard.to_positive_normal_form())
 
+    def to_latex(self) -> str:
+        return '\\forall ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + ' \\ldotp ' + self.subpattern.to_latex()
+
+    def to_utf(self) -> str:
+        return '∀ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + ' . ' + self.subpattern.to_utf()
+
 @dataclass(frozen=True)
 class Mu(Pattern):
     bound: SVar
@@ -266,6 +342,12 @@ class Mu(Pattern):
     def alpha_rename(self, v: SVar) -> 'Mu':
         return Mu(v, self.subpattern.substitute(self.bound, v))
 
+    def to_latex(self) -> str:
+        return '\\mu ' + self.bound.to_latex() + ' \\ldotp ' + self.subpattern.to_latex()
+
+    def to_utf(self) -> str:
+        return 'μ ' + self.bound.to_utf() + ' \\ldotp ' + self.subpattern.to_utf()
+
 @dataclass(frozen=True)
 class Nu(Pattern):
     bound: SVar
@@ -286,6 +368,12 @@ class Nu(Pattern):
 
     def alpha_rename(self, v: SVar) -> 'Nu':
         return Nu(v, self.subpattern.substitute(self.bound, v))
+
+    def to_latex(self) -> str:
+        return '\\nu ' + self.bound.to_latex() + ' \\ldotp ' + self.subpattern.to_latex()
+
+    def to_utf(self) -> str:
+        return 'ν ' + self.bound.to_utf() + ' \\ldotp ' + self.subpattern.to_utf()
 
 def implies(phi: Pattern, psi: Pattern) -> Pattern:
     return Or(Not(phi), psi)
