@@ -104,7 +104,7 @@ class Unsat():
 PGNodeGeneralized = Union[PGNode, Root, Unsat]
 
 ParityGame = Dict[PGNodeGeneralized, FrozenSet[PGNodeGeneralized]]
-SerializedParityGameEntry = Tuple[int, int, int, List[int]]
+SerializedParityGameEntry = Tuple[int, int, int, List[int], str]
 SerializedParityGame = List[SerializedParityGameEntry]
 
 Tableau = Dict[Closure, FrozenSet[Closure]]
@@ -164,15 +164,28 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
             return 0
         raise RuntimeError("Unimplemented: " + str(node))
 
+    def label(node: PGNodeGeneralized) -> str:
+        if isinstance(node, Unsat):
+            return "Unsat"
+        elif isinstance(node, Root):
+            return str(node.assertion)
+        else:
+            return str(node.assertion)
+
     for source, destinations in edges.items():
-        ret += [(ident(source), priority(source, def_list), player(source), sorted(list(map(ident, destinations))))]
+        ret += [(ident(source),
+                 priority(source, def_list),
+                 player(source),
+                 sorted(list(map(ident, destinations))),
+                 label(source)
+                )]
     return ret
 
 def run_pgsolver(game: SerializedParityGame) -> bool:
     def entry_to_string(entry : SerializedParityGameEntry) -> str:
-        source, priority, player, dests = entry
+        source, priority, player, dests, label = entry
         assert len(dests) > 0
-        return " ".join([str(source), str(priority), str(player), ",".join(map(str, dests))])
+        return " ".join([str(source), str(priority), str(player), ",".join(map(str, dests)), '"' + label.replace('"', "'") + '"' ])
     input = "; \n".join(map(entry_to_string, game)) + ';'
     output = check_output(['pgsolver', '-local',  'stratimprloc2', '0'], input=input, text=True)
     match = re.search(r'Winner of initial node is player (\d)\n', output)
