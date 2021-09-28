@@ -27,10 +27,11 @@ def test_definition_list() -> None:
 
 def test_build_tableaux() -> None:
     constants = [c, c1, c2, c3, c4]
+    def_list : DefList = []
 
     assertion = Matches(c, Bottom())
     signature : Dict[Symbol, int] = {}
-    closures = set(build_closures(assertion, constants, signature, {}))
+    closures = set(build_closures(assertion, constants, signature, {}, def_list))
     assert closures == set()
     game = build_tableaux(assertion, constants, signature)
     root : PGNodeGeneralized = Root(assertion)
@@ -39,7 +40,7 @@ def test_build_tableaux() -> None:
 
     assertion = Matches(c, Top())
     signature = {}
-    closures = set(build_closures(assertion, constants, signature, {}))
+    closures = set(build_closures(assertion, constants, signature, {}, def_list))
     assert closures == {frozenset([assertion])}
     game = build_tableaux(assertion, constants, signature)
     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
@@ -48,7 +49,7 @@ def test_build_tableaux() -> None:
 
     assertion = Matches(c, App(C))
     signature = { C : 0 }
-    closures = set(build_closures(assertion, constants, signature, {}))
+    closures = set(build_closures(assertion, constants, signature, {}, def_list))
     assert closures == {frozenset([assertion])}
     game = build_tableaux(assertion, constants, signature)
     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
@@ -57,7 +58,7 @@ def test_build_tableaux() -> None:
 
     assertion = Matches(c, DApp(C))
     signature = { C : 0 }
-    closures = set(build_closures(assertion, constants, signature, {}))
+    closures = set(build_closures(assertion, constants, signature, {}, def_list))
     assert closures == {frozenset([assertion])}
     game = build_tableaux(assertion, constants, signature)
     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
@@ -83,7 +84,7 @@ def test_build_tableaux() -> None:
     cl_01___ = frozenset([assertion, m_0_____,  m__1____])
     cl_11___ = frozenset([assertion, m_1_____,  m__1____])
 
-    closures = set(build_closures(assertion, constants, signature, {}))
+    closures = set(build_closures(assertion, constants, signature, {}, def_list))
     assert closures == { cl_00___, cl_10___, cl_01___, cl_11___ }
 
     cl_next___0000 = frozenset([m___0___, m____0__, m_____0_, m______0])
@@ -118,7 +119,7 @@ def test_build_tableaux() -> None:
     assert game[PGNode(assertion, cl_11___)] == frozenset({Unsat()})
 
     assertion = Matches(c, And(App(C), DApp(C)))
-    closures = set(build_closures(assertion, constants, { C : 0 }, {}))
+    closures = set(build_closures(assertion, constants, { C : 0 }, {}, def_list))
     assert closures == set()
     game = build_tableaux(assertion, constants, signature)
     assert game == {Root(assertion) : frozenset({Unsat()})}
@@ -149,7 +150,7 @@ def test_build_tableaux() -> None:
                        , Matches(c, DApp(C))
                        ])
 
-    closures = set(build_closures(assertion, [c], { C : 0, S : 1 }, {}))
+    closures = set(build_closures(assertion, [c], { C : 0, S : 1 }, {}, def_list))
     assert closures == { cl_01, cl_10, cl_11 }
     game = build_tableaux(assertion, [c, c1], signature)
     # Tableaux size grows quickly for larger constant lists
@@ -203,46 +204,22 @@ def test_is_satisfiable() -> None:
                         , And(App(C), Not(App(C)))
                         )
                      , [c, c1], signature)
-#
-#     assert     is_sat( Nu(X, App(S, X)))
-#     assert not is_sat( And( Nu(X, And(C, App(S, X)))
-#                           , DApp(S, Not(C))
-#                           )
-#                      )
-#
-#     assert not is_sat(Mu(X, App(S, X)))
-#
-#     assert     is_sat(Nu(X, And( Mu(Y, Or(C, App(NEXT , Y)) )
-#                                        , App(NEXT , X)
-#                                        )))
-#     assert not is_sat(Mu(X, And( Nu(Y, Or(C, App(NEXT , Y)) )
-#                                        , App(NEXT , X)
-#                                        )))
 
-#def test_serialize_parity_game() -> None:
-#    p0  = Matches(e, Mu(X, App(S, x)))
-#    p1  = Matches(e, App(S, App(C), x))
-#    p21 = Matches(e, App(S, e1, x))
-#    p22 = Matches(e1, App(C))
-#    p2  = AllOf(frozenset([ p21 , p22 ]))
-#    closure = frozenset( [ p0
-#                         , p1
-#                         , p2
-#                         , p21
-#                         , p22
-#                         ] )
-#    assert serialize_parity_game( PGNode(p0, closure)
-#                            , { PGNode(p0, closure)  : frozenset([ PGNode(p1, closure) ])
-#                              , PGNode(p1, closure)  : frozenset([ PGNode(p2, closure) ])
-#                              , PGNode(p2, closure)  : frozenset([ PGNode(p21, closure), PGNode(p22, closure) ])
-#                              , PGNode(p21, closure) : frozenset([])
-#                              , PGNode(p22, closure) : frozenset([])
-#                              }
-#                            , definition_list(Mu(X, App(S, x)), [])
-#                            ) == \
-#                            [ (0, 1, 1, [1])
-#                            , (1, 2, 0, [2])
-#                            , (2, 2, 1, [3, 4])
-#                            , (3, 2, 0, [])
-#                            , (4, 2, 0, [])
-#                            ]
+    assert     is_sat( Nu(X, App(S, X)), [c, c1], signature)
+    assert not is_sat( And( Nu(X, And(App(C), App(S, X)))
+                          , DApp(S, Not(App(C)))
+                          )
+                     , [c, c1], signature)
+
+    assert not is_sat(Mu(X, App(S, X))
+                     , [c, c1], signature)
+
+    assert     is_sat(Nu(X, And( Mu(Y, Or(App(C), App(S , Y)) )
+                                       , App(S , X)
+                                       ))
+                     , [c, c1], signature)
+    assert not is_sat(Mu(X, And( Nu(Y, Or( App(C), App(S , Y)) )
+                                         , App(S , X)
+                                         ))
+                     , [c, c1], signature)
+

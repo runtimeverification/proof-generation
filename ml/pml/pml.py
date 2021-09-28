@@ -346,7 +346,7 @@ class Mu(Pattern):
         return '\\mu ' + self.bound.to_latex() + ' \\ldotp ' + self.subpattern.to_latex()
 
     def to_utf(self) -> str:
-        return 'μ ' + self.bound.to_utf() + ' \\ldotp ' + self.subpattern.to_utf()
+        return 'μ ' + self.bound.to_utf() + ' . ' + self.subpattern.to_utf()
 
 @dataclass(frozen=True)
 class Nu(Pattern):
@@ -373,7 +373,7 @@ class Nu(Pattern):
         return '\\nu ' + self.bound.to_latex() + ' \\ldotp ' + self.subpattern.to_latex()
 
     def to_utf(self) -> str:
-        return 'ν ' + self.bound.to_utf() + ' \\ldotp ' + self.subpattern.to_utf()
+        return 'ν ' + self.bound.to_utf() + ' . ' + self.subpattern.to_utf()
 
 def implies(phi: Pattern, psi: Pattern) -> Pattern:
     return Or(Not(phi), psi)

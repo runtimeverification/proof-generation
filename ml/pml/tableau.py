@@ -30,7 +30,7 @@ def definition_list(p: Pattern, def_list: DefList) -> DefList:
     elif isinstance(p, (Mu, Nu)):
         if p not in def_list:
             def_list = def_list + [p]
-            def_list = definition_list(p.subpattern.substitute(p.bound, SVar(def_list.index(p))), def_list)
+            def_list = definition_list(p.subpattern.substitute(p.bound, SVar(def_list.index(p)).to_positive_normal_form()), def_list)
         return def_list
     else:
         raise RuntimeError("Unsupported pattern: " + str(p))
@@ -149,8 +149,9 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
         return 0 # This shouldn't happen!
 
     def priority(node: PGNodeGeneralized, def_list: DefList) -> int:
-        # If the lowest-priority infinitly recurring node has even priority, player 0  wins (pattern is sat).
+        # If the lowest priority infinitly recurring node has even priority, player 0  wins (pattern is sat).
         # Otherwise player 1 wins (pattern is unsat).
+
         if isinstance(node, Root):
             return 0 # Cannot repeat infinitly on any trace, so value doesn't matter.
         if isinstance(node, Unsat):
@@ -169,7 +170,15 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
                 return 2 * len(def_list) + 1
             return 2 * len(def_list) + 2
         else:
-            return 2 * len(def_list)
+            return 2 * len(def_list) + 2
+
+    def pgsolver_priority(node: PGNodeGeneralized, def_list: DefList) -> int:
+        # While in our paper, we define the lowest priority infinitly recurring node
+        # to be the deciding priority, PGSolver considers the highest priority infinitly recurring node.
+
+        # Must be greater than max possible priority and an even number.
+        max_priority = 2 * len(def_list) + 2
+        return max_priority - priority(node, def_list)
 
     def player(node: PGNodeGeneralized) -> int:
         # If a node has player N, then that player can make a move
@@ -196,13 +205,13 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
         if isinstance(node, Unsat):
             return "Unsat"
         elif isinstance(node, Root):
-            return node.assertion.to_utf()
+            return "Root"
         else:
             return node.assertion.to_utf()
 
     for source, destinations in edges.items():
         ret += [(ident(source),
-                 priority(source, def_list),
+                 pgsolver_priority(source, def_list),
                  player(source),
                  sorted(list(map(ident, destinations))),
                  label(source)
@@ -220,8 +229,8 @@ def run_pgsolver(game: SerializedParityGame) -> bool:
     if match is None:
         raise RuntimeError("PGGame not well formed?\n" + output)
 
-    # Dot output only works for global strategies for some reason
-    check_output(['pgsolver', '-global',  'recursive', '-d', '/tmp/out.dot'], input=input, text=True)
+#    with open('/tmp/out.pg', 'w') as pg_file:
+#        pg_file.write(check_output(['pgsolver', '-global',  'recursive', '-pg'], input=input, text=True))
 
     return match.group(1) == '0'
 
@@ -230,7 +239,12 @@ PartialEdges = List[Tuple[Assertion, Assertion]]
 def is_atomic_application(app : App) -> bool:
     return all(map(lambda arg: isinstance(arg, EVar), app.arguments))
 
-def add_app_dapp_to_closure(pairs : List[Tuple[Matches, Matches]] , partial_closure: Closure, partial_edges: PartialEdges, K: List[EVar]) -> List[Tuple[Closure, PartialEdges]]:
+def add_app_dapp_to_closure( pairs : List[Tuple[Matches, Matches]]
+                           , partial_closure: Closure
+                           , partial_edges: PartialEdges
+                           , K: List[EVar]
+                           , def_list: DefList
+                           ) -> List[Tuple[Closure, PartialEdges]]:
     curr_closures = [(partial_closure, partial_edges)]
     for (app, dapp) in pairs:
         assert isinstance(app.pattern, App)
@@ -248,7 +262,7 @@ def add_app_dapp_to_closure(pairs : List[Tuple[Matches, Matches]] , partial_clos
                                            ,( app, Matches(app.variable, Bottom())) 
                                            ]
                                          , K
-                                         )
+                                         , def_list)
 
                 any_of : List[Assertion] = []
                 for ci, phii in zip(app.pattern.arguments, dapp.pattern.arguments):
@@ -257,11 +271,17 @@ def add_app_dapp_to_closure(pairs : List[Tuple[Matches, Matches]] , partial_clos
                 new_closures += add_to_closure( AnyOf(frozenset(any_of))
                                               , curr_closure
                                               , curr_edges + [ (dapp, AnyOf(frozenset(any_of))) ]
-                                              , K)
+                                              , K
+                                              , def_list)
             curr_closures = new_closures
     return curr_closures
 
-def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges: PartialEdges, K: List[EVar]) -> List[Tuple[Closure, PartialEdges]]:
+def add_to_closure( assertion: Assertion
+                  , partial_closure: Closure
+                  , partial_edges: PartialEdges
+                  , K: List[EVar]
+                  , def_list: DefList
+                  ) -> List[Tuple[Closure, PartialEdges]]:
     if isinstance(assertion, Matches):
         p = assertion.pattern
         if   isinstance(p, (Bottom)):
@@ -275,7 +295,8 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
                 return add_to_closure( Matches(assertion.variable, Bottom())
                                      , partial_closure.union([assertion])
                                      , partial_edges + [(assertion, Matches(assertion.variable, Bottom()))]
-                                     , K)
+                                     , K
+                                     , def_list)
             return [(partial_closure, partial_edges)]
         elif isinstance(p, Not):
             assert isinstance(p.subpattern, EVar)
@@ -283,7 +304,8 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
                 return add_to_closure( Matches(assertion.variable, Bottom())
                                      , partial_closure.union([assertion])
                                      , partial_edges + [(assertion, Matches(assertion.variable, Bottom()))]
-                                     , K)
+                                     , K
+                                     , def_list)
             return [(partial_closure, partial_edges)]
         elif isinstance(p, DApp):
             partial_closure = partial_closure.union([assertion])
@@ -296,7 +318,7 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
                                           , partial_closure
                                           , partial_edges
                                           , K
-                                          )
+                                          , def_list)
         elif isinstance(p, App):
             partial_closure = partial_closure.union([assertion])
             if (is_atomic_application(p)):
@@ -308,6 +330,7 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
                                           , partial_closure
                                           , partial_edges
                                           , K
+                                          , def_list
                                           )
         elif isinstance(p, And):
             ret = []
@@ -316,11 +339,14 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
                                          , partial_closure
                                          , partial_edges + [(assertion, Matches(assertion.variable, p.left))]
                                          , K
+                                         , def_list
                                          ):
                 ret += add_to_closure( Matches(assertion.variable, p.right)
                                      , closure
                                      , edges + [(assertion, Matches(assertion.variable, p.right))]
-                                     , K)
+                                     , K
+                                     , def_list
+                                     )
             return ret
         elif isinstance(p, Or):
             ret = []
@@ -330,11 +356,27 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
                                      , partial_closure
                                      , partial_edges + [(assertion, Matches(assertion.variable, next))]
                                      , K
+                                     , def_list
                                      )
             return ret
-
+        elif isinstance(p, (Nu, Mu)):
+            next = p.subpattern.substitute(p.bound, SVar(def_list.index(p)))
+            return add_to_closure( Matches(assertion.variable, next)
+                                 , partial_closure.union([assertion])
+                                 , partial_edges + [(assertion, Matches(assertion.variable, next))]
+                                 , K
+                                 , def_list
+                                 )
+        elif isinstance(p, SVar) and isinstance(p.name, int): # Only consider bound `SVar`s.
+            next = def_list[p.name]
+            return add_to_closure( Matches(assertion.variable, next)
+                                 , partial_closure.union([assertion])
+                                 , partial_edges + [(assertion, Matches(assertion.variable, next))]
+                                 , K
+                                 , def_list
+                                 )
         else:
-            raise RuntimeError("Unimplemented: ")
+            raise RuntimeError("Unimplemented: " + str(assertion))
     elif isinstance(assertion, AllOf):
         curr_closures = [(partial_closure, partial_edges)]
         for a in assertion.assertions:
@@ -343,13 +385,15 @@ def add_to_closure(assertion: Assertion, partial_closure: Closure, partial_edges
                 new_closures += add_to_closure( a
                                               , closure
                                               , edges + [(assertion, a)]
-                                              , K)
+                                              , K
+                                              , def_list
+                                              )
             curr_closures = new_closures
         return curr_closures
     elif isinstance(assertion, AnyOf):
         ret = []
         for a in assertion.assertions:
-            ret += add_to_closure(a, partial_closure, partial_edges + [(assertion, a)], K)
+            ret += add_to_closure(a, partial_closure, partial_edges + [(assertion, a)], K, def_list)
         return ret
     else:
         raise RuntimeError("Unimplemented: ")
@@ -358,7 +402,9 @@ def complete_closures_for_signature( closures: List[Tuple[Closure, PartialEdges]
                                    , C: FrozenSet[EVar]
                                    , K: List[EVar]
                                    , signature: Signature
-                                   , parity_game : ParityGame) -> List[Closure]:
+                                   , parity_game : ParityGame
+                                   , def_list : DefList
+                                   ) -> List[Closure]:
     # TODO: This should be replaced by some form of resulution
     for (symbol, arity) in signature.items():
         for tuple in product(C, repeat = arity + 1):
@@ -366,8 +412,8 @@ def complete_closures_for_signature( closures: List[Tuple[Closure, PartialEdges]
             for (partial_closure, partial_edges) in closures:
                 first, *rest = tuple
                 new_edges : PartialEdges = []
-                x = add_to_closure(Matches(first, App(symbol, *rest)),          partial_closure, partial_edges, K)
-                y = add_to_closure(Matches(first, App(symbol, *rest).negate()), partial_closure, partial_edges, K)
+                x = add_to_closure(Matches(first, App(symbol, *rest)),          partial_closure, partial_edges, K, def_list)
+                y = add_to_closure(Matches(first, App(symbol, *rest).negate()), partial_closure, partial_edges, K, def_list)
                 new_closures += x
                 new_closures += y
             closures = new_closures
@@ -398,7 +444,9 @@ def build_tableau( curr_node: Closure
                  , partial_tableau: Tableau
                  , partial_game : ParityGame
                  , K: List[EVar]
-                 , signature: Signature) -> None:
+                 , signature: Signature
+                 , def_list : DefList
+                 ) -> None:
     if curr_node in partial_tableau.keys(): return
     next_nodes : List[Closure] = []
     for assertion in curr_node:
@@ -425,11 +473,12 @@ def build_tableau( curr_node: Closure
                 new_closure = frozenset({ a for a in curr_node if p.free_evars() <= free_evars(frozenset({assertion})) })
                 copied_assertions = new_closure
 
-            new_closures = complete_closures_for_signature( add_to_closure(new_assertion, new_closure, [], K)
+            new_closures = complete_closures_for_signature( add_to_closure(new_assertion, new_closure, [], K, def_list)
                                                           , free_evars(new_closure).union(frozenset(instantiation))
                                                           , K
                                                           , signature
                                                           , partial_game
+                                                          , def_list
                                                           )
             for new_closure in new_closures:
                 dest_node = PGNode(new_assertion, new_closure)
@@ -446,24 +495,24 @@ def build_tableau( curr_node: Closure
     partial_tableau[curr_node] = frozenset(next_nodes)
 
     for node in next_nodes:
-        build_tableau(node, partial_tableau, partial_game, K, signature)
+        build_tableau(node, partial_tableau, partial_game, K, signature, def_list)
 
-def build_closures(a: Matches, K: List[EVar], signature: Signature, partial_game: ParityGame) -> List[Closure]:
-    closures = add_to_closure(a, frozenset(), [], K)
+def build_closures(a: Matches, K: List[EVar], signature: Signature, partial_game: ParityGame, def_list : DefList) -> List[Closure]:
+    closures = add_to_closure(a, frozenset(), [], K, def_list)
     C = a.free_evars().union([a.variable])
-    return complete_closures_for_signature(closures, C, K, signature, partial_game)
+    return complete_closures_for_signature(closures, C, K, signature, partial_game, def_list)
 
 def build_tableaux(assertion : Matches, K: List[EVar], signature: Signature) -> ParityGame:
     def_list : DefList = definition_list(assertion.pattern, def_list = [])
     game : ParityGame = {}
     tableau : Tableau = {}
-    closures = build_closures(assertion, K, signature, game)
+    closures = build_closures(assertion, K, signature, game, def_list)
     if closures:
         game[Root(assertion)] = frozenset([PGNode(assertion, closure) for closure in closures])
     else:
         game[Root(assertion)] = frozenset([Unsat()])
     for closure in closures:
-        build_tableau(closure, tableau, game, K, signature)
+        build_tableau(closure, tableau, game, K, signature, def_list)
     return game
 
 def is_sat(p: Pattern, K: List[EVar], signature: Signature) -> bool:
