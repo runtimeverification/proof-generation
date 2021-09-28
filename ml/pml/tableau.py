@@ -137,16 +137,18 @@ Tableau = Dict[Closure, FrozenSet[Closure]]
 
 def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: DefList) -> SerializedParityGame:
     ret = []
-    keys = list(edges.keys())
+    keys = dict(zip(edges.keys(), range(0, len(edges))))
 
     def ident(node: PGNodeGeneralized) -> int:
         if isinstance(node, Root):
             return 0
         if isinstance(node, Unsat):
-            return 2
+            return 1
         if node in keys:
-            return 3 + keys.index(node)
-        return 0 # This shouldn't happen!
+            return 2 + keys[node]
+        # This shouldn't happen, but ive not been able to track down why some nodes done have entries defined.
+        # It is likely that something is lost in the process of converting partial_edges to the tableau/parity game
+        return ident(Unsat())
 
     def priority(node: PGNodeGeneralized, def_list: DefList) -> int:
         # If the lowest priority infinitly recurring node has even priority, player 0  wins (pattern is sat).
