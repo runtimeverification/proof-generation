@@ -93,15 +93,17 @@ def test_build_tableaux() -> None:
     cl_next = [ cl_next___0000, cl_next___0010, cl_next___0100, cl_next___0110 ]
 
     allof_c  = AllOf(frozenset([ Matches(c,  App(C)), Matches(c, App(S, c ))]))
-    allof_c1 = AllOf(frozenset([ Matches(c1, App(C))
-                               , Matches(c, App(S, c1))
-                               , allof_c.negate()
-                               ]))
+    allof_c1 = AllOf(frozenset([ Matches(c1, App(C)), Matches(c, App(S, c1))]))
 
     game = build_tableaux(assertion, [c, c1], signature)
     assert game[Root(assertion)] == frozenset([PGNode(assertion, cl) for cl in closures])
 
-    assert game[PGNode(assertion, cl_00___)] == frozenset({PGNode(allof_c, cl_00___)})
+    assert game[PGNode(assertion, cl_00___)] == frozenset( { PGNode(allof_c,  cl_00___)
+                                                           , PGNode(allof_c1,  cl_00___.union(cl_next___0000))
+                                                           , PGNode(allof_c1,  cl_00___.union(cl_next___0100))
+                                                           , PGNode(allof_c1,  cl_00___.union(cl_next___0010))
+                                                           , PGNode(allof_c1,  cl_00___.union(cl_next___0110))
+                                                           } )
     assert game[PGNode(allof_c, cl_00___)] == frozenset({ PGNode(Matches(c, App(C)),    cl_00___)
                                                         , PGNode(Matches(c, App(S, c)), cl_00___)
                                                         })

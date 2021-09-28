@@ -410,13 +410,11 @@ def build_tableau( curr_node: Closure
         if all(map(lambda arg: isinstance(arg, EVar), p.arguments)):
             continue
 
-        failed_instantiations : List[Assertion] = []
         potential_variables = list(assertion.free_evars()) + take(len(p.arguments), diff(K, free_evars(curr_node)))
 
         source_node = PGNode(assertion, curr_node)
         for instantiation in product(potential_variables, repeat = len(p.arguments)):
-            new_assertion = AllOf(frozenset( failed_instantiations
-                                           + [ Matches(assertion.variable,  App(p.symbol, *instantiation)) ]
+            new_assertion = AllOf(frozenset( [ Matches(assertion.variable,  App(p.symbol, *instantiation)) ]
                                            + [ Matches(inst, arg) for (inst, arg) in zip(instantiation, p.arguments) ]
                                            ))
             new_tableau_node = frozenset(instantiation) <= free_evars(frozenset({assertion}))
@@ -442,8 +440,6 @@ def build_tableau( curr_node: Closure
                         partial_game[copied_node] = partial_game.get(source_node, frozenset()).union([PGNode(copied, new_closure)])
 
             next_nodes += new_closures
-            # TODO: add game edges
-            failed_instantiations += [new_assertion.negate()]
         if not source_node in partial_game.keys():
             partial_game[source_node] = frozenset([Unsat()])
 
