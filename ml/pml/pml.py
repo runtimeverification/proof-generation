@@ -278,10 +278,12 @@ class Exists(Pattern):
         return Exists(self.bound, self.subpattern.to_positive_normal_form(), guard=self.guard.to_positive_normal_form())
 
     def to_latex(self) -> str:
-        return '\\exists ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + ' \\ldotp ' + self.subpattern.to_latex()
+        return '\\exists ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + \
+                    ' \\ldotp ' + self.guard.to_latex() + ' \\limplies ' + self.subpattern.to_latex()
 
     def to_utf(self) -> str:
-        return '∃ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + ' . ' + self.subpattern.to_utf()
+        return '∃ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + \
+                    ' . ' + self.guard.to_latex() + ' -> ' + self.subpattern.to_utf()
 
 @dataclass(frozen=True)
 class Forall(Pattern):
@@ -316,10 +318,12 @@ class Forall(Pattern):
         return Forall(self.bound, self.subpattern.to_positive_normal_form(), guard=self.guard.to_positive_normal_form())
 
     def to_latex(self) -> str:
-        return '\\forall ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + ' \\ldotp ' + self.subpattern.to_latex()
+        return '\\forall ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + \
+                    ' \\ldotp ' + self.guard.to_latex() + ' \\land ' + self.subpattern.to_latex()
 
     def to_utf(self) -> str:
-        return '∀ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + ' . ' + self.subpattern.to_utf()
+        return '∀ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + \
+                        ' . ' + self.guard.to_latex() + ' ⋀ ' + self.subpattern.to_utf()
 
 @dataclass(frozen=True)
 class Mu(Pattern):
