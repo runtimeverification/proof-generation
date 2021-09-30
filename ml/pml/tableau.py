@@ -506,13 +506,7 @@ def build_tableau( curr_node: Closure
             new_assertion = AllOf(frozenset( [ Matches(assertion.variable,  App(p.symbol, *instantiation)) ]
                                            + [ Matches(inst, arg) for (inst, arg) in zip(instantiation, p.arguments) ]
                                            ))
-            new_tableau_node = frozenset(instantiation) <= free_evars(frozenset({assertion}))
-            if new_tableau_node:
-                new_closure = curr_node
-                copied_assertions : Closure = frozenset()
-            else:
-                new_closure = frozenset({ a for a in curr_node if p.free_evars() <= free_evars(frozenset({assertion})) })
-                copied_assertions = new_closure
+            new_closure = curr_node
 
             new_closures = complete_closures_for_signature( add_to_closure(new_assertion, new_closure, [], K, def_list)
                                                           , free_evars(new_closure).union(frozenset(instantiation))
@@ -524,10 +518,6 @@ def build_tableau( curr_node: Closure
             for new_closure in new_closures:
                 dest_node = PGNode(new_assertion, new_closure)
                 partial_game[source_node] = partial_game.get(source_node, frozenset()).union([dest_node])
-                if new_tableau_node:
-                    for copied in copied_assertions:
-                        copied_node = PGNode(copied, curr_node)
-                        partial_game[copied_node] = partial_game.get(source_node, frozenset()).union([PGNode(copied, new_closure)])
 
             next_nodes += new_closures
         if not source_node in partial_game.keys():
