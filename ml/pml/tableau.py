@@ -89,6 +89,45 @@ class AllOf(Assertion):
         return ' and '.join(map(lambda a: a.to_utf(), self.assertions))
 
 @dataclass(frozen=True)
+class ExistsAssertion(Assertion):
+    bound: frozenset[EVar]
+    subassertion: Assertion
+
+    def negate(self) -> 'ForallAssertion':
+        return ForallAssertion(self.bound, self.subassertion.negate())
+
+    def free_evars(self) -> FrozenSet[EVar]:
+        return self.subassertion.free_evars() - self.bound
+
+    def to_latex(self) -> str:
+        return '\\exists ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + \
+                    ' \\ldotp ' + self.subassertion.to_latex()
+
+    def to_utf(self) -> str:
+        return '∃ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + \
+                    ' . ' + self.subassertion.to_utf()
+
+
+@dataclass(frozen=True)
+class ForallAssertion(Assertion):
+    bound: frozenset[EVar]
+    subassertion: Assertion
+
+    def negate(self) -> ExistsAssertion:
+        return ExistsAssertion(self.bound, self.subassertion.negate())
+
+    def free_evars(self) -> FrozenSet[EVar]:
+        return self.subassertion.free_evars() - self.bound
+
+    def to_latex(self) -> str:
+        return '\\forall ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + \
+                    ' \\ldotp ' + self.subassertion.to_latex()
+
+    def to_utf(self) -> str:
+        return '∀ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + \
+                    ' . ' + self.subassertion.to_utf()
+
+@dataclass(frozen=True)
 class AnyOf(Assertion):
     assertions: FrozenSet[Assertion]
 
