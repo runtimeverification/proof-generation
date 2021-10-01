@@ -540,7 +540,6 @@ def build_tableau( curr_node: Closure
             continue
         potential_variables = list(assertion.free_evars()) + list(take(len(bound), diff(K, free_evars(curr_node))))
 
-
         source_node = PGNode(assertion, curr_node)
         for instantiation in product(potential_variables, repeat = len(bound)):
             new_assertion = assertion.subassertion.substitute_multi(instantiation, list(bound))
@@ -566,16 +565,13 @@ def build_tableau( curr_node: Closure
     for node in next_nodes:
         build_tableau(node, partial_tableau, partial_game, K, signature, def_list)
 
-def build_closures(a: Matches, K: List[EVar], signature: Signature, partial_game: ParityGame, def_list : DefList) -> List[Closure]:
-    closures = add_to_closure(a, frozenset(), [], K, def_list)
-    C = a.free_evars().union([a.variable])
-    return complete_closures_for_signature(closures, C, K, signature, partial_game, def_list)
-
 def build_tableaux(assertion : Matches, K: List[EVar], signature: Signature) -> ParityGame:
     def_list : DefList = definition_list(assertion.pattern, def_list = [])
     game : ParityGame = {}
     tableau : Tableau = {}
-    closures = build_closures(assertion, K, signature, game, def_list)
+    closures_and_edges = add_to_closure(assertion, frozenset(), [], K, def_list)
+    C = assertion.free_evars().union([assertion.variable])
+    closures = complete_closures_for_signature(closures_and_edges, C, K, signature, game, def_list)
     if closures:
         game[Root(assertion)] = frozenset([PGNode(assertion, closure) for closure in closures])
     else:
