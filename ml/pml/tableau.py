@@ -45,6 +45,17 @@ class Assertion:
         raise NotImplementedError
 
     @abstractmethod
+    def substitute(self, x: Var, v: Pattern) -> Assertion:
+        raise NotImplementedError
+
+    def substitute_multi(self, xs: Iterable[EVar] , vs: Iterable[Pattern]) -> Assertion:
+        # TODO: We do not do simultanious substitutions
+        ret = self
+        for (x, v) in zip(xs, vs):
+            ret = ret.substitute(x, v)
+        return ret
+
+    @abstractmethod
     def to_latex(self) -> str:
         raise NotImplementedError
 
@@ -62,6 +73,10 @@ class Matches(Assertion):
 
     def free_evars(self) -> FrozenSet[EVar]:
         return self.pattern.free_evars().union([self.variable])
+
+    def substitute(self, x: Var, v: Pattern) -> Matches:
+        assert isinstance(self.variable.substitute(x, v), EVar)
+        return Matches(cast(EVar, self.variable.substitute(x, v)), self.pattern.substitute(x, v))
 
     def to_latex(self) -> str:
         return self.variable.to_latex() + ' \\vDash ' + self.pattern.to_latex()
@@ -82,50 +97,14 @@ class AllOf(Assertion):
             ret = ret.union(assertion.free_evars())
         return ret
 
+    def substitute(self, x: Var, v: Pattern) -> AllOf:
+        return AllOf(frozenset([a.substitute(x, v) for a in self.assertions]))
+
     def to_latex(self) -> str:
         return ' \\bigwedge '.join(map(lambda a: a.to_latex(), self.assertions))
 
     def to_utf(self) -> str:
         return ' and '.join(map(lambda a: a.to_utf(), self.assertions))
-
-@dataclass(frozen=True)
-class ExistsAssertion(Assertion):
-    bound: frozenset[EVar]
-    subassertion: Assertion
-
-    def negate(self) -> 'ForallAssertion':
-        return ForallAssertion(self.bound, self.subassertion.negate())
-
-    def free_evars(self) -> FrozenSet[EVar]:
-        return self.subassertion.free_evars() - self.bound
-
-    def to_latex(self) -> str:
-        return '\\exists ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + \
-                    ' \\ldotp ' + self.subassertion.to_latex()
-
-    def to_utf(self) -> str:
-        return '∃ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + \
-                    ' . ' + self.subassertion.to_utf()
-
-
-@dataclass(frozen=True)
-class ForallAssertion(Assertion):
-    bound: frozenset[EVar]
-    subassertion: Assertion
-
-    def negate(self) -> ExistsAssertion:
-        return ExistsAssertion(self.bound, self.subassertion.negate())
-
-    def free_evars(self) -> FrozenSet[EVar]:
-        return self.subassertion.free_evars() - self.bound
-
-    def to_latex(self) -> str:
-        return '\\forall ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + \
-                    ' \\ldotp ' + self.subassertion.to_latex()
-
-    def to_utf(self) -> str:
-        return '∀ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + \
-                    ' . ' + self.subassertion.to_utf()
 
 @dataclass(frozen=True)
 class AnyOf(Assertion):
@@ -140,11 +119,60 @@ class AnyOf(Assertion):
             ret = ret.union(assertion.free_evars())
         return ret
 
+    def substitute(self, x: Var, v: Pattern) -> AnyOf:
+        return AnyOf(frozenset([a.substitute(x, v) for a in self.assertions]))
+
     def to_latex(self) -> str:
         return ' \\bigvee '.join(map(lambda a: a.to_latex(), self.assertions))
 
     def to_utf(self) -> str:
         return ' or '.join(map(lambda a: a.to_utf(), self.assertions))
+
+@dataclass(frozen=True)
+class ExistsAssertion(Assertion):
+    bound: frozenset[EVar]
+    subassertion: Assertion
+
+    def negate(self) -> 'ForallAssertion':
+        return ForallAssertion(self.bound, self.subassertion.negate())
+
+    def free_evars(self) -> FrozenSet[EVar]:
+        return self.subassertion.free_evars() - self.bound
+
+    def substitute(self, x: Var, v: Pattern) -> ExistsAssertion:
+        if x in self.bound: return self
+        else:               return ExistsAssertion(self.bound, self.subassertion.substitute(x, v))
+
+    def to_latex(self) -> str:
+        return '\\exists ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + \
+                    ' \\ldotp ' + self.subassertion.to_latex()
+
+    def to_utf(self) -> str:
+        return '∃ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + \
+                    ' . ' + self.subassertion.to_utf()
+
+@dataclass(frozen=True)
+class ForallAssertion(Assertion):
+    bound: frozenset[EVar]
+    subassertion: Assertion
+
+    def negate(self) -> ExistsAssertion:
+        return ExistsAssertion(self.bound, self.subassertion.negate())
+
+    def free_evars(self) -> FrozenSet[EVar]:
+        return self.subassertion.free_evars() - self.bound
+
+    def substitute(self, x: Var, v: Pattern) -> ForallAssertion:
+        if x in self.bound: return self
+        else:               return ForallAssertion(self.bound, self.subassertion.substitute(x, v))
+
+    def to_latex(self) -> str:
+        return '\\forall ' + ','.join(map(lambda p: p.to_latex(), self.bound)) + \
+                    ' \\ldotp ' + self.subassertion.to_latex()
+
+    def to_utf(self) -> str:
+        return '∀ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + \
+                    ' . ' + self.subassertion.to_utf()
 
 Closure = FrozenSet[Assertion]
 def free_evars(cl: Closure) -> FrozenSet[EVar]:
