@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from itertools import accumulate
+from itertools import accumulate, count, islice
 from functools import reduce
-from typing import FrozenSet, Hashable, Iterable, Tuple, Union
+from typing import Container, FrozenSet, Hashable, Iterable, List, Tuple, TypeVar, Union
 
 Var = Union['SVar', 'EVar']
 
@@ -381,3 +381,15 @@ class Nu(Pattern):
 
 def implies(phi: Pattern, psi: Pattern) -> Pattern:
     return Or(Not(phi), psi)
+
+# Helper Utilities
+# ----------------
+
+T = TypeVar('T')
+def diff(l1: List[T] , l2_set: Container[T]) -> List[T]:
+    # Preserves order
+    return [item for item in l1 if item not in l2_set]
+
+def take(n: int, l: Iterable[T]) -> Tuple[T, ...]:
+  return tuple(islice(l, n))
+

@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from dataclasses import dataclass
 from itertools import chain, count, islice, product
-from typing import Any, Container, Dict, FrozenSet, Iterable, Iterator, List, Tuple, TypeVar, Union, cast
+from typing import Any, Container, Dict, FrozenSet, Iterable, Iterator, List, Tuple, Union, cast
 from subprocess import check_output
 import re
 
@@ -500,14 +500,6 @@ def complete_closures_for_signature( closures: List[Tuple[Closure, PartialEdges]
     for node in diff(dests, sources):
         parity_game[node] = frozenset({Unsat()})
     return ret
-
-T = TypeVar('T')
-def diff(l1: List[T] , l2_set: Container[T]) -> List[T]:
-    # Preserves order
-    return [item for item in l1 if item not in l2_set]
-
-def take(n: int, l: List[EVar]) -> List[EVar]:
-  return list(islice(l, n))
 
 def build_tableau( curr_node: Closure
                  , partial_tableau: Tableau
