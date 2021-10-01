@@ -4,7 +4,6 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from itertools import chain, count, islice, product
 from typing import Any, Container, Dict, FrozenSet, Iterable, Iterator, List, Tuple, Union, cast
-from subprocess import check_output
 import re
 
 from pml import *
@@ -187,14 +186,10 @@ class PGNode():
     closure: Closure
 
 @dataclass(frozen=True)
-class Root():
-    assertion: Assertion
-
-@dataclass(frozen=True)
 class Unsat():
     pass
 
-PGNodeGeneralized = Union[PGNode, Root, Unsat]
+PGNodeGeneralized = Union[PGNode, Unsat]
 
 ParityGame = Dict[PGNodeGeneralized, FrozenSet[PGNodeGeneralized]]
 SerializedParityGameEntry = Tuple[int, int, int, List[int], str]
@@ -207,8 +202,6 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
     keys = dict(zip(edges.keys(), range(0, len(edges))))
 
     def ident(node: PGNodeGeneralized) -> int:
-        if isinstance(node, Root):
-            return 0
         if isinstance(node, Unsat):
             return 1
         if node in keys:
@@ -221,8 +214,6 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
         # If the lowest priority infinitly recurring node has even priority, player 0  wins (pattern is sat).
         # Otherwise player 1 wins (pattern is unsat).
 
-        if isinstance(node, Root):
-            return 0 # Cannot repeat infinitly on any trace, so value doesn't matter.
         if isinstance(node, Unsat):
             return 1
         if isinstance(node.assertion, Matches):
@@ -265,7 +256,7 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
 
     def player(node: PGNodeGeneralized) -> int:
         # If a node has player N, then that player can make a move
-        if isinstance(node, (Root, Unsat)):
+        if isinstance(node, (Unsat)):
             # There is no choice to be made here, so it does not matter whose turn it is.
             return 0 
         if isinstance(node.assertion, Matches):
@@ -287,12 +278,11 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
     def label(node: PGNodeGeneralized) -> str:
         if isinstance(node, Unsat):
             return "Unsat"
-        elif isinstance(node, Root):
-            return "Root"
         else:
             from sys import maxsize
             return node.assertion.to_utf() + ' (' + str(hash(node.closure) + maxsize + 1) + ')'
 
+    ret = [(0, 0, 0, [ident(root)], "root")] # Bug in PGSolver requires root == 0
     for source, destinations in edges.items():
         ret += [(ident(source),
                  pgsolver_priority(source, def_list),
@@ -308,7 +298,15 @@ def run_pgsolver(game: SerializedParityGame) -> bool:
         assert len(dests) > 0
         return " ".join([str(source), str(priority), str(player), ",".join(map(str, dests)), '"' + label.replace('"', "'") + '"' ])
     input = "; \n".join(map(entry_to_string, game)) + ';'
-    output = check_output(['pgsolver', '-local',  'stratimprloc2', '0'], input=input, text=True)
+    from subprocess import check_output, CalledProcessError, PIPE
+    try:
+        output = check_output(['pgsolver', '-local',  'stratimprloc2', '0'], input=input, text=True, stderr=PIPE)
+    except CalledProcessError as e:
+        print('PGSolver failed')
+        print(input)
+        print(e.stderr)
+        raise
+
     match = re.search(r'Winner of initial node is player (\d)\n', output)
     if match is None:
         raise RuntimeError("PGGame not well formed?\n" + output)
@@ -565,25 +563,17 @@ def build_tableau( curr_node: Closure
     for node in next_nodes:
         build_tableau(node, partial_tableau, partial_game, K, signature, def_list)
 
-def build_tableaux(assertion : Matches, K: List[EVar], signature: Signature) -> ParityGame:
-    def_list : DefList = definition_list(assertion.pattern, def_list = [])
+def is_sat(pattern: Pattern, K: List[EVar], signature: Signature) -> bool:
+    pattern = pattern.to_positive_normal_form()
+    def_list : DefList = definition_list(pattern, def_list = [])
+    assertion = ExistsAssertion(frozenset({K[0]}), Matches(K[0], pattern))
     game : ParityGame = {}
     tableau : Tableau = {}
-    closures_and_edges = add_to_closure(assertion, frozenset(), [], K, def_list)
-    C = assertion.free_evars().union([assertion.variable])
-    closures = complete_closures_for_signature(closures_and_edges, C, K, signature, game, def_list)
-    if closures:
-        game[Root(assertion)] = frozenset([PGNode(assertion, closure) for closure in closures])
-    else:
-        game[Root(assertion)] = frozenset([Unsat()])
-    for closure in closures:
-        build_tableau(closure, tableau, game, K, signature, def_list)
-    return game
-
-def is_sat(p: Pattern, K: List[EVar], signature: Signature) -> bool:
-    p = p.to_positive_normal_form()
-    game = build_tableaux(Matches(K[0], p), K, signature)
+    root = frozenset({assertion})
+    root_pgnode = PGNode(assertion, root)
+    build_tableau(root, tableau, game, K, signature, def_list)
+    assert(root in tableau)
     game[Unsat()] = frozenset({Unsat()})
-    serialized = serialize_parity_game(Root(Matches(K[0], p)), game, definition_list(p, []))
+    serialized = serialize_parity_game(root_pgnode, game, def_list)
     return run_pgsolver(serialized)
 
