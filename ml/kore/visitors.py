@@ -489,3 +489,28 @@ class CopyVisitor(KoreVisitor[BaseASTT, BaseASTT], FullVisitorStructure[BaseASTT
 
     def postvisit_ml_pattern(self, ml_pattern: MLPattern, *args: Any) -> MLPattern:
         return MLPattern(ml_pattern.construct, *args)
+
+
+class PatternVariableRenamer(KoreVisitor[BaseASTT, BaseASTT], PatternOnlyVisitorStructure[BaseASTT, BaseASTT]):
+    """
+    Consistently rename all variables appearing in the pattern
+    """
+    def __init__(self, substitution: Mapping[Variable, Variable]):
+        super().__init__()
+        self.substitution = substitution
+
+    def postvisit_variable(self, var: Variable) -> Pattern:
+        assert var in self.substitution
+        return self.substitution[var]
+
+    def postvisit_axiom(self, axiom: Axiom, pattern: Pattern) -> Axiom:
+        axiom.pattern = pattern
+        return axiom
+
+    def postvisit_application(self, application: Application, arguments: List[Pattern]) -> Application:
+        application.arguments = arguments
+        return application
+
+    def postvisit_ml_pattern(self, ml_pattern: MLPattern, arguments: List[Pattern]) -> MLPattern:
+        ml_pattern.arguments = arguments
+        return ml_pattern

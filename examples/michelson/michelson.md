@@ -1669,9 +1669,13 @@ to the given addresses/key hashes.
     requires A . FA in_keys(ContractMap)
      andBool ContractMap [ A . FA ] ==K T
 
-  rule <k> CONTRACT(_FA, T) => . ... </k>
-       <stack> [address _] ; SS => [option contract T None] ; SS </stack>
-       <knownaddrs> _ </knownaddrs> [owise]
+  rule <k> CONTRACT(FA, T) => . ... </k>
+       <stack> [address A] ; SS => [option contract T None] ; SS </stack>
+       <knownaddrs> ContractMap </knownaddrs>
+     requires notBool (
+          A . FA in_keys(ContractMap)
+          andBool ContractMap [ A . FA ] ==K T
+     )
 
   rule <k> IMPLICIT_ACCOUNT _AL => . ... </k>
        <stack> [key_hash #KeyHash(A)] ; SS

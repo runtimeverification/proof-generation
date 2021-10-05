@@ -35,6 +35,7 @@ from .visitors import (
     QuantifierTester,
     PatternVariableVisitor,
     SortVariableVisitor,
+    PatternVariableRenamer,
 )
 from .pretty import PrettyPrinter
 """
@@ -246,6 +247,23 @@ class KoreUtils:
         """
         for axiom in module.axioms:
             KoreUtils.quantify_all_free_variables_in_axiom(axiom)
+
+    @staticmethod
+    def rename_variable_with_prefix(axiom: Axiom, prefix: str) -> Tuple[Axiom, Dict[Variable, Variable]]:
+        """
+        Return a new axiom with all variables renamed to the form <prefix><E|S><number>
+        """
+        variables = PatternVariableVisitor().visit(axiom)
+        renaming = {}
+
+        for i, var in enumerate(variables):
+            renaming[var] = Variable(f"{prefix}{'S' if var.is_set_variable else 'E'}{i}", var.sort, var.is_set_variable)
+
+        new_pattern = KoreUtils.copy_ast(axiom.get_parent(), axiom)
+        new_pattern.visit(PatternVariableRenamer(renaming))
+        new_pattern.resolve(axiom.get_parent())
+
+        return new_pattern, renaming
 
     @staticmethod
     def unify_sorts(sort1: Sort, sort2: Sort) -> Optional[Mapping[SortVariable, Sort]]:

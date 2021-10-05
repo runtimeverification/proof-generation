@@ -1091,6 +1091,13 @@ class RewriteProofGenerator(ProofGenerator):
                     simplified_results.append(ConstrainedPattern.from_pattern(simplified))
                 applied_rule.results = tuple(simplified_results)
 
+                if applied_rule.rule_id is not None and \
+                   applied_rule.rule_id in self.composer.axiom_variable_renaming and \
+                   applied_rule.substitution is not None:
+                    renaming = self.composer.axiom_variable_renaming[applied_rule.rule_id]
+                    applied_rule.substitution = applied_rule.substitution.rename_variables(renaming)
+                    applied_rule.resolve(self.composer.module)
+
     def match_with_final_results(self, task: RewritingTask, claim: ProvableClaim, start_from: int = 0) -> ProvableClaim:
         _, rhs = KoreUtils.destruct_rewrites_star(claim.claim.pattern)
         branches = KoreUtils.destruct_nested_or(rhs)
@@ -1947,7 +1954,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         # this arithmetic fact
         with self.composer.in_segment("dv"):
             self.composer.load_comment("NOTE: domain value reasoning checked by external tool")
-            thm = self.composer.load_axiom(
+            provable_claim = self.composer.load_axiom(
                 claim,
                 f"{self.composer.sanitize_label_name(application.symbol.get_symbol_name())}-domain-fact-{self.axiom_counter}",
                 comment=False,
@@ -1958,7 +1965,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
 
         self.axiom_counter += 1
 
-        return ProvableClaim(claim, thm.as_proof())
+        return ProvableClaim(claim, provable_claim.proof)
 
     def build_arithmetic_equation(self, application: kore.Application, result: Union[int, bool]) -> ProvableClaim:
         """

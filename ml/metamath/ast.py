@@ -65,6 +65,9 @@ class Term(BaseAST):
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         raise NotImplementedError()
 
+    def get_size(self) -> int:
+        raise NotImplementedError()
+
 
 @dataclass
 class Metavariable(Term):
@@ -81,6 +84,9 @@ class Metavariable(Term):
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_metavariable(self)  # type: ignore
+
+    def get_size(self) -> int:
+        return 1
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -107,6 +113,9 @@ class Application(Term):
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_application(self)  # type: ignore
+
+    def get_size(self) -> int:
+        return 1 + sum(map(lambda t: t.get_size(), self.subterms))
 
     def __hash__(self) -> int:
         if self.hash_cache is not None:

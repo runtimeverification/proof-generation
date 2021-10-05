@@ -40,6 +40,18 @@ class Substitution(WithSchema):
 
     # substitution: Dict[kore.Variable, kore.Pattern] = field(default_factory=lambda: {})
 
+    def rename_variables(self, renaming: Mapping[kore.Variable, kore.Variable]) -> Substitution:
+        new_substitution = []
+
+        for k, v in self.substitution:
+            if isinstance(k, kore.Variable) and k in renaming:
+                k = renaming[k]
+            if isinstance(v, kore.Variable) and v in renaming:
+                v = renaming[v]
+            new_substitution.append((k, v))
+
+        return Substitution(tuple(new_substitution))
+
     def is_empty(self) -> bool:
         return len(self.substitution) == 0
 

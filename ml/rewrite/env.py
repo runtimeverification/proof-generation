@@ -57,13 +57,13 @@ class SubsortRelation:
     relation (a strict partial order)
     """
     def __init__(self) -> None:
-        self.adj_list: Dict[kore.SortInstance, List[Tuple[kore.SortInstance, Theorem]]] = {}
+        self.adj_list: Dict[kore.SortInstance, List[kore.SortInstance]] = {}
         # SortInstance -> [ ( supersort, subsorting lemma ) ... ]
 
     def get_immediate_subsort_of(self, sort: kore.SortInstance) -> List[kore.SortInstance]:
         subsorts = []
         for other, supersorts in self.adj_list.items():
-            for supersort, _ in supersorts:
+            for supersort in supersorts:
                 if supersort == sort:
                     subsorts.append(other)
                     break
@@ -80,7 +80,7 @@ class SubsortRelation:
         if sort1 not in self.adj_list:
             return None
 
-        for intermediate, _ in self.adj_list[sort1]:
+        for intermediate in self.adj_list[sort1]:
             if intermediate == sort2:
                 return [sort1, sort2]
 
@@ -93,7 +93,7 @@ class SubsortRelation:
 
         return None
 
-    def add_subsort(self, sort1: kore.SortInstance, sort2: kore.SortInstance, subsort_axiom: Theorem) -> None:
+    def add_subsort(self, sort1: kore.SortInstance, sort2: kore.SortInstance) -> None:
         """
         Add sort1 < sort2
         """
@@ -102,12 +102,12 @@ class SubsortRelation:
 
         if sort1 not in self.adj_list:
             self.adj_list[sort1] = []
-        self.adj_list[sort1].append((sort2, subsort_axiom))
+        self.adj_list[sort1].append(sort2)
 
     def __str__(self) -> str:
         return "\n".join(
             [
-                "{} < {}".format(sort, ", ".join([str(supersort) for supersort, _ in supersorts]))
+                "{} < {}".format(sort, ", ".join([str(supersort) for supersort in supersorts]))
                 for sort, supersorts in self.adj_list.items()
             ]
         )
@@ -175,6 +175,11 @@ class KoreComposer(Composer):
         self.string_literals: Set[kore.StringLiteral] = set()
         self.domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]] = set()
 
+        # we rename variables to reduce the total number of variables
+        # but this will affect the hints, so we need to provide this
+        # renaming information
+        self.axiom_variable_renaming: Dict[str, Mapping[kore.Variable, kore.Variable]] = {}
+
         self.fresh_label_counter = 0
 
     def get_fresh_label(self, prefix: str) -> str:
@@ -209,10 +214,7 @@ class KoreComposer(Composer):
         self.sort_injection_symbol = inj_module.symbol_map["inj"]
 
         assert len(inj_module.axioms) == 1, "unexpected INJ module content"
-        self.sort_injection_axiom = ProvableClaim(
-            inj_module.axioms[0],
-            self.load_axiom(inj_module.axioms[0], "kore-inj-axiom").as_proof(),
-        )
+        self.sort_injection_axiom = self.load_axiom(inj_module.axioms[0], "kore-inj-axiom")
 
     def sanitize_label_name(self, label: str) -> str:
         # metamath does not allow some characters in the label
@@ -234,10 +236,10 @@ class KoreComposer(Composer):
                 if found_typecode is None:
                     new_metavars[var] = typecode
                 else:
-                    assert (found_typecode == typecode
-                            ), "inconsistent metavariable typecode: both {} and {} for variable {}".format(
-                                found_typecode, typecode, var
-                            )
+                    assert found_typecode == typecode, \
+                        "inconsistent metavariable typecode: both {} and {} for variable {}".format(
+                            found_typecode, typecode, var
+                        )
 
             if not new_metavars:
                 return
@@ -337,12 +339,27 @@ class KoreComposer(Composer):
         return ProvableClaim(claim, theorem.as_proof())
 
     def load_axiom(
-        self, axiom: kore.Axiom, label: str, comment: bool = True, provable: bool = False, **kwargs: Any
-    ) -> Theorem:
+        self,
+        axiom: kore.Axiom,
+        label: str,
+        comment: bool = True,
+        provable: bool = False,
+        rename: bool = False,
+        **kwargs: Any
+    ) -> ProvableClaim:
         """
         Encode and load a Kore axiom into the generator
         and return the corresponding theorem object
         """
+
+        if rename:
+            axiom, renaming = KoreUtils.rename_variable_with_prefix(axiom, "V")
+            uid = KoreTemplates.get_axiom_unique_id(axiom)
+            if uid is not None:
+                # assert uid not in self.axiom_variable_renaming, \
+                #        f"loading duplicate axioms {uid}"
+                self.axiom_variable_renaming[uid] = renaming
+
         term = self.encode_pattern(axiom)
 
         if comment:
@@ -354,7 +371,7 @@ class KoreComposer(Composer):
         else:
             stmt = mm.AxiomaticStatement(label, (mm.Application("|-"), term))
 
-        return self.load(stmt, **kwargs)
+        return ProvableClaim(axiom, self.load(stmt, **kwargs).as_proof())
 
     def load_symbol_sorting_lemma(self, symbol_definition: kore.SymbolDefinition) -> None:
         encoded_symbol = KoreEncoder.encode_symbol(symbol_definition.symbol)
@@ -700,9 +717,8 @@ class KoreComposer(Composer):
 
                     functional_axiom.resolve(self.module)
 
-                    theorem = self.load_axiom(functional_axiom, functional_rule_name, top_level=True)
-                    self.domain_value_functional_axioms[sort,
-                                                        literal] = ProvableClaim(functional_axiom, theorem.as_proof())
+                    self.domain_value_functional_axioms[sort, literal] = \
+                        self.load_axiom(functional_axiom, functional_rule_name, top_level=True)
 
     def load_constant_substitution_lemma(self, symbol: str, arity: int, label: str) -> None:
         """
@@ -875,11 +891,12 @@ class KoreComposer(Composer):
             return f"x{n}"
             # return {0: "x", 1: "y", 2: "z", 3: "w"}.get(n, f"x{n}")
         elif typecode == "#Variable":
-            return {0: "xX", 1: "yY", 2: "zZ", 3: "wW"}.get(n, f"xX{n}")
+            # return {0: "xX", 1: "yY", 2: "zZ", 3: "wW"}.get(n, f"xX{n}")
+            return f"xX{n}"
         elif typecode == "#Pattern":
-            return f"ph{n}"
+            return f"ptn{n}"
         else:
-            return f"var-{typecode.replace('#', '').lower()}"
+            return f"fv{typecode.replace('#', '').lower()}"
 
     def gen_metavariables(self, typecode: str, n: int) -> List[str]:
         """
@@ -1080,45 +1097,46 @@ class KoreComposer(Composer):
 
             if KoreTemplates.is_map_commutativity_axiom(axiom):
                 assert self.map_commutativity_axiom is None
-                theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
-                self.map_commutativity_axiom = ProvableClaim(axiom, theorem.as_proof())
+                self.map_commutativity_axiom = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
                 continue
 
             if KoreTemplates.is_map_associativity_axiom(axiom):
                 assert self.map_associativity_axiom is None
-                theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
-                self.map_associativity_axiom = ProvableClaim(axiom, theorem.as_proof())
+                self.map_associativity_axiom = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
                 continue
 
             if KoreTemplates.is_map_right_unit_axiom(axiom):
                 assert self.map_right_unit_axiom is None
-                theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
-                self.map_right_unit_axiom = ProvableClaim(axiom, theorem.as_proof())
+                self.map_right_unit_axiom = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
                 continue
 
             if (functional_symbol is not None or is_rewrite or is_anywhere or equation_head_symbol is not None
                     or subsort_tuple is not None):
-                theorem = self.load_axiom(axiom, f"{module.name}-axiom-{index}")
+                claim = self.load_axiom(
+                    axiom,
+                    f"{module.name}-axiom-{index}",
+                    rename=is_rewrite or is_anywhere or equation_head_symbol is not None,
+                )
 
                 # record these statements for later use
                 if functional_symbol is not None:
-                    self.functional_axioms[functional_symbol] = ProvableClaim(axiom, theorem.as_proof())
+                    self.functional_axioms[functional_symbol] = claim
                 elif is_rewrite:
                     uid = KoreTemplates.get_axiom_unique_id(axiom)
                     assert uid is not None
-                    self.rewrite_axioms[uid] = ProvableClaim(axiom, theorem.as_proof())
+                    self.rewrite_axioms[uid] = claim
                 elif is_anywhere:
-                    self.anywhere_axioms.append(ProvableClaim(axiom, theorem.as_proof()))
+                    self.anywhere_axioms.append(claim)
 
                 if equation_head_symbol is not None:
                     if equation_head_symbol not in self.equational_axioms:
                         self.equational_axioms[equation_head_symbol] = []
-                    self.equational_axioms[equation_head_symbol].append(ProvableClaim(axiom, theorem.as_proof()))
+                    self.equational_axioms[equation_head_symbol].append(claim)
 
                 # subsort axioms have the same form as functional axioms
                 if subsort_tuple is not None:
                     sort1, sort2 = subsort_tuple
-                    self.subsort_relation.add_subsort(sort1, sort2, theorem)
+                    self.subsort_relation.add_subsort(sort1, sort2)
 
     def infer_premise_metavar(self, theorem: Theorem) -> Optional[mm.Metavariable]:
         """

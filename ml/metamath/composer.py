@@ -539,9 +539,9 @@ class ProofCache:
     TODO: add heuristics to not cache "small" and "infrequent" proofs
     """
 
-    # if the proof script size exceeds this
-    # number of labels, the proof will be cached
-    # as a theorem in the database
+    # When the proof script size exceeds
+    # <THEOREM_CACHE_THRESHOLD> * statement size
+    # we still cache the proof as a separate theorem
     THEOREM_CACHE_THRESHOLD = 10
 
     # certain tools (e.g. itp) would need all cache disabled
@@ -601,7 +601,8 @@ class ProofCache:
         self.stat_cache_miss += 1
 
         # cache the proof as a theorem
-        if not no_theorem_cache and len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD:
+        if not no_theorem_cache and \
+           len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD * sum(map(lambda t: t.get_size(), terms)):
             self.stat_theorem_cache += 1
 
             # do not index the cached statements

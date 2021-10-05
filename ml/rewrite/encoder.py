@@ -17,6 +17,11 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
     and constant symbols
     """
 
+    KORE_SYMBOL_PREFIX = "\\kore-symbol-"
+    KORE_SORT_PREFIX = "\\kore-sort-"
+    KORE_ELEMENT_VAR_PREFIX = "kore-element-var-"
+    KORE_SORT_VAR_PREFIX = "kore-sort-var-"
+
     TOP = "\\kore-top"
     BOTTOM = "\\kore-bottom"
     NOT = "\\kore-not"
@@ -82,7 +87,7 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         if symbol_str == "inj":
             return "\\kore-inj"
 
-        return "\\kore-symbol-" + symbol_str
+        return KoreEncoder.KORE_SYMBOL_PREFIX + symbol_str
 
     @staticmethod
     def encode_sort(sort: Union[kore.SortInstance, str]) -> str:
@@ -94,7 +99,7 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         if sort_id == "Unit":
             return "\\unit-sort"
 
-        return "\\kore-sort-" + sort_id
+        return KoreEncoder.KORE_SORT_PREFIX + sort_id
 
     @staticmethod
     def encode_string_literal(literal: kore.StringLiteral) -> str:
@@ -106,11 +111,11 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
 
     @staticmethod
     def encode_variable(var: kore.Variable) -> str:
-        return "kore-element-var-" + var.name
+        return KoreEncoder.KORE_ELEMENT_VAR_PREFIX + var.name
 
     @staticmethod
     def encode_sort_variable(var: kore.SortVariable) -> str:
-        return "kore-sort-var-" + var.name
+        return KoreEncoder.KORE_SORT_VAR_PREFIX + var.name
 
     def __init__(self) -> None:
         self.metavariables: Dict[str, str] = {}  # var -> typecode
@@ -253,14 +258,14 @@ class KoreDecoder:
         if isinstance(term, mm.Metavariable):
             assert sort is not None, \
                    f"unable to decode {term} as a pattern variable without sorting information"
-            assert term.name.startswith("kore-element-var-"), \
+            assert term.name.startswith(KoreEncoder.KORE_ELEMENT_VAR_PREFIX), \
                    f"unable to decode {term} as a pattern variable"
-            return kore.Variable(term.name[len("kore-element-var-"):], sort)
+            return kore.Variable(term.name[len(KoreEncoder.KORE_ELEMENT_VAR_PREFIX):], sort)
 
         assert isinstance(term, mm.Application)
 
-        if term.symbol.startswith("\\kore-symbol-"):
-            symbol_name = term.symbol[len("\\kore-symbol-"):]
+        if term.symbol.startswith(KoreEncoder.KORE_SYMBOL_PREFIX):
+            symbol_name = term.symbol[len(KoreEncoder.KORE_SYMBOL_PREFIX):]
             symbol_definition = self.module.get_symbol_by_name(symbol_name)
 
             assert symbol_definition is not None, \
@@ -340,18 +345,18 @@ class KoreDecoder:
 
     def decode_sort(self, term: mm.Term) -> kore.Sort:
         if isinstance(term, mm.Metavariable):
-            assert term.name.startswith("kore-sort-var-"), \
+            assert term.name.startswith(KoreEncoder.KORE_SORT_VAR_PREFIX), \
                    f"unable to decode {term} as a sort"
-            return kore.SortVariable(term.name[len("kore-sort-var-"):])
+            return kore.SortVariable(term.name[len(KoreEncoder.KORE_SORT_VAR_PREFIX):])
 
         assert isinstance(term, mm.Application)
 
         if term.symbol == "\\unit-sort":
             sort_id = "Unit"
         else:
-            assert term.symbol.startswith("\\kore-sort-"), \
+            assert term.symbol.startswith(KoreEncoder.KORE_SORT_PREFIX), \
                     f"unable to decode {term} as a sort"
-            sort_id = term.symbol[len("\\kore-sort-"):]
+            sort_id = term.symbol[len(KoreEncoder.KORE_SORT_PREFIX):]
 
         sort_definition = self.module.get_sort_by_id(sort_id)
         assert sort_definition is not None, \
