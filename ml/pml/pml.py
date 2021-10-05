@@ -1,8 +1,8 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from itertools import accumulate, count, islice
+from itertools import accumulate, chain, count, islice
 from functools import reduce
-from typing import Container, FrozenSet, Hashable, Iterable, List, Tuple, TypeVar, Union
+from typing import Callable, Container, FrozenSet, Hashable, Iterable, List, Tuple, TypeVar, Union
 
 Var = Union['SVar', 'EVar']
 
@@ -385,11 +385,18 @@ def implies(phi: Pattern, psi: Pattern) -> Pattern:
 # Helper Utilities
 # ----------------
 
-T = TypeVar('T')
+T  = TypeVar('T')
+T1 = TypeVar('T1')
+T2 = TypeVar('T2')
+
 def diff(l1: List[T] , l2_set: Container[T]) -> List[T]:
     # Preserves order
     return [item for item in l1 if item not in l2_set]
 
 def take(n: int, l: Iterable[T]) -> Tuple[T, ...]:
-  return tuple(islice(l, n))
+    ret = tuple(islice(l, n))
+    assert len(ret) == n
+    return ret
 
+def flat_map(f : Callable[[T1], Iterable[T2]], xs: Iterable[T1]) -> Iterable[T2]:
+    return reduce(chain, map(f, xs), [])

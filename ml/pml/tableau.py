@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass
+from functools import reduce
 from itertools import chain, count, islice, product
-from typing import Any, Container, Dict, FrozenSet, Iterable, Iterator, List, Tuple, Union, cast
+from typing import Any, Callable, Container, Dict, FrozenSet, Iterable, Iterator, List, Tuple, Union, cast
 import re
 
 from pml import *
@@ -222,7 +223,7 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
                 return 0 # Tops only child is Top, so this can be any even value`
             if isinstance(p, (Bottom, EVar)) or (isinstance(p, Not) and isinstance(p.subpattern, EVar)):
                 return 0 # Cannot repeat infinitly on any trace, so value doesn't matter.
-            if isinstance(p, (And, Or)):
+            if isinstance(p, (And, Or, SVar)):
                 return 2 * len(def_list) + 2 # Not relevant; some other node will have lower or equal priority
             if isinstance(p, Nu):
                 return 2 * def_list.index(p)
@@ -302,9 +303,9 @@ def run_pgsolver(game: SerializedParityGame) -> bool:
     try:
         output = check_output(['pgsolver', '-local',  'stratimprloc2', '0'], input=input, text=True, stderr=PIPE)
     except CalledProcessError as e:
-        print('PGSolver failed')
-        print(input)
-        print(e.stderr)
+        # print('PGSolver failed')
+        # print(input)
+        # print(e.stderr)
         raise
 
     match = re.search(r'Winner of initial node is player (\d)\n', output)
@@ -323,6 +324,15 @@ PartialEdges = List[Tuple[Assertion, Assertion]]
 def is_atomic_application(app : App) -> bool:
     return all(map(lambda arg: isinstance(arg, EVar), app.arguments))
 
+def add_to_closures( assertion: Assertion
+                   , closures: List[Tuple[Closure, PartialEdges]]
+                   , K: List[EVar]
+                   , def_list: DefList
+                   ) -> List[Tuple[Closure, PartialEdges]]:
+    return  list(flat_map( lambda cl_pe: add_to_closure(assertion, *cl_pe, K, def_list)
+                         , closures
+                )        )
+
 def add_to_closure( assertion: Assertion
                   , partial_closure: Closure
                   , partial_edges: PartialEdges
@@ -330,8 +340,8 @@ def add_to_closure( assertion: Assertion
                   , def_list: DefList
                   ) -> List[Tuple[Closure, PartialEdges]]:
     next : Assertion
-    if assertion in partial_closure:
-        return [(partial_closure, partial_edges)]
+#     if assertion in partial_closure:
+#         return [(partial_closure, partial_edges)]
     if isinstance(assertion, Matches):
         p = assertion.pattern
         if   isinstance(p, (Bottom)):
@@ -367,6 +377,7 @@ def add_to_closure( assertion: Assertion
                                          , K , def_list)
                 partial_edges = partial_edges + [(assertion, assertion)]
                 return [(partial_closure, partial_edges)]
+
             bound_vars = list(take(len(p.arguments), diff(K, free_evars(partial_closure))))
             next = ExistsAssertion(frozenset(bound_vars)
                                   , AllOf(frozenset( [ Matches( assertion.variable, App(p.symbol, *bound_vars)) ]
@@ -428,6 +439,7 @@ def add_to_closure( assertion: Assertion
             return ret
         elif isinstance(p, (Nu, Mu)):
             next = Matches(assertion.variable, p.subpattern.substitute(p.bound, SVar(def_list.index(p))))
+            print('Nu ====', [(assertion.to_utf(), next.to_utf())])
             return add_to_closure( next
                                  , partial_closure.union([assertion])
                                  , partial_edges + [(assertion, next)]
@@ -436,6 +448,7 @@ def add_to_closure( assertion: Assertion
                                  )
         elif isinstance(p, SVar) and isinstance(p.name, int): # Only consider bound `SVar`s.
             next = Matches(assertion.variable, def_list[p.name])
+            print('SVar ==', [(assertion.to_utf(), next.to_utf())])
             return add_to_closure( next
                                  , partial_closure.union([assertion])
                                  , partial_edges + [(assertion, next)]
@@ -474,9 +487,9 @@ def add_to_closure( assertion: Assertion
             for (closure, edges) in curr_closures:
                 next = assertion.subassertion.substitute_multi(bound, instantiation)
                 new_closures +=  add_to_closure( next
-                                                , partial_closure
-                                                , partial_edges + [(assertion, next)]
-                                                , K, def_list)
+                                               , partial_closure
+                                               , partial_edges + [(assertion, next)]
+                                               , K, def_list)
             curr_closures = new_closures
         return curr_closures
     else:
@@ -486,9 +499,8 @@ def complete_closures_for_signature( closures: List[Tuple[Closure, PartialEdges]
                                    , C: FrozenSet[EVar]
                                    , K: List[EVar]
                                    , signature: Signature
-                                   , parity_game : ParityGame
                                    , def_list : DefList
-                                   ) -> List[Closure]:
+                                   ) -> List[Tuple[Closure, PartialEdges]]:
     # TODO: This should be replaced by some form of resulution
     for (symbol, arity) in signature.items():
         for tuple in product(C, repeat = arity + 1):
@@ -501,79 +513,103 @@ def complete_closures_for_signature( closures: List[Tuple[Closure, PartialEdges]
                 new_closures += x
                 new_closures += y
             closures = new_closures
+    return new_closures
 
-    ret : List[Closure] = []
+def instantiate_universals( closures: List[Tuple[Closure, PartialEdges]]
+                          , K: List[EVar]
+                          , def_list: DefList
+                          ) -> List[Tuple[Closure, PartialEdges]]:
+    ret = []
+    for (closure, partial_edges) in closures:
+        curr_closures = [(closure, partial_edges)]
+        for universal in closure:
+            if not isinstance(universal, ForallAssertion):
+                continue
+            curr_closures = add_to_closures(universal, curr_closures, K, def_list)
+        ret += curr_closures
+    return ret
+
+def build_games( closures: List[Tuple[Closure, PartialEdges]]
+               , parity_game: ParityGame
+               ) -> List[Tuple[Closure, ParityGame]]:
+    ret : List[Tuple[Closure, ParityGame]] = []
     sources : List[PGNode] = []
     dests : List[PGNode] = []
     for (closure, partial_edges) in closures:
+        game = parity_game.copy()
         for (source, dest) in partial_edges:
             source_node = PGNode(source, closure)
             sources += [source_node]
-            parity_game[source_node] = parity_game.get(source_node, frozenset()).union([PGNode(dest, closure)])
+            game[source_node] = game.get(source_node, frozenset()).union([PGNode(dest, closure)])
             dests += [PGNode(dest, closure)]
-        ret += [closure]
-
-    for node in diff(dests, sources):
-        parity_game[node] = frozenset({Unsat()})
+        ret += [(closure, game)]
     return ret
 
 last : Closure = frozenset()
-def build_tableau( curr_node: Closure
-                 , partial_tableau: Tableau
-                 , partial_game : ParityGame
-                 , K: List[EVar]
-                 , signature: Signature
-                 , def_list : DefList
-                 ) -> None:
-    if curr_node in partial_tableau.keys():
-        return
+def build_tableaux( curr_closure: Closure
+                  , partial_tableau: Tableau
+                  , partial_game : ParityGame
+                  , K: List[EVar]
+                  , signature: Signature
+                  , def_list : DefList
+                  ) -> List[ParityGame]:
+    # print('build_tableaux')
 
-    next_nodes : List[Closure] = []
-    for assertion in curr_node:
-        if not isinstance(assertion, ExistsAssertion):
-            continue
+    if curr_closure in partial_tableau.keys():
+        return [partial_game]
 
-        bound = list(assertion.bound)
-        if bound == []:
-            continue
-        potential_variables = list(assertion.free_evars()) + list(take(len(bound), diff(K, free_evars(curr_node))))
+    # We pick an existential assertion in the closure, and expand the closure
+    # to allow instantiating it.
+    existential = next((a for a in curr_closure if isinstance(a, ExistsAssertion)), None)
+    if not existential:
+        return [partial_game]
+    # print('existential', existential)
 
-        source_node = PGNode(assertion, curr_node)
-        for instantiation in product(potential_variables, repeat = len(bound)):
-            new_assertion = assertion.subassertion.substitute_multi(instantiation, list(bound))
-            new_closure = curr_node
+    bound = list(existential.bound)
+    # print('bound', bound)
+    potential_variables = list(existential.free_evars()) + list(take(len(bound), diff(K, free_evars(curr_closure))))
+    # print('potential_variables', potential_variables)
+    instantiations = list(product(potential_variables, repeat = len(bound)))
+    assert instantiations
+    games : List[ParityGame] = []
+    for instantiation in instantiations:
+        # print('instantiation', instantiation)
+        new_assertion = existential.subassertion.substitute_multi(instantiation, list(bound))
+        new_closure = curr_closure.difference({existential})
+        new_closures = add_to_closure(new_assertion, new_closure, [], K, def_list)
+        new_closures = instantiate_universals(new_closures, K, def_list)
+        new_closures = complete_closures_for_signature( new_closures
+                                                      , free_evars(new_closure).union(frozenset(instantiation))
+                                                      , K
+                                                      , signature
+                                                      , def_list
+                                                      )
+        for (new_closure, new_game) in build_games(new_closures, partial_game):
+            dest_node = PGNode(new_assertion, new_closure)
+            source_node = PGNode(existential, curr_closure)
+            new_game[source_node] = new_game.get(source_node, frozenset()).union([dest_node])
 
-            new_closures = complete_closures_for_signature( add_to_closure(new_assertion, new_closure, [], K, def_list)
-                                                          , free_evars(new_closure).union(frozenset(instantiation))
-                                                          , K
-                                                          , signature
-                                                          , partial_game
-                                                          , def_list
-                                                          )
-            for new_closure in new_closures:
-                dest_node = PGNode(new_assertion, new_closure)
-                partial_game[source_node] = partial_game.get(source_node, frozenset()).union([dest_node])
+            for common in curr_closure.intersection(new_closure):
+                new_game[PGNode(common, curr_closure)] = new_game.get(PGNode(common, curr_closure), frozenset()).union([PGNode(common, new_closure)])
 
-            next_nodes += new_closures
-        if not source_node in partial_game.keys():
-            partial_game[source_node] = frozenset([Unsat()])
-
-    partial_tableau[curr_node] = frozenset(next_nodes)
-
-    for node in next_nodes:
-        build_tableau(node, partial_tableau, partial_game, K, signature, def_list)
+            new_tableau = partial_tableau.copy()
+            new_tableau[curr_closure] = frozenset([new_closure])
+            new_games = build_tableaux(new_closure, new_tableau, new_game, K, signature, def_list)
+            games += new_games
+    # print('return', games) 
+    return games
 
 def is_sat(pattern: Pattern, K: List[EVar], signature: Signature) -> bool:
+    # print('==== is sat? ===============', pattern)
     pattern = pattern.to_positive_normal_form()
     def_list : DefList = definition_list(pattern, def_list = [])
     assertion = ExistsAssertion(frozenset({K[0]}), Matches(K[0], pattern))
-    game : ParityGame = {}
-    tableau : Tableau = {}
     root = frozenset({assertion})
     root_pgnode = PGNode(assertion, root)
-    build_tableau(root, tableau, game, K, signature, def_list)
-    assert(root in tableau)
-    game[Unsat()] = frozenset({Unsat()})
-    serialized = serialize_parity_game(root_pgnode, game, def_list)
-    return run_pgsolver(serialized)
+    for game in build_tableaux(root, {}, {}, K, signature, def_list):
+        game[Unsat()] = frozenset({Unsat()})
+        serialized = serialize_parity_game(root_pgnode, game, def_list)
+        if run_pgsolver(serialized):
+            return True
+    return False
 
