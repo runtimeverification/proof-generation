@@ -303,9 +303,9 @@ def run_pgsolver(game: SerializedParityGame) -> bool:
     try:
         output = check_output(['pgsolver', '-local',  'stratimprloc2', '0'], input=input, text=True, stderr=PIPE)
     except CalledProcessError as e:
-        # print('PGSolver failed')
-        # print(input)
-        # print(e.stderr)
+        print('PGSolver failed')
+        print(input)
+        print(e.stderr)
         raise
 
     match = re.search(r'Winner of initial node is player (\d)\n', output)
@@ -340,8 +340,7 @@ def add_to_closure( assertion: Assertion
                   , def_list: DefList
                   ) -> List[Tuple[Closure, PartialEdges]]:
     next : Assertion
-#     if assertion in partial_closure:
-#         return [(partial_closure, partial_edges)]
+
     if isinstance(assertion, Matches):
         p = assertion.pattern
         if   isinstance(p, (Bottom)):
@@ -399,11 +398,12 @@ def add_to_closure( assertion: Assertion
                                          , K , def_list)
                 partial_edges = partial_edges + [(assertion, assertion)]
                 return [(partial_closure, partial_edges)]
+
             bound_vars = list(take(len(p.arguments), diff(K, free_evars(partial_closure))))
-            next  = ForallAssertion(frozenset(bound_vars)
-                                  , AnyOf(frozenset( [ Matches( assertion.variable, App(p.symbol, *bound_vars).negate()) ]
-                                                   + [ Matches(bound, arg) for (bound, arg) in zip(bound_vars, p.arguments) ]
-                                  )      )         )
+            next  = ForallAssertion( frozenset(bound_vars)
+                                   , AnyOf(frozenset( [ Matches( assertion.variable, App(p.symbol, *bound_vars).negate()) ]
+                                                    + [ Matches(bound, arg) for (bound, arg) in zip(bound_vars, p.arguments) ]
+                                   )      )         )
             return add_to_closure( next
                                  , partial_closure.union([assertion])
                                  , partial_edges + [(assertion, next)]
@@ -411,32 +411,21 @@ def add_to_closure( assertion: Assertion
                                  , def_list
                                  )
         elif isinstance(p, And):
-            ret = []
-            partial_closure = partial_closure.union([assertion])
-            for (closure, edges) in add_to_closure( Matches(assertion.variable, p.left)
-                                         , partial_closure
-                                         , partial_edges + [(assertion, Matches(assertion.variable, p.left))]
-                                         , K
-                                         , def_list
-                                         ):
-                ret += add_to_closure( Matches(assertion.variable, p.right)
-                                     , closure
-                                     , edges + [(assertion, Matches(assertion.variable, p.right))]
-                                     , K
-                                     , def_list
-                                     )
-            return ret
+            next = AllOf(frozenset([ Matches(assertion.variable, p.left), Matches(assertion.variable, p.right) ]))
+            return add_to_closure( next
+                                 , partial_closure.union([assertion])
+                                 , partial_edges + [(assertion, next)]
+                                 , K
+                                 , def_list
+                                 )
         elif isinstance(p, Or):
-            ret = []
-            partial_closure = partial_closure.union([assertion])
-            for nextp in [p.left, p.right]:
-                ret += add_to_closure( Matches(assertion.variable, nextp)
-                                     , partial_closure
-                                     , partial_edges + [(assertion, Matches(assertion.variable, nextp))]
-                                     , K
-                                     , def_list
-                                     )
-            return ret
+            next = AnyOf(frozenset([ Matches(assertion.variable, p.left), Matches(assertion.variable, p.right)]))
+            return add_to_closure( next
+                                 , partial_closure.union([assertion])
+                                 , partial_edges + [(assertion, next)]
+                                 , K
+                                 , def_list
+                                 )
         elif isinstance(p, (Nu, Mu)):
             next = Matches(assertion.variable, p.subpattern.substitute(p.bound, SVar(def_list.index(p))))
             return add_to_closure( next
@@ -485,8 +474,8 @@ def add_to_closure( assertion: Assertion
             for (closure, edges) in curr_closures:
                 next = assertion.subassertion.substitute_multi(bound, instantiation)
                 new_closures +=  add_to_closure( next
-                                               , partial_closure
-                                               , partial_edges + [(assertion, next)]
+                                               , closure
+                                               , edges + [(assertion, next)]
                                                , K, def_list)
             curr_closures = new_closures
         return curr_closures
@@ -543,7 +532,6 @@ def build_games( closures: List[Tuple[Closure, PartialEdges]]
         ret += [(closure, game)]
     return ret
 
-last : Closure = frozenset()
 def build_tableaux( curr_closure: Closure
                   , partial_tableau: Tableau
                   , partial_game : ParityGame
@@ -551,12 +539,11 @@ def build_tableaux( curr_closure: Closure
                   , signature: Signature
                   , def_list : DefList
                   ) -> List[ParityGame]:
-
     if curr_closure in partial_tableau.keys():
         return [partial_game]
 
-    # We pick an existential assertion in the closure, and expand the closure
-    # to allow instantiating it.
+    # We pick an existential assertion in the closure,
+    # and expand the closure to allow instantiating it.
     existential = next((a for a in curr_closure if isinstance(a, ExistsAssertion)), None)
     if not existential:
         return [partial_game]
@@ -568,9 +555,17 @@ def build_tableaux( curr_closure: Closure
     assert instantiations
     games : List[ParityGame] = []
     for instantiation in instantiations:
-        # print('instantiation', instantiation)
-        new_assertion = existential.subassertion.substitute_multi(instantiation, list(bound))
-        new_closure = curr_closure.difference({existential})
+        new_assertion = existential.subassertion.substitute_multi(list(bound), instantiation)
+        build_new_node = not new_assertion.free_evars() <= free_evars(curr_closure) # Partial order, not equivalent to >
+        if build_new_node:
+            new_closure = frozenset([assertion for assertion in curr_closure
+                                               if assertion.free_evars() <= new_assertion.free_evars()
+                                    ])
+        else:
+            new_closure = curr_closure
+
+        
+        new_closure = new_closure.difference({existential})
         new_closures = add_to_closure(new_assertion, new_closure, [], K, def_list)
         new_closures = instantiate_universals(new_closures, K, def_list)
         new_closures = complete_closures_for_signature( new_closures
@@ -579,6 +574,8 @@ def build_tableaux( curr_closure: Closure
                                                       , signature
                                                       , def_list
                                                       )
+        print('new-closures', len(new_closures))
+        
         for (new_closure, new_game) in build_games(new_closures, partial_game):
             dest_node = PGNode(new_assertion, new_closure)
             source_node = PGNode(existential, curr_closure)
@@ -594,12 +591,15 @@ def build_tableaux( curr_closure: Closure
     return games
 
 def is_sat(pattern: Pattern, K: List[EVar], signature: Signature) -> bool:
+    print('---- is_sat')
     pattern = pattern.to_positive_normal_form()
     def_list : DefList = definition_list(pattern, def_list = [])
     assertion = ExistsAssertion(frozenset({K[0]}), Matches(K[0], pattern))
     root = frozenset({assertion})
     root_pgnode = PGNode(assertion, root)
-    for game in build_tableaux(root, {}, {}, K, signature, def_list):
+    games = build_tableaux(root, {}, {}, K, signature, def_list)
+    print('Generated', len(games), 'games.')
+    for game in games:
         game[Unsat()] = frozenset({Unsat()})
         serialized = serialize_parity_game(root_pgnode, game, def_list)
         if run_pgsolver(serialized):

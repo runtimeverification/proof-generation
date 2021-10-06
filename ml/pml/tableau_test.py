@@ -16,6 +16,7 @@ c1 = EVar("c1")
 c2 = EVar("c2")
 c3 = EVar("c3")
 c4 = EVar("c4")
+c5 = EVar("c5")
 
 def test_definition_list() -> None:
     assert definition_list(X, []) == []
@@ -168,9 +169,9 @@ def test_definition_list() -> None:
 #     assert game[PGNode(Matches(c, App(S, App(C))), cl_01)] == frozenset({Unsat()})
 #     assert game[PGNode(Matches(c, DApp(S, DApp(C))), cl_01)] == frozenset({Unsat()})
  
-def test_is_satisfiable() -> None:
-    signature = {C: 0, S: 1}
+signature = {C: 0, S: 1}
 
+def test_is_satisfiable() -> None:
     assert not is_sat(Bottom(), [c], signature)
     assert     is_sat(Top(),    [c], signature)
 
@@ -205,7 +206,9 @@ def test_is_satisfiable() -> None:
                         )
                      , [c, c1], signature)
 
-#    assert     is_sat( Nu(X, App(S, X)), [c, c1, c2, c3], signature)
+
+def test_is_satisfiable_fixpoint() -> None:
+    assert     is_sat( Nu(X, App(S, X)), [c, c1, c2], signature)
 #    assert not is_sat( And( Nu(X, And(App(C), App(S, X)))
 #                          , DApp(S, Not(App(C)))
 #                          )
@@ -222,4 +225,4 @@ def test_is_satisfiable() -> None:
 #                                         , App(S , X)
 #                                         ))
 #                     , [c, c1], signature)
-
+test_is_satisfiable_fixpoint()
