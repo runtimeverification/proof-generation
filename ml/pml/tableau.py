@@ -439,7 +439,6 @@ def add_to_closure( assertion: Assertion
             return ret
         elif isinstance(p, (Nu, Mu)):
             next = Matches(assertion.variable, p.subpattern.substitute(p.bound, SVar(def_list.index(p))))
-            print('Nu ====', [(assertion.to_utf(), next.to_utf())])
             return add_to_closure( next
                                  , partial_closure.union([assertion])
                                  , partial_edges + [(assertion, next)]
@@ -448,7 +447,6 @@ def add_to_closure( assertion: Assertion
                                  )
         elif isinstance(p, SVar) and isinstance(p.name, int): # Only consider bound `SVar`s.
             next = Matches(assertion.variable, def_list[p.name])
-            print('SVar ==', [(assertion.to_utf(), next.to_utf())])
             return add_to_closure( next
                                  , partial_closure.union([assertion])
                                  , partial_edges + [(assertion, next)]
@@ -553,7 +551,6 @@ def build_tableaux( curr_closure: Closure
                   , signature: Signature
                   , def_list : DefList
                   ) -> List[ParityGame]:
-    # print('build_tableaux')
 
     if curr_closure in partial_tableau.keys():
         return [partial_game]
@@ -563,12 +560,10 @@ def build_tableaux( curr_closure: Closure
     existential = next((a for a in curr_closure if isinstance(a, ExistsAssertion)), None)
     if not existential:
         return [partial_game]
-    # print('existential', existential)
 
     bound = list(existential.bound)
-    # print('bound', bound)
+
     potential_variables = list(existential.free_evars()) + list(take(len(bound), diff(K, free_evars(curr_closure))))
-    # print('potential_variables', potential_variables)
     instantiations = list(product(potential_variables, repeat = len(bound)))
     assert instantiations
     games : List[ParityGame] = []
@@ -596,11 +591,9 @@ def build_tableaux( curr_closure: Closure
             new_tableau[curr_closure] = frozenset([new_closure])
             new_games = build_tableaux(new_closure, new_tableau, new_game, K, signature, def_list)
             games += new_games
-    # print('return', games) 
     return games
 
 def is_sat(pattern: Pattern, K: List[EVar], signature: Signature) -> bool:
-    # print('==== is sat? ===============', pattern)
     pattern = pattern.to_positive_normal_form()
     def_list : DefList = definition_list(pattern, def_list = [])
     assertion = ExistsAssertion(frozenset({K[0]}), Matches(K[0], pattern))
