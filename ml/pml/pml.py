@@ -395,7 +395,7 @@ def diff(l1: List[T] , l2_set: Container[T]) -> List[T]:
 
 def take(n: int, l: Iterable[T]) -> Tuple[T, ...]:
     ret = tuple(islice(l, n))
-    assert len(ret) == n
+    assert len(ret) == n, (ret, n)
     return ret
 
 def flat_map(f : Callable[[T1], Iterable[T2]], xs: Iterable[T1]) -> Iterable[T2]:
