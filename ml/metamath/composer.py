@@ -542,7 +542,7 @@ class ProofCache:
     # When the proof script size exceeds
     # <THEOREM_CACHE_THRESHOLD> * statement size
     # we still cache the proof as a separate theorem
-    THEOREM_CACHE_THRESHOLD = 10
+    THEOREM_CACHE_THRESHOLD = 1
 
     # certain tools (e.g. itp) would need all cache disabled
     DISABLED = False
