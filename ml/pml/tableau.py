@@ -394,7 +394,9 @@ def add_to_closure( assertion: Assertion
                                      , partial_edges + [(assertion, Matches(assertion.variable, Bottom()))]
                                      , K
                                      , def_list)
-            return [(partial_closure, partial_edges)]
+            return [( partial_closure.union([assertion])
+                    , partial_edges + [(assertion, assertion)]
+                    )]
         elif isinstance(p, Not):
             assert isinstance(p.subpattern, EVar)
             if Matches(assertion.variable, p.negate()) in partial_closure:

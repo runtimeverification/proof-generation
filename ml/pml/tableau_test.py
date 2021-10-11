@@ -118,148 +118,120 @@ def test_instantiations() -> None:
     with raises(Exception): list(instantiations(1, frozenset(),    frozenset([c]), [c]))
     with raises(Exception): list(instantiations(1, frozenset([c]), frozenset([c]), [c]))
 
-# def test_build_tableaux() -> None:
-#     constants = [c, c1, c2, c3, c4]
-#     def_list : DefList = []
-# 
-#     assertion = Matches(c, Bottom())
-#     signature : Dict[Symbol, int] = {}
-#     closures = set(build_closures(assertion, constants, signature, {}, def_list))
-#     assert closures == set()
-#     game = build_tableaux(assertion, constants, signature)
-#     root : PGNodeGeneralized = Root(assertion)
-#     assert game == {    root : frozenset([cast(PGNodeGeneralized, Unsat())])
-#                    }
-# 
-#     assertion = Matches(c, Top())
-#     signature = {}
-#     closures = set(build_closures(assertion, constants, signature, {}, def_list))
-#     assert closures == {frozenset([assertion])}
-#     game = build_tableaux(assertion, constants, signature)
-#     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
-#                    , PGNode(assertion, frozenset([assertion])) : frozenset([PGNode(assertion, frozenset([assertion]))])
-#                    }
-# 
-#     assertion = Matches(c, App(C))
-#     signature = { C : 0 }
-#     closures = set(build_closures(assertion, constants, signature, {}, def_list))
-#     assert closures == {frozenset([assertion])}
-#     game = build_tableaux(assertion, constants, signature)
-#     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
-#                    , PGNode(assertion, frozenset([assertion])) : frozenset([PGNode(assertion, frozenset([assertion]))])
-#                    }
-# 
-#     assertion = Matches(c, DApp(C))
-#     signature = { C : 0 }
-#     closures = set(build_closures(assertion, constants, signature, {}, def_list))
-#     assert closures == {frozenset([assertion])}
-#     game = build_tableaux(assertion, constants, signature)
-#     assert game == {                           Root(assertion) : frozenset([PGNode(assertion, frozenset([assertion]))])
-#                    , PGNode(assertion, frozenset([assertion])) : frozenset([PGNode(assertion, frozenset([assertion]))])
-#                    }
-# 
-#     assertion = Matches(c, App(S, App(C)))
-#     signature = { S : 1, C : 0 }
-# 
-#     m_0_____ = Matches(c,   App(S,     c))
-#     m_1_____ = Matches(c,  DApp(S, Not(c)))
-#     m__0____ = Matches(c,   App(C))
-#     m__1____ = Matches(c,  DApp(C))
-#     m___0___ = Matches(c,   App(S, c1))
-#     m____0__ = Matches(c1,  App(S, c1))
-#     m____1__ = Matches(c1, DApp(S, Not(c1)))
-#     m_____0_ = Matches(c1,  App(S, c))
-#     m_____1_ = Matches(c1, DApp(S, Not(c)))
-#     m______0 = Matches(c1,  App(C))
-# 
-#     cl_00___ = frozenset([assertion, m_0_____,  m__0____])
-#     cl_10___ = frozenset([assertion, m_1_____,  m__0____])
-#     cl_01___ = frozenset([assertion, m_0_____,  m__1____])
-#     cl_11___ = frozenset([assertion, m_1_____,  m__1____])
-# 
-#     closures = set(build_closures(assertion, constants, signature, {}, def_list))
-#     assert closures == { cl_00___, cl_10___, cl_01___, cl_11___ }
-# 
-#     cl_next___0000 = frozenset([m___0___, m____0__, m_____0_, m______0])
-#     cl_next___0010 = frozenset([m___0___, m____0__, m_____1_, m______0])
-#     cl_next___0100 = frozenset([m___0___, m____1__, m_____0_, m______0])
-#     cl_next___0110 = frozenset([m___0___, m____1__, m_____1_, m______0])
-#     cl_next = [ cl_next___0000, cl_next___0010, cl_next___0100, cl_next___0110 ]
-# 
-#     allof_c  = AllOf(frozenset([ Matches(c,  App(C)), Matches(c, App(S, c ))]))
-#     allof_c1 = AllOf(frozenset([ Matches(c1, App(C)), Matches(c, App(S, c1))]))
-# 
-#     game = build_tableaux(assertion, [c, c1], signature)
-#     assert game[Root(assertion)] == frozenset([PGNode(assertion, cl) for cl in closures])
-# 
-#     assert game[PGNode(assertion, cl_00___)] == frozenset( { PGNode(allof_c,  cl_00___)
-#                                                            , PGNode(allof_c1,  cl_00___.union(cl_next___0000))
-#                                                            , PGNode(allof_c1,  cl_00___.union(cl_next___0100))
-#                                                            , PGNode(allof_c1,  cl_00___.union(cl_next___0010))
-#                                                            , PGNode(allof_c1,  cl_00___.union(cl_next___0110))
-#                                                            } )
-#     assert game[PGNode(allof_c, cl_00___)] == frozenset({ PGNode(Matches(c, App(C)),    cl_00___)
-#                                                         , PGNode(Matches(c, App(S, c)), cl_00___)
-#                                                         })
-#     assert game[PGNode(Matches(c, App(C)),    cl_00___)] == frozenset({PGNode(Matches(c, App(C)), cl_00___)})
-#     assert game[PGNode(Matches(c, App(S, c)), cl_00___)] == frozenset({PGNode(Matches(c, App(S, c)), cl_00___)})
-# 
-#     assert len(game[PGNode(assertion, cl_10___)]) == 4
-#     for cl_next___0xx0 in cl_next:
-#         assert PGNode(allof_c1, cl_10___.union(cl_next___0xx0)) in game[PGNode(assertion, cl_10___)]
-# 
-#     assert game[PGNode(assertion, cl_01___)] == frozenset({Unsat()})
-#     assert game[PGNode(assertion, cl_11___)] == frozenset({Unsat()})
-# 
-#     assertion = Matches(c, And(App(C), DApp(C)))
-#     closures = set(build_closures(assertion, constants, { C : 0 }, {}, def_list))
-#     assert closures == set()
-#     game = build_tableaux(assertion, constants, signature)
-#     assert game == {Root(assertion) : frozenset({Unsat()})}
-# 
-#     assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
-#     cl_00 =  frozenset( [ assertion
-#                         , Matches(c, App(S, App(C)))
-#                         , Matches(c, DApp(S, DApp(C)))
-#                         , Matches(c,  App(S, c)) # + Matches(c, DApp(S, DApp(C))) ---> Matches(c, DApp(C)) 
-#                         , Matches(c,  App(C))    # Conflicts with this
-#                         ])
-#     cl_01 =  frozenset([ assertion
-#                        , Matches(c,  App(S,  App(C)))
-#                        , Matches(c, DApp(S, DApp(C)))
-#                        , Matches(c, DApp(S, Not(c)))
-#                        , Matches(c,  App(C))
-#                        ])
-#     cl_10 =  frozenset([ assertion
-#                        , Matches(c,  App(S,  App(C)))
-#                        , Matches(c, DApp(S, DApp(C)))
-#                        , Matches(c,  App(S, c))
-#                        , Matches(c, DApp(C))
-#                        ])
-#     cl_11 =  frozenset([ assertion
-#                        , Matches(c,  App(S,  App(C)))
-#                        , Matches(c, DApp(S, DApp(C)))
-#                        , Matches(c, DApp(S, Not(c)))
-#                        , Matches(c, DApp(C))
-#                        ])
-# 
-#     closures = set(build_closures(assertion, [c], { C : 0, S : 1 }, {}, def_list))
-#     assert closures == { cl_01, cl_10, cl_11 }
-#     game = build_tableaux(assertion, [c, c1], signature)
-#     # Tableaux size grows quickly for larger constant lists
-#     # 1 --> 0.28s
-#     # 2 --> 0.36s
-#     # 3 --> 0.56s
-#     # 4 --> 25s
-#     # Tests for larger set of constants gets cumbersome, so we will test more complicated tests using `is_sat`.
-#     assert game[Root(assertion)] == frozenset({ PGNode(assertion, cl_01)
-#                                               , PGNode(assertion, cl_10)
-#                                               , PGNode(assertion, cl_11)
-#                                               })
-#     assert game[PGNode(assertion, cl_01)] == frozenset({ PGNode(Matches(c, App(S, App(C))), cl_01)
-#                                                        , PGNode(Matches(c, DApp(S, DApp(C))), cl_01)})
-#     assert game[PGNode(Matches(c, App(S, App(C))), cl_01)] == frozenset({Unsat()})
-#     assert game[PGNode(Matches(c, DApp(S, DApp(C))), cl_01)] == frozenset({Unsat()})
+def test_add_to_closure() -> None:
+    constants = [c, c1, c2, c3, c4]
+    def_list : DefList = []
+    signature = { S : 1, C : 0 }
+
+    assertion = Matches(c, Bottom())
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == []
+
+    assertion = Matches(c, Top())
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == [(frozenset({assertion}), [(assertion, assertion)])]
+
+    assertion = Matches(c, c1)
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == []
+
+    assertion = Matches(c, c)
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == [(frozenset([Matches(c, c)]), [(assertion, assertion)])]
+
+    assertion = Matches(c, App(C))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == [ (frozenset({assertion}), [(assertion, assertion)]) ]
+
+    assertion = Matches(c, App(S, c))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == [ (frozenset({assertion}), [(assertion, assertion)]) ]
+
+    assertion = Matches(c, DApp(C))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == [ (frozenset({assertion}), [(assertion, assertion)]) ]
+
+    assertion = Matches(c, DApp(S, Not(c)))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == [ (frozenset({assertion}), [(assertion, assertion)]) ]
+
+    assertion = Matches(c, And(App(C), DApp(C)))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == []
+
+    assertion = Matches(c, And(App(C), DApp(S, Not(c))))
+    left  = Matches(c, App(C))
+    right = Matches(c, DApp(S, Not(c)))
+    all_of = AllOf(frozenset([left, right]))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    assert cl_pes == [( frozenset({assertion, left, right})
+                      , [ (assertion,  all_of)
+                        , (all_of,     left)
+                        , (left,       left)
+                        , (all_of,     right)
+                        , (right,      right)
+                        ]
+                      )]
+
+    assertion = Matches(c, Or(App(C), DApp(C)))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    left = Matches(c, App(C))
+    right = Matches(c, DApp(C))
+    any_of = AnyOf(frozenset([left, right]))
+    assert cl_pes == [ (frozenset({assertion, right}),  [ (assertion, any_of)
+                                                         , (any_of, right)
+                                                         , (right, right)
+                                                         ])
+                     , (frozenset({assertion, left}), [ (assertion, any_of)
+                                                         , (any_of, left)
+                                                         , (left, left)
+                                                         ])
+                     ]
+
+
+    assertion = Matches(c, App(S, App(C)))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    exists_assertion = ExistsAssertion( frozenset([c1])
+                                      , AllOf(frozenset([Matches(c, App(S, c1)), Matches(c1, App(C))]))
+                                      )
+    assert cl_pes == [(frozenset({assertion, exists_assertion}), [(assertion, exists_assertion), (exists_assertion, exists_assertion)])]
+
+    assertion = Matches(c, DApp(S, DApp(C)))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    uninstatiated_match_1 = Matches(c, DApp(S, Not(c1)))
+    uninstatiated_match_2 = Matches(c1, DApp(C))
+    uninstatiated_any_of = AnyOf(frozenset([uninstatiated_match_1, uninstatiated_match_2]))
+    forall_assertion = ForallAssertion(frozenset([c1]), uninstatiated_any_of)
+    any_of = uninstatiated_any_of.substitute(c1, c)
+    match_1 = uninstatiated_match_1.substitute(c1, c)
+    match_2 = uninstatiated_match_2.substitute(c1, c)
+    assert cl_pes == [ (frozenset({assertion, forall_assertion, match_2})
+                       , [(assertion, forall_assertion), (forall_assertion, any_of), (any_of, match_2), (match_2, match_2)])
+                     , (frozenset({assertion, forall_assertion, match_1})
+                       , [(assertion, forall_assertion), (forall_assertion, any_of), (any_of, match_1), (match_1, match_1)])
+                     ]
+
+    assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    # TODO: Complete me
+
+    assertion = Matches(c, Nu(X, X))
+    def_list = definition_list(assertion.pattern, [])
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    unfolded = Matches(c, Nu(X, X))
+    assert cl_pes == [(frozenset([assertion]), [(assertion, assertion)])]
+
+    assertion = Matches(c, Nu(X, App(S, X)))
+    def_list = definition_list(assertion.pattern, [])
+    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    unfolded = Matches(c, App(S, Nu(X, App(S, X))))
+    exists_assertion = ExistsAssertion(frozenset([c1]), AllOf(frozenset([Matches(c, App(S, c1)), Matches(c1, Nu(X, App(S, X)))])))
+    assert cl_pes == [( frozenset([assertion, unfolded, exists_assertion])
+                      , [(assertion, unfolded), (unfolded, exists_assertion), (exists_assertion, exists_assertion)]
+                      )]
+    cl_pes = instantiate_universals(cl_pes, constants, def_list)
+    cl_pes = complete_closures_for_signature(cl_pes, frozenset([c, c1]), constants, signature, def_list)
+    games = build_games(cl_pes, {})
  
 signature = {C: 0, S: 1}
 
