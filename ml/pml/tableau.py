@@ -369,6 +369,9 @@ def add_to_closure( assertion: Assertion
                   ) -> List[Tuple[Closure, PartialEdges]]:
     next : Assertion
 
+    if assertion in partial_closure:
+        return [(partial_closure, partial_edges)]
+
     if isinstance(assertion, Matches):
         p = assertion.pattern
         if   isinstance(p, (Bottom)):

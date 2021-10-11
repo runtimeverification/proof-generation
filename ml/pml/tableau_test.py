@@ -243,9 +243,29 @@ def test_is_satisfiable_basic() -> None:
                         )
                      , [c, c1], signature)
 
+def test_is_satisfiable_fixpoint_only() -> None:
+    assert     is_sat( Nu(X, X), [c, c1], signature)
+    assert not is_sat( Mu(X, X), [c, c1], signature)
 
-def test_is_satisfiable_fixpoint() -> None:
-    pass
+    assert     is_sat( Mu(X,  Or(X,  App(C))), [c, c1], signature)
+    assert     is_sat( Nu(X, And(X, DApp(C))), [c, c1], signature)
+    assert not is_sat( And( Nu(X, And(X, DApp(C)))
+                          , Mu(X,  Or(X, App(C))))
+                     , [c, c1], signature)
+
+    assert     is_sat( Nu(X,  Or(X,  App(C))), [c, c1], signature)
+    assert not is_sat( Mu(X, And(X, DApp(C))), [c, c1], signature)
+
+    assert not is_sat( Nu(X, Mu(X, X)), [c, c1], signature)
+    assert     is_sat( Mu(X, Nu(X, X)), [c, c1], signature)
+
+    assert not is_sat( Mu(X, And(X, Nu(X, X))), [c, c1], signature)
+    assert     is_sat( Mu(X,  Or(X, Nu(X, X))), [c, c1], signature)
+
+#    assert     is_sat( Nu(X, And(X, DApp(C))), [c, c1], signature)
+
+#    assert     is_sat( Nu(X, Mu(Y, And(X, Y))), [c, c1], signature)
+
 #    assert     is_sat( Nu(X, App(S, X)), [c, c1, c2], signature)
 #    assert not is_sat( And( Nu(X, And(App(C), App(S, X)))
 #                          , DApp(S, Not(App(C)))
