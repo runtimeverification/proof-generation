@@ -292,12 +292,12 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
         # If a node has player N, then that player can make a move
         if isinstance(node, (Unsat)):
             # There is no choice to be made here, so it does not matter whose turn it is.
-            return 0 
+            return 0
         if isinstance(node.assertion, Matches):
             if isinstance(node.assertion.pattern, (Top, Bottom, Mu, Nu, SVar, EVar)) or \
                (isinstance(node.assertion.pattern, Not) and isinstance(node.assertion.pattern.subpattern, EVar)):
                 # There is no choice to be made here, so it does not matter whose turn it is.
-                return 0 
+                return 0
             if isinstance(node.assertion.pattern, (And, Forall, DApp)):
                 return 1
             if isinstance(node.assertion.pattern, (Or,  Exists, App)):
@@ -597,7 +597,7 @@ def build_tableaux( curr_closure: Closure
         else:
             new_closure = curr_closure
 
-        
+
         new_closure = new_closure.difference({existential})
         new_closures = add_to_closure(new_assertion, new_closure, [], K, def_list)
         new_closures = instantiate_universals(new_closures, K, def_list)
@@ -608,7 +608,7 @@ def build_tableaux( curr_closure: Closure
                                                       , def_list
                                                       )
         print('new-closures', len(new_closures))
-        
+
         for (new_closure, new_game) in build_games(new_closures, partial_game):
             dest_node = PGNode(new_assertion, new_closure)
             source_node = PGNode(existential, curr_closure)
