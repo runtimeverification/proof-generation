@@ -190,6 +190,34 @@ class PGNode():
 class Unsat():
     pass
 
+def instantiations( length: int
+                  , curr_assertion: FrozenSet[EVar]
+                  ,  curr_closures: FrozenSet[EVar]
+                  ,      available: List[EVar]
+                  ) -> Iterable[Tuple[EVar,...]]:
+    available = diff(available, curr_closures)
+    curr      = sorted(list(curr_assertion))
+    return list(instantiations_lists(length, curr, available))
+
+def instantiations_lists(length: int, curr: List[EVar], avail: List[EVar]) -> Iterable[Tuple[EVar,...]]:
+    if length == 0:
+        yield ()
+        return
+    if length == 1:
+        for item in curr:
+            yield (item,)
+        yield (avail[0],)
+        return
+
+    for curr_item in curr:
+        for tuple in instantiations_lists(length - 1, curr, avail):
+            yield (curr_item, *tuple)
+    for tuple in instantiations_lists(length - 1, curr + [avail[0]], avail[1:]):
+        yield (avail[0], *tuple)
+    return
+
+
+
 PGNodeGeneralized = Union[PGNode, Unsat]
 
 ParityGame = Dict[PGNodeGeneralized, FrozenSet[PGNodeGeneralized]]
@@ -550,11 +578,8 @@ def build_tableaux( curr_closure: Closure
 
     bound = list(existential.bound)
 
-    potential_variables = list(existential.free_evars()) + list(take(len(bound), diff(K, free_evars(curr_closure))))
-    instantiations = list(product(potential_variables, repeat = len(bound)))
-    assert instantiations
     games : List[ParityGame] = []
-    for instantiation in instantiations:
+    for instantiation in instantiations(len(bound), existential.free_evars(), free_evars(curr_closure), K):
         new_assertion = existential.subassertion.substitute_multi(list(bound), instantiation)
         build_new_node = not new_assertion.free_evars() <= free_evars(curr_closure) # Partial order, not equivalent to >
         if build_new_node:

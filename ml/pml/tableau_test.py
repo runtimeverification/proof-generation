@@ -26,6 +26,43 @@ def test_definition_list() -> None:
            , Nu(Y, App(S, SVar(0)))
            ]
 
+def test_instantiations() -> None:
+    assert list(instantiations(0, frozenset(), frozenset(), [c1]))     == [()]
+    assert list(instantiations(1, frozenset(), frozenset(), [c1]))     == [(c1,)]
+    assert list(instantiations(1, frozenset(), frozenset(), [c1, c2])) == [(c1,)]
+
+    assert list(instantiations(1, frozenset([c, c1]), frozenset([c, c1, c2]), [c, c1, c2, c3, c4, c5])) \
+        == [ (c,), (c1,), (c3,) ]
+
+    # TODO: Do we need to be more particular about the order?
+    assert set(instantiations(2, frozenset([c, c1]), frozenset([c, c1, c2]), [c, c1, c2, c3, c4, c5])) \
+        == { (c, c), (c, c1), (c1, c), (c1, c1)             # 0 vars from available
+           , (c, c3), (c1, c3), (c3, c), (c3, c1), (c3, c3) # 1 var  from available
+           , (c3, c4)                                       # 2 vars from available
+           }
+    assert set(instantiations(3, frozenset([c, c1]), frozenset([c, c1, c2]), [c, c1, c2, c3, c4, c5])) \
+        == { # 0 vars from available
+             (c, c, c),   (c, c, c1),   (c, c1, c),  (c, c, c1),   (c, c1, c1)
+           , (c1, c, c),  (c1, c, c1),  (c1, c1, c), (c1, c, c1),  (c1, c1, c1)
+             # 1 var  from available
+           , (c, c, c3),  (c, c1, c3),  (c, c3, c),  (c, c3, c1),  (c, c3, c3)
+           , (c1, c, c3), (c1, c1, c3), (c1, c3, c), (c1, c3, c1), (c1, c3, c3)
+           , (c3, c, c),  (c3, c, c1),  (c3, c1, c), (c3, c, c1),  (c3, c1, c1)
+           , (c3, c, c3), (c3, c1, c3), (c3, c3, c), (c3, c3, c1), (c3, c3, c3)
+             # 2 vars from available
+           , (c,  c3, c4), (c1, c3, c4), (c3, c,  c4)
+           , (c3, c1, c4), (c3, c4, c,), (c3, c4, c1)
+           , (c3, c4, c3), (c3, c3, c4), (c3, c4, c4)
+             # 3 vars from available
+           , (c3, c4, c5)
+           }
+
+    # Width of pattern higher than available variables.
+    from pytest import raises
+    with raises(Exception): list(instantiations(1, frozenset(),    frozenset(),  [ ]))
+    with raises(Exception): list(instantiations(1, frozenset(),    frozenset([c]), [c]))
+    with raises(Exception): list(instantiations(1, frozenset([c]), frozenset([c]), [c]))
+
 # def test_build_tableaux() -> None:
 #     constants = [c, c1, c2, c3, c4]
 #     def_list : DefList = []

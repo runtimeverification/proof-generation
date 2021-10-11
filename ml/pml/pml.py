@@ -75,7 +75,7 @@ class Bottom(Pattern):
     def to_utf(self) -> str:
         return '⊥'
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=True)
 class EVar(Pattern):
     name: str
 
