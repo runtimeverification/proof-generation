@@ -313,8 +313,10 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
         if isinstance(node, Unsat):
             return "Unsat"
         else:
-            from sys import maxsize
-            return node.assertion.to_utf() + ' (' + str(hash(node.closure) + maxsize + 1) + ')'
+            free = [v.name for v in free_evars(node.closure)]
+            apps  = [a.to_utf() for a in node.closure if isinstance(a, Matches) and isinstance(a.pattern, App) and is_atomic_application(a.pattern)]
+            dapps = [a.to_utf() for a in node.closure if isinstance(a, Matches) and isinstance(a.pattern, DApp) and is_atomic_application(a.pattern.negate())]
+            return node.assertion.to_utf() + '\\nfree: ' + ','.join(free) + ';\\nApps: ' +  ','.join(apps) + ';\\nDApps: ' +  ','.join(dapps)
 
     ret = [(0, 0, 0, [ident(root)], "root")] # Bug in PGSolver requires root == 0
     for source, destinations in edges.items():
