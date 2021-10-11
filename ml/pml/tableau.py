@@ -538,7 +538,7 @@ def complete_closures_for_signature( closures: List[Tuple[Closure, PartialEdges]
                 new_closures += x
                 new_closures += y
             closures = new_closures
-    return new_closures
+    return closures
 
 def instantiate_universals( closures: List[Tuple[Closure, PartialEdges]]
                           , K: List[EVar]

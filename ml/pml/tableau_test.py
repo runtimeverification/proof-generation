@@ -26,6 +26,61 @@ def test_definition_list() -> None:
            , Mu(Y, DApp(S, Not(SVar(0))))
            ]
 
+def test_complete_closures_for_signature() -> None:
+    assert complete_closures_for_signature([(frozenset(), [])], frozenset(),     [], {C : 0, S : 1}, []) == [(frozenset(), [])]
+    assert complete_closures_for_signature([(frozenset(), [])], frozenset({c1}), [], {}, [])             == [(frozenset(), [])]
+    cl_pes = complete_closures_for_signature([(frozenset(), [])], frozenset({c1}), [], {C : 0}, [])
+    assert len(cl_pes) == 2
+    assert cl_pes[0][0] == frozenset([Matches(c1,  App(C))])
+    assert cl_pes[1][0] == frozenset([Matches(c1, DApp(C))])
+
+    cl_pes = complete_closures_for_signature([(frozenset(), [])], frozenset({c}), [], {S : 1}, [])
+    assert len(cl_pes) == 2
+    assert cl_pes[0][0] == frozenset([Matches(c,  App(S,     c ))])
+    assert cl_pes[1][0] == frozenset([Matches(c, DApp(S, Not(c)))])
+
+    cl_pes = complete_closures_for_signature([(frozenset(), [])], frozenset({c, c1}), [], {S : 1}, [])
+    assert len(cl_pes) == 16
+    assert cl_pes[0][0] == frozenset([ Matches(c,   App(S,     c  )) , Matches(c,   App(S,     c1 )) , Matches(c1,  App(S,     c  )) , Matches(c1,  App(S, c1 ))])
+    assert cl_pes[1][0] == frozenset([ Matches(c,   App(S,     c  )) , Matches(c,   App(S,     c1 )) , Matches(c1,  App(S,     c  )) , Matches(c1, DApp(S, Not(c1)))])
+    assert cl_pes[2][0] == frozenset([ Matches(c,   App(S,     c  )) , Matches(c,   App(S,     c1 )) , Matches(c1, DApp(S, Not(c ))) , Matches(c1,  App(S, c1 ))])
+
+    cl_pes = complete_closures_for_signature([(frozenset(), [])], frozenset({c, c1}), [], {S : 1, C : 0}, [])
+    assert len(cl_pes) == 64
+    for (cl, pe) in cl_pes:
+        assert len(cl) == 6
+
+    cl_pes = complete_closures_for_signature([(frozenset([Matches(c, DApp(S, c1))]), [])], frozenset({c, c1}), [], {S : 1, C : 0}, [])
+    assert len(cl_pes) == 64
+    for (cl, pe) in cl_pes:
+        assert len(cl) == 7
+
+    cl_pes = complete_closures_for_signature([(frozenset([Matches(c, DApp(S, Not(c1)))]), [])], frozenset({c, c1}), [], {S : 1, C : 0}, [])
+    assert len(cl_pes) == 32
+    for (cl, pe) in cl_pes:
+        assert len(cl) == 6
+
+    from typing import FrozenSet, Tuple
+    closures : List[Tuple[FrozenSet[Assertion], List[Tuple[Assertion, Assertion]]]] \
+             = [( frozenset({ExistsAssertion(frozenset({c}), AllOf(frozenset({Matches(c1, App(S, c)), Matches(c, App(C))}))),
+                             Matches(c1, App(S, c)),
+                             Matches(c, App(C)),
+                             Matches(c1, App(S, c1)),
+                             ExistsAssertion(frozenset({c}), Matches(c, App(S, App(C)))),
+                             Matches(c1, App(S, App(C))),
+                             Matches(c1, App(C))}
+                           )
+                , [(AllOf(frozenset({Matches(c1, App(S, c)), Matches(c, App(C))})), Matches(c1, App(S, c))),
+                   (Matches(c1, App(S, c)), Matches(c1, App(S, c))),
+                   (AllOf(frozenset({Matches(c1, App(S, c)), Matches(c, App(C))})), Matches(c, App(C))),
+                   (Matches(c, App(C)), Matches(c, App(C)))]
+                )]
+    cl_pes = complete_closures_for_signature(closures, frozenset({c, c1}), [], {S : 1, C : 0}, [])
+    for (cl, pe) in cl_pes:
+        apps  = [a for a in cl if isinstance(a, Matches) and isinstance(a.pattern, App) and is_atomic_application(a.pattern)]
+        dapps = [a for a in cl if isinstance(a, Matches) and isinstance(a.pattern, DApp) and is_atomic_application(a.pattern.negate())]
+        assert len(apps) + len(dapps) == 6
+
 def test_instantiations() -> None:
     assert list(instantiations(0, frozenset(), frozenset(), [c1]))     == [()]
     assert list(instantiations(1, frozenset(), frozenset(), [c1]))     == [(c1,)]
