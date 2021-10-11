@@ -245,11 +245,8 @@ def test_add_to_closure() -> None:
 signature = {C: 0, S: 1}
 
 def test_is_satisfiable_basic() -> None:
-    assert not is_sat(Bottom(), [c], signature)
-    assert     is_sat(Top(),    [c], signature)
-
-    assert not is_sat(And(EVar('c'), Not(EVar('c'))), [c], signature)
-    assert not is_sat(And(Not(EVar('c')), EVar('c')), [c], signature)
+    assert not is_sat(Bottom(), [c, c1], signature)
+    assert     is_sat(Top(),    [c, c1], signature)
 
     assert     is_sat(App(C),              [c, c1], signature)
     assert     is_sat(DApp(C),             [c, c1], signature)
@@ -336,3 +333,7 @@ def test_is_satisfiable_fixpoint_with_apps() -> None:
 #                                         , App(S , X)
 #                                         ))
 #                     , [c, c1], signature)
+
+# def test_is_satisfiable_existential_only() -> None:
+#     assert not is_sat(Exists(frozenset(c), And(EVar('c'), Not(EVar('c')))), [c, c1], signature)
+#     assert not is_sat(Exists(frozenset(c), And(Not(EVar('c')), EVar('c'))), [c, c1], signature)

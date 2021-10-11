@@ -615,7 +615,6 @@ def build_tableaux( curr_closure: Closure
         else:
             new_closure = curr_closure
 
-
         new_closure = new_closure.difference({existential})
         new_closures = add_to_closure(new_assertion, new_closure, [], K, def_list)
         new_closures = instantiate_universals(new_closures, K, def_list)
