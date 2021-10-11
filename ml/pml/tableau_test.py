@@ -23,7 +23,7 @@ def test_definition_list() -> None:
     assert definition_list(Mu(X, App(S, X)), []) == [Mu(X, App(S, X))]
     assert definition_list(Mu(X, Nu(Y, App(S, X))), []) \
         == [ Mu(X, Nu(Y, App(S, X)))
-           , Nu(Y, App(S, SVar(0)))
+           , Mu(Y, DApp(S, Not(SVar(0))))
            ]
 
 def test_instantiations() -> None:

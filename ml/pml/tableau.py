@@ -27,13 +27,18 @@ def definition_list(p: Pattern, def_list: DefList) -> DefList:
         for arg in p.arguments:
             def_list = definition_list(arg,  def_list)
         return def_list
-    elif isinstance(p, (Mu, Nu)):
+    elif isinstance(p, Mu):
         if p not in def_list:
             def_list = def_list + [p]
             def_list = definition_list(p.subpattern.substitute(p.bound, SVar(def_list.index(p)).to_positive_normal_form()), def_list)
         return def_list
+    elif isinstance(p, Nu):
+        return definition_list(p.negate(), def_list)
     else:
         raise RuntimeError("Unsupported pattern: " + str(p))
+
+def unfold(p: Union[Mu, Nu], def_list: DefList) -> Pattern:
+    return p.subpattern.substitute(p.bound, p)
 
 class Assertion:
     @abstractmethod
@@ -254,7 +259,7 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
             if isinstance(p, (And, Or, SVar)):
                 return 2 * len(def_list) + 2 # Not relevant; some other node will have lower or equal priority
             if isinstance(p, Nu):
-                return 2 * def_list.index(p)
+                return 2 * def_list.index(p.negate())
             if isinstance(p, Mu):
                 return 2 * def_list.index(p) + 1
             if isinstance(p,  App) and is_atomic_application(p) or \
@@ -458,21 +463,21 @@ def add_to_closure( assertion: Assertion
                                  , def_list
                                  )
         elif isinstance(p, (Nu, Mu)):
-            next = Matches(assertion.variable, p.subpattern.substitute(p.bound, SVar(def_list.index(p))))
+            next = Matches(assertion.variable, unfold(p, def_list))
             return add_to_closure( next
                                  , partial_closure.union([assertion])
                                  , partial_edges + [(assertion, next)]
                                  , K
                                  , def_list
                                  )
-        elif isinstance(p, SVar) and isinstance(p.name, int): # Only consider bound `SVar`s.
-            next = Matches(assertion.variable, def_list[p.name])
-            return add_to_closure( next
-                                 , partial_closure.union([assertion])
-                                 , partial_edges + [(assertion, next)]
-                                 , K
-                                 , def_list
-                                 )
+#        elif isinstance(p, SVar) and isinstance(p.name, int): # Only consider bound `SVar`s.
+#            next = Matches(assertion.variable, def_list[p.name])
+#            return add_to_closure( next
+#                                 , partial_closure.union([assertion])
+#                                 , partial_edges + [(assertion, next)]
+#                                 , K
+#                                 , def_list
+#                                 )
         else:
             raise RuntimeError("Unimplemented: " + str(assertion))
     elif isinstance(assertion, AllOf):
