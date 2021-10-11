@@ -38,7 +38,10 @@ def definition_list(p: Pattern, def_list: DefList) -> DefList:
         raise RuntimeError("Unsupported pattern: " + str(p))
 
 def unfold(p: Union[Mu, Nu], def_list: DefList) -> Pattern:
-    return p.subpattern.substitute(p.bound, p)
+    if isinstance(p, Mu):
+        return p.subpattern.substitute(p.bound, SVar(def_list.index(p)))
+    else:
+        return p.subpattern.substitute(p.bound, Not(SVar(def_list.index(p.negate()))))
 
 class Assertion:
     @abstractmethod
@@ -254,9 +257,11 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
             p = node.assertion.pattern
             if isinstance(p, Top):
                 return 0 # Tops only child is Top, so this can be any even value`
-            if isinstance(p, (Bottom, EVar)) or (isinstance(p, Not) and isinstance(p.subpattern, EVar)):
+            if isinstance(p, (Bottom, EVar)) \
+               or (isinstance(p, Not) and isinstance(p.subpattern, EVar)):
                 return 0 # Cannot repeat infinitly on any trace, so value doesn't matter.
-            if isinstance(p, (And, Or, SVar)):
+            if isinstance(p, (And, Or, SVar)) \
+               or (isinstance(p, Not) and isinstance(p.subpattern, SVar)):
                 return 2 * len(def_list) + 2 # Not relevant; some other node will have lower or equal priority
             if isinstance(p, Nu):
                 return 2 * def_list.index(p.negate())
@@ -295,6 +300,7 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
             return 0
         if isinstance(node.assertion, Matches):
             if isinstance(node.assertion.pattern, (Top, Bottom, Mu, Nu, SVar, EVar)) or \
+               (isinstance(node.assertion.pattern, Not) and isinstance(node.assertion.pattern.subpattern, SVar)) or \
                (isinstance(node.assertion.pattern, Not) and isinstance(node.assertion.pattern.subpattern, EVar)):
                 # There is no choice to be made here, so it does not matter whose turn it is.
                 return 0
@@ -397,8 +403,7 @@ def add_to_closure( assertion: Assertion
             return [( partial_closure.union([assertion])
                     , partial_edges + [(assertion, assertion)]
                     )]
-        elif isinstance(p, Not):
-            assert isinstance(p.subpattern, EVar)
+        elif isinstance(p, Not) and isinstance(p.subpattern, EVar):
             if Matches(assertion.variable, p.negate()) in partial_closure:
                 return add_to_closure( Matches(assertion.variable, Bottom())
                                      , partial_closure.union([assertion])
@@ -474,14 +479,23 @@ def add_to_closure( assertion: Assertion
                                  , K
                                  , def_list
                                  )
-#        elif isinstance(p, SVar) and isinstance(p.name, int): # Only consider bound `SVar`s.
-#            next = Matches(assertion.variable, def_list[p.name])
-#            return add_to_closure( next
-#                                 , partial_closure.union([assertion])
-#                                 , partial_edges + [(assertion, next)]
-#                                 , K
-#                                 , def_list
-#                                 )
+        elif isinstance(p, SVar) and isinstance(p.name, int): # Only consider bound `SVar`s.
+            next = Matches(assertion.variable, def_list[p.name])
+            return add_to_closure( next
+                                 , partial_closure.union([assertion])
+                                 , partial_edges + [(assertion, next)]
+                                 , K
+                                 , def_list
+                                 )
+        elif isinstance(p, Not) and isinstance(p.subpattern, SVar) and isinstance(p.subpattern.name, int): # Only consider bound `SVar`s.
+            next = Matches(assertion.variable, def_list[p.subpattern.name].negate())
+            return add_to_closure( next
+                                 , partial_closure.union([assertion])
+                                 , partial_edges + [(assertion, next)]
+                                 , K
+                                 , def_list
+                                 )
+
         else:
             raise RuntimeError("Unimplemented: " + str(assertion))
     elif isinstance(assertion, AllOf):

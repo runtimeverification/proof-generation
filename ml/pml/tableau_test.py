@@ -26,6 +26,11 @@ def test_definition_list() -> None:
            , Mu(Y, DApp(S, Not(SVar(0))))
            ]
 
+    assert definition_list(Nu(X, Mu(Y, And(X, Y))), []) \
+        == [ Mu(X, Nu(Y, Or(X, Y)))
+           , Mu(Y, And(Not(SVar(0)), Y))
+           ]
+
 def test_complete_closures_for_signature() -> None:
     assert complete_closures_for_signature([(frozenset(), [])], frozenset(),     [], {C : 0, S : 1}, []) == [(frozenset(), [])]
     assert complete_closures_for_signature([(frozenset(), [])], frozenset({c1}), [], {}, [])             == [(frozenset(), [])]
@@ -218,14 +223,18 @@ def test_add_to_closure() -> None:
     assertion = Matches(c, Nu(X, X))
     def_list = definition_list(assertion.pattern, [])
     cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
-    unfolded = Matches(c, Nu(X, X))
-    assert cl_pes == [(frozenset([assertion]), [(assertion, assertion)])]
+    unfolded = Matches(c, Not(SVar(0)))
+    assert cl_pes == [( frozenset([assertion, unfolded])
+                      , [ (assertion, unfolded)
+                        , (unfolded, assertion)
+                        ]
+                      )]
 
     assertion = Matches(c, Nu(X, App(S, X)))
     def_list = definition_list(assertion.pattern, [])
     cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
-    unfolded = Matches(c, App(S, Nu(X, App(S, X))))
-    exists_assertion = ExistsAssertion(frozenset([c1]), AllOf(frozenset([Matches(c, App(S, c1)), Matches(c1, Nu(X, App(S, X)))])))
+    unfolded = Matches(c, App(S, Not(SVar(0))))
+    exists_assertion = ExistsAssertion(frozenset([c1]), AllOf(frozenset([Matches(c, App(S, c1)), Matches(c1, Not(SVar(0)))])))
     assert cl_pes == [( frozenset([assertion, unfolded, exists_assertion])
                       , [(assertion, unfolded), (unfolded, exists_assertion), (exists_assertion, exists_assertion)]
                       )]
@@ -245,7 +254,7 @@ def test_is_satisfiable_basic() -> None:
     assert     is_sat(App(C),              [c, c1], signature)
     assert     is_sat(DApp(C),             [c, c1], signature)
     assert not is_sat(And(App(C),DApp(C)), [c, c1], signature)
-    assert     is_sat(App(S, App(C)),      [c, c1], signature)
+    assert     is_sat(App(S, App(C)),      [c, c1, c2, c3], signature)
     assert not is_sat( And(App(S, App(C)), DApp(S, DApp(C)))
                      , [c, c1, c2], signature
                      )
@@ -254,6 +263,8 @@ def test_is_satisfiable_basic() -> None:
     assert     is_sat(DApp(S, Not(App(C))),  [c, c1], signature)
 
     assert     is_sat(And(App(D), Not(App(C))), [c, c1], signature)
+
+    assert not is_sat(And(App(C), DApp(C)),     [c, c1], signature)
     assert not is_sat(And(App(C), Not(App(C))), [c, c1], signature)
     assert not is_sat(And(  App(S, App(C))
                          , DApp(S, Not(App(C)))
@@ -262,6 +273,19 @@ def test_is_satisfiable_basic() -> None:
 
     assert     is_sat(Or(App(C), Not(App(C))), [c, c1], signature)
     assert     is_sat(Or(  App(S, App(C))
+                        , DApp(S, Not(App(C)))
+                        )
+                     , [c, c1], signature)
+    assert not is_sat(Or( And(App(C), Not(App(C)))
+                        , And(App(C), Not(App(C)))
+                        )
+                     , [c, c1], signature)
+
+    assert not is_sat(And(App(S, App(C)), DApp(S, DApp(C))),     [c, c1, c2, c3], signature)
+    assert not is_sat(And(App(S, App(C)), DApp(S, Not(App(C)))), [c, c1, c2, c3], signature)
+
+    assert     is_sat(Or(App(C), Not(App(C))), [c, c1], signature)
+    assert     is_sat(Or(  App(S,     App(C))
                         , DApp(S, Not(App(C)))
                         )
                      , [c, c1], signature)
@@ -286,14 +310,16 @@ def test_is_satisfiable_fixpoint_only() -> None:
     assert not is_sat( Nu(X, Mu(X, X)), [c, c1], signature)
     assert     is_sat( Mu(X, Nu(X, X)), [c, c1], signature)
 
+    assert not is_sat( Nu(X, Mu(Y, And(X, Y))), [c, c1], signature)
+
     assert not is_sat( Mu(X, And(X, Nu(X, X))), [c, c1], signature)
     assert     is_sat( Mu(X,  Or(X, Nu(X, X))), [c, c1], signature)
 
-#    assert     is_sat( Nu(X, And(X, DApp(C))), [c, c1], signature)
+def test_is_satisfiable_fixpoint_with_apps() -> None:
+    assert     is_sat( Nu(X, And(X, DApp(C))), [c, c1], signature)
+    assert     is_sat( Nu(X, And(X, DApp(S, App(C)))), [c, c1], signature)
 
-#    assert     is_sat( Nu(X, Mu(Y, And(X, Y))), [c, c1], signature)
-
-#    assert     is_sat( Nu(X, App(S, X)), [c, c1, c2], signature)
+#    assert     is_sat( Nu(X, App(S, X)), [c, c1, c2, c3], signature)
 #    assert not is_sat( And( Nu(X, And(App(C), App(S, X)))
 #                          , DApp(S, Not(App(C)))
 #                          )
