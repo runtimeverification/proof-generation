@@ -588,19 +588,20 @@ def build_tableaux( curr_closure: Closure
                   , K: List[EVar]
                   , signature: Signature
                   , def_list : DefList
-                  ) -> List[ParityGame]:
+                  ) -> Iterator[ParityGame]:
     if curr_closure in partial_tableau.keys():
-        return [partial_game]
+        yield partial_game
+        return
 
     # We pick an existential assertion in the closure,
     # and expand the closure to allow instantiating it.
     existential = next((a for a in curr_closure if isinstance(a, ExistsAssertion)), None)
     if not existential:
-        return [partial_game]
+        yield partial_game
+        return
 
     bound = list(existential.bound)
 
-    games : List[ParityGame] = []
     prev_instantiations_negated : FrozenSet[Assertion] = frozenset()
     for instantiation in instantiations(len(bound), existential.free_evars(), free_evars(curr_closure), K):
         new_assertion = existential.subassertion.substitute_multi(list(bound), instantiation)
@@ -648,9 +649,8 @@ def build_tableaux( curr_closure: Closure
 
             new_tableau = partial_tableau.copy()
             new_tableau[curr_closure] = frozenset([new_closure])
-            new_games = build_tableaux(new_closure, new_tableau, new_game, K, signature, def_list)
-            games += new_games
-    return games
+            yield from build_tableaux(new_closure, new_tableau, new_game, K, signature, def_list)
+    return
 
 def is_sat(pattern: Pattern, K: List[EVar], signature: Signature) -> bool:
     print('---- is_sat')
@@ -660,7 +660,6 @@ def is_sat(pattern: Pattern, K: List[EVar], signature: Signature) -> bool:
     root = frozenset({assertion})
     root_pgnode = PGNode(assertion, root)
     games = build_tableaux(root, {}, {}, K, signature, def_list)
-    print('Generated', len(games), 'games.')
     for game in games:
         game[Unsat()] = frozenset({Unsat()})
         serialized = serialize_parity_game(root_pgnode, game, def_list)
