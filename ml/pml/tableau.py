@@ -524,7 +524,7 @@ def add_to_closure( assertion: Assertion
                 , partial_edges + [(assertion, assertion)]
                 )]
     elif isinstance(assertion, ForallAssertion):
-        curr_closures = [(partial_closure.union([assertion]), partial_edges)]
+        curr_closures = [(partial_closure.union([assertion]), partial_edges + [(assertion, assertion)])]
         bound = list(assertion.bound)
         for instantiation in product(C, repeat = len(assertion.bound)):
             new_closures = []
