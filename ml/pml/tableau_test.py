@@ -250,6 +250,7 @@ def test_is_satisfiable_basic() -> None:
 
     assert     is_sat(App(C),              [c, c1], signature)
     assert     is_sat(DApp(C),             [c, c1], signature)
+
     assert not is_sat(And(App(C),DApp(C)), [c, c1], signature)
 
     assert     is_sat(App(S, App(C)),      [c, c1, c2, c3], signature)
@@ -317,23 +318,23 @@ def test_is_satisfiable_fixpoint_with_apps() -> None:
     assert     is_sat( Nu(X, And(X, DApp(C))), [c, c1], signature)
     assert     is_sat( Nu(X, And(X, DApp(S, App(C)))), [c, c1], signature)
 
-#    assert     is_sat( Nu(X, App(S, X)), [c, c1, c2, c3], signature)
-#    assert not is_sat( And( Nu(X, And(App(C), App(S, X)))
-#                          , DApp(S, Not(App(C)))
-#                          )
-#                     , [c, c1], signature)
-#
+    assert     is_sat( Nu(X, App(S, X)), [c, c1, c2, c3], { S : 1 })
+    assert not is_sat( And( Nu(X, And(App(C), App(S, X)))
+                          , DApp(S, Not(App(C)))
+                          )
+                     , [c, c1, c2, c3], signature)
+
 #    assert not is_sat(Mu(X, App(S, X))
-#                     , [c, c1], signature)
+#                     , [c, c1, c2, c3], signature)
 #
 #    assert     is_sat(Nu(X, And( Mu(Y, Or(App(C), App(S , Y)) )
 #                                       , App(S , X)
 #                                       ))
-#                     , [c, c1], signature)
+#                     , [c, c1, c2, c3], signature)
 #    assert not is_sat(Mu(X, And( Nu(Y, Or( App(C), App(S , Y)) )
 #                                         , App(S , X)
 #                                         ))
-#                     , [c, c1], signature)
+#                     , [c, c1, c2, c3], signature)
 
 # def test_is_satisfiable_existential_only() -> None:
 #     assert not is_sat(Exists(frozenset(c), And(EVar('c'), Not(EVar('c')))), [c, c1], signature)
