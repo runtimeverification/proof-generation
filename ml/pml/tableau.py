@@ -613,22 +613,24 @@ def build_tableaux( curr_closure: Closure
         new_closure: Closure
         if build_new_node:
             C = new_assertion.free_evars()
-            new_closure = frozenset([assertion for assertion in curr_closure
-                                               if     assertion.free_evars() <= C
-                                                  and (    isinstance(assertion, ForallAssertion)
-                                                        or ( isinstance(assertion, ExistsAssertion) and not assertion == existential)
-                                                        or (     isinstance(assertion, Matches)
-                                                             and ( (isinstance(assertion.pattern, App)  and is_atomic_application(assertion.pattern))
-                                                               or (isinstance(assertion.pattern, DApp) and is_atomic_application(assertion.pattern.negate()))
-                                                                )
-                                                           )
-                                                      )
-                                    ])
+            new_closures : List[Tuple[Closure, PartialEdges]] = [(frozenset(), [])]
+            for assertion in curr_closure:
+                if not assertion.free_evars() <= C: # Beware, not a total order.
+                    continue
+                if not  isinstance(assertion, ForallAssertion) \
+                     or ( isinstance(assertion, ExistsAssertion) and not assertion == existential) \
+                     or (     isinstance(assertion, Matches)
+                          and ( (isinstance(assertion.pattern, App)  and is_atomic_application(assertion.pattern))
+                            or (isinstance(assertion.pattern, DApp) and is_atomic_application(assertion.pattern.negate()))
+                             )
+                        ):
+                    continue
+                new_closures = add_to_closures(assertion, new_closures, C, K, def_list)
         else:
             C = free_evars(curr_closure)
-            new_closure = curr_closure
+            new_closures = [(curr_closure, [])]
 
-        new_closures = add_to_closure(new_assertion, new_closure, [], C, K, def_list)
+        new_closures = add_to_closures(new_assertion, new_closures, C, K, def_list)
         new_closures = add_to_closures(AllOf(prev_instantiations_negated), new_closures, C, K, def_list)
         prev_instantiations_negated = prev_instantiations_negated.union([new_assertion.negate()])
         new_closures = instantiate_universals(new_closures, C, K, def_list)
