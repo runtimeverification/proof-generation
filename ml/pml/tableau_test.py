@@ -251,6 +251,7 @@ def test_is_satisfiable_basic() -> None:
     assert     is_sat(App(C),              [c, c1], signature)
     assert     is_sat(DApp(C),             [c, c1], signature)
     assert not is_sat(And(App(C),DApp(C)), [c, c1], signature)
+
     assert     is_sat(App(S, App(C)),      [c, c1, c2, c3], signature)
     assert not is_sat( And(App(S, App(C)), DApp(S, DApp(C)))
                      , [c, c1, c2], signature

@@ -495,7 +495,6 @@ def add_to_closure( assertion: Assertion
                                  , K
                                  , def_list
                                  )
-
         else:
             raise RuntimeError("Unimplemented: " + str(assertion))
     elif isinstance(assertion, AllOf):
@@ -634,7 +633,6 @@ def build_tableaux( curr_closure: Closure
                                                       , signature
                                                       , def_list
                                                       )
-        print('new-closures', len(new_closures))
 
         for (new_closure, new_game) in build_games(new_closures, partial_game):
             if build_new_node:
