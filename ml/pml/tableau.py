@@ -452,7 +452,7 @@ def add_to_closure( assertion: Assertion
                                                     + [ Matches(bound, arg) for (bound, arg) in zip(bound_vars, p.arguments) ]
                                    )      )         )
             return add_to_closure( next
-                                 , partial_closure.union([assertion])
+                                 , partial_closure
                                  , partial_edges + [(assertion, next)]
                                  , C, K
                                  , def_list
