@@ -601,6 +601,7 @@ def build_tableaux( curr_closure: Closure
     bound = list(existential.bound)
 
     games : List[ParityGame] = []
+    prev_instantiations_negated : FrozenSet[Assertion] = frozenset()
     for instantiation in instantiations(len(bound), existential.free_evars(), free_evars(curr_closure), K):
         new_assertion = existential.subassertion.substitute_multi(list(bound), instantiation)
         build_new_node = not new_assertion.free_evars() <= free_evars(curr_closure) # Partial order, not equivalent to >
@@ -623,6 +624,8 @@ def build_tableaux( curr_closure: Closure
             new_closure = curr_closure
 
         new_closures = add_to_closure(new_assertion, new_closure, [], K, def_list)
+        new_closures = add_to_closures(AllOf(prev_instantiations_negated), new_closures, K, def_list)
+        prev_instantiations_negated = prev_instantiations_negated.union([new_assertion.negate()])
         new_closures = instantiate_universals(new_closures, K, def_list)
         new_closures = complete_closures_for_signature( new_closures
                                                       , C
