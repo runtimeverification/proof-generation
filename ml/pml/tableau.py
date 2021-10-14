@@ -574,15 +574,11 @@ def build_games( closures: List[Tuple[Closure, PartialEdges]]
                , parity_game: ParityGame
                ) -> List[Tuple[Closure, ParityGame]]:
     ret : List[Tuple[Closure, ParityGame]] = []
-    sources : List[PGNode] = []
-    dests : List[PGNode] = []
     for (closure, partial_edges) in closures:
         game = parity_game.copy()
         for (source, dest) in partial_edges:
             source_node = PGNode(source, closure)
-            sources += [source_node]
             game[source_node] = game.get(source_node, frozenset()).union([PGNode(dest, closure)])
-            dests += [PGNode(dest, closure)]
         ret += [(closure, game)]
     return ret
 
