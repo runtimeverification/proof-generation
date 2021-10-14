@@ -243,9 +243,9 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
             return 1
         if node in keys:
             return 2 + keys[node]
-        # This shouldn't happen, but ive not been able to track down why some nodes done have entries defined.
-        # It is likely that something is lost in the process of converting partial_edges to the tableau/parity game
-        return ident(Unsat())
+        print(hash(node), label(node))
+        return hash(node)
+        raise RuntimeError("Trace terminates at node: " + str(node))
 
     def priority(node: PGNodeGeneralized, def_list: DefList) -> int:
         # If the lowest priority infinitly recurring node has even priority, player 0  wins (pattern is sat).
