@@ -367,16 +367,18 @@ def is_atomic_application(app : App) -> bool:
 
 def add_to_closures( assertion: Assertion
                    , closures: List[Tuple[Closure, PartialEdges]]
+                   , C: FrozenSet[EVar]
                    , K: List[EVar]
                    , def_list: DefList
                    ) -> List[Tuple[Closure, PartialEdges]]:
-    return  list(flat_map( lambda cl_pe: add_to_closure(assertion, *cl_pe, K, def_list)
+    return  list(flat_map( lambda cl_pe: add_to_closure(assertion, *cl_pe, C, K, def_list)
                          , closures
                 )        )
 
 def add_to_closure( assertion: Assertion
                   , partial_closure: Closure
                   , partial_edges: PartialEdges
+                  , C: FrozenSet[EVar]
                   , K: List[EVar]
                   , def_list: DefList
                   ) -> List[Tuple[Closure, PartialEdges]]:
@@ -390,15 +392,15 @@ def add_to_closure( assertion: Assertion
         if   isinstance(p, (Bottom)):
             return []
         elif isinstance(p, (Top)):
-            return [( partial_closure.union([assertion])
+            return [( partial_closure
                     , partial_edges + [(assertion, assertion)]
                     )]
         elif isinstance(p, EVar):
             if assertion.variable != p:
                 return add_to_closure( Matches(assertion.variable, Bottom())
-                                     , partial_closure.union([assertion])
+                                     , partial_closure
                                      , partial_edges + [(assertion, Matches(assertion.variable, Bottom()))]
-                                     , K
+                                     , C, K
                                      , def_list)
             return [( partial_closure.union([assertion])
                     , partial_edges + [(assertion, assertion)]
@@ -406,45 +408,45 @@ def add_to_closure( assertion: Assertion
         elif isinstance(p, Not) and isinstance(p.subpattern, EVar):
             if Matches(assertion.variable, p.negate()) in partial_closure:
                 return add_to_closure( Matches(assertion.variable, Bottom())
-                                     , partial_closure.union([assertion])
+                                     , partial_closure
                                      , partial_edges + [(assertion, Matches(assertion.variable, Bottom()))]
-                                     , K
+                                     , C, K
                                      , def_list)
             return [(partial_closure, partial_edges)]
         elif isinstance(p, App):
-            partial_closure = partial_closure.union([assertion])
             if (is_atomic_application(p)):
+                partial_closure = partial_closure.union([assertion])
                 if assertion.negate() in partial_closure:
                     next = Matches(assertion.variable, Bottom())
                     return add_to_closure( next
                                          , partial_closure, partial_edges + [(assertion,next), (assertion.negate(), next)]
-                                         , K , def_list)
+                                         , C, K , def_list)
                 partial_edges = partial_edges + [(assertion, assertion)]
                 return [(partial_closure, partial_edges)]
 
-            bound_vars = list(take(len(p.arguments), diff(K, free_evars(partial_closure))))
+            bound_vars = list(take(len(p.arguments), diff(K, C)))
             next = ExistsAssertion(frozenset(bound_vars)
                                   , AllOf(frozenset( [ Matches( assertion.variable, App(p.symbol, *bound_vars)) ]
                                                    + [ Matches(bound, arg) for (bound, arg) in zip(bound_vars, p.arguments) ]
                                   )      )         )
             return add_to_closure( next
-                                 , partial_closure.union([assertion])
+                                 , partial_closure
                                  , partial_edges + [(assertion, next)]
-                                 , K
+                                 , C, K
                                  , def_list
                                  )
         elif isinstance(p, DApp):
-            partial_closure = partial_closure.union([assertion])
             if (is_atomic_application(p.negate())):
+                partial_closure = partial_closure.union([assertion])
                 if assertion.negate() in partial_closure:
                     next = Matches(assertion.variable, Bottom())
                     return add_to_closure( next
                                          , partial_closure, partial_edges + [(assertion,next), (assertion.negate(), next)]
-                                         , K , def_list)
+                                         , C, K , def_list)
                 partial_edges = partial_edges + [(assertion, assertion)]
                 return [(partial_closure, partial_edges)]
 
-            bound_vars = list(take(len(p.arguments), diff(K, free_evars(partial_closure))))
+            bound_vars = list(take(len(p.arguments), diff(K, C)))
             next  = ForallAssertion( frozenset(bound_vars)
                                    , AnyOf(frozenset( [ Matches( assertion.variable, App(p.symbol, *bound_vars).negate()) ]
                                                     + [ Matches(bound, arg) for (bound, arg) in zip(bound_vars, p.arguments) ]
@@ -452,47 +454,47 @@ def add_to_closure( assertion: Assertion
             return add_to_closure( next
                                  , partial_closure.union([assertion])
                                  , partial_edges + [(assertion, next)]
-                                 , K
+                                 , C, K
                                  , def_list
                                  )
         elif isinstance(p, And):
             next = AllOf(frozenset([ Matches(assertion.variable, p.left), Matches(assertion.variable, p.right) ]))
             return add_to_closure( next
-                                 , partial_closure.union([assertion])
+                                 , partial_closure
                                  , partial_edges + [(assertion, next)]
-                                 , K
+                                 , C, K
                                  , def_list
                                  )
         elif isinstance(p, Or):
             next = AnyOf(frozenset([ Matches(assertion.variable, p.left), Matches(assertion.variable, p.right)]))
             return add_to_closure( next
-                                 , partial_closure.union([assertion])
+                                 , partial_closure
                                  , partial_edges + [(assertion, next)]
-                                 , K
+                                 , C, K
                                  , def_list
                                  )
         elif isinstance(p, (Nu, Mu)):
             next = Matches(assertion.variable, unfold(p, def_list))
             return add_to_closure( next
-                                 , partial_closure.union([assertion])
+                                 , partial_closure
                                  , partial_edges + [(assertion, next)]
-                                 , K
+                                 , C, K
                                  , def_list
                                  )
         elif isinstance(p, SVar) and isinstance(p.name, int): # Only consider bound `SVar`s.
             next = Matches(assertion.variable, def_list[p.name])
             return add_to_closure( next
-                                 , partial_closure.union([assertion])
+                                 , partial_closure
                                  , partial_edges + [(assertion, next)]
-                                 , K
+                                 , C, K
                                  , def_list
                                  )
         elif isinstance(p, Not) and isinstance(p.subpattern, SVar) and isinstance(p.subpattern.name, int): # Only consider bound `SVar`s.
             next = Matches(assertion.variable, def_list[p.subpattern.name].negate())
             return add_to_closure( next
-                                 , partial_closure.union([assertion])
+                                 , partial_closure
                                  , partial_edges + [(assertion, next)]
-                                 , K
+                                 , C, K
                                  , def_list
                                  )
         else:
@@ -505,7 +507,7 @@ def add_to_closure( assertion: Assertion
                 new_closures += add_to_closure( a
                                               , closure
                                               , edges + [(assertion, a)]
-                                              , K
+                                              , C, K
                                               , def_list
                                               )
             curr_closures = new_closures
@@ -513,7 +515,7 @@ def add_to_closure( assertion: Assertion
     elif isinstance(assertion, AnyOf):
         ret = []
         for a in assertion.assertions:
-            ret += add_to_closure(a, partial_closure, partial_edges + [(assertion, a)], K, def_list)
+            ret += add_to_closure(a, partial_closure, partial_edges + [(assertion, a)], C, K, def_list)
         return ret
     elif isinstance(assertion, ExistsAssertion):
         return [( partial_closure.union([assertion])
@@ -522,14 +524,14 @@ def add_to_closure( assertion: Assertion
     elif isinstance(assertion, ForallAssertion):
         curr_closures = [(partial_closure.union([assertion]), partial_edges)]
         bound = list(assertion.bound)
-        for instantiation in product(free_evars(partial_closure), repeat = len(assertion.bound)):
+        for instantiation in product(C, repeat = len(assertion.bound)):
             new_closures = []
             for (closure, edges) in curr_closures:
                 next = assertion.subassertion.substitute_multi(bound, instantiation)
-                new_closures +=  add_to_closure( next
-                                               , closure
-                                               , edges + [(assertion, next)]
-                                               , K, def_list)
+                new_closures += add_to_closure( next
+                                              , closure
+                                              , edges + [(assertion, next)]
+                                              , C, K, def_list)
             curr_closures = new_closures
         return curr_closures
     else:
@@ -548,14 +550,15 @@ def complete_closures_for_signature( closures: List[Tuple[Closure, PartialEdges]
             for (partial_closure, partial_edges) in closures:
                 first, *rest = tuple
                 new_edges : PartialEdges = []
-                x = add_to_closure(Matches(first, App(symbol, *rest)),          partial_closure, partial_edges, K, def_list)
-                y = add_to_closure(Matches(first, App(symbol, *rest).negate()), partial_closure, partial_edges, K, def_list)
+                x = add_to_closure(Matches(first, App(symbol, *rest)),          partial_closure, partial_edges, C, K, def_list)
+                y = add_to_closure(Matches(first, App(symbol, *rest).negate()), partial_closure, partial_edges, C, K, def_list)
                 new_closures += x
                 new_closures += y
             closures = new_closures
     return closures
 
 def instantiate_universals( closures: List[Tuple[Closure, PartialEdges]]
+                          , C: FrozenSet[EVar]
                           , K: List[EVar]
                           , def_list: DefList
                           ) -> List[Tuple[Closure, PartialEdges]]:
@@ -565,7 +568,7 @@ def instantiate_universals( closures: List[Tuple[Closure, PartialEdges]]
         for universal in closure:
             if not isinstance(universal, ForallAssertion):
                 continue
-            curr_closures = add_to_closures(universal, curr_closures, K, def_list)
+            curr_closures = add_to_closures(universal, curr_closures, C, K, def_list)
         ret += curr_closures
     return ret
 
@@ -623,10 +626,10 @@ def build_tableaux( curr_closure: Closure
             C = free_evars(curr_closure)
             new_closure = curr_closure
 
-        new_closures = add_to_closure(new_assertion, new_closure, [], K, def_list)
-        new_closures = add_to_closures(AllOf(prev_instantiations_negated), new_closures, K, def_list)
+        new_closures = add_to_closure(new_assertion, new_closure, [], C, K, def_list)
+        new_closures = add_to_closures(AllOf(prev_instantiations_negated), new_closures, C, K, def_list)
         prev_instantiations_negated = prev_instantiations_negated.union([new_assertion.negate()])
-        new_closures = instantiate_universals(new_closures, K, def_list)
+        new_closures = instantiate_universals(new_closures, C, K, def_list)
         new_closures = complete_closures_for_signature( new_closures
                                                       , C
                                                       , K

@@ -124,52 +124,52 @@ def test_instantiations() -> None:
     with raises(Exception): list(instantiations(1, frozenset([c]), frozenset([c]), [c]))
 
 def test_add_to_closure() -> None:
-    constants = [c, c1, c2, c3, c4]
+    K = [c, c1, c2, c3, c4]
     def_list : DefList = []
     signature = { S : 1, C : 0 }
 
     assertion = Matches(c, Bottom())
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     assert cl_pes == []
 
     assertion = Matches(c, Top())
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
-    assert cl_pes == [(frozenset({assertion}), [(assertion, assertion)])]
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
+    assert cl_pes == [(frozenset(), [(assertion, assertion)])]
 
     assertion = Matches(c, c1)
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     assert cl_pes == []
 
     assertion = Matches(c, c)
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     assert cl_pes == [(frozenset([Matches(c, c)]), [(assertion, assertion)])]
 
     assertion = Matches(c, App(C))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     assert cl_pes == [ (frozenset({assertion}), [(assertion, assertion)]) ]
 
     assertion = Matches(c, App(S, c))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     assert cl_pes == [ (frozenset({assertion}), [(assertion, assertion)]) ]
 
     assertion = Matches(c, DApp(C))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     assert cl_pes == [ (frozenset({assertion}), [(assertion, assertion)]) ]
 
     assertion = Matches(c, DApp(S, Not(c)))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     assert cl_pes == [ (frozenset({assertion}), [(assertion, assertion)]) ]
 
     assertion = Matches(c, And(App(C), DApp(C)))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     assert cl_pes == []
 
     assertion = Matches(c, And(App(C), DApp(S, Not(c))))
     left  = Matches(c, App(C))
     right = Matches(c, DApp(S, Not(c)))
     all_of = AllOf(frozenset([left, right]))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
-    assert cl_pes == [( frozenset({assertion, left, right})
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
+    assert cl_pes == [( frozenset({left, right})
                       , [ (assertion,  all_of)
                         , (all_of,     left)
                         , (left,       left)
@@ -179,50 +179,54 @@ def test_add_to_closure() -> None:
                       )]
 
     assertion = Matches(c, Or(App(C), DApp(C)))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     left = Matches(c, App(C))
     right = Matches(c, DApp(C))
     any_of = AnyOf(frozenset([left, right]))
-    assert cl_pes == [ (frozenset({assertion, right}),  [ (assertion, any_of)
-                                                         , (any_of, right)
-                                                         , (right, right)
-                                                         ])
-                     , (frozenset({assertion, left}), [ (assertion, any_of)
-                                                         , (any_of, left)
-                                                         , (left, left)
-                                                         ])
+    assert cl_pes == [ (frozenset({right}), [ (assertion, any_of)
+                                              , (any_of, right)
+                                              , (right, right)
+                                              ])
+                     , (frozenset({left}), [ (assertion, any_of)
+                                              , (any_of, left)
+                                              , (left, left)
+                                              ])
                      ]
 
 
     assertion = Matches(c, App(S, App(C)))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     exists_assertion = ExistsAssertion( frozenset([c1])
                                       , AllOf(frozenset([Matches(c, App(S, c1)), Matches(c1, App(C))]))
                                       )
-    assert cl_pes == [(frozenset({assertion, exists_assertion}), [(assertion, exists_assertion), (exists_assertion, exists_assertion)])]
+    assert cl_pes == [(frozenset({exists_assertion}), [(assertion, exists_assertion), (exists_assertion, exists_assertion)])]
 
     assertion = Matches(c, DApp(S, DApp(C)))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     uninstatiated_match_1 = Matches(c, DApp(S, Not(c1)))
     uninstatiated_match_2 = Matches(c1, DApp(C))
     uninstatiated_any_of = AnyOf(frozenset([uninstatiated_match_1, uninstatiated_match_2]))
-    forall_assertion = ForallAssertion(frozenset([c1]), uninstatiated_any_of)
+    forall_assertion = ForallAssertion(frozenset([c]), uninstatiated_any_of)
     any_of = uninstatiated_any_of.substitute(c1, c)
     match_1 = uninstatiated_match_1.substitute(c1, c)
     match_2 = uninstatiated_match_2.substitute(c1, c)
-    assert cl_pes == [ (frozenset({assertion, forall_assertion, match_2})
-                       , [(assertion, forall_assertion), (forall_assertion, any_of), (any_of, match_2), (match_2, match_2)])
-                     , (frozenset({assertion, forall_assertion, match_1})
-                       , [(assertion, forall_assertion), (forall_assertion, any_of), (any_of, match_1), (match_1, match_1)])
-                     ]
+    assert len(cl_pes) == 2
+    print(cl_pes[1][0])
+    assert cl_pes[1][0] == frozenset({forall_assertion, match_1})
+    assert (frozenset({forall_assertion, match_1})
+           , [(assertion, forall_assertion), (forall_assertion, forall_assertion), (forall_assertion, any_of), (any_of, match_1), (match_1, match_1)]) \
+        in cl_pes
+    assert (frozenset({forall_assertion, match_2})
+           , [(assertion, forall_assertion), (forall_assertion, forall_assertion), (forall_assertion, any_of), (any_of, match_2), (match_2, match_2)]) \
+        in cl_pes
 
     assertion = Matches(c, And(App(S, App(C)), DApp(S, DApp(C))))
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     # TODO: Complete me
 
     assertion = Matches(c, Nu(X, X))
     def_list = definition_list(assertion.pattern, [])
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     unfolded = Matches(c, Not(SVar(0)))
     assert cl_pes == [( frozenset([assertion, unfolded])
                       , [ (assertion, unfolded)
@@ -232,14 +236,14 @@ def test_add_to_closure() -> None:
 
     assertion = Matches(c, Nu(X, App(S, X)))
     def_list = definition_list(assertion.pattern, [])
-    cl_pes = add_to_closure(assertion, frozenset(), [], constants, def_list)
+    cl_pes = add_to_closure(assertion, frozenset(), [], assertion.free_evars(), K, def_list)
     unfolded = Matches(c, App(S, Not(SVar(0))))
     exists_assertion = ExistsAssertion(frozenset([c1]), AllOf(frozenset([Matches(c, App(S, c1)), Matches(c1, Not(SVar(0)))])))
     assert cl_pes == [( frozenset([assertion, unfolded, exists_assertion])
                       , [(assertion, unfolded), (unfolded, exists_assertion), (exists_assertion, exists_assertion)]
                       )]
-    cl_pes = instantiate_universals(cl_pes, constants, def_list)
-    cl_pes = complete_closures_for_signature(cl_pes, frozenset([c, c1]), constants, signature, def_list)
+    cl_pes = instantiate_universals(cl_pes, assertion.free_evars(), K, def_list)
+    cl_pes = complete_closures_for_signature(cl_pes, frozenset([c, c1]), K, signature, def_list)
     games = build_games(cl_pes, {})
  
 signature = {C: 0, S: 1}
