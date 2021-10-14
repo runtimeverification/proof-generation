@@ -475,6 +475,8 @@ def add_to_closure( assertion: Assertion
                                  )
         elif isinstance(p, (Nu, Mu)):
             next = Matches(assertion.variable, unfold(p, def_list))
+            if (assertion, next) in partial_edges:
+                return [(partial_closure, partial_edges)]
             return add_to_closure( next
                                  , partial_closure
                                  , partial_edges + [(assertion, next)]
