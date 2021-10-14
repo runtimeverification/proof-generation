@@ -642,20 +642,24 @@ def build_tableaux( curr_closure: Closure
                                                       )
 
         for (new_closure, new_game) in build_games(new_closures, partial_game):
-            if build_new_node:
-                for common in curr_closure.intersection(new_closure):
-                    if isinstance(common, ExistsAssertion):
-                        continue
-                    new_game[PGNode(common, curr_closure)] = new_game.get(PGNode(common, curr_closure), frozenset()).union([PGNode(common, new_closure)])
-
-            dest_node = PGNode(new_assertion, new_closure)
-            source_node = PGNode(existential, curr_closure)
-            new_game[source_node] = new_game.get(source_node, frozenset()).union([dest_node])
-
+            source_node = PGNode(existential,   curr_closure)
+            dest_node   = PGNode(new_assertion, new_closure)
             new_tableau = partial_tableau.copy()
-            new_tableau[curr_closure] = frozenset([new_closure])
+            connect_new_tableau_node(source_node, dest_node, new_tableau, new_game)
             yield from build_tableaux(new_closure, new_tableau, new_game, K, signature, def_list)
     return
+
+def connect_new_tableau_node(source_node: PGNode, dest_node: PGNode, tableau: Tableau, game: ParityGame) -> None:
+    # modifies tableau, game
+    tableau[source_node.closure] = frozenset([dest_node.closure])
+
+    game[source_node] = game.get(source_node, frozenset()).union([dest_node])
+    if source_node.closure == dest_node.closure:
+        return
+    for common in source_node.closure.intersection(dest_node.closure):
+        print('common', common.to_utf())
+        node_of_common_assertion = PGNode(common, source_node.closure)
+        game[node_of_common_assertion] = game.get(node_of_common_assertion, frozenset()).union([PGNode(common, dest_node.closure)])
 
 def is_sat(pattern: Pattern, K: List[EVar], signature: Signature) -> bool:
     print('---- is_sat')
