@@ -604,18 +604,28 @@ def build_tableaux( curr_closure: Closure
     for instantiation in instantiations(len(bound), existential.free_evars(), free_evars(curr_closure), K):
         new_assertion = existential.subassertion.substitute_multi(list(bound), instantiation)
         build_new_node = not new_assertion.free_evars() <= free_evars(curr_closure) # Partial order, not equivalent to >
+        new_closure: Closure
         if build_new_node:
+            C = new_assertion.free_evars()
             new_closure = frozenset([assertion for assertion in curr_closure
-                                               if assertion.free_evars() <= new_assertion.free_evars()
+                                               if     assertion.free_evars() <= C
+                                                  and (    isinstance(assertion, ForallAssertion)
+                                                        or ( isinstance(assertion, ExistsAssertion) and not assertion == existential)
+                                                        or (     isinstance(assertion, Matches)
+                                                             and ( (isinstance(assertion.pattern, App)  and is_atomic_application(assertion.pattern))
+                                                               or (isinstance(assertion.pattern, DApp) and is_atomic_application(assertion.pattern.negate()))
+                                                                )
+                                                           )
+                                                      )
                                     ])
         else:
+            C = free_evars(curr_closure)
             new_closure = curr_closure
 
-        new_closure = new_closure.difference({existential})
         new_closures = add_to_closure(new_assertion, new_closure, [], K, def_list)
         new_closures = instantiate_universals(new_closures, K, def_list)
         new_closures = complete_closures_for_signature( new_closures
-                                                      , free_evars(new_closure).union(frozenset(instantiation))
+                                                      , C
                                                       , K
                                                       , signature
                                                       , def_list
@@ -623,12 +633,15 @@ def build_tableaux( curr_closure: Closure
         print('new-closures', len(new_closures))
 
         for (new_closure, new_game) in build_games(new_closures, partial_game):
+            if build_new_node:
+                for common in curr_closure.intersection(new_closure):
+                    if isinstance(common, ExistsAssertion):
+                        continue
+                    new_game[PGNode(common, curr_closure)] = new_game.get(PGNode(common, curr_closure), frozenset()).union([PGNode(common, new_closure)])
+
             dest_node = PGNode(new_assertion, new_closure)
             source_node = PGNode(existential, curr_closure)
             new_game[source_node] = new_game.get(source_node, frozenset()).union([dest_node])
-
-            for common in curr_closure.intersection(new_closure):
-                new_game[PGNode(common, curr_closure)] = new_game.get(PGNode(common, curr_closure), frozenset()).union([PGNode(common, new_closure)])
 
             new_tableau = partial_tableau.copy()
             new_tableau[curr_closure] = frozenset([new_closure])
