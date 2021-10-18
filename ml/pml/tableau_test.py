@@ -1,6 +1,7 @@
 from pml import *
 from tableau import *
-from typing import Dict, List, cast
+from typing import Dict, List, Tuple, cast
+import pytest
 
 S = Symbol("S")
 C = Symbol("C")
@@ -244,54 +245,39 @@ def test_add_to_closure() -> None:
  
 signature = {C: 0, S: 1}
 
-def test_is_satisfiable_basic() -> None:
-    assert not is_sat(Bottom(), [c, c1], signature)
-    assert     is_sat(Top(),    [c, c1], signature)
+def commentid(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> str:
+    comment, sat, pat, consts, sig  = args
+    return '{},{}c'.format(comment, pat.to_utf())
 
-    assert     is_sat(App(C),              [c, c1], signature)
-    assert     is_sat(DApp(C),             [c, c1], signature)
+@pytest.mark.parametrize('args', [
+    ('bottom',          False,  Bottom(),                    [c, c1], signature),
+    ('top',             True,   Top(),                       [c, c1], signature),
 
-    assert not is_sat(And(App(C),DApp(C)), [c, c1], signature)
+    ('app',             True,   App(C),                      [c, c1], signature),
+    ('dapp',            True,   DApp(C),                     [c, c1], signature),
+    ('app and neg',     False,  And(App(C),DApp(C)),         [c, c1], signature),
+    ('app and neg 2',   True,   And(App(D), Not(App(C))),    [c, c1], {C: 0, D: 0}),
 
-    assert     is_sat(App(S, App(C)),      [c, c1, c2, c3], signature)
-    assert not is_sat( And(App(S, App(C)), DApp(S, DApp(C)))
-                     , [c, c1, c2], signature
-                     )
+    ('app-nested',      True,   App(S, App(C)),              [c, c1, c2, c3], signature),
+    ('app-nested-neg',  False,  And( App(S, App(C))
+                                   , DApp(S, DApp(C))),      [c, c1, c2, c3], signature),
 
-    assert     is_sat(App(S, App(C)),        [c, c1], signature)
-    assert     is_sat(DApp(S, Not(App(C))),  [c, c1], signature)
+    ('non-normal-form', True,   DApp(S, Not(App(C))),        [c, c1, c2, c3], signature),
+    ('non-normal-form', False,  And(App(C), Not(App(C))),    [c, c1, c2, c3], signature),
+    ('non-normal-form', False,  And( App(S, App(C))
+                                   , DApp(S, Not(App(C)))),  [c, c1, c2, c3], signature),
 
-    assert     is_sat(And(App(D), Not(App(C))), [c, c1], signature)
+    ('or',              True,   Or(App(C), Not(App(C))),     [c, c1, c2, c3], signature),
+    ('or-app-nested',   True,   Or( App(S, App(C))
+                                  , DApp(S, Not(App(C)))),   [c, c1, c2, c3], signature),
+    ('or-unsat',        False,  Or( And(App(C), Not(App(C)))
+                                  , And(App(C), Not(App(C)))
+                                  ),                         [c, c1], signature),
 
-    assert not is_sat(And(App(C), DApp(C)),     [c, c1], signature)
-    assert not is_sat(And(App(C), Not(App(C))), [c, c1], signature)
-    assert not is_sat(And(  App(S, App(C))
-                         , DApp(S, Not(App(C)))
-                         )
-                     , [c, c1], signature)
-
-    assert     is_sat(Or(App(C), Not(App(C))), [c, c1], signature)
-    assert     is_sat(Or(  App(S, App(C))
-                        , DApp(S, Not(App(C)))
-                        )
-                     , [c, c1], signature)
-    assert not is_sat(Or( And(App(C), Not(App(C)))
-                        , And(App(C), Not(App(C)))
-                        )
-                     , [c, c1], signature)
-
-    assert not is_sat(And(App(S, App(C)), DApp(S, DApp(C))),     [c, c1, c2, c3], signature)
-    assert not is_sat(And(App(S, App(C)), DApp(S, Not(App(C)))), [c, c1, c2, c3], signature)
-
-    assert     is_sat(Or(App(C), Not(App(C))), [c, c1], signature)
-    assert     is_sat(Or(  App(S,     App(C))
-                        , DApp(S, Not(App(C)))
-                        )
-                     , [c, c1], signature)
-    assert not is_sat(Or( And(App(C), Not(App(C)))
-                        , And(App(C), Not(App(C)))
-                        )
-                     , [c, c1], signature)
+], ids=commentid)
+def test_sat_tuplearg_basic(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> None:
+    comment, sat, pattern, consts, sig = args
+    assert sat is is_sat(pattern, consts, sig)
 
 def test_is_satisfiable_fixpoint_only() -> None:
     assert     is_sat( Nu(X, X), [c, c1], signature)
