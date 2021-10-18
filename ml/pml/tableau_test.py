@@ -247,12 +247,14 @@ signature = {C: 0, S: 1}
 
 def commentid(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> str:
     comment, sat, pat, consts, sig  = args
-    return '{},{}c'.format(comment, pat.to_utf())
+    return comment
 
 @pytest.mark.parametrize('args', [
+    # Basic
     ('bottom',          False,  Bottom(),                    [c, c1], signature),
     ('top',             True,   Top(),                       [c, c1], signature),
 
+    # App/And
     ('app',             True,   App(C),                      [c, c1], signature),
     ('dapp',            True,   DApp(C),                     [c, c1], signature),
     ('app and neg',     False,  And(App(C),DApp(C)),         [c, c1], signature),
@@ -267,6 +269,7 @@ def commentid(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> 
     ('non-normal-form', False,  And( App(S, App(C))
                                    , DApp(S, Not(App(C)))),  [c, c1, c2, c3], signature),
 
+    # App/Or
     ('or',              True,   Or(App(C), Not(App(C))),     [c, c1, c2, c3], signature),
     ('or-app-nested',   True,   Or( App(S, App(C))
                                   , DApp(S, Not(App(C)))),   [c, c1, c2, c3], signature),
@@ -274,41 +277,39 @@ def commentid(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> 
                                   , And(App(C), Not(App(C)))
                                   ),                         [c, c1], signature),
 
+    # Fixed points
+    ('nu-top',          True,   Nu(X, X), [c, c1], signature),
+    ('mu-bot',          False,  Mu(X, X), [c, c1], signature),
+
+    ('eventually-c',    True,   Mu(X,  Or(X,  App(C))), [c, c1], signature),
+    ('always-not-c',    True,   Nu(X, And(X, DApp(C))), [c, c1], signature),
+    ('Ec-and-A-not-c',  False,  And( Nu(X, And(X, DApp(C)))
+                                   , Mu(X,  Or(X, App(C)))), [c, c1], signature),
+
+    ('nu-or-app',       True,   Nu(X, Or(X,  App(C))),  [c, c1], signature),
+    ('mu-and-dapp',     False,  Mu(X, And(X, DApp(C))), [c, c1], signature),
+
+    ('nu-mu',           False,  Nu(X, Mu(X, X)), [c, c1], signature),
+    ('mu-nu',           True,   Mu(X, Nu(X, X)), [c, c1], signature),
+
+    ('nu-mu-and',       False,  Nu(X, Mu(Y, And(X, Y))), [c, c1], signature),
+
+    ('mu-and-nu',       False,  Mu(X, And(X, Nu(X, X))), [c, c1], signature),
+    ('mu-or-nu',        True,   Mu(X,  Or(X, Nu(X, X))), [c, c1], signature),
+
+    ('nu-and-dapp',     True,   Nu(X, And(X, DApp(C))), [c, c1], signature),
+    ('nu-and-dapp-app', True,   Nu(X, And(X, DApp(S, App(C)))), [c, c1], signature),
+
+    ('nu-app',          True,   Nu(X, App(S, X)), [c, c1, c2, c3], { S : 1 }),
+    ('fp-1',            False,  And( Nu(X, And(App(C), App(S, X)))
+                                   , DApp(S, Not(App(C)))
+                                   ), [c, c1, c2, c3], signature),
+
 ], ids=commentid)
-def test_sat_tuplearg_basic(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> None:
+def test_is_sat(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> None:
     comment, sat, pattern, consts, sig = args
     assert sat is is_sat(pattern, consts, sig)
 
-def test_is_satisfiable_fixpoint_only() -> None:
-    assert     is_sat( Nu(X, X), [c, c1], signature)
-    assert not is_sat( Mu(X, X), [c, c1], signature)
-
-    assert     is_sat( Mu(X,  Or(X,  App(C))), [c, c1], signature)
-    assert     is_sat( Nu(X, And(X, DApp(C))), [c, c1], signature)
-    assert not is_sat( And( Nu(X, And(X, DApp(C)))
-                          , Mu(X,  Or(X, App(C))))
-                     , [c, c1], signature)
-
-    assert     is_sat( Nu(X,  Or(X,  App(C))), [c, c1], signature)
-    assert not is_sat( Mu(X, And(X, DApp(C))), [c, c1], signature)
-
-    assert not is_sat( Nu(X, Mu(X, X)), [c, c1], signature)
-    assert     is_sat( Mu(X, Nu(X, X)), [c, c1], signature)
-
-    assert not is_sat( Nu(X, Mu(Y, And(X, Y))), [c, c1], signature)
-
-    assert not is_sat( Mu(X, And(X, Nu(X, X))), [c, c1], signature)
-    assert     is_sat( Mu(X,  Or(X, Nu(X, X))), [c, c1], signature)
-
-def test_is_satisfiable_fixpoint_with_apps() -> None:
-    assert     is_sat( Nu(X, And(X, DApp(C))), [c, c1], signature)
-    assert     is_sat( Nu(X, And(X, DApp(S, App(C)))), [c, c1], signature)
-
-    assert     is_sat( Nu(X, App(S, X)), [c, c1, c2, c3], { S : 1 })
-    assert not is_sat( And( Nu(X, And(App(C), App(S, X)))
-                          , DApp(S, Not(App(C)))
-                          )
-                     , [c, c1, c2, c3], signature)
 
 #    assert not is_sat(Mu(X, App(S, X))
 #                     , [c, c1, c2, c3], signature)
