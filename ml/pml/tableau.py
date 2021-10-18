@@ -182,7 +182,7 @@ class ForallAssertion(Assertion):
         return '∀ ' + ','.join(map(lambda p: p.to_utf(), self.bound)) + \
                     ' . ' + self.subassertion.to_utf()
 
-Closure = FrozenSet[Assertion]
+Closure = FrozenSet[Union[Matches, ForallAssertion, ExistsAssertion]]
 def free_evars(cl: Closure) -> FrozenSet[EVar]:
     ret : FrozenSet[EVar] = frozenset()
     for assertion in cl:

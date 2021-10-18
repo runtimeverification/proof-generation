@@ -67,7 +67,7 @@ def test_complete_closures_for_signature() -> None:
         assert len(cl) == 6
 
     from typing import FrozenSet, Tuple
-    closures : List[Tuple[FrozenSet[Assertion], List[Tuple[Assertion, Assertion]]]] \
+    closures : List[Tuple[Closure, List[Tuple[Assertion, Assertion]]]] \
              = [( frozenset({ExistsAssertion(frozenset({c}), AllOf(frozenset({Matches(c1, App(S, c)), Matches(c, App(C))}))),
                              Matches(c1, App(S, c)),
                              Matches(c, App(C)),
