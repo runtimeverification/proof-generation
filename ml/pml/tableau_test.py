@@ -250,6 +250,7 @@ def commentid(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> 
     return comment
 
 @pytest.mark.parametrize('args', [
+
     # Basic
     ('bottom',          False,  Bottom(),                    [c, c1], signature),
     ('top',             True,   Top(),                       [c, c1], signature),
@@ -305,15 +306,12 @@ def commentid(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> 
                                    , DApp(S, Not(App(C)))
                                    ), [c, c1, c2, c3], signature),
 
+    ('mu-app',          False,  Mu(X, App(S, X)), [c, c1, c2, c3], { S : 1 }),
 ], ids=commentid)
 def test_is_sat(args:Tuple[str, bool, Pattern, List[EVar], Dict[Symbol, int]]) -> None:
     comment, sat, pattern, consts, sig = args
     assert sat is is_sat(pattern, consts, sig)
 
-
-#    assert not is_sat(Mu(X, App(S, X))
-#                     , [c, c1, c2, c3], signature)
-#
 #    assert     is_sat(Nu(X, And( Mu(Y, Or(App(C), App(S , Y)) )
 #                                       , App(S , X)
 #                                       ))

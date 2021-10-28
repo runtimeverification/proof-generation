@@ -334,7 +334,9 @@ def serialize_parity_game(root: PGNodeGeneralized, edges: ParityGame, def_list: 
                 )]
     return ret
 
+run = 0
 def run_pgsolver(game: SerializedParityGame) -> bool:
+
     def entry_to_string(entry : SerializedParityGameEntry) -> str:
         source, priority, player, dests, label = entry
         assert len(dests) > 0
@@ -353,7 +355,9 @@ def run_pgsolver(game: SerializedParityGame) -> bool:
     if match is None:
         raise RuntimeError("PGGame not well formed?\n" + output)
 
-    with open('/tmp/in.pg', 'w') as pg_file:
+    global run
+    run += 1
+    with open('/tmp/in.' + str(run) + '.pg', 'w') as pg_file:
         pg_file.write(input)
     with open('/tmp/out.pg', 'w') as pg_file:
         pg_file.write(check_output(['pgsolver', '-global',  'recursive', '-pg'], input=input, text=True))
@@ -587,67 +591,62 @@ def build_games( closures: List[Tuple[Closure, PartialEdges]]
     return ret
 
 def build_tableaux( curr_closure: Closure
-                  , partial_tableau: Tableau
-                  , partial_game : ParityGame
+                  , x_partial_tableau: Tableau
+                  , x_partial_game : ParityGame
                   , K: List[EVar]
                   , signature: Signature
                   , def_list : DefList
-                  ) -> Iterator[ParityGame]:
-    if curr_closure in partial_tableau.keys():
-        yield partial_game
+                  ) -> Iterator[Tuple[Tableau, ParityGame]]:
+    if curr_closure in x_partial_tableau.keys():
+        yield (x_partial_tableau,  x_partial_game)
         return
 
-    # We pick an existential assertion in the closure,
-    # and expand the closure to allow instantiating it.
-    existential = next((a for a in curr_closure if isinstance(a, ExistsAssertion)), None)
-    if not existential:
-        yield partial_game
-        return
+    tableau_games : Iterable[Tuple[Tableau, ParityGame]] = [(x_partial_tableau, x_partial_game)]
+    for existential in (a for a in curr_closure if isinstance(a, ExistsAssertion)):
+        for (partial_tableau, partial_game) in tableau_games:
+            bound = list(existential.bound)
 
-    bound = list(existential.bound)
+            new_tableau_games : Iterable[Tuple[Tableau, ParityGame]] = []
+            prev_instantiations_negated : FrozenSet[Assertion] = frozenset()
 
-    prev_instantiations_negated : FrozenSet[Assertion] = frozenset()
-    for instantiation in instantiations(len(bound), existential.free_evars(), free_evars(curr_closure), K):
-        new_assertion = existential.subassertion.substitute_multi(list(bound), instantiation)
-        build_new_node = not new_assertion.free_evars() <= free_evars(curr_closure) # Partial order, not equivalent to >
-        new_closure: Closure
-        if build_new_node:
-            C = new_assertion.free_evars()
-            new_closures : List[Tuple[Closure, PartialEdges]] = [(frozenset(), [])]
-            for assertion in curr_closure:
-                if not assertion.free_evars() <= C: # Beware, not a total order.
-                    continue
-                if not  isinstance(assertion, ForallAssertion) \
-                     or ( isinstance(assertion, ExistsAssertion) and not assertion == existential) \
-                     or (     isinstance(assertion, Matches)
-                          and ( (isinstance(assertion.pattern, App)  and is_atomic_application(assertion.pattern))
-                            or (isinstance(assertion.pattern, DApp) and is_atomic_application(assertion.pattern.negate()))
-                             )
-                        ):
-                    continue
-                new_closures = add_to_closures(assertion, new_closures, C, K, def_list)
-        else:
-            C = free_evars(curr_closure)
-            new_closures = [(curr_closure, [])]
+            for instantiation in instantiations(len(bound), existential.free_evars(), free_evars(curr_closure), K):
+                new_assertion = existential.subassertion.substitute_multi(list(bound), instantiation)
+                build_new_node = not new_assertion.free_evars() <= free_evars(curr_closure) # Partial order, not equivalent to >
+                new_closure: Closure
+                C = new_assertion.free_evars()
+                new_closures : List[Tuple[Closure, PartialEdges]] = [(frozenset(), [])]
+                for assertion in curr_closure:
+                    if not assertion.free_evars() <= C: # Beware, not a total order.
+                        continue
+                    if not  isinstance(assertion, ForallAssertion) \
+                         or ( isinstance(assertion, ExistsAssertion) and not assertion == existential) \
+                         or (     isinstance(assertion, Matches)
+                              and ( (isinstance(assertion.pattern, App)  and is_atomic_application(assertion.pattern))
+                                or (isinstance(assertion.pattern, DApp) and is_atomic_application(assertion.pattern.negate()))
+                                 )
+                            ):
+                        continue
+                    new_closures = add_to_closures(assertion, new_closures, C, K, def_list)
 
-        new_closures = add_to_closures(new_assertion, new_closures, C, K, def_list)
-        new_closures = add_to_closures(AllOf(prev_instantiations_negated), new_closures, C, K, def_list)
-        prev_instantiations_negated = prev_instantiations_negated.union([new_assertion.negate()])
-        new_closures = instantiate_universals(new_closures, C, K, def_list)
-        new_closures = complete_closures_for_signature( new_closures
-                                                      , C
-                                                      , K
-                                                      , signature
-                                                      , def_list
-                                                      )
+                new_closures = add_to_closures(new_assertion, new_closures, C, K, def_list)
+                new_closures = add_to_closures(AllOf(prev_instantiations_negated), new_closures, C, K, def_list)
+                prev_instantiations_negated = prev_instantiations_negated.union([new_assertion.negate()])
+                new_closures = instantiate_universals(new_closures, C, K, def_list)
+                new_closures = complete_closures_for_signature( new_closures
+                                                              , C
+                                                              , K
+                                                              , signature
+                                                              , def_list
+                                                              )
 
-        for (new_closure, new_game) in build_games(new_closures, partial_game):
-            source_node = PGNode(existential,   curr_closure)
-            dest_node   = PGNode(new_assertion, new_closure)
-            new_tableau = partial_tableau.copy()
-            connect_new_tableau_node(source_node, dest_node, new_tableau, new_game)
-            yield from build_tableaux(new_closure, new_tableau, new_game, K, signature, def_list)
-    return
+                for (new_closure, new_game) in build_games(new_closures, partial_game):
+                    source_node = PGNode(existential,   curr_closure)
+                    dest_node   = PGNode(new_assertion, new_closure)
+                    new_tableau = partial_tableau.copy()
+                    connect_new_tableau_node(source_node, dest_node, new_tableau, new_game)
+                    new_tableau_games = chain(new_tableau_games, build_tableaux(new_closure, new_tableau, new_game, K, signature, def_list))
+            tableau_games = new_tableau_games
+    yield from tableau_games
 
 def connect_new_tableau_node(source_node: PGNode, dest_node: PGNode, tableau: Tableau, game: ParityGame) -> None:
     # modifies tableau, game
@@ -668,8 +667,8 @@ def is_sat(pattern: Pattern, K: List[EVar], signature: Signature) -> bool:
     assertion = ExistsAssertion(frozenset({K[0]}), Matches(K[0], pattern))
     root = frozenset({assertion})
     root_pgnode = PGNode(assertion, root)
-    games = build_tableaux(root, {}, {}, K, signature, def_list)
-    for game in games:
+    tableau_games = build_tableaux(root, {}, {}, K, signature, def_list)
+    for (tableau, game) in tableau_games:
         game[Unsat()] = frozenset({Unsat()})
         serialized = serialize_parity_game(root_pgnode, game, def_list)
         if run_pgsolver(serialized):
