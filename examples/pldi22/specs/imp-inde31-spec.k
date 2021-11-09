@@ -89,7 +89,7 @@ claim
     <state>
         x |-> (X:Int => 0)
         y |-> (Y:Int => X +Int Y)
-        _:Map // need this to capture rest of the map
+        z |-> _:Int
     </state>
     requires X >=Int 0
 
@@ -105,8 +105,8 @@ claim
     </k>
     <state>
         x |-> (X:Int => X +Int Z)
+        y |-> _:Int
         z |-> (Z:Int => 0)
-        _:Map
     </state>
     requires Z >=Int 0
 
@@ -121,9 +121,9 @@ claim
         ...
     </k>
     <state>
+        x |-> _:Int
         y |-> (Y:Int => 0)
         z |-> (Z:Int => Z +Int Y)
-        _:Map
     </state>
     requires Y >=Int 0
 
