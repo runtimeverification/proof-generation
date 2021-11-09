@@ -35,6 +35,7 @@ class SMTProofGenerator(ProofGenerator):
 
     SMT_HOOK_TO_SMT_FUNCTION: Dict[str, Callable[..., z3.AstRef]] = {
         "(^ #1 #2)": lambda x, y: x**y,
+        "(gcd #1 #2)": lambda x, y: z3.Function("gcd", z3.IntSort(), z3.IntSort(), z3.IntSort())(x, y),
         "(ite (< #1 0) (- 0 #1) #1)": lambda x: z3.If(x < 0, -x, x),
         "distinct": lambda *args: z3.Distinct(*args),
     }
@@ -57,6 +58,7 @@ class SMTProofGenerator(ProofGenerator):
         tactic = SMTProofGenerator.TACTIC_MAP[option.tactic]
 
         self.solver = tactic.solver()
+        self.solver.set("timeout", 10000) # TODO: make this an option
         self.prelude_formulas = []
 
         # TODO: this only supports formulas (but no declarations and options)
