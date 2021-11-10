@@ -11,7 +11,10 @@ module IMP-SYNTAX
                  > AExp "+" AExp              [left, seqstrict, color(pink)]
                  | AExp "-" AExp              [left, seqstrict, color(pink)]
   syntax BExp  ::= Bool
-                 | AExp "<=" AExp             [seqstrict, latex({#1}\leq{#2}), color(pink)]
+                 | AExp "<=" AExp             [seqstrict]
+                 | AExp "<" AExp              [seqstrict]
+                 | AExp ">=" AExp             [seqstrict]
+                 | AExp ">" AExp              [seqstrict]
                  | "!" BExp                   [strict, color(pink)]
                  | "(" BExp ")"               [bracket]
                  > BExp "&&" BExp             [left, strict(1), color(pink)]
@@ -49,6 +52,9 @@ module IMP
   rule - I1 => 0 -Int I1
 
   rule I1 <= I2 => I1 <=Int I2
+  rule I1 < I2 => I1 <Int I2
+  rule I1 >= I2 => I1 >=Int I2
+  rule I1 > I2 => I1 >Int I2
   rule ! T => notBool T
   rule C:Bool && B => B requires C
   rule C:Bool && _ => false requires notBool C
