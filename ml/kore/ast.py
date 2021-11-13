@@ -651,6 +651,9 @@ class Application(Pattern):
             return self.symbol == other.symbol and self.arguments == other.arguments
         return False
 
+    def __hash__(self) -> int:
+        return hash(self.symbol) ^ hash(tuple(self.arguments))
+
     def __lt__(self, other: Any) -> bool:
         assert isinstance(other, Application)
         return (self.symbol, self.arguments) < (other.symbol, other.arguments)
@@ -772,6 +775,9 @@ class MLPattern(Pattern):
                 self.construct == other.construct and self.sorts == other.sorts and self.arguments == other.arguments
             )
         return False
+
+    def __hash__(self) -> int:
+        return hash(self.construct) ^ hash(tuple(self.sorts)) ^ hash(tuple(self.arguments))
 
     def __lt__(self, other: Any) -> bool:
         assert isinstance(other, MLPattern)

@@ -59,6 +59,8 @@ class RewriteProofGenerator(ProofGenerator):
             IntegerMultiplicationEvaluator(composer),
             "Lbl'UndsSlsh'Int'Unds'":
             IntegerDivisionEvaluator(composer),
+            "Lbl'UndsPerc'Int'Unds'":
+            IntegerModEvaluator(composer),
             "Lbl'Unds-GT-Eqls'Int'Unds'":
             IntegerGreaterThanOrEqualToEvaluator(composer),
             "Lbl'Unds-LT-Eqls'Int'Unds'":
@@ -199,7 +201,7 @@ class RewriteProofGenerator(ProofGenerator):
             if len(step.applied_rules) == 1 and step.applied_rules[0].rule_id == task.claim_id:
                 # claims will be resolved in the end
                 print(f"### step {i} using circularity")
-                step_claim = self.prove_reachability_axiom_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, claim, step)
+                step_claim = self.prove_reachability_axiom_step(kore.MLPattern.ONE_PATH_REACHES_STAR, claim, step)
             else:
                 print(f"### step {i}")
                 step_claim = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_STAR, step)
@@ -336,7 +338,9 @@ class RewriteProofGenerator(ProofGenerator):
 
         TODO: perhaps we should merge this to prove_symbolic_step
         """
-        assert reachability == kore.MLPattern.ONE_PATH_REACHES_PLUS
+        assert len(step.remainders) <= 1
+
+        assert reachability == kore.MLPattern.ONE_PATH_REACHES_STAR
 
         assert len(step.applied_rules) == 1
         applied_rule = step.applied_rules[0]
@@ -371,20 +375,8 @@ class RewriteProofGenerator(ProofGenerator):
         axiom_instantiation = self.simplify_pattern(axiom_instantiation, [0, 1, 1])  # rhs
         axiom_instantiation = self.simplify_pattern(axiom_instantiation, [0, 1, 0, 0])  # requires clause
 
-        # arrange the LHS to be initial
         _, instantiated_reachability = KoreUtils.destruct_implies(axiom_instantiation.claim.pattern)
-        instantiated_lhs, instantiated_rhs = KoreUtils.destruct_one_path_reaches_plus(instantiated_reachability)
-
-        subsumption_lhs = self.prove_constrained_pattern_subsumption(
-            initial,
-            ConstrainedPattern.from_pattern(instantiated_lhs),
-        )
-
-        axiom_instantiation = self.composer.apply_kore_lemma(
-            "kore-one-path-reaches-plus-subsumption-lhs-alt",
-            subsumption_lhs,
-            axiom_instantiation,
-        )
+        _, instantiated_rhs = KoreUtils.destruct_one_path_reaches_plus(instantiated_reachability)
 
         # remove ensures clause
         axiom_instantiation = self.composer.apply_kore_lemma(
@@ -398,17 +390,68 @@ class RewriteProofGenerator(ProofGenerator):
             axiom_instantiation,
         )
 
-        # arrange the RHS to be goal
-        _, instantiated_reachability = KoreUtils.destruct_implies(axiom_instantiation.claim.pattern)
-        _, instantiated_rhs = KoreUtils.destruct_one_path_reaches_plus(instantiated_reachability)
+        # weaken to reaches-plus
+        axiom_instantiation = self.composer.apply_kore_lemma(
+            "kore-one-path-reaches-star-intro-alt3",
+            axiom_instantiation,
+        )
 
+        appended_remainder = False
+
+        # we need to combine the remainder term if it exists
+        if len(step.remainders) != 0:
+            remainder, = step.remainders
+
+            if not self.check_smt_unsat(remainder.get_constraint()):
+                appended_remainder = True
+                # |- axiom -> (remainder_constraint \/ lhs_constraint) /\ lhs =>* remainder \/ rhs
+                axiom_instantiation = self.composer.apply_kore_lemma(
+                    "kore-one-path-reaches-star-union-alt2",
+                    self.apply_reachability_reflexivity(kore.MLPattern.ONE_PATH_REACHES_STAR, remainder.as_pattern()),
+                    axiom_instantiation,
+                )
+
+        # compute the LHS and RHS again
+        _, instantiated_reachability = KoreUtils.destruct_implies(axiom_instantiation.claim.pattern)
+        instantiated_lhs, _ = KoreUtils.destruct_one_path_reaches_star(instantiated_reachability)
+
+        # arrange the LHS to be initial
+        subsumption_lhs = self.prove_constrained_pattern_subsumption(
+            initial,
+            ConstrainedPattern.from_pattern(instantiated_lhs),
+        )
+
+        axiom_instantiation = self.composer.apply_kore_lemma(
+            "kore-one-path-reaches-star-subsumption-lhs-alt",
+            subsumption_lhs,
+            axiom_instantiation,
+        )
+
+        # need to pass the LHS constraint to the RHS
+        if not appended_remainder:
+            axiom_instantiation = self.composer.apply_kore_lemma(
+                "kore-one-path-reaches-star-constraint-lemma-alt",
+                axiom_instantiation,
+            )
+        # TODO: is appended_remainder is true, we may still need to do this
+
+        # recompute the RHS
+        _, instantiated_reachability = KoreUtils.destruct_implies(axiom_instantiation.claim.pattern)
+        _, instantiated_rhs = KoreUtils.destruct_one_path_reaches_star(instantiated_reachability)
+        if appended_remainder:
+            _, instantiated_rhs = KoreUtils.destruct_or(instantiated_rhs)
+
+        # arrange the RHS to be goal
         subsumption_rhs = self.prove_constrained_pattern_subsumption(
             ConstrainedPattern.from_pattern(instantiated_rhs),
             final,
         )
 
+        # if we have appended the remainder, then the RHS will be a disjunction
+        # so we have to apply subsumption differently
         axiom_instantiation = self.composer.apply_kore_lemma(
-            "kore-one-path-reaches-plus-subsumption-rhs-alt",
+            "kore-one-path-reaches-star-subsumption-rhs-alt2"
+            if appended_remainder else "kore-one-path-reaches-star-subsumption-rhs-alt",
             axiom_instantiation,
             subsumption_rhs,
         )
@@ -900,7 +943,9 @@ class RewriteProofGenerator(ProofGenerator):
 
         # no changes to the remainder
         for remainder in step.remainders:
-            branches.append(self.apply_reachability_reflexivity(reachability, remainder.as_pattern()))
+            if not self.check_smt_unsat(remainder.get_constraint()):
+                # if unsat, then skip
+                branches.append(self.apply_reachability_reflexivity(reachability, remainder.as_pattern()))
 
         # if len(step.remainders) == 0, we can use =>+ instead of =>*
         step_claim = branches[-1]
@@ -994,7 +1039,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         if len(branches1) == 1:
             # TODO: support the case when we have premises
-            assert not step1_has_premise and not step2_has_premise, "not supported"
+            # assert not step1_has_premise and not step2_has_premise, "not supported"
             return self.apply_reachability_transitivity(reachability, step1, step2)
 
         # now we assume there are at least 2 branches in step1
@@ -1222,7 +1267,7 @@ class RewriteProofGenerator(ProofGenerator):
         "kore-one-path-reaches-star-intro-alt",
     }
     """
-    (resulting type, src, dest)
+    (resulting type, src1, src2)
     """
     REACHABILITY_TRANS_THEOREMS = {
         (kore.MLPattern.REWRITES_PLUS, kore.MLPattern.REWRITES_PLUS, kore.MLPattern.REWRITES_STAR):
@@ -1237,6 +1282,16 @@ class RewriteProofGenerator(ProofGenerator):
             kore.MLPattern.ONE_PATH_REACHES_STAR, kore.MLPattern.ONE_PATH_REACHES_STAR, kore.MLPattern.ONE_PATH_REACHES_STAR
         ):
         "kore-one-path-reaches-star-transitivity",
+    }
+    """
+    (resulting type, src1, src2)
+    """
+    REACHABILITY_WEAKENED_TRANS_THEOREMS = {
+        # TODO: this is not general enough and only covers the always -> circularity premise
+        (
+            kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_STAR
+        ):
+        "kore-reachability-one-path-transitivity-alt2",
     }
 
     REACHABILITY_REFLEXIVITY_THEOREMS = {
@@ -1258,6 +1313,7 @@ class RewriteProofGenerator(ProofGenerator):
     REACHABILITY_WEAKENED_SUBSUMPTION_THEOREMS = {
         kore.MLPattern.ONE_PATH_REACHES_PLUS:
         ("kore-one-path-reaches-plus-subsumption-lhs-alt", "kore-one-path-reaches-plus-subsumption-rhs-alt"),
+        kore.MLPattern.ONE_PATH_REACHES_STAR: ("kore-one-path-reaches-star-subsumption-lhs-alt", ""),
     }
     """
     Propagate the constraint LHS to RHS
@@ -1319,11 +1375,20 @@ class RewriteProofGenerator(ProofGenerator):
     ) -> ProvableClaim:
         """
         Apply transitivity on the given two claims
+        Note that claim1 or claim2 may have additional premises
         """
+
+        if KoreUtils.is_implies(claim1.claim.pattern) or KoreUtils.is_implies(claim2.claim.pattern):
+            assert not KoreUtils.is_implies(claim1.claim.pattern), "unsupported"
+            # TODO: right now we only support claim 2 to have premises
+            table = RewriteProofGenerator.REACHABILITY_WEAKENED_TRANS_THEOREMS
+        else:
+            table = RewriteProofGenerator.REACHABILITY_TRANS_THEOREMS
+
         claim_type1 = self.get_reachability_type(claim1)
         claim_type2 = self.get_reachability_type(claim2)
 
-        for (dest, src1, src2), theorem_name in RewriteProofGenerator.REACHABILITY_TRANS_THEOREMS.items():
+        for (dest, src1, src2), theorem_name in table.items():
             if dest == target_type:
                 path1 = self.get_reachability_conversion_path(claim_type1, src1)
                 path2 = self.get_reachability_conversion_path(claim_type2, src2)
@@ -2007,6 +2072,13 @@ class IntegerDivisionEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) // self.parse_int(b))
+
+
+class IntegerModEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        # TODO: check if this definition of % is the same as K
+        return self.build_arithmetic_equation(application, self.parse_int(a) % self.parse_int(b))
 
 
 class IntegerGreaterThanOrEqualToEvaluator(BuiltinFunctionEvaluator):

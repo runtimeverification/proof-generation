@@ -6,7 +6,8 @@ DEFINITIONS_DIR := $(MAKEFILE_DIR)/definitions
 
 PROVE_REACHABILITY := pypy3 -m scripts.prove_reachability --standalone
 EXP_OPTIONS := --smt-prelude $(MAKEFILE_DIR)/prelude.smt2 --z3-tactic "(and-then qfnra-nlsat default)" --unknown-as-sat
-GCD_OPTIONS := --smt-prelude $(MAKEFILE_DIR)/gcd.smt2 --unknown-as-sat
+GCD_OPTIONS := --smt-prelude $(MAKEFILE_DIR)/gcd.smt2 --z3-timeout 10000 --unknown-as-sat
+COUNT_BY_K_OPTIONS := --smt-prelude $(MAKEFILE_DIR)/count-by-k.smt2 --z3-tactic "(! default :random_seed 0)" --z3-timeout 60000 --unknown-as-sat
 
 MMVERIFY := pypy3 $(MAKEFILE_DIR)/mmverify.py
 
@@ -49,6 +50,11 @@ proofs/%-gcd.mm: $(SPECS_DIR)/%-gcd-spec.k
 	cd $(REPO_DIR) && \
 	\time -v -o $(STATS_DIR)/$*-gcd.mm.time \
 	$(PROVE_REACHABILITY) $(GCD_OPTIONS) $(DEFINITION_PATH) $(MODULE_NAME) $< $(MODULE_NAME)-GCD-SPEC --output $(MAKEFILE_DIR)/$@
+
+proofs/%-loop-new-count-by-k.mm: $(SPECS_DIR)/%-loop-new-count-by-k-spec.k
+	cd $(REPO_DIR) && \
+	\time -v -o $(STATS_DIR)/$*-loop-new-count-by-k.mm.time \
+	$(PROVE_REACHABILITY) $(COUNT_BY_K_OPTIONS) $(DEFINITION_PATH) $(MODULE_NAME) $< $(MODULE_NAME)-LOOP-NEW-COUNT-BY-K-SPEC --output $(MAKEFILE_DIR)/$@
 
 proofs/%.mm: $(SPECS_DIR)/%-spec.k
 	cd $(REPO_DIR) && \

@@ -11,12 +11,14 @@ module IMP-SYNTAX
                  > AExp "+" AExp              [left, seqstrict, color(pink)]
                  | AExp "-" AExp              [left, seqstrict, color(pink)]
   syntax BExp  ::= Bool
+                 | AExp "==" AExp             [seqstrict]
                  | AExp "<=" AExp             [seqstrict]
                  | AExp "<" AExp              [seqstrict]
                  | AExp ">=" AExp             [seqstrict]
                  | AExp ">" AExp              [seqstrict]
                  | "!" BExp                   [strict, color(pink)]
                  | "(" BExp ")"               [bracket]
+                 // | "nondet"
                  > BExp "&&" BExp             [left, strict(1), color(pink)]
   syntax Block ::= "{" "}"
                  | "{" Stmt "}"               [format(%1%i%n%2%d%n%3)]
@@ -51,6 +53,7 @@ module IMP
   rule I1 - I2 => I1 -Int I2
   rule - I1 => 0 -Int I1
 
+  rule I1 == I2 => I1 ==Int I2
   rule I1 <= I2 => I1 <=Int I2
   rule I1 < I2 => I1 <Int I2
   rule I1 >= I2 => I1 >=Int I2
@@ -72,4 +75,8 @@ module IMP
   rule <k> int (X,Xs => Xs);_ </k> <state> _:Map (.Map => X|->0) </state>
     // requires notBool (X in keys(Rho))
   rule int .Ids; S => S  [structural]
+
+  // a non-deterministic Boolean
+  // rule nondet => false
+  // rule nondet => true
 endmodule

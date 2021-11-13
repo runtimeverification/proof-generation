@@ -13,6 +13,7 @@ from .env import KoreComposer, ProofGenerator, ProvableClaim
 class SMTOption:
     prelude_file: Optional[str] = None
     tactic: str = "default"
+    timeout: Optional[int] = None  # in ms
 
 
 class SMTProofGenerator(ProofGenerator):
@@ -21,6 +22,7 @@ class SMTProofGenerator(ProofGenerator):
         "Lbl'Unds'-Int'Unds'": lambda a, b: a - b,
         "Lbl'UndsStar'Int'Unds'": lambda a, b: a * b,
         "Lbl'UndsSlsh'Int'Unds'": lambda a, b: a / b,
+        "Lbl'UndsPerc'Int'Unds'": lambda a, b: a % b,
         "Lbl'Unds-GT-Eqls'Int'Unds'": lambda a, b: a >= b,
         "Lbl'Unds-LT-Eqls'Int'Unds'": lambda a, b: a <= b,
         "Lbl'Unds-GT-'Int'Unds'": lambda a, b: a > b,
@@ -40,10 +42,19 @@ class SMTProofGenerator(ProofGenerator):
         "distinct": lambda *args: z3.Distinct(*args),
     }
 
+    SEED_0 = z3.ParamsRef()
+    SEED_0.set("random_seed", 0)
+
     # TODO: actually write a parser
     TACTIC_MAP = {
-        "default": z3.Tactic("default"),
-        "(and-then qfnra-nlsat default)": z3.AndThen(z3.Tactic("qfnra-nlsat"), z3.Tactic("default")),
+        "default":
+        z3.Tactic("default"),
+        "(and-then qfnra-nlsat default)":
+        z3.AndThen(z3.Tactic("qfnra-nlsat"), z3.Tactic("default")),
+        "(! default :random_seed 0)":
+        z3.WithParams(z3.Tactic("default"), SEED_0),
+        "(! (and-then qfnra-nlsat default) :random_seed 0)":
+        z3.WithParams(z3.AndThen(z3.Tactic("qfnra-nlsat"), z3.Tactic("default")), SEED_0),
     }
 
     def __init__(
@@ -58,7 +69,8 @@ class SMTProofGenerator(ProofGenerator):
         tactic = SMTProofGenerator.TACTIC_MAP[option.tactic]
 
         self.solver = tactic.solver()
-        self.solver.set("timeout", 10000) # TODO: make this an option
+        if option.timeout is not None:
+            self.solver.set("timeout", option.timeout)
         self.prelude_formulas = []
 
         # TODO: this only supports formulas (but no declarations and options)
@@ -75,7 +87,7 @@ class SMTProofGenerator(ProofGenerator):
         if isinstance(predicate, kore.Claim):
             predicate = predicate.pattern
 
-        encoded_predicate = self.encode_predicate(predicate)
+        encoded_predicate = self.encode_predicate(predicate, {})
 
         self.solver.push()
 
@@ -93,7 +105,7 @@ class SMTProofGenerator(ProofGenerator):
         else:
             return None
 
-    def encode_predicate(self, predicate: kore.Pattern) -> z3.BoolRef:
+    def encode_predicate(self, predicate: kore.Pattern, abstraction_map: Dict[kore.Pattern, z3.BoolRef]) -> z3.BoolRef:
         """
         Encode a kore predicate as a boolean term
         """
@@ -101,23 +113,29 @@ class SMTProofGenerator(ProofGenerator):
         if isinstance(predicate, kore.MLPattern):
             if KoreUtils.is_equals(predicate):
                 left, right = KoreUtils.destruct_equals(predicate)
-                return self.encode_term(left) == self.encode_term(right)
+                return self.encode_term(left, abstraction_map) == self.encode_term(right, abstraction_map)
 
             elif KoreUtils.is_and(predicate):
                 left, right = KoreUtils.destruct_and(predicate)
-                return z3.And(self.encode_predicate(left), self.encode_predicate(right))
+                return z3.And(
+                    self.encode_predicate(left, abstraction_map), self.encode_predicate(right, abstraction_map)
+                )
 
             elif KoreUtils.is_or(predicate):
                 left, right = KoreUtils.destruct_or(predicate)
-                return z3.Or(self.encode_predicate(left), self.encode_predicate(right))
+                return z3.Or(
+                    self.encode_predicate(left, abstraction_map), self.encode_predicate(right, abstraction_map)
+                )
 
             elif KoreUtils.is_implies(predicate):
                 left, right = KoreUtils.destruct_implies(predicate)
-                return z3.Implies(self.encode_predicate(left), self.encode_predicate(right))
+                return z3.Implies(
+                    self.encode_predicate(left, abstraction_map), self.encode_predicate(right, abstraction_map)
+                )
 
             elif KoreUtils.is_not(predicate):
                 subterm, = KoreUtils.destruct_not(predicate)
-                return z3.Not(self.encode_predicate(subterm))
+                return z3.Not(self.encode_predicate(subterm, abstraction_map))
 
             elif KoreUtils.is_top(predicate):
                 return True
@@ -125,9 +143,17 @@ class SMTProofGenerator(ProofGenerator):
             elif KoreUtils.is_bottom(predicate):
                 return False
 
-        assert False, f"unable to encode predicate {predicate}"
+        # abstract the predicate using a Boolean variable
+        if predicate in abstraction_map:
+            return abstraction_map[predicate]
 
-    def encode_term(self, term: kore.Pattern) -> z3.AstRef:
+        abstraction_map[predicate] = z3.FreshBool()
+        print(f"abstracting predicate with variable {abstraction_map[predicate]}: {predicate}")
+        return abstraction_map[predicate]
+
+        # assert False, f"unable to encode predicate {predicate}"
+
+    def encode_term(self, term: kore.Pattern, abstraction_map: Dict[kore.Pattern, z3.BoolRef]) -> z3.AstRef:
         """
         Encode a (functional) pattern as a FOL term
 
@@ -152,7 +178,7 @@ class SMTProofGenerator(ProofGenerator):
 
             if symbol_name in SMTProofGenerator.HOOKED_FUNCTION_TO_SMT_FUNCTION:
                 function = SMTProofGenerator.HOOKED_FUNCTION_TO_SMT_FUNCTION[symbol_name]
-                subterms = tuple(self.encode_term(argument) for argument in term.arguments)
+                subterms = tuple(self.encode_term(argument, abstraction_map) for argument in term.arguments)
                 return function(*subterms)
 
             definition = term.symbol.definition
@@ -170,7 +196,7 @@ class SMTProofGenerator(ProofGenerator):
                        f"unsupported SMT hook {template} for {term}"
 
                 return SMTProofGenerator.SMT_HOOK_TO_SMT_FUNCTION[template](
-                    *(self.encode_term(arg) for arg in term.arguments)
+                    *(self.encode_term(arg, abstraction_map) for arg in term.arguments)
                 )
 
         elif isinstance(term, kore.Variable):
@@ -182,5 +208,15 @@ class SMTProofGenerator(ProofGenerator):
 
             elif sort_id == "SortBool":
                 return z3.Bool(term.name)
+
+        sort = KoreUtils.infer_sort(term)
+
+        if isinstance(sort, kore.SortInstance) and sort.get_sort_id() == "SortBool":
+            if term in abstraction_map:
+                return abstraction_map[term]
+
+            abstraction_map[term] = z3.FreshBool()
+            print(f"abstracting term with variable {abstraction_map[term]}: {term}")
+            return abstraction_map[term]
 
         assert False, f"unable to encode term {term}"

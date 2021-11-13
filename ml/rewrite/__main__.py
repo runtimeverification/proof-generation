@@ -62,7 +62,7 @@ def load_tasks(module: Module, task_path: str) -> Tuple[Tuple[RewritingTask, ...
 
 
 def parse_smt_option(args: argparse.Namespace) -> SMTOption:
-    return SMTOption(args.smt_prelude, args.z3_tactic or "default")
+    return SMTOption(args.smt_prelude, args.z3_tactic or "default", args.z3_timeout)
 
 
 def prove_rewriting(
@@ -158,6 +158,11 @@ def set_additional_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--z3-tactic",
         help="Tactic to use for z3",
+    )
+    parser.add_argument(
+        "--z3-timeout",
+        type=int,
+        help="z3 timeout (in ms)",
     )
 
 
