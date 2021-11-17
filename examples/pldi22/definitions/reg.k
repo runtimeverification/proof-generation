@@ -15,10 +15,12 @@ syntax Address ::= rel(Int) | abs(Int)
 syntax Instruction ::= "load"  Register "," Operand               [strict(2)]
                      | "store" Operand "," Operand                [seqstrict]
                      | "move"  Register "," Operand               [strict(2)]
-                     | "add"   Register "," Operand "," Operand   [strict(2, 3)]
-                     | "mul"   Register "," Operand "," Operand   [strict(2, 3)]
-                     | "div"   Register "," Operand "," Operand   [strict(2, 3)]
-                     | "le"    Register "," Operand "," Operand   [strict(2, 3)]
+                     | "add"   Register "," Operand "," Operand   [seqstrict(2, 3)]
+                     | "sub"   Register "," Operand "," Operand   [seqstrict(2, 3)]
+                     | "mul"   Register "," Operand "," Operand   [seqstrict(2, 3)]
+                     | "div"   Register "," Operand "," Operand   [seqstrict(2, 3)]
+                     | "eq"    Register "," Operand "," Operand   [seqstrict(2, 3)]
+                     | "le"    Register "," Operand "," Operand   [seqstrict(2, 3)]
                      | "not"   Register "," Operand               [strict(2)]
                      | "br"    Operand "," Address "," Address    [strict(1)]
                      | "jump"  Address
@@ -97,8 +99,12 @@ rule <k> store A:Int, V:Int => . ... </k>
 rule move R:Register, V:Int => setRegister(R, V)
 
 rule add R:Register, V1:Int, V2:Int => setRegister(R, V1 +Int V2)
+rule sub R:Register, V1:Int, V2:Int => setRegister(R, V1 -Int V2)
 rule mul R:Register, V1:Int, V2:Int => setRegister(R, V1 *Int V2)
 rule div R:Register, V1:Int, V2:Int => setRegister(R, V1 /Int V2) requires V2 =/=Int 0
+
+rule eq R:Register, V1:Int, V2:Int => setRegister(R, 1) requires V1 ==Int V2
+rule eq R:Register, V1:Int, V2:Int => setRegister(R, 0) requires notBool (V1 ==Int V2)
 
 rule le R:Register, V1:Int, V2:Int => setRegister(R, 1) requires V1 <=Int V2
 rule le R:Register, V1:Int, V2:Int => setRegister(R, 0) requires notBool (V1 <=Int V2)
