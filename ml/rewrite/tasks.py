@@ -210,7 +210,11 @@ class ConstrainedPattern(WithSchema):
             constraint, term = KoreUtils.destruct_and(pattern)
             return ConstrainedPattern(term, constraint)
         else:
-            return ConstrainedPattern(pattern, parse_pattern("\\top{SortGeneratedTopCell{}}()"))
+            if pattern.is_resolved():
+                top = KoreUtils.construct_top(KoreUtils.infer_sort(pattern))
+                return ConstrainedPattern(pattern, top)
+            else:
+                return ConstrainedPattern(pattern, parse_pattern("\\top{SortGeneratedTopCell{}}()"))
 
     @staticmethod
     def get_raw_schema() -> Any:

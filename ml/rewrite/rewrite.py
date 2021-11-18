@@ -183,6 +183,27 @@ class RewriteProofGenerator(ProofGenerator):
         and the hints
         """
 
+        # TODO: when there are existential vars, K generates
+        # claims of the form ph1 => exists ... ph2 /\ ph3
+        # where ph1 and ph3 are both constraints
+        # to make our life easier, we switch the order of ph3 and ph2
+        # so that constraints are always on the left hand side
+        if KoreUtils.is_exists(task.rhs.pattern):
+            exists_vars = []
+            rhs_body = task.rhs.pattern
+            while KoreUtils.is_exists(rhs_body):
+                var, rhs_body = KoreUtils.destruct_exists(rhs_body)
+                exists_vars.append(var)
+
+            rhs_left, rhs_right = KoreUtils.destruct_and(rhs_body)
+            new_rhs = KoreUtils.construct_and(rhs_right, rhs_left)
+
+            for var in exists_vars[::-1]:
+                new_rhs = KoreUtils.construct_exists(var, new_rhs)
+
+            task.rhs.pattern = new_rhs
+            task.rhs.resolve(self.composer.module)
+
         claim = self.composer.construct_claim(
             KoreUtils.construct_one_path_reaches_plus(
                 task.lhs.as_pattern(),
@@ -323,6 +344,50 @@ class RewriteProofGenerator(ProofGenerator):
 
         return provable
 
+    def prenex_existential_configuration(
+        self, pattern: kore.Pattern
+    ) -> Optional[Tuple[ProvableClaim, List[kore.Variable], kore.Pattern]]:
+        """
+        Given a pattern of the form ph1 /\ exists x (ph2 /\ ph3)
+        move the existential quantifier to the outermost level
+        and return a proof of
+        |- (ph1 /\ exists x (ph2 /\ ph3)) -> (exists x (ph1 /\ ph2) /\ ph3)
+        and the (should be q-free) body (ph1 /\ ph3) /\ ph2
+
+        If the pattern has no existential quantifiers, return None
+        """
+
+        if not KoreUtils.is_and(pattern):
+            return None
+
+        left, right = KoreUtils.destruct_and(pattern)
+
+        if not KoreUtils.is_exists(right):
+            return None
+
+        exists_vars = []
+
+        while KoreUtils.is_exists(right):
+            var, right = KoreUtils.destruct_exists(right)
+            exists_vars.append(var)
+
+        if KoreUtils.is_and(right):
+            right_left, right_right = KoreUtils.destruct_and(right)
+            qf_pattern = KoreUtils.construct_and(KoreUtils.construct_and(left, right_left), right_right)
+        else:
+            qf_pattern = KoreUtils.construct_and(left, right)
+
+        prenex_pattern = qf_pattern
+
+        for var in exists_vars[::-1]:
+            prenex_pattern = KoreUtils.construct_exists(var, prenex_pattern)
+
+        # TODO: [exists] prove this
+        return self.composer.load_fresh_claim_placeholder(
+            "prenex-exists",
+            KoreUtils.construct_implies(pattern, prenex_pattern),
+        ), exists_vars[::-1], qf_pattern
+
     def prove_reachability_axiom_step(
         self,
         reachability: ReachabilityType,
@@ -441,11 +506,43 @@ class RewriteProofGenerator(ProofGenerator):
         if appended_remainder:
             _, instantiated_rhs = KoreUtils.destruct_or(instantiated_rhs)
 
+        # if the RHS has existential quantifiers, move them to the outermost level
+        prenex_proof = self.prenex_existential_configuration(instantiated_rhs)
+        if prenex_proof is not None:
+            prenex = True
+            prenex_claim, exists_vars, instantiated_rhs = prenex_proof
+            axiom_instantiation = self.composer.apply_kore_lemma(
+                "kore-one-path-reaches-star-subsumption-rhs-alt2"
+                if appended_remainder else "kore-one-path-reaches-star-subsumption-rhs-alt",
+                axiom_instantiation,
+                prenex_claim,
+            )
+        else:
+            prenex = False
+            exists_vars = []
+
         # arrange the RHS to be goal
         subsumption_rhs = self.prove_constrained_pattern_subsumption(
             ConstrainedPattern.from_pattern(instantiated_rhs),
             final,
         )
+
+        if prenex:
+            # if there is existential quantifiers in the original RHS,
+            # we have to existentially quantify both sides of subsumption
+            subsumption_rhs_left, subsumption_rhs_right = KoreUtils.destruct_implies(subsumption_rhs.claim.pattern)
+            for var in exists_vars:
+                subsumption_rhs_left = KoreUtils.construct_exists(var, subsumption_rhs_left)
+                subsumption_rhs_right = KoreUtils.construct_exists(var, subsumption_rhs_right)
+
+            # TODO: [exists] prove this
+            subsumption_rhs = self.composer.load_fresh_claim_placeholder(
+                "implies-compat-exists",
+                KoreUtils.construct_implies(
+                    subsumption_rhs_left,
+                    ConstrainedPattern.from_pattern(subsumption_rhs_right).as_pattern(),
+                ),
+            )
 
         # if we have appended the remainder, then the RHS will be a disjunction
         # so we have to apply subsumption differently
@@ -683,15 +780,113 @@ class RewriteProofGenerator(ProofGenerator):
         pattern1_constraint = pattern1.get_constraint()
         pattern2_constraint = pattern2.get_constraint()
 
+        # if pattern1 and pattern2 have the same existential quantifiers
+        # we only need to unify their q-free body
+        pattern1_body = pattern1.pattern
+        pattern2_body = pattern2.pattern
+
+        if KoreUtils.is_exists(pattern1_body) and KoreUtils.is_exists(pattern2_body):
+            exists_vars = []
+
+            while KoreUtils.is_exists(pattern1_body) and \
+                KoreUtils.is_exists(pattern2_body):
+                var1, pattern1_body = KoreUtils.destruct_exists(pattern1_body)
+                var2, pattern2_body = KoreUtils.destruct_exists(pattern2_body)
+                assert var1 == var2, f"reordering of existential variables not supported, got {var1}, {var2}"
+                exists_vars.append(var1)
+
+                if KoreUtils.is_and(pattern1_body):
+                    new_constraint, pattern1_body = KoreUtils.destruct_and(pattern1_body)
+                    pattern1_constraint = KoreUtils.construct_and(pattern1_constraint, new_constraint)
+
+                if KoreUtils.is_and(pattern2_body):
+                    new_constraint, pattern2_body = KoreUtils.destruct_and(pattern2_body)
+                    pattern2_constraint = KoreUtils.construct_and(pattern2_constraint, new_constraint)
+
+            new_pattern1 = ConstrainedPattern(pattern1_body, pattern1_constraint)
+            new_pattern2 = ConstrainedPattern(pattern2_body, pattern2_constraint)
+
+            inner_subsumption = self.prove_constrained_pattern_subsumption(new_pattern1, new_pattern2)
+
+            # TODO: prove these FO rearrangements
+            # lhs_rearrange = self.composer.load_fresh_claim_placeholder(
+            #     "exists-rearrange",
+            #     KoreUtils.construct_implies(pattern1.as_pattern(), new_pattern1.as_pattern()),
+            # )
+            # rhs_rearrange = self.composer.load_fresh_claim_placeholder(
+            #     "exists-rearrange",
+            #     KoreUtils.construct_implies(new_pattern2.as_pattern(), pattern2.as_pattern()),
+            # )
+
+            # finally concatenate both ends
+            # return self.prop_gen.apply_implies_transitivity(
+            #     self.prop_gen.apply_implies_transitivity(
+            #         lhs_rearrange,
+            #         inner_subsumption,
+            #     ),
+            #     rhs_rearrange,
+            # )
+
+            # TODO: [exists] implement this
+            return self.composer.load_fresh_claim_placeholder(
+                "subsumption",
+                KoreUtils.construct_implies(pattern1.as_pattern(), pattern2.as_pattern()),
+            )
+
+        # if only RHS has existential quantifiers, then we need to do instantiation
+        if KoreUtils.is_exists(pattern2_body):
+            exists_vars = []
+
+            while KoreUtils.is_exists(pattern2_body):
+                var2, pattern2_body = KoreUtils.destruct_exists(pattern2_body)
+                exists_vars.append(var2)
+
+                if KoreUtils.is_and(pattern2_body):
+                    new_constraint, pattern2_body = KoreUtils.destruct_and(pattern2_body)
+                    pattern2_constraint = KoreUtils.construct_and(pattern2_constraint, new_constraint)
+
+            # allow substitution (here pattern2 is more general since it has existential quantifiers)
+            unification_result = \
+                UnificationProofGenerator(self.composer) \
+                    .unify_patterns(pattern2_body, pattern1_body)
+
+            assert unification_result is not None, \
+                   f"failed to unify {pattern1_body} and {pattern2_body}"
+
+            # KoreUtils.pretty_print(pattern1_body)
+            # KoreUtils.pretty_print(pattern2_body)
+            # print(unification_result)
+
+            # only check subsumption of pattern2 under the substitution
+            pattern2_rearranged = ConstrainedPattern(pattern2_body, pattern2_constraint).as_pattern()
+            pattern2_rearranged.resolve(self.composer.module)
+
+            pattern2_instance = KoreUtils.copy_and_substitute_pattern(
+                pattern2_rearranged,
+                unification_result.substitution,
+            )
+            self.prove_constrained_pattern_subsumption(
+                pattern1,
+                ConstrainedPattern.from_pattern(pattern2_instance),
+            )
+
+            # TODO; [exists] actually prove this
+            return self.composer.load_fresh_claim_placeholder(
+                "subsumption",
+                KoreUtils.construct_implies(pattern1.as_pattern(), pattern2.as_pattern()),
+            )
+
         unification_result = \
             UnificationProofGenerator(self.composer, allow_unevaluated_functions=True, disable_substitution=True) \
-                .unify_patterns(pattern1.pattern, pattern2.pattern)
+                .unify_patterns(pattern1_body, pattern2_body)
 
         # we can not instantiate variables here so the substitution must be empty
         assert unification_result is not None and len(unification_result.substitution) == 0, \
-               f"failed to prove {pattern1.as_pattern()} is subsumed by {pattern2.as_pattern()}"
+               f"failed to unify {pattern1_body} and {pattern2_body}"
 
-        claim = self.prop_gen.apply_implies_reflexivity(pattern1.as_pattern())
+        claim = self.prop_gen.apply_implies_reflexivity(
+            ConstrainedPattern(pattern1_body, pattern1_constraint).as_pattern()
+        )
 
         for equation, path in unification_result.applied_equations:
             if isinstance(equation, ConstraintEquation):

@@ -54,6 +54,9 @@ class BaseAST(Generic[ParentT]):
     def resolve(self, parent: ParentT) -> None:
         self.set_parent(parent)
 
+    def is_resolved(self) -> bool:
+        return self.meta_parent is not None
+
 
 class AttributeMixin:
     attributes: Tuple[Application, ...]

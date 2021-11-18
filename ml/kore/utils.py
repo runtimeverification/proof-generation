@@ -421,7 +421,10 @@ class KoreUtils:
     def construct_binary_ml_pattern(construct: str, left: Pattern, right: Pattern) -> MLPattern:
         left_sort = KoreUtils.infer_sort(left)
         right_sort = KoreUtils.infer_sort(right)
-        assert left_sort == right_sort, \
+        assert left_sort == right_sort or \
+               (isinstance(left_sort, SortInstance) and \
+                isinstance(right_sort, SortInstance) and \
+                left_sort.get_sort_id() == right_sort.get_sort_id()), \
                f"unmatched sort {left_sort} and {right_sort}"
         return MLPattern(construct, [left_sort], [left, right])
 
