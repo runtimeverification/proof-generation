@@ -233,8 +233,10 @@ class MapCommutativity(Equation):
         # TODO:: assert here that subpattern is a mapmerge
 
         # get the two variable (names) in the commutativity axiom
-        assert self.composer.map_commutativity_axiom is not None
-        comm_axiom = self.composer.map_commutativity_axiom
+        map_sort = KoreUtils.infer_sort(subpattern)
+        assert map_sort in self.composer.map_commutativity_axiom, f"unable to find commutativity axiom for {map_sort}"
+        assert isinstance(map_sort, kore.SortInstance)
+        comm_axiom = self.composer.map_commutativity_axiom[map_sort]
 
         comm_axiom_body = KoreUtils.strip_forall(comm_axiom.claim.pattern)
         assert isinstance(comm_axiom_body, kore.MLPattern)
@@ -272,8 +274,10 @@ class MapAssociativity(Equation):
         assert isinstance(subpattern, kore.Application)
         assert KoreTemplates.is_map_merge_pattern(subpattern)
 
-        assert self.composer.map_associativity_axiom is not None
-        assoc_axiom = self.composer.map_associativity_axiom
+        map_sort = KoreUtils.infer_sort(subpattern)
+        assert map_sort in self.composer.map_associativity_axiom, f"unable to find associativity axiom for {map_sort}"
+        assert isinstance(map_sort, kore.SortInstance)
+        assoc_axiom = self.composer.map_associativity_axiom[map_sort]
 
         assoc_axiom_body = KoreUtils.strip_forall(assoc_axiom.claim.pattern)
         assert isinstance(assoc_axiom_body, kore.MLPattern)
@@ -340,8 +344,10 @@ class MapRightUnit(Equation):
         assert isinstance(subpattern, kore.Pattern)
         assert KoreTemplates.is_map_pattern(subpattern)
 
-        assert self.composer.map_right_unit_axiom is not None
-        right_unit_axiom = self.composer.map_right_unit_axiom
+        map_sort = KoreUtils.infer_sort(subpattern)
+        assert map_sort in self.composer.map_right_unit_axiom, f"unable to find right unit axiom for {map_sort}"
+        assert isinstance(map_sort, kore.SortInstance)
+        right_unit_axiom = self.composer.map_right_unit_axiom[map_sort]
 
         right_unit_axiom_body = KoreUtils.strip_forall(right_unit_axiom.claim.pattern)
         assert isinstance(right_unit_axiom_body, kore.MLPattern)
@@ -540,11 +546,17 @@ class MapUnificationMixin(ABC):
             # KoreUtils.pretty_print(pattern2)
             return self.unify_concrete_map_patterns_with_sort(pattern1, pattern2)
 
+        if (KoreTemplates.get_path_to_nth_item_in_map(pattern1, 0) is None) != \
+           (KoreTemplates.get_path_to_nth_item_in_map(pattern2, 0) is None):
+            # one is empty and the other is not
+            return None
+
         left1 = KoreTemplates.get_map_merge_left(pattern1)
 
         # if the left most item is not at the top level, we shuffle it up
         if not KoreTemplates.is_map_mapsto_pattern(left1):
             path = KoreTemplates.get_path_to_nth_item_in_map(pattern1, 0)
+            assert path is not None
             pattern1, applied_eqs1 = self.bubble_item(pattern1, path)
             left1 = KoreTemplates.get_map_merge_left(pattern1)
         else:
@@ -562,6 +574,7 @@ class MapUnificationMixin(ABC):
             return None
 
         path = KoreTemplates.get_path_to_nth_item_in_map(pattern2, i)
+        assert path is not None
         pattern2, applied_eqs2 = self.bubble_item(pattern2, path)
         left2 = KoreTemplates.get_map_merge_left(pattern2)
 

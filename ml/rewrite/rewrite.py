@@ -73,6 +73,8 @@ class RewriteProofGenerator(ProofGenerator):
             IntegerEqualityEvaluator(composer),
             "Lbl'Unds'andBool'Unds'":
             BooleanAndEvaluator(composer),
+            "Lbl'Unds'orBool'Unds'":
+            BooleanOrEvaluator(composer),
             "LblnotBool'Unds'":
             BooleanNotEvaluator(composer),
             "Lbl'UndsEqlsEqls'K'Unds'":
@@ -1173,6 +1175,89 @@ class RewriteProofGenerator(ProofGenerator):
 
         return final_claim
 
+    def prove_trivial_disjunction_implication(
+        self, disjunction1: kore.Pattern, disjunction2: kore.Pattern
+    ) -> ProvableClaim:
+        """
+        Prove |- phi_1 \/ ... \/ phi_n -> psi_1 \/ ... \/ psi_m
+        where for all i, exists j such that phi_i = psi_j
+        """
+
+        if KoreUtils.is_or(disjunction1):
+            left, right = KoreUtils.destruct_or(disjunction1)
+            return self.composer.apply_kore_lemma(
+                "kore-or-elim-alt2",
+                self.prove_trivial_disjunction_implication(left, disjunction2),
+                self.prove_trivial_disjunction_implication(right, disjunction2),
+            )
+
+        if disjunction1 == disjunction2:
+            return self.prop_gen.apply_implies_reflexivity(disjunction1)
+
+        if KoreUtils.is_or(disjunction2):
+            left, right = KoreUtils.destruct_or(disjunction2)
+
+            if disjunction1 in KoreUtils.destruct_nested_or(left):
+                return self.prop_gen.apply_implies_transitivity(
+                    self.prove_trivial_disjunction_implication(disjunction1, left),
+                    self.composer.apply_kore_lemma(
+                        "kore-or-intro-left-alt2",
+                        goal=self.composer.construct_claim(KoreUtils.construct_implies(left, disjunction2), ),
+                    ),
+                )
+            elif disjunction1 in KoreUtils.destruct_nested_or(right):
+                return self.prop_gen.apply_implies_transitivity(
+                    self.prove_trivial_disjunction_implication(disjunction1, right),
+                    self.composer.apply_kore_lemma(
+                        "kore-or-intro-right-alt2",
+                        goal=self.composer.construct_claim(KoreUtils.construct_implies(right, disjunction2), ),
+                    ),
+                )
+
+        assert False, f"failed to prove that {disjunction1} implies {disjunction2}"
+
+        # disjuncts2 = KoreUtils.destruct_nested_or(disjunction2)
+        # assert disjunction1 in disjuncts2
+        # index = disjuncts2.index(disjunction1)
+
+        # # shuffle the <index> pattern to the topmost position
+        # shuffle = self.prop_gen.apply_iff_elim_right(
+        #     self.prop_gen.shuffle_nested(kore.MLPattern.OR, disjunction2, index),
+        # )
+
+        # shuffled, _ = KoreUtils.destruct_implies(shuffle.claim.pattern)
+
+        # return self.prop_gen.apply_implies_transitivity(
+        #     self.composer.apply_kore_lemma(
+        #         "kore-or-intro-left-alt2",
+        #         goal=self.composer.construct_claim(
+        #             KoreUtils.construct_implies(disjunction1, shuffled),
+        #         ),
+        #     ),
+        #     shuffle,
+        # )
+
+    def simplify_branches(self, claim: ProvableClaim) -> ProvableClaim:
+        """
+        Remove duplicate branches on the RHS
+        """
+        _, _, rhs, _ = self.destruct_rewrite_axiom(claim, separate_rhs=False)
+        branches = KoreUtils.destruct_nested_or(rhs)
+
+        unique_branches = list(set(branches))
+
+        if len(unique_branches) == len(branches):
+            return claim
+
+        new_rhs = unique_branches[0]
+        for branch in unique_branches[1:]:
+            new_rhs = KoreUtils.construct_or(branch, new_rhs)
+
+        return self.apply_reachability_subsumption_right(
+            claim,
+            self.prove_trivial_disjunction_implication(rhs, new_rhs),
+        )
+
     def connect_symbolic_steps(
         self, reachability: ReachabilityType, step1: ProvableClaim, step2: ProvableClaim
     ) -> ProvableClaim:
@@ -1194,6 +1279,8 @@ class RewriteProofGenerator(ProofGenerator):
         lhs2_constraint, lhs2_term = KoreUtils.destruct_and(lhs2)
 
         branches1 = KoreUtils.destruct_nested_or(rhs1)
+
+        # print(len(branches1), len(set(branches1)))
 
         # unify lhs2 with any of the branches
         unification_gen = UnificationProofGenerator(
@@ -1391,30 +1478,39 @@ class RewriteProofGenerator(ProofGenerator):
         print("preprocess rewriting task")
         self.preprocess_steps(task.steps)
 
-        step_claims = []
+        initial_pattern = task.get_initial_pattern().as_pattern()
+        final_claim = self.apply_reachability_reflexivity(kore.MLPattern.REWRITES_STAR, initial_pattern)
+        final_claim = self.simplify_pattern(final_claim, [0, 1])
 
         for i, step in enumerate(task.steps):
             print(f"######## symbolic step {i} ########")
             claim = self.prove_symbolic_step(kore.MLPattern.REWRITES_STAR, step)
-            step_claims.append(claim)
+            final_claim = self.connect_symbolic_steps(kore.MLPattern.REWRITES_STAR, final_claim, claim)
+            final_claim = self.simplify_branches(final_claim)
+
+            if i + 1 != len(task.steps):
+                final_claim = self.composer.load_provable_claim_as_theorem(
+                    self.composer.get_fresh_label("intermediate-state"),
+                    final_claim,
+                )
 
         # TODO: not using task.initial and task.final yet
 
-        # connect all steps together
-        # with self.composer.new_context():
-        initial_pattern = task.get_initial_pattern().as_pattern()
+        # # connect all steps together
+        # # with self.composer.new_context():
+        # initial_pattern = task.get_initial_pattern().as_pattern()
 
-        # assuming that the set of free variables will not increase
-        # self.add_free_variable_sorting_hypotheses(initial_pattern)
+        # # assuming that the set of free variables will not increase
+        # # self.add_free_variable_sorting_hypotheses(initial_pattern)
 
-        # simplify initial pattern
-        print("######## simplifying initial claim ########")
-        final_claim = self.apply_reachability_reflexivity(kore.MLPattern.REWRITES_STAR, initial_pattern)
-        final_claim = self.simplify_pattern(final_claim, [0, 1])
+        # # simplify initial pattern
+        # print("######## simplifying initial claim ########")
+        # final_claim = self.apply_reachability_reflexivity(kore.MLPattern.REWRITES_STAR, initial_pattern)
+        # final_claim = self.simplify_pattern(final_claim, [0, 1])
 
-        for i, claim in enumerate(step_claims):
-            print(f"######## connecting symbolic step {i} ########")
-            final_claim = self.connect_symbolic_steps(kore.MLPattern.REWRITES_STAR, final_claim, claim)
+        # for i, claim in enumerate(step_claims):
+        #     print(f"######## connecting symbolic step {i} ########")
+        #     final_claim = self.connect_symbolic_steps(kore.MLPattern.REWRITES_STAR, final_claim, claim)
 
         final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
 
@@ -2310,6 +2406,12 @@ class BooleanAndEvaluator(BuiltinFunctionEvaluator):
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_bool(a) and self.parse_bool(b))
+
+
+class BooleanOrEvaluator(BuiltinFunctionEvaluator):
+    def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
+        a, b = application.arguments
+        return self.build_arithmetic_equation(application, self.parse_bool(a) or self.parse_bool(b))
 
 
 class BooleanNotEvaluator(BuiltinFunctionEvaluator):

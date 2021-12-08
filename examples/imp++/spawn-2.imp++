@@ -1,0 +1,5 @@
+int x;
+
+spawn x = 0;
+spawn x = 1;
+x = 2;

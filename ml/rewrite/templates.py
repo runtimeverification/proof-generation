@@ -31,31 +31,40 @@ class KoreTemplates:
         return KoreTemplates.get_symbol_of_functional_axiom(axiom) is not None
 
     @staticmethod
-    def is_map_commutativity_axiom(axiom: kore.Axiom) -> bool:
+    def is_map_commutativity_axiom(axiom: kore.Axiom) -> Optional[kore.SortInstance]:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
-        return (
-            axiom.has_attribute("comm") and isinstance(inner_pattern, kore.MLPattern)
-            and inner_pattern.construct == kore.MLPattern.EQUALS and str(inner_pattern.sorts[0]) == r"SortMap{}"
-        )
+        if (axiom.has_attribute("comm") and isinstance(inner_pattern, kore.MLPattern)
+                and inner_pattern.construct == kore.MLPattern.EQUALS
+                and str(inner_pattern.sorts[0]).endswith(r"Map{}")  # TODO: a bit hacky...
+            ):
+            assert isinstance(inner_pattern.sorts[0], kore.SortInstance)
+            return inner_pattern.sorts[0]
+        return None
 
     @staticmethod
-    def is_map_associativity_axiom(axiom: kore.Axiom) -> bool:
+    def is_map_associativity_axiom(axiom: kore.Axiom) -> Optional[kore.SortInstance]:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
-        return (
-            axiom.has_attribute("assoc") and isinstance(inner_pattern, kore.MLPattern)
-            and inner_pattern.construct == kore.MLPattern.EQUALS and str(inner_pattern.sorts[0]) == r"SortMap{}"
-        )
+        if (axiom.has_attribute("assoc") and isinstance(inner_pattern, kore.MLPattern)
+                and inner_pattern.construct == kore.MLPattern.EQUALS
+                and str(inner_pattern.sorts[0]).endswith(r"Map{}")):
+            assert isinstance(inner_pattern.sorts[0], kore.SortInstance)
+            return inner_pattern.sorts[0]
+        return None
 
     @staticmethod
-    def is_map_right_unit_axiom(axiom: kore.Axiom) -> bool:
+    def is_map_right_unit_axiom(axiom: kore.Axiom) -> Optional[kore.SortInstance]:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)
-        return (
-            axiom.has_attribute("unit") and isinstance(inner_pattern, kore.MLPattern)
-            and inner_pattern.construct == kore.MLPattern.EQUALS and str(inner_pattern.sorts[0]) == r"SortMap{}"
-            and isinstance(inner_pattern.arguments[0], kore.Application)
-            and isinstance(inner_pattern.arguments[0].arguments[1], kore.Application)
-            and inner_pattern.arguments[0].arguments[1].symbol.get_symbol_name() == "Lbl'Stop'Map"
-        )
+        if (axiom.has_attribute("unit") and isinstance(inner_pattern, kore.MLPattern)
+                and inner_pattern.construct == kore.MLPattern.EQUALS
+                and str(inner_pattern.sorts[0]).endswith(r"Map{}")  # something like SortMap{}
+                and isinstance(inner_pattern.arguments[0], kore.Application)
+                and isinstance(inner_pattern.arguments[0].arguments[1], kore.Application)
+                and inner_pattern.arguments[0].arguments[1].symbol.get_symbol_name().endswith(
+                    "Map")  # something like Lbl'Stop'Map
+            ):
+            assert isinstance(inner_pattern.sorts[0], kore.SortInstance)
+            return inner_pattern.sorts[0]
+        return None
 
     @staticmethod
     def get_symbol_of_equational_axiom(axiom: kore.Axiom, ) -> Optional[kore.SymbolInstance]:
@@ -302,7 +311,7 @@ class KoreTemplates:
         left.arguments[1] = right
 
     @staticmethod
-    def get_path_to_nth_item_in_map(pattern: kore.Pattern, n: int) -> PatternPath:
+    def get_path_to_nth_item_in_map(pattern: kore.Pattern, n: int) -> Optional[PatternPath]:
         """
         Get the path to the ith item in a map pattern
         """
@@ -321,12 +330,17 @@ class KoreTemplates:
             right_items = KoreTemplates.destruct_map_pattern(right)
 
             if n < len(left_items):
-                return [0] + KoreTemplates.get_path_to_nth_item_in_map(left, n)
+                rest = KoreTemplates.get_path_to_nth_item_in_map(left, n)
+                if rest is None: return None
+                return [0] + rest
 
             if n - len(left_items) < len(right_items):
-                return [1] + KoreTemplates.get_path_to_nth_item_in_map(right, n - len(left_items))
+                rest = KoreTemplates.get_path_to_nth_item_in_map(right, n - len(left_items))
+                if rest is None: return None
+                return [1] + rest
 
-            assert False, f"map {pattern} index out of bound {n}"
+            # assert False, f"map {pattern} index out of bound {n}"
+            return None
 
         assert False, f"not a map {pattern}"
 

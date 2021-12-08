@@ -34,6 +34,12 @@ $c \kore-rewrites-plus $.
 $c \kore-one-path-reaches-plus $.
 $c \kore-one-path-reaches-star $.
 $c \kore-circularity $.
+$c \kore-non-terminating $.
+$c \kore-all-path-next-nt $.
+$c \kore-all-path-eventually $.
+$c \kore-all-path-rewrites $.
+$c \kore-all-path-rewrites-star $.
+$c \kore-all-path-rewrites-plus $.
 $c \kore-dv $.
 $c \kore-valid $.
 $c \kore-is-sort $.
@@ -157,6 +163,31 @@ kore-one-path-reaches-plus-is-sugar $a #Notation ( \kore-one-path-reaches-plus p
 
 kore-circularity-is-pattern $a #Pattern ( \kore-circularity ph0 ph1 ) $.
 kore-circularity-is-sugar $a #Notation ( \kore-circularity ph0 ph1 ) ( \kore-all-path-next ph0 ( \kore-always ph0 ph1 ) ) $.
+
+$( All-path variants of rewriting $)
+
+kore-non-terminating-is-pattern $a #Pattern ( \kore-non-terminating ph0 ) $.
+kore-non-terminating-is-sugar $a #Notation ( \kore-non-terminating ph0 ) ( \kore-next ph0 ( \kore-top ph0 ) ) $.
+
+$( Similar to all-path-next but does not include terminating states $)
+kore-all-path-next-nt-is-pattern $a #Pattern ( \kore-all-path-next-nt ph0 ph1 ) $.
+kore-all-path-next-nt-is-sugar $a #Notation ( \kore-all-path-next-nt ph0 ph1 ) ( \kore-and ph0 ( \kore-all-path-next ph0 ph1 ) ( \kore-non-terminating ph0 ) ) $.
+
+kore-all-path-eventually-is-pattern $a #Pattern ( \kore-all-path-eventually ph0 ph1 ) $.
+${
+    $d X ph0 $.
+    $d X ph1 $.
+    kore-all-path-eventually-is-sugar $a #Notation ( \kore-all-path-eventually ph0 ph1 ) ( \kore-mu ph0 X ( \kore-or ph0 ph1 ( \kore-all-path-next-nt ph0 X ) ) ) $.
+$}
+
+kore-all-path-rewrites-is-pattern $a #Pattern ( \kore-all-path-rewrites ph0 ph1 ph2 ) $.
+kore-all-path-rewrites-is-sugar $a #Notation ( \kore-all-path-rewrites ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-all-path-next-nt ph0 ph2 ) ) $.
+
+kore-all-path-rewrites-star-is-pattern $a #Pattern ( \kore-all-path-rewrites-star ph0 ph1 ph2 ) $.
+kore-all-path-rewrites-star-is-sugar $a #Notation ( \kore-all-path-rewrites-star ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-all-path-eventually ph0 ph2 ) ) $.
+
+kore-all-path-rewrites-plus-is-pattern $a #Pattern ( \kore-all-path-rewrites-plus ph0 ph1 ph2 ) $.
+kore-all-path-rewrites-plus-is-sugar $a #Notation ( \kore-all-path-rewrites-plus ph0 ph1 ph2 ) ( \kore-implies ph0 ph1 ( \kore-all-path-next-nt ph0 ( \kore-all-path-eventually ph0 ph2 ) ) ) $.
 
 $c \kore-dv-symbol $.
 kore-dv-is-symbol $a #Symbol \kore-dv-symbol $.

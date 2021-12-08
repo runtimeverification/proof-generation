@@ -24,9 +24,9 @@ class KorePreprocessor:
         "Lbl'Unds'Map'Unds'",
         "Lbl'UndsSlsh'Int'Unds'",  # TODO: this probably doesn't make sense since /Int is not defined on 0
         "Lbl'UndsPerc'Int'Unds'",
-
-        # "Lbl'Stop'ThreadCellMap", # TODO: hacky
-        # "LblThreadCellMapItem",
+        "Lbl'Stop'ThreadCellMap",  # TODO: hacky
+        "LblThreadCellMapItem",
+        "Lbl'Unds'ThreadCellMap'Unds'",
     ]
     MISSING_SUBSORT_AXIOMS = [
         ("SortKConfigVar", "SortKItem"),
