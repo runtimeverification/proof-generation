@@ -194,7 +194,7 @@ def gen_proof(args: argparse.Namespace) -> None:
                 [
                     "kompile",
                     "--backend",
-                    "llvm",
+                    "haskell",
                     "--directory",
                     cache_dir,
                     "--main-module",
@@ -221,11 +221,10 @@ def gen_proof(args: argparse.Namespace) -> None:
         with tempfile.NamedTemporaryFile() as tmp_file:
             if no_backend_hints:
                 task_obj = gen_task_legacy(os.path.dirname(kompiled_dir), pgm)
-                with open(tmp_file.name, "w") as f:
-                    yaml.dump(task_obj, f)
+                yaml.dump(task_obj, tmp_file)
             else:
                 gen_task(os.path.dirname(kompiled_dir), tmp_file.name, pgm, kore_definition, module)
-            
+
             # commit the final task file
             shutil.copy(tmp_file.name, task_path)
 
