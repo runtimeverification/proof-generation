@@ -6,6 +6,7 @@ import sys
 import shlex
 import shutil
 import argparse
+import tempfile
 import subprocess
 
 import yaml
@@ -193,7 +194,7 @@ def gen_proof(args: argparse.Namespace) -> None:
                 [
                     "kompile",
                     "--backend",
-                    "haskell",
+                    "llvm",
                     "--directory",
                     cache_dir,
                     "--main-module",
@@ -217,12 +218,16 @@ def gen_proof(args: argparse.Namespace) -> None:
     task_path = os.path.join(cache_dir, f"rewriting-task-{pgm_name}.yml")
 
     if check_dependency_change([task_path], [kompile_timestamp, pgm]):
-        if no_backend_hints:
-            task_obj = gen_task_legacy(os.path.dirname(kompiled_dir), pgm)
-            with open(task_path, "w") as f:
-                yaml.dump(task_obj, f)
-        else:
-            gen_task(os.path.dirname(kompiled_dir), task_path, pgm, kore_definition, module)
+        with tempfile.NamedTemporaryFile() as tmp_file:
+            if no_backend_hints:
+                task_obj = gen_task_legacy(os.path.dirname(kompiled_dir), pgm)
+                with open(tmp_file.name, "w") as f:
+                    yaml.dump(task_obj, f)
+            else:
+                gen_task(os.path.dirname(kompiled_dir), tmp_file.name, pgm, kore_definition, module)
+            
+            # commit the final task file
+            shutil.copy(tmp_file.name, task_path)
 
     ### step 3. generate proof object
     print(f"- generating proof")
