@@ -2,6 +2,3 @@
 	path = deps/k
 	url = git@github.com:rod-lin/k.git
 	branch = matching-logic-proof-checker
-[submodule "rust-metamath"]
-	path = rust-metamath
-	url = git@github.com:jzw2/rust-metamath.git
