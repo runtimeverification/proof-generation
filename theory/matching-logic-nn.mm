@@ -1,5 +1,10 @@
 $[ theory/matching-logic-prelude.mm $]
 
+${
+
+$v f $.
+function-var-is-pattern $a #Pattern f $.
+
 $( Vectors and Linear Operations $)
 
 $c \vector $.
@@ -21,24 +26,39 @@ layer-is-symbol $a #Symbol \layer $.
 
 $( Subsort relation $)
 
-axiom-subsort-vec-term $a |- ( \included ( \inh \vector ) ( \inh \term ) ) $.
+$c \subsort $.
+subsort-is-pattern $a #Pattern ( \subsort ph0 ph1 ) $.
+subsort-is-sugar   $a #Notation ( \subsort ph0 ph1 ) ( \included ( \inh ph0 ) ( \inh ph1 ) ) $. 
+
+axiom-subsort-vec-term $a |- ( \subsort \vector \term ) $.
+
 
 $( Binary Partial Function $)
 
-$c \is-binary-partial-function $.
-is-binary-partial-function-is-pattern $a #Pattern ( \is-binary-partial-function ph0 ph1 ph2 ph3 ) $.
+
+$c \is-unary-partial-function $.
+is-unary-partial-function-is-pattern $a #Pattern ( \is-unary-partial-function f s1 s2 ) $.
 ${
-    $d x y z ph0 $.
-    $d x y z ph1 $.
-    $d x y z ph2 $.
-    $d x y z ph3 $.
-    is-binary-partial-function-is-sugar $a #Notation ( \is-binary-partial-function ph0 ph1 ph2 ph3 )
-                                          ( \sorted-forall x ph1
-                                          ( \sorted-forall y ph2
-                                          ( \sorted-exists z ph3 ( \included ( \app ph0 x y ) z ) ) ) ) $.
+    $d x y f $.
+    $d x y s1 $.
+    $d x y s2 $.
+    is-unary-partial-function-is-sugar $a #Notation ( \is-unary-partial-function f s1 s2 )
+                                         ( \sorted-forall x s1
+                                         ( \sorted-exists y s2 ( \included ( \app f x ) y ) ) ) $.
 $}
 
-$( Linear Operations $)
+$c \is-binary-partial-function $.
+is-binary-partial-function-is-pattern $a #Pattern ( \is-binary-partial-function f s1 s2 s3 ) $.
+${
+    $d x y z f $.
+    $d x y z s1 $.
+    $d x y z s2 $.
+    $d x y z s3 $.
+    is-binary-partial-function-is-sugar $a #Notation ( \is-binary-partial-function f s1 s2 s3 )
+                                          ( \sorted-forall x s1 ( \is-unary-partial-function ( \app f s1 ) s2 s3 ) ) $.
+$}
+
+$( Linear Operations till here $)
 
 $c \projection $.
 projection-is-symbol $a #Symbol \projection $.
@@ -150,3 +170,4 @@ axiom-term-matmult $a |- ( \sorted-forall x \term
                          ( \eq ( \app \eval ( \app \matMult y x ) z ) ( \app \matMult y ( \app \eval x z ) ) ) ) ) ) $.
 
 $( Dynamic Propagation $)
+$}
