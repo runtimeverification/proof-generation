@@ -58,11 +58,14 @@ ${
                                           ( \sorted-forall x s1 ( \is-unary-partial-function ( \app f s1 ) s2 s3 ) ) $.
 $}
 
-$( Linear Operations till here $)
+$( Linear Operations $)
 
 $c \projection $.
 projection-is-symbol $a #Symbol \projection $.
 
+axiom-projection-is-binary-partial-function  $a |- ( \is-binary-partial-function \projection \vector \nat \vector ) $.
+
+$( 
 vec-projection-is-pattern $a #Pattern ( \projection \vector \nat \vector ) $.
 ${
     $d x y z \projection $.
@@ -72,11 +75,15 @@ ${
                                           ( \sorted-forall x \vector
                                           ( \sorted-forall y \nat
                                           ( \sorted-exists z \vector ( \included ( \app \projection x y ) z ) ) ) ) $.
-$}
+$} 
+$)
 
 $c \addition $.
 addition-is-symbol $a #Symbol \addition $.
 
+axiom-addition-is-binary-partial-function $a |- ( \is-binary-partial-function \addition \vector \vector \vector ) $.
+
+$( 
 vec-addition-is-pattern $a #Pattern ( \addition \vector \vector \vector ) $.
 ${
     $d x y z \addition $.
@@ -85,11 +92,15 @@ ${
                                           ( \sorted-forall x \vector
                                           ( \sorted-forall y \vector
                                           ( \sorted-exists z \vector ( \included ( \app \addition x y ) z ) ) ) ) $.
-$}
+$} 
+$)
 
 $c \matMult $.
 matMult-is-symbol $a #Symbol \matMult $.
 
+axiom-matMult-is-binary-partial-function $a |- ( \is-binary-partial-function \matMult \matrix \vector \vector ) $.
+
+$( 
 vec-matMult-is-pattern $a #Pattern ( \matMult \matrix \vector \vector ) $.
 ${
     $d x y z \matMult $.
@@ -99,11 +110,15 @@ ${
                                           ( \sorted-forall x \matrix
                                           ( \sorted-forall y \vector
                                           ( \sorted-exists z \vector ( \included ( \app \matMult x y ) z ) ) ) ) $.
-$}
+$} 
+$)
 
 $c \eval $.
 eval-is-symbol $a #Symbol \eval $.
 
+axiom-eval-is-binary-partial-function $a |- ( \is-binary-partial-function \eval \term \layer \vector ) $.
+
+$(
 term-eval-is-pattern $a #Pattern ( \eval \term \layer \vector ) $.
 ${
     $d x y z \eval $.
@@ -115,13 +130,18 @@ ${
                                           ( \sorted-forall y \layer
                                           ( \sorted-exists z \vector ( \included ( \app \eval x y ) z ) ) ) ) $.
 $}
+$)
 
 axiom-constant-term $a |- ( \sorted-forall x \vector 
-                          ( \sorted-forall y \layer ( \eq ( app \eval x y ) x ) ) ) $.
+                          ( \sorted-forall y \layer ( \eq ( \app ( \app \eval x ) y ) x ) ) ) $.
 
 
 $( Linear Operations Lift to Terms $)
 
+
+axiom-projection-on-term-is-binary-partial-function  $a |- ( \is-binary-partial-function \projection \term \nat \term ) $.
+
+$(
 term-projection-is-pattern $a #Pattern ( \projection \term \nat \term ) $.
 ${
     $d x y z \projection $.
@@ -132,7 +152,11 @@ ${
                                           ( \sorted-forall y \nat
                                           ( \sorted-exists z \term ( \included ( \app \projection x y ) z ) ) ) ) $.
 $}
+$)
 
+
+axiom-addition-on-term-is-binary-partial-function $a |- ( \is-binary-partial-function \addition \term \term \term ) $.
+$(
 term-addition-is-pattern $a #Pattern ( \addition \term \term \term ) $.
 ${
     $d x y z \addition $.
@@ -142,7 +166,12 @@ ${
                                           ( \sorted-forall y \term
                                           ( \sorted-exists z \term ( \included ( \app \addition x y ) z ) ) ) ) $.
 $}
+$)
 
+
+axiom-matMult-on-term-is-binary-partial-function $a |- ( \is-binary-partial-function \matMult \matrix \term \term ) $.
+
+$(
 term-matMult-is-pattern $a #Pattern ( \matMult \matrix \term \term ) $.
 ${
     $d x y z \matMult $.
@@ -153,6 +182,7 @@ ${
                                           ( \sorted-forall y \term
                                           ( \sorted-exists z \term ( \included ( \app \matMult x y ) z ) ) ) ) $.
 $}
+$)
 
 axiom-term-projection $a |- ( \sorted-forall x \term 
                             ( \sorted-forall y \nat
