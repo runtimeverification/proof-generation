@@ -8,6 +8,7 @@ syntax Id ::= "f" [token]
 
 claim mul(1, app(app(fix(f, lambda(n, lambda(k, if(le(k, 0), 1, mul(n, app(app(f, n), add(k, -1))))))), N), K)) => exp(N, K)
   requires N >Int 0 andBool K >=Int 0 andBool R >Int 0
+  [one-path]
 
 // loop invariant
 claim
