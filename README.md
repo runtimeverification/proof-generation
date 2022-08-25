@@ -25,7 +25,7 @@ This repository contains:
     mvn package
     popd
 
-NOTE: this will take a while
+NOTE: This will take about 20 minutes.
 NOTE: You could also try to use a newer version of K but you would need to add an extra
 flag `--no-backend-hints` for the `scripts.prove_symbolic` script.
 

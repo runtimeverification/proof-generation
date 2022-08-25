@@ -1,0 +1,21 @@
+(assert (forall ((a Int) (b Int))
+    (! (=> (and (> a 0) (> b 0))
+           (= (* a (^ a (+ b (- 1)))) (^ a b)))
+    :pattern ((^ a b)))
+))
+
+(assert (forall ((a Int) (b Int))
+    (! (=> (and (> a 0) (> b 1))
+           (= (* a (* a (^ a (+ b (- 2))))) (^ a b)))
+    :pattern ((^ a b)))
+))
+
+(assert (forall ((a Int) (b Int))
+    (! (=> (= b 0) (= (^ a b) 1))
+    :pattern ((^ a b)))
+))
+
+(assert (forall ((a Int) (b Int))
+    (! (=> (= b 1) (= (^ a b) a))
+    :pattern ((^ a b)))
+))
