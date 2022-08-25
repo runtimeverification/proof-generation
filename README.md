@@ -10,24 +10,38 @@ This repository contains:
 -   An automated prover that can generate proofs of concrete rewriting in Kore,
     given a Kore definition and a trace
 
-Dependencies
-------------
+## Usage
 
-The itp and rewrite prover use Python (3.7+). Some dependencies are required:
+1. Clone all submodules
+
+    git submodule update --init --recursive --depth 1
+
+2. Compile the customized K framework. The following commands are tested on Ubuntu 22.04, for other distributions you might need suitable commands to install required packages.
+
+    pushd deps/k
+    sudo apt-get install build-essential m4 openjdk-8-jdk libgmp-dev libmpfr-dev pkg-config flex bison z3 libz3-dev maven python3 cmake gcc clang-11 lld-11 llvm-11-tools zlib1g-dev libboost-test-dev libyaml-dev libjemalloc-dev
+    curl -sSL https://get.haskellstack.org/ | sh
+    sed -i 's/-Werror //' llvm-backend/src/main/native/llvm-backend/CMakeLists.txt
+    mvn package
+    popd
+
+NOTE: this will take a while
+NOTE: You could also try to use a newer version of K but you would need to add an extra
+flag `--no-backend-hints` for the `scripts.prove_symbolic` script.
+
+Finally, add K binaries to `PATH` (NOTE: this needs to be run every time the terminal is restarted):
+
+    export PATH=$(realpath deps/k/k-distribution/target/release/k/bin):$PATH
+
+3. Install Python prerequisites (NOTE: Python 3.7+ is required)
 
     python3 -m pip install -r requirements.txt
 
-You would also need to build and install a custom version of K at [here](https://github.com/rod-lin/k/tree/matching-logic-proof-checker),
-which uses a modified haskell backend to print extra proof hints for rewriting.
+4. Install Metamath for verification
 
-You could also try to use the current version of K but
-you would need to add an extra flag `--no-backend-hints` for the `scripts.prove_symbolic`
-script below.
+    sudo apt-get install metamath
 
-The newer versions might **not** work since they may generate different axioms for rewriting.
-
-Examples of generating proofs for concrete rewriting
-----------------------------------------------------
+## Examples of generating proofs for concrete rewriting
 
 Suppose you have a K definition `def.k` with the main module `MAIN`, and a
 program `pgm.txt`, you can use
@@ -49,16 +63,3 @@ Once that's done, you can use Metamath to verify the proof:
     0 10%  20%  30%  40%  50%  60%  70%  80%  90% 100%
     ..................................................
     MM>
-
-
-Reachability Examples
----
-
-```
-EV=/media/rodlin/ext4/popl22-evaluation
-/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/imp/imp.k IMP $EV/imp/sum-spec.k SUM-SPEC --output $EV/imp/sum-proof.mm --standalone
-/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/imp/imp.k IMP $EV/imp/collatz-spec.k COLLATZ-SPEC --output $EV/imp/collatz-proof.mm --standalone
-/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/imp/imp.k IMP $EV/imp/exp-spec.k EXP-SPEC --output $EV/imp/exp-proof.mm --standalone --smt-prelude $EV/imp/prelude.smt2 --z3-tactic "(and-then qfnra-nlsat default)" --unknown-as-sat
-/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/reg/reg.k REG $EV/reg/sum-spec.k SUM-SPEC --output $EV/reg/sum-proof.mm --standalone
-/usr/bin/time -v pypy3 -m scripts.prove_reachability $EV/pcf/pcf.k PCF $EV/pcf/sum-spec.k SUM-SPEC --output $EV/pcf/sum-proof.mm --standalone
-```
