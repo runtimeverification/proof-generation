@@ -26,6 +26,7 @@ claim
     b |-> gcd(A, B)
   </state>
   requires A >Int 0 andBool B>Int 0
+  [one-path]
 
 // loop invariant
 claim
@@ -45,5 +46,6 @@ claim
     b |-> (B:Int => gcd(A, B))
   </state>
   requires A >Int 0 andBool B>Int 0
+  [one-path]
 
 endmodule

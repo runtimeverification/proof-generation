@@ -7,6 +7,7 @@ syntax Id ::= "f" [token]
 
 claim app(fix(f, lambda(x, if(le(x, 1), x, if(le(add(mul(div(x, 2), 2), 1), x), app(f, add(mul(x, 3), 1)), app(f, div(x, 2)))))), N:Int) => 1
   requires N >=Int 1
+  [one-path]
 
 // loop invariant
 claim

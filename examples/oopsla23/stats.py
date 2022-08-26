@@ -24,7 +24,7 @@ tasks = [
     ("gcd.pcf", { "def": "pcf", "spec": "gcd" }),
     ("ln/count-by-1", { "def": "imp", "spec": "loop-new-count-by-1" }),
     ("ln/count-by-2", { "def": "imp", "spec": "loop-new-count-by-2" }),
-    ("ln/count-by-k", { "def": "imp", "spec": "loop-new-count-by-k" }),
+    # ("ln/count-by-k", { "def": "imp", "spec": "loop-new-count-by-k" }),
     ("ln/gauss-sum", { "def": "imp", "spec": "loop-new-gauss-sum" }),
     ("ln/half", { "def": "imp", "spec": "loop-new-half" }),
     ("ln/nested-1", { "def": "imp", "spec": "loop-new-nested-1" }),
