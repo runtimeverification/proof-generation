@@ -208,7 +208,7 @@ def gen_proof(args: argparse.Namespace) -> None:
     task_path = os.path.join(cache_dir, f"reachability-task-{spec_name}.yml")
 
     if check_dependency_change([task_path], [spec_kore_file, kompile_timestamp]):
-        try:
+        with NamedTemporaryFile() as tmp_task_file:
             proc = run_command(
                 [
                     "kore-exec",
@@ -220,17 +220,15 @@ def gen_proof(args: argparse.Namespace) -> None:
                     "--prove",
                     spec_kore_file,
                     "--trace-rewrites",
-                    task_path,
+                    tmp_task_file.name,
                 ] + (["--smt-prelude", args.smt_prelude] if args.smt_prelude is not None else []) +
                 (["--z3-tactic", args.z3_tactic] if args.z3_tactic is not None else []) +
                 (["--unknown-as-sat"] if args.unknown_as_sat else []),
-                stdout=subprocess.DEVNULL,
             )
             exit_code = proc.wait()
             assert exit_code == 0, f"kore-exec --prove failed with exit code {exit_code}"
-        except:
-            os.remove(task_path)
-            raise
+
+            shutil.copy(tmp_task_file.name, task_path)
 
     ### Step 4. Pass the hints and definition to ml.rewrite
     print(f"- generating proof")
