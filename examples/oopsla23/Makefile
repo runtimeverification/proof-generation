@@ -41,19 +41,21 @@ DEFINITION_NAME = $(call SPLIT_DASH,$*,1)
 MODULE_NAME = $(shell echo $(DEFINITION_NAME) | tr '[:lower:]' '[:upper:]')
 DEFINITION_PATH = $(DEFINITIONS_DIR)/$(DEFINITION_NAME).k
 
-# build all uncompressed proofs
 .PHONY: all
-all: $(ALL_TARGETS)
+all: verify verify-compressed
+
+# generate all uncompressed proofs
+.PHONY: gen
+gen: $(ALL_TARGETS)
+
+.PHONY: compress
+compress: $(addsuffix .xz,$(ALL_TARGETS))
 
 .PHONY: verify
 verify: $(subst proofs/,stats/,$(addsuffix .verify.time,$(ALL_TARGETS)))
 
 .PHONY: verify
-compressed-verify: $(subst proofs/,stats/,$(addsuffix .compressed-verify.time,$(ALL_TARGETS)))
-
-.PHONY: compress
-compress: $(addsuffix .xz,$(ALL_TARGETS))
-	du -sh proofs/*.mm.xz
+verify-compressed: $(subst proofs/,stats/,$(addsuffix .verify-compressed.time,$(ALL_TARGETS)))
 
 proofs/%-exp.mm: $(SPECS_DIR)/%-exp-spec.k
 	cd $(REPO_DIR) && \
@@ -86,8 +88,8 @@ proofs/%.mm: $(SPECS_DIR)/%-spec.k
 stats/%.mm.verify.time: proofs/%.mm
 	\time -v -o $@ $(SMETAMATH) $<
 
-stats/%.mm.compressed-verify.time: SHELL:=/bin/bash
-stats/%.mm.compressed-verify.time: proofs/%.mm.xz
+stats/%.mm.verify-compressed.time: SHELL:=/bin/bash
+stats/%.mm.verify-compressed.time: proofs/%.mm.xz
 	\time -v -o $@ $(SMETAMATH) <(xz -dc $<)
 
 proofs/%.mm.xz: proofs/%.mm

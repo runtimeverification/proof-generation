@@ -49,6 +49,11 @@ def get_symbolic_steps(config):
     return sum(line.count("applied-rules:") for line in open(hint_file))
 
 
+def get_spec_file_loc(config):
+    with open(f"specs/{config['def']}-{config['spec']}-spec.k") as f:
+        return len(f.readlines())
+
+
 def get_hint_file_size(config):
     # in bytes
     return os.path.getsize(f"definitions/.ml-proof-cache-{config['def']}/reachability-task-{config['def']}-{config['spec']}-spec.yml")
@@ -76,7 +81,8 @@ def main():
         proof_size = get_proof_size(config)
         compressed_proof_size = get_compressed_proof_size(config)
         verify_time = get_proof_checking_time(config)
-        # compressed_verify_time = get_user_time(f"stats/{config['def']}-{config['spec']}.mm.compressed-verify.time")
+        spec_loc = get_spec_file_loc(config)
+        # compressed_verify_time = get_user_time(f"stats/{config['def']}-{config['spec']}.mm.verify-compressed.time")
         print(f"\\code{{{name}}} & {round(gen_time)}\\,s & {steps} & {round(hint_size / 1e6, 2)}\\,MB & {round(proof_size / 1e6)}/{round(compressed_proof_size / 1e6, 1)}\\,MB & {round(verify_time, 1)}\\,s \\\\")
 
 
