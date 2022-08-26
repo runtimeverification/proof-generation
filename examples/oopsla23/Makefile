@@ -9,7 +9,9 @@ EXP_OPTIONS := --smt-prelude $(MAKEFILE_DIR)/exp.smt2 --z3-tactic "(and-then qfn
 GCD_OPTIONS := --smt-prelude $(MAKEFILE_DIR)/gcd.smt2 --z3-timeout 10000 --unknown-as-sat
 COUNT_BY_K_OPTIONS := --smt-prelude $(MAKEFILE_DIR)/count-by-k.smt2 --z3-tactic "(! default :random_seed 0)" --z3-timeout 60000 --unknown-as-sat
 
+CARGO := cargo
 MMVERIFY := pypy3 $(MAKEFILE_DIR)/mmverify.py
+RUST_METAMATH := $(REPO_DIR)/rust-metamath/target/release/rust-metamath
 SMETAMATH := smetamath --verify --silent
 
 SPLIT_DASH = $(word $2,$(subst -, ,$1))
@@ -42,7 +44,7 @@ MODULE_NAME = $(shell echo $(DEFINITION_NAME) | tr '[:lower:]' '[:upper:]')
 DEFINITION_PATH = $(DEFINITIONS_DIR)/$(DEFINITION_NAME).k
 
 .PHONY: all
-all: verify verify-compressed
+all: verify verify-with-rust-metamath verify-compressed
 
 # generate all uncompressed proofs
 .PHONY: gen
@@ -54,8 +56,15 @@ compress: $(addsuffix .xz,$(ALL_TARGETS))
 .PHONY: verify
 verify: $(subst proofs/,stats/,$(addsuffix .verify.time,$(ALL_TARGETS)))
 
+.PHONY: rust-metamath verify-with-rust-metamath
+verify-with-rust-metamath: $(subst proofs/,stats/,$(addsuffix .verify-with-rust-metamath.time,$(ALL_TARGETS)))
+
 .PHONY: verify
 verify-compressed: $(subst proofs/,stats/,$(addsuffix .verify-compressed.time,$(ALL_TARGETS)))
+
+.PHONY: rust-metamath
+rust-metamath:
+	cd $(REPO_DIR)/rust-metamath && cargo build --release
 
 proofs/%-exp.mm: $(SPECS_DIR)/%-exp-spec.k
 	cd $(REPO_DIR) && \
@@ -87,6 +96,9 @@ proofs/%.mm: $(SPECS_DIR)/%-spec.k
 
 stats/%.mm.verify.time: proofs/%.mm
 	\time -v -o $@ $(SMETAMATH) $<
+
+stats/%.mm.verify-with-rust-metamath.time: proofs/%.mm
+	\time -v -o $@ $(RUST_METAMATH) $<
 
 stats/%.mm.verify-compressed.time: SHELL:=/bin/bash
 stats/%.mm.verify-compressed.time: proofs/%.mm.xz

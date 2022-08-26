@@ -114,7 +114,7 @@ impl MM {
                         self.begin_label = None;
                     }
                     if self.begin_label.is_none() {
-                        println!("verifying {}", label_u);
+                        // println!("verifying {}", label_u);
                         self.verify(label_u.clone(), stat.into(), proof.to_vec());
                     }
                     let data = LabelEntry::DollarP(self.fs.make_assertion(stat.into()));
@@ -432,5 +432,5 @@ fn main() {
     mm.read(&mut Tokens::new(BufReader::new(file)));
     mm.dump();
     let elapsed = now.elapsed();
-    println!("Finished checking in {:.2?}", elapsed);
+    // println!("Finished checking in {:.2?}", elapsed);
 }

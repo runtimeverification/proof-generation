@@ -10,6 +10,8 @@ Then, run make to perform all evaluations:
 
     make
 
+With `-j1`, this will take roughly 50 minutes to finish.
+
 Alternative, you can run each component separately
 
     make gen               # generate all uncompressed proofs
