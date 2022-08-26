@@ -82,12 +82,12 @@ def preprocess_spec_file(spec_module: str, file_path: str) -> None:
 
                         _, right = KoreUtils.destruct_implies(sentence.pattern)
                         assert isinstance(right, kore.Application) and \
-                            right.symbol.get_symbol_name() == "weakAlwaysFinally", \
-                            f"not a reachability claim: {sentence}"
+                               right.symbol.get_symbol_name() in ("weakAlwaysFinally", "weakExistsFinally"), \
+                               f"not a reachability claim: {sentence}"
 
                         # rename all free variables to avoid name clash
                         assert len(KoreUtils.get_free_sort_variables(sentence)) == 0, \
-                            f"sort variable not supported: {sentence}"
+                               f"sort variable not supported: {sentence}"
 
                         free_vars = KoreUtils.get_free_variables(sentence)
                         substitution = {

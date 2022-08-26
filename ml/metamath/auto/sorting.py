@@ -278,7 +278,7 @@ class SortingProver:
 
         assert (
             substitution is not None
-        ), f"unable to unify the conclusion {conclusion} with the sorting lemma |- {sorting_lemma_term}"
+        ), f"unable to unify the conclusion {conclusion} with the RHS {sorting_lemma_rhs} of the sorting lemma |- {sorting_lemma_term}"
         assert set(substitution.keys()).issubset(
             sorting_lemma.statement.get_metavariables()
         ), f"free metavariables left unused in the sorting lemma |- {sorting_lemma_term}"

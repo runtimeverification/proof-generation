@@ -1482,9 +1482,25 @@ class RewriteProofGenerator(ProofGenerator):
         final_claim = self.apply_reachability_reflexivity(kore.MLPattern.REWRITES_STAR, initial_pattern)
         final_claim = self.simplify_pattern(final_claim, [0, 1])
 
+        proved_steps: Dict[kore.Pattern, ProvableClaim] = {}
+
         for i, step in enumerate(task.steps):
             print(f"######## symbolic step {i} ########")
-            claim = self.prove_symbolic_step(kore.MLPattern.REWRITES_STAR, step)
+
+            result = step.applied_rules[-1].results[0].as_pattern()
+            for branch in step.applied_rules[:-1][::-1]:
+                result = KoreUtils.construct_or(branch.results[0].as_pattern(), result)
+
+            initial = step.get_initial_pattern().as_pattern()
+            step_goal = KoreUtils.construct_rewrites_star(initial, result)
+
+            if step_goal in proved_steps:
+                claim = proved_steps[step_goal]
+                print("step already proved")
+            else:
+                claim = self.prove_symbolic_step(kore.MLPattern.REWRITES_STAR, step)
+                proved_steps[step_goal] = claim
+
             final_claim = self.connect_symbolic_steps(kore.MLPattern.REWRITES_STAR, final_claim, claim)
             final_claim = self.simplify_branches(final_claim)
 
