@@ -11,7 +11,7 @@ COUNT_BY_K_OPTIONS := --smt-prelude $(MAKEFILE_DIR)/count-by-k.smt2 --z3-tactic 
 
 CARGO := cargo
 MMVERIFY := pypy3 $(MAKEFILE_DIR)/mmverify.py
-RUST_METAMATH := $(REPO_DIR)/rust-metamath/target/release/rust-metamath
+RUST_METAMATH := $(REPO_DIR)/deps/rust-metamath/target/release/rust-metamath
 SMETAMATH := smetamath --verify --silent
 
 SPLIT_DASH = $(word $2,$(subst -, ,$1))
@@ -62,8 +62,8 @@ verify-with-rust-metamath: $(subst proofs/,stats/,$(addsuffix .verify-with-rust-
 .PHONY: verify
 verify-compressed: $(subst proofs/,stats/,$(addsuffix .verify-compressed.time,$(ALL_TARGETS)))
 
-$(RUST_METAMATH): $(REPO_DIR)/rust-metamath/src/*.rs
-	cd $(REPO_DIR)/rust-metamath && cargo build --release
+$(RUST_METAMATH): $(REPO_DIR)/deps/rust-metamath/src/*.rs
+	cd $(REPO_DIR)/deps/rust-metamath && cargo build --release
 
 proofs/%-exp.mm: $(SPECS_DIR)/%-exp-spec.k
 	cd $(REPO_DIR) && \
