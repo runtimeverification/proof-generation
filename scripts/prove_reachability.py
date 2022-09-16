@@ -210,6 +210,7 @@ def gen_proof(args: argparse.Namespace) -> None:
     if check_dependency_change([task_path], [spec_kore_file, kompile_timestamp]):
         with NamedTemporaryFile() as tmp_task_file:
             proc = run_command(
+                ([ "time", "-v", "-o", args.time_kore_prove ] if args.time_kore_prove is not None else []) +
                 [
                     "kore-exec",
                     kore_definition,
@@ -254,6 +255,10 @@ def main() -> None:
         const=True,
         default=False,
         help="Treat unknown results from SMT solver as satisfiable"
+    )
+    parser.add_argument(
+        "--time-kore-prove",
+        help="output timing stats of kore-exec -prove to a file",
     )
     set_additional_flags(parser)
     args = parser.parse_args()

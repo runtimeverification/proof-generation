@@ -84,7 +84,8 @@ def main():
         spec_loc = get_spec_file_loc(config)
         # compressed_verify_time = get_user_time(f"stats/{config['def']}-{config['spec']}.mm.verify-compressed.time")
         verify_with_rust_metamath_time = get_user_time(f"stats/{config['def']}-{config['spec']}.mm.verify-with-rust-metamath.time")
-        print(f"\\code{{{name}}} & {spec_loc} & {round(gen_time)}\\,s & {steps} & {round(hint_size / 1e6, 2)}\\,MB & {round(proof_size / 1e6)}/{round(compressed_proof_size / 1e6, 1)}\\,MB & {round(verify_time, 1)}\\,s & {round(verify_with_rust_metamath_time, 1)}\\,s \\\\")
+        kore_prove_time = get_user_time(f"stats/{config['def']}-{config['spec']}.mm.kore-prove.time")
+        print(f"\\code{{{name}}} & {spec_loc} & {steps} & {round(hint_size / 1e6, 2)}\\,MB & {round(proof_size / 1e6)}/{round(compressed_proof_size / 1e6, 1)}\\,MB & {round(kore_prove_time, 1)} & {round(gen_time)} & {round(verify_time, 1)} & {round(verify_with_rust_metamath_time, 1)} \\\\")
 
 
 if __name__ == "__main__":

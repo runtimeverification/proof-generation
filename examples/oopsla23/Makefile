@@ -56,20 +56,20 @@ compress: $(addsuffix .xz,$(ALL_TARGETS))
 .PHONY: verify
 verify: $(subst proofs/,stats/,$(addsuffix .verify.time,$(ALL_TARGETS)))
 
-.PHONY: rust-metamath verify-with-rust-metamath
+.PHONY: verify-with-rust-metamath
 verify-with-rust-metamath: $(subst proofs/,stats/,$(addsuffix .verify-with-rust-metamath.time,$(ALL_TARGETS)))
 
 .PHONY: verify
 verify-compressed: $(subst proofs/,stats/,$(addsuffix .verify-compressed.time,$(ALL_TARGETS)))
 
-.PHONY: rust-metamath
-rust-metamath:
+$(RUST_METAMATH): $(REPO_DIR)/rust-metamath/src/*.rs
 	cd $(REPO_DIR)/rust-metamath && cargo build --release
 
 proofs/%-exp.mm: $(SPECS_DIR)/%-exp-spec.k
 	cd $(REPO_DIR) && \
 	\time -v -o $(STATS_DIR)/$*-exp.mm.time \
 	$(PROVE_REACHABILITY) $(EXP_OPTIONS) $(DEFINITION_PATH) $(MODULE_NAME) $< $(MODULE_NAME)-EXP-SPEC --output $(MAKEFILE_DIR)/$@ \
+	--time-kore-prove $(STATS_DIR)/$*-exp.mm.kore-prove.time \
 	1> $(STATS_DIR)/$*-exp.mm.stdout \
 	2> $(STATS_DIR)/$*-exp.mm.stderr
 
@@ -77,6 +77,7 @@ proofs/%-gcd.mm: $(SPECS_DIR)/%-gcd-spec.k
 	cd $(REPO_DIR) && \
 	\time -v -o $(STATS_DIR)/$*-gcd.mm.time \
 	$(PROVE_REACHABILITY) $(GCD_OPTIONS) $(DEFINITION_PATH) $(MODULE_NAME) $< $(MODULE_NAME)-GCD-SPEC --output $(MAKEFILE_DIR)/$@ \
+	--time-kore-prove $(STATS_DIR)/$*-gcd.mm.kore-prove.time \
 	1> $(STATS_DIR)/$*-gcd.mm.stdout \
 	2> $(STATS_DIR)/$*-gcd.mm.stderr
 
@@ -84,6 +85,7 @@ proofs/%-loop-new-count-by-k.mm: $(SPECS_DIR)/%-loop-new-count-by-k-spec.k
 	cd $(REPO_DIR) && \
 	\time -v -o $(STATS_DIR)/$*-loop-new-count-by-k.mm.time \
 	$(PROVE_REACHABILITY) $(COUNT_BY_K_OPTIONS) $(DEFINITION_PATH) $(MODULE_NAME) $< $(MODULE_NAME)-LOOP-NEW-COUNT-BY-K-SPEC --output $(MAKEFILE_DIR)/$@ \
+	--time-kore-prove $(STATS_DIR)/$*-loop-new-count-by-k.mm.kore-prove.time \
 	1> $(STATS_DIR)/$*-loop-new-count-by-k.mm.stdout \
 	2> $(STATS_DIR)/$*-loop-new-count-by-k.mm.stderr
 
@@ -91,13 +93,14 @@ proofs/%.mm: $(SPECS_DIR)/%-spec.k
 	cd $(REPO_DIR) && \
 	\time -v -o $(STATS_DIR)/$*.mm.time \
 	$(PROVE_REACHABILITY) $(DEFINITION_PATH) $(MODULE_NAME) $< $(shell echo $* | tr '[:lower:]' '[:upper:]')-SPEC --output $(MAKEFILE_DIR)/$@ \
+	--time-kore-prove $(STATS_DIR)/$*.mm.kore-prove.time \
 	1> $(STATS_DIR)/$*.mm.stdout \
 	2> $(STATS_DIR)/$*.mm.stderr
 
 stats/%.mm.verify.time: proofs/%.mm
 	\time -v -o $@ $(SMETAMATH) $<
 
-stats/%.mm.verify-with-rust-metamath.time: proofs/%.mm
+stats/%.mm.verify-with-rust-metamath.time: proofs/%.mm $(RUST_METAMATH)
 	\time -v -o $@ $(RUST_METAMATH) $<
 
 stats/%.mm.verify-compressed.time: SHELL:=/bin/bash
@@ -109,4 +112,4 @@ proofs/%.mm.xz: proofs/%.mm
 
 .PHONY: clean
 clean:
-	rm -f proofs/*.mm stats/*.time stats/*.stdout stats/*.stderr
+	rm -rf definitions/.ml-proof-cache-* proofs/*.mm stats/*.time stats/*.stdout stats/*.stderr
