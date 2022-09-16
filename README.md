@@ -1,5 +1,5 @@
-Matching Logic Proof Checker
-----------------------------
+K Framework Proof Generation (in Metamath)
+------------------------------------------
 
 This repository contains:
 
