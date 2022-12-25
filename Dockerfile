@@ -123,5 +123,6 @@ Welcome to the artifact evaluation Docker image for the paper
 You can find a copy of our original submission at /opt/proof-generation/paper.pdf
 Instructions to use image can be found in /opt/proof-generation/README.md
 An online version of README.md is also available at https://github.com/kframework/proof-generation/blob/oopsla23-ae/README.md
+
 EOT
 EOF
