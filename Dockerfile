@@ -104,6 +104,7 @@ ADD ml ml
 ADD scripts scripts
 ADD theory theory
 ADD evaluation evaluation
+ADD example example
 ADD requirements.txt requirements.txt
 
 RUN pypy3 -m pip install -r requirements.txt
