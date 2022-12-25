@@ -5,3 +5,6 @@
 [submodule "deps/rust-metamath"]
 	path = deps/rust-metamath
 	url = git@github.com:kframework/rust-metamath.git
+[submodule "deps/smetamath-rs"]
+	path = deps/smetamath-rs
+	url = git@github.com:zhengyao-lin/smetamath-rs.git

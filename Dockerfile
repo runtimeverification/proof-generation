@@ -30,9 +30,9 @@ ENV PATH="/opt/jdk/bin:${PATH}"
 # install haskell
 RUN curl -sSL https://get.haskellstack.org/ | sh
 
-#####################
-# Build K framework #
-#####################
+######################
+# Build dependencies #
+######################
 
 FROM base AS build
 
@@ -62,18 +62,27 @@ RUN deps=$(jdeps --ignore-missing-deps --print-module-deps k/k-distribution/targ
           --compress=2 \
           --add-modules $deps
 
+# Build rust-metamath
+ADD deps/rust-metamath /rust-metamath
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s - -y
+RUN . "$HOME/.cargo/env" && cd rust-metamath && cargo build --release
+
+# Build smetamath-rs
+ADD deps/smetamath-rs /smetamath-rs
+RUN . "$HOME/.cargo/env" && cd smetamath-rs && cargo build --release
+
 ###################################################
 # Pack final image with only runtime dependencies #
 ###################################################
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04 AS final
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-        tcc libc-dev flex bison z3 python3 python3-pip \
-        libjemalloc-dev metamath && \
+        tcc libc-dev flex bison z3 pypy3 python3-pip \
+        libjemalloc-dev metamath make time xz-utils && \
     rm -rf /var/lib/apt/lists/* && \
     ln -s /usr/bin/tcc /usr/bin/gcc
 
@@ -82,14 +91,18 @@ COPY --from=build /k/k-distribution/target/release/k/bin /opt/k/bin
 COPY --from=build /k/k-distribution/target/release/k/lib /opt/k/lib
 COPY --from=build /k/k-distribution/target/release/k/include /opt/k/include
 
-ENV PATH="/opt/k/bin:/opt/jre/bin:${PATH}"
+COPY --from=build /rust-metamath/target/release/rust-metamath /opt/rust-metamath/rust-metamath
+COPY --from=build /smetamath-rs/target/release/smetamath /opt/smetamath-rs/smetamath
 
-WORKDIR /opt/matching-logic-proof-checker
+ENV PATH="/opt/smetamath-rs:/opt/rust-metamath:/opt/k/bin:/opt/jre/bin:${PATH}"
+
+WORKDIR /opt/proof-generation
 ADD ml ml
 ADD scripts scripts
-ADD tests tests
 ADD theory theory
+ADD evaluation evaluation
 ADD requirements.txt requirements.txt
-ADD requirements-dev.txt requirements-dev.txt
 
-RUN python3 -m pip install -r requirements.txt
+RUN pypy3 -m pip install -r requirements.txt
+
+WORKDIR /opt/proof-generation/evaluation
