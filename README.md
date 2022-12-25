@@ -1,71 +1,14 @@
-K Framework Proof Generation (in Metamath)
-------------------------------------------
+Paper #23 Generating Proof Certificates for a Language-Agnostic Deductive Program Verifier
+---
 
-This repository contains:
+### Getting Started
+1. Install Docker (this image has been tested on Docker 20.10.22 on an x86-64 machine).
+2. Obatin our Docker image from TODO. Suppose it is named `paper-223.tar.gz`.
+3. Load the image into Docker: `docker load < paper-223.tar.gz`
+4. Run the image: `docker run -it oopsla23-paper-23-ae`
+5. Change to the `evaluation` directory: `cd evaluation`
+6. Run the evaluation and collect all stats: `make -j<n>` where `<n>` can be set to a reasonable number according to the number of CPU cores in your machine.
+   On a machine with an Intel i7-12700K processor (14-core, 20-thread) and 32 GiB of memory, `make -j20` took around 8 minutes to finish.
+7. Output the results as a LaTeX tabular: `python3 stats.py`
 
--   A formulation of [matching logic](http://www.matching-logic.org/) in Metamath
-    (`theory/matching-logic-*.mm`)
--   A formalization of [Kore](https://github.com/kframework/kore) in matching logic (`theory/kore-*.mm`)
--   An interactive theorem prover specialized for matching logic (`ml/itp`), [more info](ml/itp)
--   An automated prover that can generate proofs of concrete rewriting in Kore,
-    given a Kore definition and a trace
-
-## Usage
-
-1. Clone all submodules
-
-    ```
-    git submodule update --init --recursive --depth 1
-    ```
-
-2. Install Z3 4.8.10 from [https://github.com/Z3Prover/z3/releases/tag/z3-4.8.10](https://github.com/Z3Prover/z3/releases/tag/z3-4.8.10)
-
-2. Compile the customized K framework. The following commands are tested on Ubuntu 22.04, for other distributions you might need suitable commands to install required packages.
-
-    ```
-    pushd deps/k
-    sudo apt-get install build-essential m4 openjdk-8-jdk libgmp-dev libmpfr-dev pkg-config flex bison libz3-dev maven python3 cmake gcc clang-11 lld-11 llvm-11-tools zlib1g-dev libboost-test-dev libyaml-dev libjemalloc-dev
-    curl -sSL https://get.haskellstack.org/ | sh
-    sed -i 's/-Werror //' llvm-backend/src/main/native/llvm-backend/CMakeLists.txt
-    mvn package
-    popd
-    ```
-
-NOTE: This will take about 20 minutes.
-NOTE: You could also try to use a newer version of K but you would need to add an extra
-flag `--no-backend-hints` for the `scripts.prove_symbolic` script.
-
-Finally, add K binaries to `PATH` (NOTE: this needs to be run every time the terminal is restarted):
-
-    export PATH=$(realpath deps/k/k-distribution/target/release/k/bin):$PATH
-
-3. Install Python prerequisites (NOTE: Python 3.7+ is required)
-
-    python3 -m pip install -r requirements.txt
-
-4. Install Metamath for verification
-
-    sudo apt-get install metamath
-
-## Examples of generating proofs for concrete rewriting
-
-Suppose you have a K definition `def.k` with the main module `MAIN`, and a
-program `pgm.txt`, you can use
-
-    python3 -m scripts.prove_symbolic def.k MAIN pgm.txt --output rewriting-proof
-
-to generate the (concrete) rewriting proof for the program `pgm.txt` and output
-to the `rewriting-proof` directory.
-
-Once that's done, you can use Metamath to verify the proof:
-
-    $ metamath rewriting-proof/goal.mm
-    ...
-    77192945 bytes were read into the source buffer.
-    The source has 9148 statements; 4352 are $a and 1776 are $p.
-    No errors were found.  However, proofs were not checked.  Type VERIFY PROOF *
-    if you want to check them.
-    MM> verify proof *
-    0 10%  20%  30%  40%  50%  60%  70%  80%  90% 100%
-    ..................................................
-    MM>
+The final table should have comparable results to Figure 5 in our paper.

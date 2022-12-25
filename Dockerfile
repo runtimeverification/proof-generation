@@ -1,3 +1,6 @@
+# syntax=docker/dockerfile:1.4
+# BuildKit is required to build this Dockerfile
+
 ARG jdk_build=https://download.java.net/java/GA/jdk15.0.2/0d1cfde4252546c6931946de8db48ee2/7/GPL/openjdk-15.0.2_linux-x64_bin.tar.gz
 
 ###########################
@@ -105,4 +108,20 @@ ADD requirements.txt requirements.txt
 
 RUN pypy3 -m pip install -r requirements.txt
 
-WORKDIR /opt/proof-generation/evaluation
+ADD paper.pdf paper.pdf
+ADD README.md README.md
+
+RUN cat >> /root/.bashrc <<'EOF'
+PS1='\w\$ '
+
+cat << EOT
+Welcome to the artifact evaluation Docker image for the paper
+    
+    Generating Proof Certificates for a Language-Agnostic Deductive Program Verifier
+    Zhengyao Lin, Xiaohong Chen, Minh-Thai Trinh, John Wang, and Grigore Rosu
+
+You can find a copy of our original submission at /opt/proof-generation/paper.pdf
+Instructions to use image can be found in /opt/proof-generation/README.md
+An online version of README.md is also available at https://github.com/kframework/proof-generation/blob/oopsla23-ae/README.md
+EOT
+EOF
