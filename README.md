@@ -17,8 +17,8 @@ These claims are:
 For the Available and Functional badges, this section describes how to reproduce Figure 5 in our paper.
 
 1. Install Docker (this image has been tested on Docker 20.10.22 on an x86-64 machine).
-2. Obatin our Docker image `paper-223.tar.gz` from [Zenodo](https://doi.org/10.5281/zenodo.7482286).
-3. Load the image into Docker: `docker load < paper-223.tar.gz`
+2. Obatin our Docker image `paper-23.tar.gz` from [Zenodo](https://doi.org/10.5281/zenodo.7482286).
+3. Load the image into Docker: `docker load < paper-23.tar.gz`
 4. Run the image in an interactive console: `docker run -it oopsla23-paper-23-ae`
 5. Within the container, change to the `evaluation` directory: `cd evaluation`
 6. Run the evaluation and collect all stats: `make -j<n>` where `<n>` can be set to a reasonable number according to the number of CPU cores in your machine.
