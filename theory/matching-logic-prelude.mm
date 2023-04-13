@@ -15,6 +15,28 @@ $)
 
 $( Part 0. More Metavariables $)
 
+$v ph6 ph7 ph8 $.
+ph6-is-pattern $f #Pattern ph6 $.
+ph7-is-pattern $f #Pattern ph7 $.
+ph8-is-pattern $f #Pattern ph8 $.
+
+$v th0 th1 th2 th3 th4 th5 th6 th7 th8 $.
+th0-is-pattern $f #Pattern th0 $.
+th1-is-pattern $f #Pattern th1 $.
+th2-is-pattern $f #Pattern th2 $.
+th3-is-pattern $f #Pattern th3 $.
+th4-is-pattern $f #Pattern th4 $.
+th5-is-pattern $f #Pattern th5 $.
+th6-is-pattern $f #Pattern th6 $.
+th7-is-pattern $f #Pattern th7 $.
+th8-is-pattern $f #Pattern th8 $.
+
+$v z w Z W $.
+z-is-element-var $f #ElementVariable z $.
+w-is-element-var $f #ElementVariable w $.
+Z-is-element-var $f #SetVariable Z $.
+W-is-element-var $f #SetVariable W $.
+
 $v x0 x1 x2 x3 $.
 x0-is-element-var $f #ElementVariable x0 $.
 x1-is-element-var $f #ElementVariable x1 $.
@@ -26,6 +48,11 @@ s1-is-element-var $f #ElementVariable s1 $.
 s2-is-element-var $f #ElementVariable s2 $.
 s3-is-element-var $f #ElementVariable s3 $.
 
+$v sg1 sg2 sg3 sg4 $.
+sg1-is-symbol $f #Symbol sg1 $.
+sg2-is-symbol $f #Symbol sg2 $.
+sg3-is-symbol $f #Symbol sg3 $.
+sg4-is-symbol $f #Symbol sg4 $.
 
 $( Part 1. More Syntactic Sugar for Vanilla Matching Logic $)
 

@@ -1,3 +1,4 @@
+$( MATCHING LOGIC PROOF CHECKER has 200 LOC $)
 $c #Pattern #ElementVariable #SetVariable #Variable #Symbol $.
 $v ph0 ph1 ph2 ph3 ph4 ph5 x y X Y xX yY sg0 $.
 ph0-is-pattern $f #Pattern ph0 $. ph1-is-pattern $f #Pattern ph1 $.

@@ -1,4 +1,5 @@
-$( MATCHING LOGIC $)
+$( MATCHING LOGIC PROOF CHECKER $)
+$( It is identical to matching-logic-200-loc.mm modulo comments and whitespace. $)
 
 $c #Pattern $.
 $c #ElementVariable $.
@@ -6,12 +7,11 @@ $c #SetVariable $.
 $c #Variable $.
 $c #Symbol $.
 
-$v ph0 ph1 ph2 ph3 ph4 ph5 ph6 ph7 ph8 $.
-$v th0 th1 th2 th3 th4 th5 th6 th7 th8 $.
-$v x y z w $.
-$v X Y Z W $.
+$v ph0 ph1 ph2 ph3 ph4 ph5 $.
+$v x y $.
+$v X Y $.
 $v xX yY $.
-$v sg0 sg1 sg2 sg3 sg4 $.
+$v sg0 $.
 
 ph0-is-pattern $f #Pattern ph0 $.
 ph1-is-pattern $f #Pattern ph1 $.
@@ -19,38 +19,17 @@ ph2-is-pattern $f #Pattern ph2 $.
 ph3-is-pattern $f #Pattern ph3 $.
 ph4-is-pattern $f #Pattern ph4 $.
 ph5-is-pattern $f #Pattern ph5 $.
-ph6-is-pattern $f #Pattern ph6 $.
-ph7-is-pattern $f #Pattern ph7 $.
-ph8-is-pattern $f #Pattern ph8 $.
-
-th0-is-pattern $f #Pattern th0 $.
-th1-is-pattern $f #Pattern th1 $.
-th2-is-pattern $f #Pattern th2 $.
-th3-is-pattern $f #Pattern th3 $.
-th4-is-pattern $f #Pattern th4 $.
-th5-is-pattern $f #Pattern th5 $.
-th6-is-pattern $f #Pattern th6 $.
-th7-is-pattern $f #Pattern th7 $.
-th8-is-pattern $f #Pattern th8 $.
 
 x-is-element-var $f #ElementVariable x $.
 y-is-element-var $f #ElementVariable y $.
-z-is-element-var $f #ElementVariable z $.
-w-is-element-var $f #ElementVariable w $.
 
 X-is-element-var $f #SetVariable X $.
 Y-is-element-var $f #SetVariable Y $.
-Z-is-element-var $f #SetVariable Z $.
-W-is-element-var $f #SetVariable W $.
 
 xX-is-var $f #Variable xX $.
 yY-is-var $f #Variable yY $.
 
 sg0-is-symbol $f #Symbol sg0 $.
-sg1-is-symbol $f #Symbol sg1 $.
-sg2-is-symbol $f #Symbol sg2 $.
-sg3-is-symbol $f #Symbol sg3 $.
-sg4-is-symbol $f #Symbol sg4 $.
 
 element-var-is-var $a #Variable x $.
 set-var-is-var     $a #Variable X $.
@@ -71,6 +50,8 @@ $c \app    $.
 $c \exists $.
 $c \mu     $.
 $c ( )     $.
+
+$( Matching Logic Syntax $)
 
 bot-is-pattern $a #Pattern \bot $.
 imp-is-pattern $a #Pattern ( \imp ph0 ph1 ) $.
@@ -138,7 +119,7 @@ ${
     negative-disjoint $a #Negative xX ph0 $.
 $}
 
-$( Fresh $)
+$( Freshness $)
 
 ${
     $d xX yY $.
