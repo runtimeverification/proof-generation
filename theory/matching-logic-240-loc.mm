@@ -23,8 +23,6 @@ symbol-is-pattern  $a #Pattern sg0 $.
 
 $c #Positive #Negative #Fresh #ApplicationContext #Substitution #Notation |- $.
 $c \bot \imp \app \exists \mu ( ) $.
-
-$( Matching Logic Syntax $)
 bot-is-pattern $a #Pattern \bot $.
 imp-is-pattern $a #Pattern ( \imp ph0 ph1 ) $.
 app-is-pattern $a #Pattern ( \app ph0 ph1 ) $.
