@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "proof-generation"
+version = "0.1.0"
+description = "Proof generation for the K Framework"
+authors = ["Your Name <you@example.com>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+packages = [{include = "proof_generation"}]
+
+[tool.poetry.dependencies]
+python = "3.9.16"
+lark-parser = "0.9.0"
+schema = "0.7.4"
+pyyaml = "5.3.1"
+z3-solver = "4.8.10.0"
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "0.812"
+pytest = "6.2.3"
+yapf = "0.31.0"
+flake8 = "3.7.9"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
