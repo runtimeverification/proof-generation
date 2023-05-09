@@ -218,7 +218,7 @@ def gen_proof(args: argparse.Namespace) -> None:
     task_path = os.path.join(cache_dir, f"rewriting-task-{pgm_name}.yml")
 
     if check_dependency_change([task_path], [kompile_timestamp, pgm]):
-        with tempfile.NamedTemporaryFile(dir=cache_dir) as tmp_file:
+        with tempfile.NamedTemporaryFile(dir=cache_dir, mode='w') as tmp_file:
             if no_backend_hints:
                 task_obj = gen_task_legacy(os.path.dirname(kompiled_dir), pgm)
                 yaml.dump(task_obj, tmp_file)
