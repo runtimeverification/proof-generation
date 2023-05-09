@@ -349,7 +349,7 @@ class RewriteProofGenerator(ProofGenerator):
     def prenex_existential_configuration(
         self, pattern: kore.Pattern
     ) -> Optional[Tuple[ProvableClaim, List[kore.Variable], kore.Pattern]]:
-        """
+        r"""
         Given a pattern of the form ph1 /\ exists x (ph2 /\ ph3)
         move the existential quantifier to the outermost level
         and return a proof of
@@ -1178,7 +1178,7 @@ class RewriteProofGenerator(ProofGenerator):
     def prove_trivial_disjunction_implication(
         self, disjunction1: kore.Pattern, disjunction2: kore.Pattern
     ) -> ProvableClaim:
-        """
+        r"""
         Prove |- phi_1 \/ ... \/ phi_n -> psi_1 \/ ... \/ psi_m
         where for all i, exists j such that phi_i = psi_j
         """
