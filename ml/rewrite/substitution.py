@@ -26,6 +26,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator):
 
     This also support substituting sort variables
     """
+
     def __init__(
         self,
         composer: KoreComposer,

@@ -10,6 +10,7 @@ class KoreTemplates:
     A utility class used to extract and identify
     certain information in a kompile-generated kore module
     """
+
     @staticmethod
     def is_rewrite_axiom(axiom: kore.Axiom) -> bool:
         inner_pattern = KoreUtils.strip_forall(axiom.pattern)

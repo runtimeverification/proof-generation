@@ -13,6 +13,7 @@ import ml.metamath.auto as auto
 
 
 class TypecodeProver:
+
     @staticmethod
     def check_typecode(
         composer: Composer,

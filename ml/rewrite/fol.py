@@ -23,6 +23,7 @@ class FOLProofGenerator(ProofGenerator):
     """
     Generating proofs related to FOL and equality reasoning
     """
+
     def apply_symmetry(self, equation: ProvableClaim) -> ProvableClaim:
         return self.composer.apply_kore_lemma("kore-equals-symmetry", equation)
 

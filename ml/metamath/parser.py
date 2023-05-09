@@ -10,6 +10,7 @@ from .ast import *
 
 
 class ASTTransformer(Transformer[BaseAST]):
+
     def __init__(self, metavariables: Iterable[str] = []) -> None:
         super().__init__()
         self.metavariables = list(metavariables)

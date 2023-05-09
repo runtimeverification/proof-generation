@@ -28,6 +28,7 @@ class DisjointnessProofGenerator(ProofGenerator):
     [owise] rules, which assumes that a pattern
     does NOT unify with a pattern.
     """
+
     def get_free_vars_in_pattern(self, pattern: kore.Pattern) -> List[kore.Variable]:
         free_vars = FreePatternVariableVisitor().visit(pattern)
         return sorted(free_vars, key=lambda v: v.name, reverse=True)

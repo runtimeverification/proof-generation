@@ -54,6 +54,7 @@ class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisito
     Exapand a given list of alias definitions
     Assuming the definitions are not interdependent
     """
+
     def __init__(self, alias_definitions: Iterable[AliasDefinition]):
         super().__init__()
         self.changed = False
@@ -109,6 +110,7 @@ class KoreUtils:
     """
     Utility functions on KORE AST
     """
+
     @staticmethod
     def copy_ast(module: Module, ast: AST) -> AST:
         copy_ast = ast.visit(CopyVisitor())

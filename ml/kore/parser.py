@@ -9,6 +9,7 @@ def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
     A decorator to attach extra info on each
     AST node when doing tranformation
     """
+
     @v_args(tree=True)
     def wrapper(self: Transformer[BaseAST[Any]], tree: Tree) -> Any:
         node = f(self, tree.children)
@@ -25,6 +26,7 @@ def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class ASTTransformer(Transformer[BaseAST[Any]]):
+
     def identifier(self, args: List[Token]) -> str:
         return args[0].value
 

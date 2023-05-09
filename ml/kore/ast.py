@@ -82,6 +82,7 @@ class AttributeMixin:
 
 
 class Definition(BaseAST[None], AttributeMixin):
+
     def __init__(self, modules: List[Module], attributes: Tuple[Application, ...] = ()):
         super().__init__()
 
@@ -114,6 +115,7 @@ class Definition(BaseAST[None], AttributeMixin):
 
 
 class Module(BaseAST[Definition], AttributeMixin):
+
     def __init__(self, name: str, sentences: List[Sentence], attributes: Tuple[Application, ...] = ()):
         self.name = name
         self.all_sentences: List[Sentence] = []
@@ -212,12 +214,14 @@ class Module(BaseAST[Definition], AttributeMixin):
 
 
 class Sentence(BaseAST[Module], AttributeMixin):
+
     def __init__(self, attributes: Tuple[Application, ...] = ()):
         super().__init__()
         self.attributes = attributes
 
 
 class Pattern(BaseAST[Module]):
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -229,6 +233,7 @@ class Pattern(BaseAST[Module]):
 
 
 class ImportStatement(Sentence):
+
     def __init__(self, module: Union[str, Module], attributes: Tuple[Application, ...] = ()):
         super().__init__(attributes)
         self.module = module
@@ -260,6 +265,7 @@ class ImportStatement(Sentence):
 
 
 class SortDefinition(Sentence):
+
     def __init__(
         self,
         sort_id: str,
@@ -298,6 +304,7 @@ class SortDefinition(Sentence):
 
 
 class SortInstance(BaseAST[Module]):
+
     def __init__(self, definition: Union[str, SortDefinition], arguments: List[Sort]):
         super().__init__()
         self.definition = definition
@@ -348,6 +355,7 @@ class SortInstance(BaseAST[Module]):
 
 
 class SortVariable(BaseAST[Module]):
+
     def __init__(self, name: str):
         self.name = name
 
@@ -376,6 +384,7 @@ Sort = Union[SortVariable, SortInstance]
 
 
 class SymbolDefinition(Sentence):
+
     def __init__(
         self,
         symbol: str,
@@ -430,6 +439,7 @@ class SymbolDefinition(Sentence):
 
 
 class SymbolInstance(BaseAST[Module]):
+
     def __init__(self, definition: Union[str, SymbolDefinition], sort_arguments: List[Sort]):
         super().__init__()
         self.definition = definition
@@ -484,6 +494,7 @@ class SymbolInstance(BaseAST[Module]):
 
 
 class Axiom(Sentence):
+
     def __init__(
         self,
         sort_variables: List[SortVariable],
@@ -525,6 +536,7 @@ Claim = Axiom
 
 
 class AliasDefinition(Sentence):
+
     def __init__(
         self,
         definition: SymbolDefinition,
@@ -569,6 +581,7 @@ class AliasDefinition(Sentence):
 
 
 class Variable(Pattern):
+
     def __init__(self, name: str, sort: Sort, is_set_variable: bool = False):
         super().__init__()
         self.name = name
@@ -607,6 +620,7 @@ class Variable(Pattern):
 
 
 class StringLiteral(Pattern):
+
     def __init__(self, content: str):
         super().__init__()
         self.content = content
@@ -633,6 +647,7 @@ class StringLiteral(Pattern):
 
 
 class Application(Pattern):
+
     def __init__(self, symbol: SymbolInstance, arguments: List[Pattern]):
         super().__init__()
         self.symbol = symbol

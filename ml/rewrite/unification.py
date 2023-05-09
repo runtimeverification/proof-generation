@@ -80,6 +80,7 @@ class UnificationResult:
 
 
 class Equation:
+
     def __init__(self, composer: KoreComposer):
         self.composer = composer
 
@@ -102,6 +103,7 @@ class DuplicateConjunction(Equation):
     r"""
     phi /\ phi = phi
     """
+
     def __init__(self, composer: KoreComposer, inverse: bool = False):
         super().__init__(composer)
         self.inverse = inverse
@@ -144,6 +146,7 @@ class InjectionCombine(Equation):
     If A < B < C
     inj{B, C}(inj{A, B}(X)) => inj{A, C}(X)
     """
+
     def replace_equal_subpattern(self, provable: ProvableClaim, path: PatternPath) -> ProvableClaim:
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
         assert (
@@ -184,6 +187,7 @@ class InjectionSplit(Equation):
     If A < B < C
     inj{A, C}(X) => inj{B, C}(inj{A, B}(X))
     """
+
     def __init__(self, composer: KoreComposer, sort_a: kore.Sort, sort_b: kore.Sort, sort_c: kore.Sort):
         super().__init__(composer)
         self.sort_a = sort_a
@@ -224,6 +228,7 @@ class MapCommutativity(Equation):
     r"""
     mapmerge(M1, M2) === mapmerge(M2, M1)
     """
+
     def get_inverse(self) -> MapCommutativity:
         return self
 
@@ -262,6 +267,7 @@ class MapAssociativity(Equation):
     mapmerge(mapmerge(M1, M2), M3) <==> mapmerge(M1, mapmerge(M2, M3))
     We use a boolean rotate_right to control the direction.
     """
+
     def __init__(self, composer: KoreComposer, rotate_right: bool):
         super().__init__(composer)
         self.rotate_right: bool = rotate_right
@@ -328,6 +334,7 @@ class MapRightUnit(Equation):
     """
     merge(M, .Map) == M
     """
+
     def __init__(self, composer: KoreComposer, inverse: bool = False):
         """
         When inverse is true, apply the equation from left to right:
@@ -613,6 +620,7 @@ class ConstraintEquation(Equation):
     additional equation (equations in the constraint)
     is applied during unification
     """
+
     def __init__(self, composer: KoreComposer, lhs: kore.Pattern, rhs: kore.Pattern):
         super().__init__(composer)
         self.lhs = lhs
@@ -623,6 +631,7 @@ class ConstraintEquation(Equation):
 
 
 class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
+
     def __init__(
         self,
         composer: KoreComposer,

@@ -21,6 +21,7 @@ class Backend(ABC):
       - discard everything
       - verify the proofs in runtime and then discard them
     """
+
     @abstractmethod
     def dump_statement(self, segment: SegmentLabel, statement: Statement) -> None:
         ...
@@ -30,6 +31,7 @@ class NullBackend(Backend):
     """
     Discards all statements
     """
+
     def dump_statement(self, segment: SegmentLabel, statement: Statement) -> None:
         return None
 
@@ -39,6 +41,7 @@ class StandaloneFileBackend(Backend):
     Store everything (including the prelude file)
     to a standalone output file
     """
+
     def __init__(self, path: str, compression: bool = False):
         self.path = path
         self.compression = compression
@@ -70,6 +73,7 @@ class MultipleFileBackend(Backend):
     files. It stores a DAG for dependencies between the
     output Metamath files
     """
+
     @dataclass
     class Node:
         full_path: str  # e.g. database.mm

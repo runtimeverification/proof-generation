@@ -23,6 +23,7 @@ class Hookable:
 
     @classmethod
     def add_hook(cls, name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             hooks = Hookable.get_hooks(cls)
 

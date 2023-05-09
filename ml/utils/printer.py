@@ -7,6 +7,7 @@ class Printer:
     """
     Base class for an printer
     """
+
     def __init__(self, output: TextIO, tab: str = "  "):
         super().__init__()
         self.output = output

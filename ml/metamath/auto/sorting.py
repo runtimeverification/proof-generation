@@ -35,6 +35,7 @@ class SortingProver:
     Whenever it comes to the point that we need to show ( \in-sort psij ph0 ), for some 1 <= j <= k
     we will scan the essentials to show that
     """
+
     @staticmethod
     def in_sort(term: Term, sort: Term) -> Application:
         return Application("\\in-sort", (term, sort))

@@ -12,6 +12,7 @@ class Visitor(Generic[TreeT, ResultT]):
     """
     A general visitor base class
     """
+
     def previsit_default(self, x: TreeT) -> None:
         return
 
@@ -58,6 +59,7 @@ class UnionVisitor(Visitor[TreeT, Set[T]]):
     Union visitor is used for collecting
     information that is unioned at each node
     """
+
     def postvisit_default(self, x: TreeT, *args: ChildrenResultT[Set[T]]) -> Set[T]:
         union: Set[T] = set()
 
@@ -75,6 +77,7 @@ class ConjunctionVisitor(Visitor[TreeT, bool]):
     """
     Tests if every node satisfy certain condition
     """
+
     def postvisit_default(self, x: TreeT, *args: ChildrenResultT[bool]) -> bool:
         result = True
 
@@ -92,6 +95,7 @@ class DisjunctionVisitor(Visitor[TreeT, bool]):
     """
     Tests if there exists a subnode that satisfy certain condition
     """
+
     def postvisit_default(self, x: TreeT, *args: ChildrenResultT[bool]) -> bool:
         result = False
 

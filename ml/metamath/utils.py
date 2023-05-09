@@ -4,6 +4,7 @@ from .ast import *
 
 
 class MetamathUtils:
+
     @staticmethod
     def construct_top() -> Term:
         return Application("\\top")

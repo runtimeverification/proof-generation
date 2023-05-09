@@ -13,6 +13,7 @@ class FreshProver:
     Prove claims of the form
     #Fresh x ph0
     """
+
     @staticmethod
     def construct_target(var: Metavariable, term: Term) -> StructuredStatement:
         return StructuredStatement("", (Application("#Fresh"), var, term))

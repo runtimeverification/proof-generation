@@ -6,6 +6,7 @@ from .ast import *
 
 
 class ASTTransformer(Transformer[Tactical]):
+
     def token(self, args: List[Token]) -> str:
         return args[0].value
 

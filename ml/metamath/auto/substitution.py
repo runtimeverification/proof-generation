@@ -10,6 +10,7 @@ from .typecode import TypecodeProver
 
 
 class SubstitutionProver:
+
     @staticmethod
     def get_target(
         after_pattern: Term,

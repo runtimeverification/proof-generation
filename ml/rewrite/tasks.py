@@ -17,6 +17,7 @@ Schema = Any
 
 
 class WithSchema:
+
     @staticmethod
     def get_raw_schema() -> Schema:
         raise NotImplementedError()

@@ -35,6 +35,7 @@ class BuiltinCommand:
 
     @staticmethod
     def add(*args: Any, **kwargs: Any) -> Callable[[HandlerT], HandlerT]:
+
         def decorator(handler: HandlerT) -> HandlerT:
             BuiltinCommand.builtin_commands.append(BuiltinCommand(handler, *args, **kwargs))
             return handler
@@ -59,6 +60,7 @@ usage:
 
 
 class InteractiveState:
+
     def __init__(self, theory_path: str, goal_name: str, debug: bool = False):
         self.undo_states: List[Tuple[ProofState, Tactical]] = []
         self.redo_states: List[Tuple[ProofState, Tactical]] = []

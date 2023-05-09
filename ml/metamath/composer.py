@@ -242,11 +242,13 @@ class AutoProof:
     A proof generator that's supposed to prove the statement given to it,
     if not, it will raise an error
     """
+
     def prove(self, composer: Composer, statement: StructuredStatement) -> Proof:
         raise NotImplementedError()
 
 
 class MethodAutoProof(AutoProof):
+
     def __init__(self, method: Callable[[Composer, StructuredStatement], Proof]):
         self.method = method
 
@@ -780,6 +782,7 @@ class Composer(Hookable):
     Composer is a utility class used for
     emitting metamath statements and proofs
     """
+
     def __init__(self, *, backend: Backend = NullBackend()) -> None:
         self.context = Context()  # outermost context for a database
         self.theorems: Dict[str, Theorem] = {}  # label -> Theorem
