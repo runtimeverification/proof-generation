@@ -210,8 +210,7 @@ def gen_proof(args: argparse.Namespace) -> None:
     if check_dependency_change([task_path], [spec_kore_file, kompile_timestamp]):
         with NamedTemporaryFile() as tmp_task_file:
             proc = run_command(
-                ([ "time", "-v", "-o", args.time_kore_prove ] if args.time_kore_prove is not None else []) +
-                [
+                (["time", "-v", "-o", args.time_kore_prove] if args.time_kore_prove is not None else []) + [
                     "kore-exec",
                     kore_definition,
                     "--module",
