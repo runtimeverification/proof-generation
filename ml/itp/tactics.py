@@ -190,7 +190,7 @@ class SetSchematicVariableTactic(Tactic):
         state.assign_schematic_variables(substitution)
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
-        pass
+        raise NotImplementedError()
 
 
 @ProofState.register_tactic("shuffle")
@@ -203,7 +203,7 @@ class ShuffleTactic(Tactic):
         state.current_goals = [state.current_goals[-1]] + state.current_goals[:-1]
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
-        pass
+        raise NotImplementedError()
 
 
 @ProofState.register_tactic("claim")
