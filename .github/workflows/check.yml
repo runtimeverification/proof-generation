@@ -20,11 +20,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+        python -m pip install --upgrade poetry
+        poetry install
     - name: Test
       run: |
-        scripts/test
+        poetry run scripts/test
     - name: Formatting
       run: |
-        yapf --recursive --diff ml scripts tests
+        poetry run yapf --recursive --diff ml scripts tests
