@@ -131,7 +131,7 @@ class SearchTactic(Tactic):
         raise NoStateChangeException()
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
-        pass
+        raise NotImplementedError()
 
 
 @ProofState.register_tactic("wf")
