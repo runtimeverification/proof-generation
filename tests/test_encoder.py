@@ -9,6 +9,7 @@ from ml.rewrite.encoder import KoreEncoder
 
 
 class TestKoreEncoder(unittest.TestCase):
+
     def setUp(self) -> None:
         self.encoder = KoreEncoder()
 
