@@ -1,12 +1,10 @@
-from typing import Any, Dict, Union
-import argparse
-import csv
-import os
 import re
+import os
+import csv
+import argparse
 
 from ml.metamath.parser import load_database
 from ml.metamath.composer import Composer, Theorem
-
 
 
 def decode_index(index: str) -> int:
@@ -63,7 +61,7 @@ def get_metamath_steps(theorem: Theorem, compressed_proof: str) -> int:
     return len([label for label in script if not is_pattern_subtree(label)])
 
 
-def collect_stats(writer: csv.DictWriter[Union[str, bool, int]], path: str) -> int:
+def collect_stats(writer: csv.DictWriter, path: str) -> int:
     database = load_database(path, include_proof=False)
     composer = Composer()
     composer.load(database)
@@ -75,7 +73,6 @@ def collect_stats(writer: csv.DictWriter[Union[str, bool, int]], path: str) -> i
 
     for match in re.finditer(r"(\S*)\s*\$p[\s\S]*?\$=([\s\S]*?)\$\.", source):
         label = match.group(1)
-        assert(isinstance(label, str))
         proof = match.group(2).strip()
         split_match = re.match(r"\$\(([\w\W]+)\$\)\s+([\w\W]+)", proof)
         if split_match is not None:
@@ -118,7 +115,7 @@ def main() -> None:
     count = 0
 
     with open(args.output, "w") as output_file:
-        writer : csv.DictWriter[Union[str, bool, int]] = csv.DictWriter(output_file, ["label", "used_tautology", "num_tactics", "num_mm_proof_steps"])
+        writer = csv.DictWriter(output_file, ["label", "used_tautology", "num_tactics", "num_mm_proof_steps"])
         writer.writeheader()
 
         for name in os.listdir(args.theory):
