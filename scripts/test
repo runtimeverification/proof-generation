@@ -2,5 +2,6 @@
 
 set -euo pipefail
 
+yapf --recursive --diff ml scripts tests
 mypy --strict --no-incremental ml scripts tests
 pytest "$@" --ignore=deps

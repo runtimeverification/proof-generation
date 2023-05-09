@@ -25,6 +25,3 @@ jobs:
     - name: Test
       run: |
         poetry run scripts/test
-    - name: Formatting
-      run: |
-        poetry run yapf --recursive --diff ml scripts tests
