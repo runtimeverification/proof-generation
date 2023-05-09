@@ -5,7 +5,7 @@ description = "Proof generation for the K Framework"
 authors = ["Your Name <you@example.com>"]
 license = "BSD-3-Clause"
 readme = "README.md"
-packages = [{include = "proof_generation"}]
+packages = [{include = "ml"}]
 
 [tool.poetry.dependencies]
 python = "3.9.16"
