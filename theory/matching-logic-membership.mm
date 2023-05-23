@@ -757,5 +757,7 @@ ${
             apply "functional-imp-nonempty"
             apply "functional-imp-nonempty-alt.0"
         $)
-        ( element-var-is-var var-is-pattern eq-is-pattern exists-is-pattern imp-is-pattern ceil-is-pattern functional-imp-nonempty rule-weakening-imp2 proof-rule-mp ) BCEFAGCHIBAJICEFAGCHAJBACKLDM $.
+        th0-is-pattern x-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern x-is-element-var exists-is-pattern imp-is-pattern th0-is-pattern ph0-is-pattern ceil-is-pattern imp-is-pattern x-is-element-var element-var-is-var var-is-pattern ph0-is-pattern eq-is-pattern x-is-element-var exists-is-pattern ph0-is-pattern ceil-is-pattern th0-is-pattern ph0-is-pattern x-is-element-var functional-imp-nonempty rule-weakening-imp2 functional-imp-nonempty-alt.0 proof-rule-mp
+        $.
 $}
+
