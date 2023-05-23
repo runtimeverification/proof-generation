@@ -287,6 +287,18 @@ class InteractiveState:
         else:
             print(proof_text)
 
+    @BuiltinCommand.add("proof-uncompressed", help_message="once all goals are resolved, print the uncompressed proof")
+    def command_proof_uncompressed(self, output_file: Optional[str] = None) -> None:
+        proof = self.proof_state.gen_proof()
+        stmt = proof.as_statement(self.goal_name)
+        proof_text = Encoder.encode_string(stmt)
+
+        if output_file is not None:
+            with open(output_file, "w") as output:
+                output.write(proof_text)
+        else:
+            print(proof_text)
+
     @BuiltinCommand.add("script", help_message="print all tactics applied")
     def command_script(self) -> None:
         print("\n".join(map(lambda t: str(t[1]), self.undo_states)))
