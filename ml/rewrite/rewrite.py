@@ -42,6 +42,7 @@ class RewriteProofGenerator(ProofGenerator):
     """
     Generate proofs for rewriting related claims
     """
+
     def __init__(self, composer: KoreComposer, smt_option: SMTOption = SMTOption()):
         super().__init__(composer)
         self.owise_assumption_counter = 0
@@ -2202,6 +2203,7 @@ class RewriteProofGenerator(ProofGenerator):
 
 
 class InnermostNestedInjectionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], Optional[PatternPath]]):
+
     def __init__(self, env: KoreComposer):
         super().__init__()
         self.composer = env
@@ -2240,6 +2242,7 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
     Return a path of an application subpattern with a function-like head such that
     it doesn't have any (sub-)subpattern with a function-like head
     """
+
     def __init__(self, composer: KoreComposer, concrete_functions: Set[str], builtin_functions: Set[str]):
         super().__init__()
         self.composer = composer
@@ -2294,6 +2297,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
     """
     Common base class for evaluator of the builtin sort SortInt{}
     """
+
     def __init__(self, composer: KoreComposer):
         super().__init__(composer)
         self.axiom_counter = 0
@@ -2358,30 +2362,35 @@ class BuiltinFunctionEvaluator(ProofGenerator):
 
 
 class IntegerAdditionEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) + self.parse_int(b))
 
 
 class IntegerSubtractionEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) - self.parse_int(b))
 
 
 class IntegerMultiplicationEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) * self.parse_int(b))
 
 
 class IntegerDivisionEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) // self.parse_int(b))
 
 
 class IntegerModEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         # TODO: check if this definition of % is the same as K
@@ -2389,48 +2398,56 @@ class IntegerModEvaluator(BuiltinFunctionEvaluator):
 
 
 class IntegerGreaterThanOrEqualToEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) >= self.parse_int(b))
 
 
 class IntegerLessThanOrEqualToEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) <= self.parse_int(b))
 
 
 class IntegerGreaterThanEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) > self.parse_int(b))
 
 
 class IntegerLessThanEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) < self.parse_int(b))
 
 
 class IntegerEqualityEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_int(a) == self.parse_int(b))
 
 
 class BooleanAndEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_bool(a) and self.parse_bool(b))
 
 
 class BooleanOrEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, self.parse_bool(a) or self.parse_bool(b))
 
 
 class BooleanNotEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         (a, ) = application.arguments
         return self.build_arithmetic_equation(application, not self.parse_bool(a))
@@ -2438,12 +2455,14 @@ class BooleanNotEvaluator(BuiltinFunctionEvaluator):
 
 # TODO: we may need to define this in the prelude
 class KEqualityEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, a == b)
 
 
 class KNotEqualityEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         a, b = application.arguments
         return self.build_arithmetic_equation(application, a != b)
@@ -2453,6 +2472,7 @@ class MapLookupEvaluator(BuiltinFunctionEvaluator):
     """
     Implements the K builtin function MAP.lookup
     """
+
     def lookup(self, map_pattern: kore.Application, key_pattern: kore.Pattern) -> Optional[kore.Pattern]:
         if KoreTemplates.is_map_unit_pattern(map_pattern):
             return None
@@ -2485,6 +2505,7 @@ class MapUpdateEvaluator(BuiltinFunctionEvaluator):
     """
     Implements the K builtin function MAP.update
     """
+
     def update_existing(self, map_pattern: kore.Application, key_pattern: kore.Pattern,
                         value_pattern: kore.Pattern) -> Tuple[kore.Pattern, bool]:
         if KoreTemplates.is_map_unit_pattern(map_pattern):
@@ -2536,6 +2557,7 @@ class MapUpdateEvaluator(BuiltinFunctionEvaluator):
 
 
 class MapInKeysEvaluator(BuiltinFunctionEvaluator):
+
     def find_key(self, map_pattern: kore.Application, key_pattern: kore.Application) -> bool:
         """
         Check if the given key is in the map pattern or not
@@ -2561,6 +2583,7 @@ class MapInKeysEvaluator(BuiltinFunctionEvaluator):
 
 
 class BytesUnitEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         sort = KoreUtils.infer_sort(application)
         dv = kore.MLPattern(kore.MLPattern.DV, [sort], [kore.StringLiteral("")])
@@ -2568,6 +2591,7 @@ class BytesUnitEvaluator(BuiltinFunctionEvaluator):
 
 
 class IfEvaluator(BuiltinFunctionEvaluator):
+
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         condition, true_branch, false_branch = application.arguments
 

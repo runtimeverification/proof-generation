@@ -9,6 +9,7 @@ from .typecode import TypecodeProver
 
 
 class PredicateProver:
+
     @staticmethod
     def construct_target(term: Term) -> StructuredStatement:
         return StructuredStatement("", MetamathUtils.construct_provable(Application("\\is-predicate", (term, ))))

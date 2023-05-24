@@ -16,6 +16,7 @@ class VisitorStructure(Generic[TreeT, ResultT]):
     relation of parents and children in a visitor, in particular,
     which children of a node will be visited and in what order
     """
+
     def visit(self, ast: TreeT) -> ResultT:
         raise NotImplementedError()
 
@@ -24,6 +25,7 @@ class PatternOnlyVisitorStructure(VisitorStructure[BaseASTT, ResultT]):
     """
     Only visit node that may contain (non-attribute) patterns
     """
+
     def visit_children_of_definition(self, definition: Definition) -> List[ChildrenResultT[ResultT]]:
         return [
             [self.visit(module) for module in definition.module_map.values()],  # type: ignore
@@ -59,6 +61,7 @@ class PatternAndSortVisitorStructure(VisitorStructure[BaseASTT, ResultT]):
     """
     Explores all patterns and sorts
     """
+
     def visit_children_of_definition(self, definition: Definition) -> List[ChildrenResultT[ResultT]]:
         return [
             [self.visit(module) for module in definition.module_map.values()],  # type: ignore[arg-type]
@@ -127,6 +130,7 @@ class FullVisitorStructure(VisitorStructure[BaseASTT, ResultT]):
     """
     Explores all children (but avoiding infinite recursion)
     """
+
     def visit_children_of_definition(self, definition: Definition) -> List[ChildrenResultT[ResultT]]:
         return [
             [self.visit(module) for module in definition.module_map.values()],  # type: ignore[arg-type]
@@ -216,6 +220,7 @@ class FreePatternVariableVisitor(KoreUnionVisitor[Variable], PatternOnlyVisitorS
     """
     Collect free (pattern) variables in a definition
     """
+
     def postvisit_variable(self, var: Variable) -> Set[Variable]:
         return {var}
 
@@ -239,6 +244,7 @@ class PatternVariableVisitor(KoreUnionVisitor[Variable], PatternOnlyVisitorStruc
     """
     Collect all variables used in a pattern
     """
+
     def postvisit_variable(self, var: Variable) -> Set[Variable]:
         return {var}
 
@@ -248,6 +254,7 @@ class SortVariableVisitor(KoreUnionVisitor[SortVariable], PatternAndSortVisitorS
     """
     Collect all sort variables used in a pattern
     """
+
     def postvisit_sort_variable(self, var: SortVariable) -> Set[SortVariable]:
         return {var}
 
@@ -257,6 +264,7 @@ class OrderedPatternVariableVisitor(KoreUnionVisitor[Tuple[int, Variable]],
     """
     Collect all variables used in a pattern (in order of visit)
     """
+
     def __init__(self) -> None:
         self.index = 0
 
@@ -274,6 +282,7 @@ class QuantifierTester(KoreConjunctionVisitor, PatternOnlyVisitorStructure[BaseA
     """
     Tests if a given pattern is quantifier free
     """
+
     def postvisit_ml_pattern(self, pattern: MLPattern, arguments: List[bool]) -> bool:
         if (pattern.construct == MLPattern.FORALL or pattern.construct == MLPattern.EXISTS):
             return False
@@ -287,6 +296,7 @@ class ApplicationSubpatternTester(KoreDisjunctionVisitor, PatternOnlyVisitorStru
     """
     Tests if a given set of application subpatterns is present
     """
+
     def __init__(self, subpatterns: Tuple[Application, ...]):
         super().__init__()
         self.subpatterns = subpatterns
@@ -308,6 +318,7 @@ class PatternSubstitutionVisitor(KoreVisitor[BaseASTT, BaseASTT], PatternOnlyVis
     In place substitution of pattern variables
     Note: this visitor does not detect free variable capturing
     """
+
     def __init__(self, substitution: Mapping[Variable, Pattern]):
         super().__init__()
         self.substitution: Dict[Variable, Pattern] = dict(substitution)
@@ -377,6 +388,7 @@ class SortSubstitutionVisitor(KoreVisitor[BaseASTT, BaseASTT], PatternAndSortVis
     """
     In place substitution of sort variables
     """
+
     def __init__(self, substitution: Mapping[SortVariable, Sort]):
         super().__init__()
         self.substitution = substitution
@@ -428,6 +440,7 @@ class CopyVisitor(KoreVisitor[BaseASTT, BaseASTT], FullVisitorStructure[BaseASTT
     we have to call resolve() again to relink all the
     references to definitions
     """
+
     def postvisit_definition(self, definition: Definition, *args: Any) -> Definition:
         return Definition(*args)
 
@@ -495,6 +508,7 @@ class PatternVariableRenamer(KoreVisitor[BaseASTT, BaseASTT], PatternOnlyVisitor
     """
     Consistently rename all variables appearing in the pattern
     """
+
     def __init__(self, substitution: Mapping[Variable, Variable]):
         super().__init__()
         self.substitution = substitution

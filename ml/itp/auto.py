@@ -35,6 +35,7 @@ class SearchTactic(Tactic):
 
     And by size I mean the number of applications in the term
     """
+
     @staticmethod
     def get_size_of_term(term: Term) -> int:
         if isinstance(term, Metavariable):
@@ -139,6 +140,7 @@ class WellFormednessTactic(Tactic):
     """
     Prove the well-formedness of a term
     """
+
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
@@ -165,6 +167,7 @@ class NotationTactic(Tactic):
     Automatically prove notational equivalence of terms
     modulo the definition relation #Notation
     """
+
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
@@ -191,6 +194,7 @@ class DesugarTactic(Tactic):
     Expand all syntax sugar defined using #Notation
     in the current goal
     """
+
     def find_kore_symbol(self, state: ProofState, term: Term) -> Optional[str]:
         if isinstance(term, Application):
             if (term.symbol.startswith("\\kore-")
@@ -280,6 +284,7 @@ class SubstitutionTactic(Tactic):
     """
     Prove a statement about substitution
     """
+
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         self.proof = SubstitutionProver.prove_substitution_statement(
@@ -294,6 +299,7 @@ class SubstitutionTactic(Tactic):
 
 @ProofState.register_tactic("sorting")
 class SortingTactic(Tactic):
+
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
@@ -307,6 +313,7 @@ class SortingTactic(Tactic):
 
 @ProofState.register_tactic("context")
 class ApplicationContextTactic(Tactic):
+
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
@@ -318,6 +325,7 @@ class ApplicationContextTactic(Tactic):
 
 @ProofState.register_tactic("fresh")
 class FreshTactic(Tactic):
+
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
@@ -332,6 +340,7 @@ class FreshTactic(Tactic):
 @ProofState.register_tactic("positive")
 @ProofState.register_tactic("negative")
 class PositiveTactic(Tactic):
+
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement

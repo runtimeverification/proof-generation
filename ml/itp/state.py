@@ -48,6 +48,7 @@ class Goal:
     are recorded in ProofState so that
     we can copy states more easily
     """
+
     def __init__(
         self,
         goal_id: int,
@@ -77,6 +78,7 @@ class Claim:
      - a local claim shares all mandatory hypotheses of the current goal
        and cannot have hypotheses itself.
     """
+
     def __init__(self, goal_id: int, theorem: Theorem, is_local: bool = False, scope: Optional[str] = None):
         self.goal_id = goal_id
         self.theorem = theorem
@@ -100,6 +102,7 @@ class ProofState:
 
     @staticmethod
     def register_tactic(name: str, help_msg: Optional[str] = None) -> Callable[[Type[Tactic]], Type[Tactic]]:
+
         def decorator(class_object: Type[Tactic]) -> Type[Tactic]:
             ProofState.all_tactics[name] = TacticRecord(class_object, help_msg)
             return class_object
@@ -398,6 +401,7 @@ class ProofState:
 
 
 class Tactic:
+
     def __init__(self, tactic_name: str):
         self.tactic_name = tactic_name
 

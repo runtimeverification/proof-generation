@@ -4,6 +4,7 @@ from ..ast import Metavariable, Term, Application, StructuredStatement
 
 
 class Unification:
+
     @staticmethod
     def unify(
         equations: List[Tuple[Term, Term]],

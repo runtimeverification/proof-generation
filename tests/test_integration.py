@@ -8,6 +8,7 @@ from ml.rewrite.__main__ import main as rewrite_main
 
 
 class TestIntegrationBase(unittest.TestCase):
+
     def setUp(self) -> None:
         self.output_proof_dir = tempfile.mkdtemp()
 

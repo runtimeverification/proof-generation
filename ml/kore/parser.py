@@ -9,6 +9,7 @@ def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
     A decorator to attach extra info on each
     AST node when doing tranformation
     """
+
     @v_args(tree=True)
     def wrapper(self: Transformer[BaseAST[Any]], tree: Tree) -> Any:
         node = f(self, tree.children)
@@ -25,21 +26,27 @@ def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class ASTTransformer(Transformer[BaseAST[Any]]):
+
     def identifier(self, args: List[Token]) -> str:
+        assert isinstance(args[0].value, str)
         return args[0].value
 
     def symbol_id(self, args: List[Token]) -> str:
+        assert isinstance(args[0].value, str)
         return args[0].value
 
     def set_var_id(self, args: List[Token]) -> str:
+        assert isinstance(args[0].value, str)
         return args[0].value
 
     def string_literal(self, args: List[Token]) -> str:
+        assert isinstance(args[0].value, str)
         literal = args[0].value
         assert literal.startswith('"') and literal.endswith('"')
         return literal[1:-1]
 
     def ml_symbols(self, args: List[Token]) -> str:
+        assert isinstance(args[0].value, str)
         return args[0].value
 
     @meta_info

@@ -11,6 +11,7 @@ class ApplicationContextProver:
     An automated prover for statements of the form
     #ApplicationContext x ph0
     """
+
     @staticmethod
     def get_target(var: Metavariable, pattern: Term) -> StructuredStatement:
         return ProvableStatement("", (Application("#ApplicationContext"), var, pattern))

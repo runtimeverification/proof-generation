@@ -80,8 +80,10 @@ class NotationProver:
     @staticmethod
     def get_path_to_lowest_common_ancestor(
         composer: Composer, symbol1: str, symbol2: str
-    ) -> Optional[Tuple[Tuple[Tuple[Theorem, str], ...],  # tuple of (theorem name, symbol)
-                        Tuple[Tuple[Theorem, str], ...], ]]:
+    ) -> Optional[Tuple[
+            Tuple[Tuple[Theorem, str], ...],  # tuple of (theorem name, symbol)
+            Tuple[Tuple[Theorem, str], ...],
+    ]]:
         """
         Return a list of theorems to apply on each side
         """

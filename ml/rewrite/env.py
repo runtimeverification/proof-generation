@@ -24,6 +24,7 @@ from .templates import KoreTemplates
 
 
 class ProofGenerator:
+
     def __init__(self, composer: KoreComposer):
         self.composer = composer
 
@@ -34,6 +35,7 @@ class ProvableClaim:
     This pair comes up often because we need to
     reuse some operations and information on the Kore ast
     """
+
     def __init__(self, claim: kore.Claim, proof: Proof):
         encoded_claim = KoreEncoder().visit(claim)
         assert isinstance(proof, Proof)
@@ -56,6 +58,7 @@ class SubsortRelation:
     A data structure that stores the subsort
     relation (a strict partial order)
     """
+
     def __init__(self) -> None:
         self.adj_list: Dict[kore.SortInstance, List[kore.SortInstance]] = {}
         # SortInstance -> [ ( supersort, subsorting lemma ) ... ]
@@ -117,6 +120,7 @@ class KoreComposer(Composer):
     """
     KoreComposer extends regular composer with information specialized to Kore and K
     """
+
     def __init__(self, *, dv_as_provable: bool = False, **kwargs: Any):
         super().__init__(**kwargs)
 

@@ -25,6 +25,7 @@ class MetamathVisitor(Visitor["BaseAST", ResultT]):
     All terms basically consists only of constant symbols
     with the only exception being metavariables.
     """
+
     def visit_children_of_application(self, application: Application) -> List[List[Any]]:
         return [
             [subterm.visit(self) for subterm in application.subterms],
@@ -47,6 +48,7 @@ class MetamathVisitor(Visitor["BaseAST", ResultT]):
 
 
 class BaseAST:
+
     def __str__(self) -> str:
         return Encoder.encode_string(self, omit_proof=True)
 
@@ -56,6 +58,7 @@ class BaseAST:
 
 @dataclass
 class Term(BaseAST):
+
     def get_metavariables(self) -> Set[str]:
         raise NotImplementedError()
 
@@ -130,6 +133,7 @@ class Application(Term):
 
 
 class Statement(BaseAST):
+
     def get_metavariables(self) -> Set[str]:
         return set()
 
@@ -263,6 +267,7 @@ class Encoder(Printer, Visitor[BaseAST, None]):
     """
     Encoder for Metamath AST with options
     """
+
     def __init__(self, output: TextIO, tab: str = "   ", omit_proof: bool = False):
         super().__init__(output, tab)
         self.omit_proof = omit_proof

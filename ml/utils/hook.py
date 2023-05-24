@@ -19,10 +19,11 @@ class Hookable:
             hooks = {}
             setattr(cls_obj, f"__{cls_obj.__name__}_hooks__", hooks)
 
-        return hooks  # type: ignore
+        return hooks
 
     @classmethod
     def add_hook(cls, name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+
         def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             hooks = Hookable.get_hooks(cls)
 

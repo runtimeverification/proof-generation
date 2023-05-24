@@ -35,6 +35,7 @@ class BuiltinCommand:
 
     @staticmethod
     def add(*args: Any, **kwargs: Any) -> Callable[[HandlerT], HandlerT]:
+
         def decorator(handler: HandlerT) -> HandlerT:
             BuiltinCommand.builtin_commands.append(BuiltinCommand(handler, *args, **kwargs))
             return handler
@@ -59,6 +60,7 @@ usage:
 
 
 class InteractiveState:
+
     def __init__(self, theory_path: str, goal_name: str, debug: bool = False):
         self.undo_states: List[Tuple[ProofState, Tactical]] = []
         self.redo_states: List[Tuple[ProofState, Tactical]] = []
@@ -277,6 +279,18 @@ class InteractiveState:
     def command_proof(self, output_file: Optional[str] = None) -> None:
         proof = self.proof_state.gen_proof()
         stmt = proof.as_compressed_statement(self.goal_name, self.proof_state.composer.context)
+        proof_text = Encoder.encode_string(stmt)
+
+        if output_file is not None:
+            with open(output_file, "w") as output:
+                output.write(proof_text)
+        else:
+            print(proof_text)
+
+    @BuiltinCommand.add("proof-uncompressed", help_message="once all goals are resolved, print the uncompressed proof")
+    def command_proof_uncompressed(self, output_file: Optional[str] = None) -> None:
+        proof = self.proof_state.gen_proof()
+        stmt = proof.as_statement(self.goal_name)
         proof_text = Encoder.encode_string(stmt)
 
         if output_file is not None:

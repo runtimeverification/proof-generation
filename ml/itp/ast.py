@@ -10,11 +10,13 @@ from ml.metamath.parser import parse_term_with_metavariables
 
 
 class BaseAST:
+
     def __repr__(self) -> str:
         return str(self)
 
 
 class Options(BaseAST):
+
     def __init__(self, *args: str, **kwargs: str):
         super().__init__()
         self.args = args
@@ -39,6 +41,7 @@ class Options(BaseAST):
 
 
 class Tactical(BaseAST):
+
     def apply(self, state: ProofState) -> ProofState:
         raise NotImplementedError()
 
@@ -47,6 +50,7 @@ class AtomicTactical(Tactical):
     """
     A single tactic with no combinators
     """
+
     def __init__(self, tactic: str, options: Options = Options()):
         super().__init__()
         self.tactic = tactic
@@ -64,6 +68,7 @@ class OrTactical(Tactical):
     """
     Apply the tacticals in sequence, until one of them succeeds
     """
+
     def __init__(self, *tacticals: Tactical):
         super().__init__()
         self.tacticals = tacticals
@@ -100,6 +105,7 @@ class AndTactical(Tactical):
     """
     Apply the tacticals in sequence, fail if any of them fail
     """
+
     def __init__(self, *tacticals: Tactical):
         super().__init__()
         self.tacticals = tacticals
@@ -130,6 +136,7 @@ class PlusTactical(Tactical):
     """
     Apply the tactical one or more times until it fails
     """
+
     def __init__(self, tactical: Tactical):
         super().__init__()
         self.tactical = tactical
@@ -163,6 +170,7 @@ class StarTactical(Tactical):
     """
     Apply the tactical zero or more times until it fails
     """
+
     def __init__(self, tactical: Tactical):
         super().__init__()
         self.tactical = tactical

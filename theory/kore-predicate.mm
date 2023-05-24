@@ -1,5 +1,5 @@
 $[ theory/kore.mm $]
-$[ theory/kore-notation.mm $]
+$[ theory/kore-propositional.mm $]
 $[ theory/matching-logic-predicate.mm $]
 
 kore-ceil-is-predicate $p |- ( \kore-is-predicate ph1 ( \kore-ceil ph0 ph1 ph2 ) ) $=

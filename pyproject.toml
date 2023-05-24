@@ -8,18 +8,19 @@ readme = "README.md"
 packages = [{include = "ml"}]
 
 [tool.poetry.dependencies]
-python = "3.9.16"
-lark-parser = "0.9.0"
-schema = "0.7.4"
-pyyaml = "5.3.1"
-z3-solver = "4.8.10.0"
+python = "^3.9"
+lark-parser = "^0.12.0"
+schema = "^0.7.5"
+pyyaml = "^6.0"
+z3-solver = "^4.12.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
-mypy = "0.812"
-pytest = "6.2.3"
-yapf = "0.31.0"
-flake8 = "3.7.9"
+mypy = "^1.2.0"
+pytest = "^7.3.1"
+yapf = "^0.33.0"
+flake8 = "^6.0.0"
+types-pyyaml = "^6.0.12.10"
 
 [build-system]
 requires = ["poetry-core"]

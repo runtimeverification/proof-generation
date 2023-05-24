@@ -227,6 +227,7 @@ class KoreDecoder:
     Decode the result of KoreEncoder
     Works only on applications and structured statements
     """
+
     def __init__(self, module: kore.Module):
         self.module = module
 

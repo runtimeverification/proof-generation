@@ -12,6 +12,7 @@ except:
 
 
 class MemoryProfiler:
+
     @staticmethod
     def start(num_frames: int = 2) -> None:
         assert tracemalloc is not None, "cannot import module tracemalloc"

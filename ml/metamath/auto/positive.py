@@ -16,6 +16,7 @@ class PositiveProver:
     or
     #Negative xX ph0
     """
+
     @staticmethod
     def construct_positive_target(var: Metavariable, term: Term) -> StructuredStatement:
         return StructuredStatement(
