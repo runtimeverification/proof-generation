@@ -6,7 +6,8 @@ set -euo pipefail
 # ============
 
 build-metamath() {
-    (   cd deps/metamath-exe/src
+    (   git submodule update --init --recursive deps/metamath-exe/
+        cd deps/metamath-exe/src
         gcc m*.c -o metamath
     )
 }
@@ -53,6 +54,5 @@ metamath-verify-all() {
 static-checks
 unit-tests
 build-metamath
-
 metamath-verify-all theory/matching-logic*.mm theory/prelude.mm
 
