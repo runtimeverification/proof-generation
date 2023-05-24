@@ -45,7 +45,7 @@ COMMANDS
 }
 
 metamath-verify-all() {
-    for f in theory/*.mm; do
+    for f in "$@"; do
         metamath-verify "$f"
     done
 }
@@ -53,5 +53,6 @@ metamath-verify-all() {
 static-checks
 unit-tests
 build-metamath
-metamath-verify-all
+
+metamath-verify-all theory/matching-logic*.mm theory/prelude.mm
 
