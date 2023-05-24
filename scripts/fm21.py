@@ -61,7 +61,7 @@ def get_metamath_steps(theorem: Theorem, compressed_proof: str) -> int:
     return len([label for label in script if not is_pattern_subtree(label)])
 
 
-def collect_stats(writer: csv.DictWriter, path: str) -> int:
+def collect_stats(writer: csv.DictWriter[str], path: str) -> int:
     database = load_database(path, include_proof=False)
     composer = Composer()
     composer.load(database)

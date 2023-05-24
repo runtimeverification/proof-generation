@@ -8,9 +8,11 @@ from .ast import *
 class ASTTransformer(Transformer[Tactical]):
 
     def token(self, args: List[Token]) -> str:
+        assert isinstance(args[0].value, str)
         return args[0].value
 
     def string(self, args: List[Token]) -> str:
+        assert isinstance(args[0].value, str)
         literal = args[0].value
         assert literal.startswith('"') and literal.endswith('"')
         return literal[1:-1]

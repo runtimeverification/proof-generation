@@ -16,6 +16,7 @@ class ASTTransformer(Transformer[BaseAST]):
         self.metavariables = list(metavariables)
 
     def token(self, args: List[Token]) -> str:
+        assert isinstance(args[0].value, str)
         return args[0].value
 
     def constant_stmt(self, args: List[str]) -> ConstantStatement:
