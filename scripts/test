@@ -10,6 +10,7 @@ build-metamath() {
         cd deps/metamath-exe/src
         gcc m*.c -o metamath
     )
+    PATH="$(pwd)/deps/metamath-exe/src:$PATH"
 }
 
 # Tests
