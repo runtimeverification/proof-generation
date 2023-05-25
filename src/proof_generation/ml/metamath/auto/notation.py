@@ -383,7 +383,7 @@ class NotationProver:
                     subproofs.append(subproof)
 
                 proof = theorem.match_and_apply(target, *subproofs)
-                assert proof.is_proof_of(target), f'congruence axiom gave unexpected result'
+                assert proof.is_proof_of(target), 'congruence axiom gave unexpected result'
 
                 return proof
             elif left.symbol in composer.notation_axiom_graph:

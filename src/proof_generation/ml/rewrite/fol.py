@@ -185,7 +185,7 @@ class FOLProofGenerator(ProofGenerator):
 
         equation_sort = KoreUtils.infer_sort(equation.claim.pattern)
         assert isinstance(equation_sort, kore.SortVariable), \
-               f'expecting a more general form with a free sort variable'
+               'expecting a more general form with a free sort variable'
 
         lhs, rhs = KoreUtils.destruct_equals(equation.claim.pattern)
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
@@ -306,7 +306,7 @@ class FOLProofGenerator(ProofGenerator):
 
         for sort_var, sort in sorted(substitution.items(), key=lambda t: t[0].name):
             assert len(KoreUtils.get_free_sort_variables(sort)) == 0, \
-                   f'substituting sorts with free sort variables is not supported'
+                   'substituting sorts with free sort variables is not supported'
 
             sort_is_functional = self.composer.get_theorem('kore-sort-functional').apply(
                 SortingProver.auto,

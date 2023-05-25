@@ -172,7 +172,7 @@ def gen_proof(args: argparse.Namespace) -> None:
         assert exit_code == 0, f'kompiled failed with exit code {exit_code}'
 
     ### Step 2. Do a dry run of kprove to generate the specs
-    print(f'- generating hints for the spec')
+    print('- generating hints for the spec')
     spec_kore_file = os.path.join(cache_dir, f'{spec_name}.kore')
 
     if check_dependency_change([spec_kore_file], [spec_path, kompile_timestamp]):
@@ -231,7 +231,7 @@ def gen_proof(args: argparse.Namespace) -> None:
             shutil.copy(tmp_task_file.name, task_path)
 
     ### Step 4. Pass the hints and definition to ml.rewrite
-    print(f'- generating proof')
+    print('- generating proof')
 
     args.definition = kore_definition
     args.module = module

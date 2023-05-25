@@ -213,7 +213,7 @@ def gen_proof(args: argparse.Namespace) -> None:
         kompile_timestamp = os.path.join(kompiled_dir, 'timestamp')
 
     ### step 2. generate snapshots and rewriting information
-    print(f'- generating snapshots')
+    print('- generating snapshots')
     kore_definition = os.path.join(kompiled_dir, 'definition.kore')
     task_path = os.path.join(cache_dir, f'rewriting-task-{pgm_name}.yml')
 
@@ -229,7 +229,7 @@ def gen_proof(args: argparse.Namespace) -> None:
             shutil.copy(tmp_file.name, task_path)
 
     ### step 3. generate proof object
-    print(f'- generating proof')
+    print('- generating proof')
 
     args.definition = kore_definition
     args.module = module

@@ -1221,7 +1221,7 @@ class KoreComposer(Composer):
                 else:  # MetamathUtils.is_kore_valid(conclusion):
                     # take from the given essential proofs
                     assert essential_claim_index < len(essential_provable_claims), \
-                           f'not enough essential proofs are given'
+                           'not enough essential proofs are given'
                     essential_provable_claim = essential_provable_claims[essential_claim_index]
                     essential_claim_index += 1
 
@@ -1239,7 +1239,7 @@ class KoreComposer(Composer):
                 assert False, f'cannot infer which proof to assign for hypothesis {essential}'
 
         assert essential_claim_index == len(essential_provable_claims), \
-               f'too many essential proofs given'
+               'too many essential proofs given'
 
         return essential_proofs
 

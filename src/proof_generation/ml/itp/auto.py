@@ -1365,7 +1365,7 @@ class TautologyTactic(Tactic):
         clauses = [self.junction_to_list(conjunct, 'or') for conjunct in self.junction_to_list(cnf_term)]
 
         # find a path to falsum
-        print(f'searching a path to falsum')
+        print('searching a path to falsum')
         path = self.find_path_to_falsum(clauses)
         assert path is not None, f'the equivalent cnf {clauses} does not imply falsum'
 

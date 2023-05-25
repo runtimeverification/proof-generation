@@ -50,7 +50,7 @@ def transform_provable_statement(
 
     # find the end of the proof
     end_match = re.search(r'\s*\$\.$', stmt_src[proof_start_pos:])
-    assert end_match is not None, f'non-terminated provable statement'
+    assert end_match is not None, 'non-terminated provable statement'
     proof_end_pos = proof_start_pos + end_match.start()
 
     # print(proof_start_pos, proof_end_pos, stmt_src[proof_start_pos:proof_end_pos])
@@ -90,7 +90,7 @@ def find_all_comment_segments(src: str) -> List[Tuple[int, int]]:
         if next_comment_close != -1:
             if next_comment_close < next_comment_open or next_comment_open == -1:
                 pos = next_comment_close + 2
-                assert comment_level != 0, f'incorrectly nested comment at next_comment_close'
+                assert comment_level != 0, 'incorrectly nested comment at next_comment_close'
                 comment_level -= 1
                 if comment_level == 0:
                     assert current_start is not None
@@ -99,7 +99,7 @@ def find_all_comment_segments(src: str) -> List[Tuple[int, int]]:
                 continue
         break
 
-    assert comment_level == 0, f'unclosed comment at EOF'
+    assert comment_level == 0, 'unclosed comment at EOF'
 
     return comment_segments
 

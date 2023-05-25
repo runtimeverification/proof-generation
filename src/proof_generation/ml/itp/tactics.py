@@ -317,7 +317,7 @@ class FromTactic(Tactic):
         assert False, f'unable to find theorem {name}'
 
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
-        assert len(args) >= 1, f'expecting at least one argument'
+        assert len(args) >= 1, 'expecting at least one argument'
 
         hypothesis_names = list(args[:-1])
         theorem_name = args[-1]

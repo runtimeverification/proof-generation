@@ -101,7 +101,7 @@ class SMTProofGenerator(ProofGenerator):
         self.solver.pop()
 
         if result == z3.unsat:
-            return self.composer.load_fresh_claim_placeholder(f'smt-query', predicate)
+            return self.composer.load_fresh_claim_placeholder('smt-query', predicate)
         else:
             return None
 

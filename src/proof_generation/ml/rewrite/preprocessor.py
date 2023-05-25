@@ -97,7 +97,7 @@ class KorePreprocessor:
             input_vars: List[kore.Pattern] = [
                 kore.Variable(f'V{i + 1}', sort) for i, sort in enumerate(symbol_definition.input_sorts)
             ]
-            output_var = kore.Variable(f'V0', symbol_definition.output_sort)
+            output_var = kore.Variable('V0', symbol_definition.output_sort)
             sort_var = kore.SortVariable('R')
 
             symbol_instance = kore.SymbolInstance(symbol_definition, [])
@@ -178,8 +178,8 @@ class KorePreprocessor:
             input_sort = kore.SortInstance(sort_definition1, [])
             output_sort = kore.SortInstance(sort_definition2, [])
 
-            input_var = kore.Variable(f'From', input_sort)
-            output_var = kore.Variable(f'Val', output_sort)
+            input_var = kore.Variable('From', input_sort)
+            output_var = kore.Variable('Val', output_sort)
 
             inj_symbol = kore.SymbolInstance(inj_definition, [input_sort, output_sort])
 

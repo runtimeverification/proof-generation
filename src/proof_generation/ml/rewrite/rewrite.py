@@ -120,7 +120,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         sorted_claims = self.sort_dependency_graph(claim_dependency)
         assert sorted_claims is not None, \
-               f'cycle in the claim dependency graph'
+               'cycle in the claim dependency graph'
 
         # self.proved_claims['claim-1'] = self.composer.load_fresh_claim_placeholder(
         #     'claim',
@@ -218,7 +218,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         self.preprocess_steps(task.steps)
 
-        print(f'### step 0')
+        print('### step 0')
         symbolic_execution = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, task.steps[0])
 
         for i, step in enumerate(task.steps[1:], 1):
@@ -908,7 +908,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         lhs, rhs = KoreUtils.destruct_implies(claim.claim.pattern)
         assert lhs == pattern1.as_pattern() and rhs == pattern2.as_pattern(), \
-               f'unexpected result'
+               'unexpected result'
 
         counter = self.pattern_subsumption_counter
         self.pattern_subsumption_counter += 1
@@ -969,10 +969,10 @@ class RewriteProofGenerator(ProofGenerator):
 
         assert applied_rule.substitution is not None and \
                applied_rule.rule_id is not None, \
-               f'symbolic execution requires backend hints'
+               'symbolic execution requires backend hints'
 
         assert len(applied_rule.results) == 1, \
-               f'splitting in equations is currently not supported'
+               'splitting in equations is currently not supported'
         final = applied_rule.results[0]
 
         # applying either a claim or an axiom
@@ -1531,7 +1531,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         final_claim = self.composer.load_provable_claim_as_theorem('goal', final_claim)
 
-        print(f'######## pruning unsatisfiable branch(es) ########')
+        print('######## pruning unsatisfiable branch(es) ########')
         final_claim = self.match_with_final_results(task, final_claim)
 
         print('final claim:')
@@ -2170,7 +2170,7 @@ class RewriteProofGenerator(ProofGenerator):
             # simplify nested inj
             nested_inj_path = InnermostNestedInjectionPathVisitor(self.composer).visit(subpattern)
             if nested_inj_path is not None:
-                print(f'> simplifying nested inj')
+                print('> simplifying nested inj')
                 provable = InjectionCombine(self.composer).replace_equal_subpattern(provable, path + nested_inj_path)
                 continue
 
