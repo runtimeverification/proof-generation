@@ -13,6 +13,14 @@ build-metamath() {
     PATH="$(pwd)/deps/metamath-exe/src:$PATH"
 }
 
+build-k() {
+    (   git submodule update --init --recursive deps/k/
+        cd deps/k
+        mvn package -DskipTests -Dllvm.backend.skip
+    )
+    PATH="$(pwd)/deps/k/k-distribution/bin/:$PATH"
+}
+
 # Tests
 # =====
 
@@ -52,8 +60,25 @@ metamath-verify-all() {
     done
 }
 
+kore-to-metamath() {
+    kore_file=$1; shift
+    main_module=$1; shift
+    output=$1; shift
+    python -m ml.rewrite --standalone --prelude theory/prelude.mm \
+           "$kore_file" "$main_module" -o "$output"
+}
+
+test-kompile-and-verify() {
+    example_name=$1; shift
+    main_module=$1; shift
+    kompile --backend haskell "examples/${example_name}/${example_name}.k" --directory ".build/${example_name}/"
+    kore-to-metamath ".build/${example_name}/${example_name}-kompiled/definition.kore" "${main_module}" ".build/${example_name}/definition.mm"
+    metamath-verify ".build/${example_name}/definition.mm"
+}
+
 static-checks
 unit-tests
 build-metamath
 metamath-verify-all theory/matching-logic*.mm theory/prelude.mm
-
+build-k
+test-kompile-and-verify imp IMP
