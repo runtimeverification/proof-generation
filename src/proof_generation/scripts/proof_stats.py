@@ -13,7 +13,7 @@ def debug(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:  # type: ignore
+def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:
     command_str = ' '.join([shlex.quote(frag) for frag in command])
     debug(f"{ANSI.in_gray('+ ' + command_str)}")
     return subprocess.Popen(command, **kwargs)

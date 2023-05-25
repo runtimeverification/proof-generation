@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-import z3  # type: ignore
+import z3
 
 from ..kore import ast as kore
 from ..kore.utils import KoreUtils

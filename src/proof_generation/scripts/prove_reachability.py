@@ -15,7 +15,7 @@ from ..ml.rewrite.__main__ import run_on_arguments, set_additional_flags
 from ..ml.utils.ansi import ANSI
 
 
-def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:  # type: ignore
+def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:
     command_str = ' '.join([shlex.quote(frag) for frag in command])
     print(f"{ANSI.in_gray('+ ' + command_str)}", file=sys.stderr)
     return subprocess.Popen(command, **kwargs)

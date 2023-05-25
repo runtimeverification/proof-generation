@@ -7,7 +7,7 @@ import sys
 from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
-import schema  # type: ignore
+import schema
 import yaml
 
 from ..kore.parser import parse_definition

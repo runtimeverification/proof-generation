@@ -55,3 +55,11 @@ skip-string-normalization = true
 
 [tool.mypy]
 disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "schema"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "z3"
+ignore_missing_imports = true

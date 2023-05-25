@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Type, TypeVar
 
-import schema  # type: ignore
+import schema
 
 from ..kore import ast as kore
 from ..kore.parser import parse_pattern
@@ -31,7 +31,7 @@ class WithSchema:
 
     @classmethod
     def load_from_object(cls: Type[T], obj: Any) -> T:
-        return schema.Schema(cls.get_schema()).validate(obj)  # type: ignore
+        return schema.Schema(cls.get_schema()).validate(obj)
 
 
 @dataclass
