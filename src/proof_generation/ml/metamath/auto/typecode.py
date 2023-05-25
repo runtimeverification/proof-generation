@@ -67,16 +67,16 @@ class TypecodeProver:
         """
 
         # TODO: these checks are a bit too specialized
-        if (typecode == "#Variable" or typecode == "#ElementVariable"
-                or typecode == "#SetVariable") and not isinstance(term, Metavariable):
+        if (typecode == '#Variable' or typecode == '#ElementVariable'
+                or typecode == '#SetVariable') and not isinstance(term, Metavariable):
             return None
 
-        if typecode == "#Symbol" and (not isinstance(term, Application) or len(term.subterms) != 0):
+        if typecode == '#Symbol' and (not isinstance(term, Application) or len(term.subterms) != 0):
             return None
 
-        expected_statement = ProvableStatement("", (Application(typecode), term))
+        expected_statement = ProvableStatement('', (Application(typecode), term))
 
-        cached_proof = composer.lookup_proof_cache("typecode-cache-" + typecode, expected_statement.terms)
+        cached_proof = composer.lookup_proof_cache('typecode-cache-' + typecode, expected_statement.terms)
         if cached_proof is not None:
             return cached_proof
 
@@ -90,7 +90,7 @@ class TypecodeProver:
                     if metavar.name == term.name:
                         # found a direct proof
                         proof = Proof.from_script(expected_statement, theorem.statement.label)
-                        return composer.cache_proof("typecode-cache-" + typecode, proof)
+                        return composer.cache_proof('typecode-cache-' + typecode, proof)
             # otherwise treat the metavariable as a term
 
         # TODO: check if this may loop infinitely
@@ -115,8 +115,8 @@ class TypecodeProver:
                             break
                     else:
                         if len(hypothesis.terms) == 3 and \
-                           (hypothesis.terms[0] == Application("#Positive") or
-                            hypothesis.terms[0] == Application("#Negative")):
+                           (hypothesis.terms[0] == Application('#Positive') or
+                            hypothesis.terms[0] == Application('#Negative')):
                             essential_proof = PositiveProver.prove_statement(composer, hypothesis)
 
                 # try to recursively prove that each of the subterms in the solution
@@ -127,7 +127,7 @@ class TypecodeProver:
                 for floating in theorem.context.floatings:
                     assert (
                         floating.metavariable in solution
-                    ), f"unable to determine metavarible {floating.metavariable} in theorem {theorem.statement}"
+                    ), f'unable to determine metavarible {floating.metavariable} in theorem {theorem.statement}'
 
                     metavar_proof = TypecodeProver.prove_typecode(
                         composer, floating.typecode, solution[floating.metavariable]
@@ -146,6 +146,6 @@ class TypecodeProver:
                     # directly construct the proof here for performance
                     assert theorem.statement.label is not None
                     proof = Proof.from_application(expected_statement, theorem.statement.label, subproofs)
-                    return composer.cache_proof("typecode-cache-" + typecode, proof)
+                    return composer.cache_proof('typecode-cache-' + typecode, proof)
 
         return None

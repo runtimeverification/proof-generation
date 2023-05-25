@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any, List, TypeVar, Generic, Union, Callable, Set
 from abc import abstractmethod
 
-TreeT = TypeVar("TreeT", contravariant=True)
-ResultT = TypeVar("ResultT")
+TreeT = TypeVar('TreeT', contravariant=True)
+ResultT = TypeVar('ResultT')
 ChildrenResultT = Union[ResultT, List[ResultT]]
 
 
@@ -32,26 +32,26 @@ class Visitor(Generic[TreeT, ResultT]):
         2. call visit_children_of_* to visit all children
         3. call postvisit_* (with return values of the children visits)
         """
-        if name.startswith("previsit_"):
+        if name.startswith('previsit_'):
             return self.previsit_default
-        elif name.startswith("visit_children_of_"):
+        elif name.startswith('visit_children_of_'):
             return self.visit_children_of_default
-        elif name.startswith("postvisit_"):
+        elif name.startswith('postvisit_'):
             return self.postvisit_default
-        elif name.startswith("proxy_visit_"):
+        elif name.startswith('proxy_visit_'):
             name = name[12:]
 
             def f(node: TreeT) -> ResultT:
-                getattr(self, "previsit_" + name)(node)
-                children = getattr(self, "visit_children_of_" + name)(node)
-                return getattr(self, "postvisit_" + name)(node, *children)  # type: ignore
+                getattr(self, 'previsit_' + name)(node)
+                children = getattr(self, 'visit_children_of_' + name)(node)
+                return getattr(self, 'postvisit_' + name)(node, *children)  # type: ignore
 
             return f
         else:
             raise AttributeError(name)
 
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 class UnionVisitor(Visitor[TreeT, Set[T]]):

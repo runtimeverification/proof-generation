@@ -21,9 +21,9 @@ def locate_comment_segment(comment_segments: List[Tuple[int, int]], pos: int) ->
 def transform_provable_statement(
     composer: Composer, comment_segments: List[Tuple[int, int]], label: str, stmt_src: str, abs_pos: int
 ) -> str:
-    proof_start_pos = stmt_src.index("$=") + 2
+    proof_start_pos = stmt_src.index('$=') + 2
 
-    print(f"  compressing theorem {label}")
+    print(f'  compressing theorem {label}')
 
     # find the start of the proof, excluding comments
     while True:
@@ -32,7 +32,7 @@ def transform_provable_statement(
         suffix_strip = suffix.lstrip()
         next_nonspace = proof_start_pos + len(suffix) - len(suffix_strip)
 
-        assert next_nonspace < len(stmt_src), "failed to find a proof"
+        assert next_nonspace < len(stmt_src), 'failed to find a proof'
 
         segment = locate_comment_segment(comment_segments, abs_pos + next_nonspace)
         if segment is None:
@@ -44,13 +44,13 @@ def transform_provable_statement(
             _, end = segment
             proof_start_pos = end - abs_pos
 
-    if stmt_src[proof_start_pos] == "(":
+    if stmt_src[proof_start_pos] == '(':
         # already in compressed format
         return stmt_src
 
     # find the end of the proof
-    end_match = re.search(r"\s*\$\.$", stmt_src[proof_start_pos:])
-    assert end_match is not None, f"non-terminated provable statement"
+    end_match = re.search(r'\s*\$\.$', stmt_src[proof_start_pos:])
+    assert end_match is not None, f'non-terminated provable statement'
     proof_end_pos = proof_start_pos + end_match.start()
 
     # print(proof_start_pos, proof_end_pos, stmt_src[proof_start_pos:proof_end_pos])
@@ -76,8 +76,8 @@ def find_all_comment_segments(src: str) -> List[Tuple[int, int]]:
     current_start = None
 
     while pos < len(src):
-        next_comment_open = src.find("$(", pos)
-        next_comment_close = src.find("$)", pos)
+        next_comment_open = src.find('$(', pos)
+        next_comment_close = src.find('$)', pos)
 
         if next_comment_open != -1:
             if next_comment_open < next_comment_close or next_comment_close == -1:
@@ -90,7 +90,7 @@ def find_all_comment_segments(src: str) -> List[Tuple[int, int]]:
         if next_comment_close != -1:
             if next_comment_close < next_comment_open or next_comment_open == -1:
                 pos = next_comment_close + 2
-                assert comment_level != 0, f"incorrectly nested comment at next_comment_close"
+                assert comment_level != 0, f'incorrectly nested comment at next_comment_close'
                 comment_level -= 1
                 if comment_level == 0:
                     assert current_start is not None
@@ -99,7 +99,7 @@ def find_all_comment_segments(src: str) -> List[Tuple[int, int]]:
                 continue
         break
 
-    assert comment_level == 0, f"unclosed comment at EOF"
+    assert comment_level == 0, f'unclosed comment at EOF'
 
     return comment_segments
 
@@ -118,9 +118,9 @@ def update_comment_segments(comment_segments: List[Tuple[int, int]], pos: int, o
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Compress Metamath proofs")
-    parser.add_argument("input", nargs="+", help="Input files or directories")
-    parser.add_argument("output", help="Output directory")
+    parser = argparse.ArgumentParser(description='Compress Metamath proofs')
+    parser.add_argument('input', nargs='+', help='Input files or directories')
+    parser.add_argument('output', help='Output directory')
     args = parser.parse_args()
 
     all_inputs = []
@@ -129,26 +129,26 @@ def main() -> None:
     for input_path in args.input:
         if os.path.isdir(input_path):
             for f in os.scandir(input_path):
-                if f.is_file() and f.name.endswith(".mm"):
+                if f.is_file() and f.name.endswith('.mm'):
                     all_inputs.append(f.path)
         else:
-            assert os.path.isfile(input_path), f"Input not found {input_path}"
+            assert os.path.isfile(input_path), f'Input not found {input_path}'
             all_inputs.append(input_path)
 
     assert not os.path.exists(args.output), \
-           f"Output directory {args.output} already exists"
+           f'Output directory {args.output} already exists'
 
     os.mkdir(args.output)
 
     for input_path in all_inputs:
-        print(f"loading database {input_path}")
+        print(f'loading database {input_path}')
 
         with open(input_path) as input_file:
             ast = load_database(input_path, include_proof=False)
             composer: Composer = Composer()
             composer.load(ast)
 
-            print(f"loaded database {input_path}")
+            print(f'loaded database {input_path}')
 
             contents = input_file.read()
 
@@ -159,7 +159,7 @@ def main() -> None:
             pos = 0
 
             while True:
-                match = re.search(r"(\S*)\s*\$p[\s\S]*?\$=[\s\S]*?\$\.", contents[pos:])
+                match = re.search(r'(\S*)\s*\$p[\s\S]*?\$=[\s\S]*?\$\.', contents[pos:])
                 if match is None:
                     break
 
@@ -190,10 +190,10 @@ def main() -> None:
 
         output_path = os.path.join(args.output, os.path.basename(input_path))
 
-        print(f"outputting to {output_path}")
-        with open(output_path, "w") as output_file:
+        print(f'outputting to {output_path}')
+        with open(output_path, 'w') as output_file:
             output_file.write(contents)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

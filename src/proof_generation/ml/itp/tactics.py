@@ -17,7 +17,7 @@ class PreprocessedTheorem:
     schematic_substitution: Dict[str, Term]
 
 
-@ProofState.register_tactic("apply")
+@ProofState.register_tactic('apply')
 class ApplyTactic(Tactic):
     """
     Apply a theorem on the top of the goal stack
@@ -45,12 +45,12 @@ class ApplyTactic(Tactic):
 
         for metavar in new_subst:
             assert metavar in metavars, \
-                   f"metavariable {metavar} is not active in theorem {theorem.statement.label}"
+                   f'metavariable {metavar} is not active in theorem {theorem.statement.label}'
 
         for metavar in metavars:
             if metavar not in new_subst:
                 typecode = state.composer.find_metavariable(metavar)
-                assert typecode is not None, f"metavariable {metavar} not found"
+                assert typecode is not None, f'metavariable {metavar} not found'
                 new_subst[metavar] = state.get_next_schematic_variable(typecode)
 
         # substitute in schematic variables
@@ -89,7 +89,7 @@ class ApplyTactic(Tactic):
         if self.theorem is not None:
             return self.theorem
 
-        assert False, f"cannot find theorem {name}"
+        assert False, f'cannot find theorem {name}'
 
     def apply(self, state: ProofState, *args: str, **options: str) -> None:
         theorem_name, = args
@@ -112,7 +112,7 @@ class ApplyTactic(Tactic):
 
         # unify the conclusion of the statement with our top goal
         result = Tactic.unify_statements(state, top_goal_statement, theorem_conclusion)
-        assert result is not None, f"unable to unify the goal {top_goal_statement} with {theorem_conclusion}"
+        assert result is not None, f'unable to unify the goal {top_goal_statement} with {theorem_conclusion}'
         schematic_substitution, self.applied_notation = result
 
         # assign schematic variables
@@ -126,7 +126,7 @@ class ApplyTactic(Tactic):
         live_svars = state.get_live_schematic_variables()
         killed_svars = top_goal_statement.get_metavariables().difference(live_svars)
         killed_svars = {var for var in killed_svars if state.get_schematic_variable_from_name(var) is not None}
-        assert len(killed_svars) == 0, f"schematic variable(s) {killed_svars} killed before being assigned"
+        assert len(killed_svars) == 0, f'schematic variable(s) {killed_svars} killed before being assigned'
 
     def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
         """
@@ -137,7 +137,7 @@ class ApplyTactic(Tactic):
         num_essentials = len(self.theorem.context.essentials)
         assert (
             len(subproofs) >= num_essentials
-        ), f"theorem {self.theorem.statement.label} requires {num_essentials}, but only {len(subproofs)} are provided"
+        ), f'theorem {self.theorem.statement.label} requires {num_essentials}, but only {len(subproofs)} are provided'
 
         # during apply(), we made a substitution from metavariables to schematic variables
         # now we attempt to resolve all the schematic variables to concrete terms (terms
@@ -173,7 +173,7 @@ class ApplyTactic(Tactic):
         return proof
 
 
-@ProofState.register_tactic("let")
+@ProofState.register_tactic('let')
 class SetSchematicVariableTactic(Tactic):
     """
     Set some schematic variables to concrete terms (without schematic variables)
@@ -187,7 +187,7 @@ class SetSchematicVariableTactic(Tactic):
         substituting_svars = set(substitution.keys())
         assert substituting_svars.issubset(
             live_svars
-        ), f"assigning dead/nonexistent schematic variable(s) {substituting_svars.difference(live_svars)}"
+        ), f'assigning dead/nonexistent schematic variable(s) {substituting_svars.difference(live_svars)}'
 
         state.assign_schematic_variables(substitution)
 
@@ -195,8 +195,8 @@ class SetSchematicVariableTactic(Tactic):
         raise NotImplementedError()
 
 
-@ProofState.register_tactic("shuffle")
-@ProofState.register_tactic("meh")
+@ProofState.register_tactic('shuffle')
+@ProofState.register_tactic('meh')
 class ShuffleTactic(Tactic):
     """
     Move the current goal to the last
@@ -209,7 +209,7 @@ class ShuffleTactic(Tactic):
         raise NotImplementedError()
 
 
-@ProofState.register_tactic("claim")
+@ProofState.register_tactic('claim')
 class ClaimTactic(Tactic):
     """
     Make a temporary claim and use it in other parts of the proof
@@ -228,13 +228,13 @@ class ClaimTactic(Tactic):
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         # the last argument or the single kwarg is the conclusion
         # other positional arguments are hypotheses
-        assert len(kwargs) <= 1, "wrong claim format"
+        assert len(kwargs) <= 1, 'wrong claim format'
         if len(kwargs) == 1:
             label, conclusion_str = list(kwargs.items())[0]
             hypotheses_str = args
         else:
-            assert len(args) >= 1, "wrong claim format"
-            label = ClaimTactic.find_free_theorem_name(state, "claim-")
+            assert len(args) >= 1, 'wrong claim format'
+            label = ClaimTactic.find_free_theorem_name(state, 'claim-')
             conclusion_str = args[-1]
             hypotheses_str = args[:-1]
 
@@ -242,7 +242,7 @@ class ClaimTactic(Tactic):
         essentials = []
         for i, hypothesis in enumerate(hypotheses_str):
             terms = self.parse_terms(state, hypothesis)
-            essential_label = f"{label}.{i}"
+            essential_label = f'{label}.{i}'
             essential = EssentialStatement(essential_label, terms)
             essentials.append(essential)
 
@@ -265,7 +265,7 @@ class ClaimTactic(Tactic):
         return state.gen_proof_for_goal(self.claim_goal)
 
 
-@ProofState.register_tactic("from")
+@ProofState.register_tactic('from')
 class FromTactic(Tactic):
     """
     Apply theorem to hypotheses
@@ -297,7 +297,7 @@ class FromTactic(Tactic):
                 state.add_goal_dependency(goal, state.get_goal_by_id(claim.goal_id))
                 continue
 
-            assert False, f"unable to find hypothesis {name}"
+            assert False, f'unable to find hypothesis {name}'
 
         return hypotheses
 
@@ -314,10 +314,10 @@ class FromTactic(Tactic):
                 self.claim_goal = state.get_goal_by_id(claim.goal_id)
                 return self.theorem
 
-        assert False, f"unable to find theorem {name}"
+        assert False, f'unable to find theorem {name}'
 
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
-        assert len(args) >= 1, f"expecting at least one argument"
+        assert len(args) >= 1, f'expecting at least one argument'
 
         hypothesis_names = list(args[:-1])
         theorem_name = args[-1]
@@ -333,7 +333,7 @@ class FromTactic(Tactic):
 
         # add a local claim
         theorem_conclusion_as_essential = \
-            EssentialStatement(ClaimTactic.find_free_theorem_name(state, "hyp-"), theorem_conclusion.terms)
+            EssentialStatement(ClaimTactic.find_free_theorem_name(state, 'hyp-'), theorem_conclusion.terms)
         local_theorem = Theorem(state.composer, theorem_conclusion_as_essential)
         phantom_goal = state.add_claim(local_theorem, is_local=True)
         state.resolve_top_goal(self)  # directly resolve it
@@ -341,13 +341,13 @@ class FromTactic(Tactic):
         # initialize all hypotheses
         hypotheses = self.init_hypotheses(state, phantom_goal, hypothesis_names)
         assert len(theorem.context.essentials) == len(hypotheses), \
-               f"not enough hypotheses is given for theorem {theorem_name}, expecting {len(theorem.context.essentials)}, given {len(hypotheses)}"
+               f'not enough hypotheses is given for theorem {theorem_name}, expecting {len(theorem.context.essentials)}, given {len(hypotheses)}'
 
         # unify the essentials
         equations = []
         for theorem_essential, hypothesis in zip(theorem_essentials, hypotheses):
             assert len(theorem_essential.terms) == len(hypothesis.statement.terms), \
-                   f"unable to unify hypotheses {theorem_essential} and {hypothesis.statement}"
+                   f'unable to unify hypotheses {theorem_essential} and {hypothesis.statement}'
             equations.extend(list(zip(theorem_essential.terms, hypothesis.statement.terms)))
 
         result = Tactic.unify(state, equations)

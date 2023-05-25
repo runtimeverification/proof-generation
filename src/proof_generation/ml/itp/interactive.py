@@ -18,9 +18,9 @@ from ml.utils.ansi import ANSI
 import ml.itp.auto
 import ml.itp.tactics
 
-readline.parse_and_bind("tab: complete")
+readline.parse_and_bind('tab: complete')
 
-TAB = "  "
+TAB = '  '
 
 HandlerT = Callable[..., Any]
 
@@ -51,12 +51,12 @@ class BuiltinCommand:
         lines = []
 
         for command in BuiltinCommand.builtin_commands:
-            lines.append("{}{} - {}".format(TAB, "/".join(command.names), command.help_message))
+            lines.append('{}{} - {}'.format(TAB, '/'.join(command.names), command.help_message))
 
         print("""\
 usage:
 {}<tactic> [options] - apply a tactic
-{}""".format(TAB, "\n".join(lines)))
+{}""".format(TAB, '\n'.join(lines)))
 
 
 class InteractiveState:
@@ -72,7 +72,7 @@ class InteractiveState:
         composer = Composer()
         database = load_database(theory_path, include_proof=False)
         goal = composer.load(database, stop_at=goal_name)
-        assert goal is not None, f"failed to load goal {goal_name}"
+        assert goal is not None, f'failed to load goal {goal_name}'
 
         composer.remove_theorem(goal_name)
 
@@ -82,7 +82,7 @@ class InteractiveState:
         self.proof_state: ProofState = ProofState(composer, goal.statement)
 
         # initialize completer
-        readline.set_completer_delims(" ")
+        readline.set_completer_delims(' ')
         readline.set_completer(self.command_completer)
 
     def command_completer(self, text: str, state: int) -> Optional[str]:
@@ -95,7 +95,7 @@ class InteractiveState:
         theorem_names.sort()
 
         current_buffer = readline.get_line_buffer().lstrip()
-        split = current_buffer.split("&")[-1].split("|")[-1].lstrip().split(" ")
+        split = current_buffer.split('&')[-1].split('|')[-1].lstrip().split(' ')
 
         if len(split) > 1:
             filtered_names = [name for name in theorem_names if name.startswith(text)]
@@ -105,7 +105,7 @@ class InteractiveState:
             else:
                 filtered_names = [name for name in theorem_names if name.startswith(text)]
         else:
-            filtered_names = [name + " " for name in command_names if name.startswith(text)]
+            filtered_names = [name + ' ' for name in command_names if name.startswith(text)]
 
         if state < len(filtered_names):
             return filtered_names[state]
@@ -116,7 +116,7 @@ class InteractiveState:
         self.print_state()
         while True:
             try:
-                tactical_src = input("> ").strip()
+                tactical_src = input('> ').strip()
                 if not tactical_src:
                     continue
 
@@ -167,7 +167,7 @@ class InteractiveState:
         # print all current inline claims
         global_claims = self.proof_state.get_all_global_claims()
         if len(global_claims):
-            lines = ["claim(s):"]
+            lines = ['claim(s):']
 
             for claim in global_claims:
                 if len(claim.theorem.context.essentials) == 0:
@@ -175,14 +175,14 @@ class InteractiveState:
                 else:
                     for i, essential in enumerate(claim.theorem.context.essentials):
                         line = TAB
-                        if i == 0: line += "${ "
-                        else: line += "   "
+                        if i == 0: line += '${ '
+                        else: line += '   '
                         line += str(essential)
                         lines.append(line)
 
-                    lines.append(TAB + "   " + str(claim.theorem.statement) + " $}")
+                    lines.append(TAB + '   ' + str(claim.theorem.statement) + ' $}')
 
-            segments.append("\n".join(lines))
+            segments.append('\n'.join(lines))
 
         # print all current goals
         current_goals = self.proof_state.get_current_goal_statements()
@@ -194,11 +194,11 @@ class InteractiveState:
 
             if len(essentials) or len(local_claims) or len(disjoints):
                 segments.append(
-                    "\n".join(
+                    '\n'.join(
                         [
-                            "hypotheses:",
+                            'hypotheses:',
                             *[
-                                TAB + "$d " + " ".join(map(str, disjoint.metavariables)) + " $."
+                                TAB + '$d ' + ' '.join(map(str, disjoint.metavariables)) + ' $.'
                                 for disjoint in disjoints
                             ],
                             *[TAB + str(essential.statement) for essential in essentials],
@@ -208,33 +208,33 @@ class InteractiveState:
                 )
 
             segments.append(
-                "\n".join(
+                '\n'.join(
                     [
-                        "goal(s):",
+                        'goal(s):',
                         *[
-                            f"{TAB}{ANSI.in_bold(goal)}" if i == 0 else f"{TAB}{goal}"
+                            f'{TAB}{ANSI.in_bold(goal)}' if i == 0 else f'{TAB}{goal}'
                             for i, goal in enumerate(current_goals)
                         ],
                     ]
                 )
             )
         else:
-            segments.append("no goals left!")
+            segments.append('no goals left!')
 
-        separator = "===================="
-        print(separator + "\n" + f"\n{separator}\n".join(segments))
+        separator = '===================='
+        print(separator + '\n' + f'\n{separator}\n'.join(segments))
 
-    @BuiltinCommand.add("reload", help_message="reload the theory file and re-apply all tactics")
+    @BuiltinCommand.add('reload', help_message='reload the theory file and re-apply all tactics')
     def command_reload(self) -> None:
-        ans = input(f"are you sure to reload {self.init_theory_path}? (y/n) <n> ")
-        if ans.strip().lower() != "y":
+        ans = input(f'are you sure to reload {self.init_theory_path}? (y/n) <n> ')
+        if ans.strip().lower() != 'y':
             return
 
         if len(self.undo_states):
-            print("re-applying the following script:")
-            print("==================")
+            print('re-applying the following script:')
+            print('==================')
             self.command_script()
-            print("==================")
+            print('==================')
 
         old_tacticals = [tactical for _, tactical in self.undo_states]
         self.init_from_theory_and_goal(self.init_theory_path, self.init_goal.statement.label)
@@ -243,85 +243,85 @@ class InteractiveState:
 
         # re-apply all tactics
         for tactical in old_tacticals:
-            print(f"applying the tactical: {tactical}")
+            print(f'applying the tactical: {tactical}')
             self.apply_tactical(tactical)
 
         if len(self.undo_states) == 0:
             self.print_state()
 
-    @BuiltinCommand.add("undo", help_message="undo a tactic")
+    @BuiltinCommand.add('undo', help_message='undo a tactic')
     def command_undo(self) -> None:
         if len(self.undo_states):
             old_state, tactical = self.undo_states.pop()
             self.redo_states.append((self.proof_state, tactical))
-            print(f"undoing tactical {tactical}")
+            print(f'undoing tactical {tactical}')
             self.proof_state = old_state
             self.print_state()
         else:
-            print("no previous state")
+            print('no previous state')
 
-    @BuiltinCommand.add("redo", help_message="redo a tactic")
+    @BuiltinCommand.add('redo', help_message='redo a tactic')
     def command_redo(self) -> None:
         if len(self.redo_states):
             new_state, tactical = self.redo_states.pop()
             self.undo_states.append((self.proof_state, tactical))
-            print(f"redoing tactical `{tactical}`")
+            print(f'redoing tactical `{tactical}`')
             self.proof_state = new_state
             self.print_state()
         else:
-            print("no newer state")
+            print('no newer state')
 
-    @BuiltinCommand.add("goal", help_message="print the current goal(s)")
+    @BuiltinCommand.add('goal', help_message='print the current goal(s)')
     def command_goal(self) -> None:
         self.print_state()
 
-    @BuiltinCommand.add("proof", help_message="once all goals are resolved, print the final proof")
+    @BuiltinCommand.add('proof', help_message='once all goals are resolved, print the final proof')
     def command_proof(self, output_file: Optional[str] = None) -> None:
         proof = self.proof_state.gen_proof()
         stmt = proof.as_compressed_statement(self.goal_name, self.proof_state.composer.context)
         proof_text = Encoder.encode_string(stmt)
 
         if output_file is not None:
-            with open(output_file, "w") as output:
+            with open(output_file, 'w') as output:
                 output.write(proof_text)
         else:
             print(proof_text)
 
-    @BuiltinCommand.add("proof-uncompressed", help_message="once all goals are resolved, print the uncompressed proof")
+    @BuiltinCommand.add('proof-uncompressed', help_message='once all goals are resolved, print the uncompressed proof')
     def command_proof_uncompressed(self, output_file: Optional[str] = None) -> None:
         proof = self.proof_state.gen_proof()
         stmt = proof.as_statement(self.goal_name)
         proof_text = Encoder.encode_string(stmt)
 
         if output_file is not None:
-            with open(output_file, "w") as output:
+            with open(output_file, 'w') as output:
                 output.write(proof_text)
         else:
             print(proof_text)
 
-    @BuiltinCommand.add("script", help_message="print all tactics applied")
+    @BuiltinCommand.add('script', help_message='print all tactics applied')
     def command_script(self) -> None:
-        print("\n".join(map(lambda t: str(t[1]), self.undo_states)))
+        print('\n'.join(map(lambda t: str(t[1]), self.undo_states)))
 
-    @BuiltinCommand.add("help", help_message="print this help message")
+    @BuiltinCommand.add('help', help_message='print this help message')
     def command_help(self) -> None:
         BuiltinCommand.print_help()
-        print("\navailable tactics:")
+        print('\navailable tactics:')
         for name, (_, help_msg) in self.proof_state.all_tactics.items():
             print(f"{TAB}{name} - {help_msg or '<no help message>'}")
 
-    @BuiltinCommand.add("q", "quit", "exit", help_message="quit itp")
+    @BuiltinCommand.add('q', 'quit', 'exit', help_message='quit itp')
     def command_quit(self) -> None:
         try:
-            ans = input("\nquit? (y/n) <n> ")
+            ans = input('\nquit? (y/n) <n> ')
 
         except EOFError:
-            print("okay...")
+            print('okay...')
             exit(1)
 
         except KeyboardInterrupt:
-            print("okay...")
+            print('okay...')
             exit(1)
 
-        if ans.strip().lower() == "y":
+        if ans.strip().lower() == 'y':
             exit(0)

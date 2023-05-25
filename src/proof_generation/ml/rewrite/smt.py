@@ -12,7 +12,7 @@ from .env import KoreComposer, ProofGenerator, ProvableClaim
 @dataclass
 class SMTOption:
     prelude_file: Optional[str] = None
-    tactic: str = "default"
+    tactic: str = 'default'
     timeout: Optional[int] = None  # in ms
 
 
@@ -36,25 +36,25 @@ class SMTProofGenerator(ProofGenerator):
     }
 
     SMT_HOOK_TO_SMT_FUNCTION: Dict[str, Callable[..., z3.AstRef]] = {
-        "(^ #1 #2)": lambda x, y: x**y,
-        "(gcd #1 #2)": lambda x, y: z3.Function("gcd", z3.IntSort(), z3.IntSort(), z3.IntSort())(x, y),
-        "(ite (< #1 0) (- 0 #1) #1)": lambda x: z3.If(x < 0, -x, x),
-        "distinct": lambda *args: z3.Distinct(*args),
+        '(^ #1 #2)': lambda x, y: x**y,
+        '(gcd #1 #2)': lambda x, y: z3.Function('gcd', z3.IntSort(), z3.IntSort(), z3.IntSort())(x, y),
+        '(ite (< #1 0) (- 0 #1) #1)': lambda x: z3.If(x < 0, -x, x),
+        'distinct': lambda *args: z3.Distinct(*args),
     }
 
     SEED_0 = z3.ParamsRef()
-    SEED_0.set("random_seed", 0)
+    SEED_0.set('random_seed', 0)
 
     # TODO: actually write a parser
     TACTIC_MAP = {
-        "default":
-        z3.Tactic("default"),
-        "(and-then qfnra-nlsat default)":
-        z3.AndThen(z3.Tactic("qfnra-nlsat"), z3.Tactic("default")),
-        "(! default :random_seed 0)":
-        z3.WithParams(z3.Tactic("default"), SEED_0),
-        "(! (and-then qfnra-nlsat default) :random_seed 0)":
-        z3.WithParams(z3.AndThen(z3.Tactic("qfnra-nlsat"), z3.Tactic("default")), SEED_0),
+        'default':
+        z3.Tactic('default'),
+        '(and-then qfnra-nlsat default)':
+        z3.AndThen(z3.Tactic('qfnra-nlsat'), z3.Tactic('default')),
+        '(! default :random_seed 0)':
+        z3.WithParams(z3.Tactic('default'), SEED_0),
+        '(! (and-then qfnra-nlsat default) :random_seed 0)':
+        z3.WithParams(z3.AndThen(z3.Tactic('qfnra-nlsat'), z3.Tactic('default')), SEED_0),
     }
 
     def __init__(
@@ -65,12 +65,12 @@ class SMTProofGenerator(ProofGenerator):
         super().__init__(composer)
 
         assert option.tactic in SMTProofGenerator.TACTIC_MAP, \
-               f"unsupported tactic {option.tactic}"
+               f'unsupported tactic {option.tactic}'
         tactic = SMTProofGenerator.TACTIC_MAP[option.tactic]
 
         self.solver = tactic.solver()
         if option.timeout is not None:
-            self.solver.set("timeout", option.timeout)
+            self.solver.set('timeout', option.timeout)
         self.prelude_formulas = []
 
         # TODO: this only supports formulas (but no declarations and options)
@@ -96,12 +96,12 @@ class SMTProofGenerator(ProofGenerator):
         self.solver.add(z3.Not(encoded_predicate))
 
         result = self.solver.check()
-        print(f"smt query {result}:", encoded_predicate)
+        print(f'smt query {result}:', encoded_predicate)
 
         self.solver.pop()
 
         if result == z3.unsat:
-            return self.composer.load_fresh_claim_placeholder(f"smt-query", predicate)
+            return self.composer.load_fresh_claim_placeholder(f'smt-query', predicate)
         else:
             return None
 
@@ -148,10 +148,10 @@ class SMTProofGenerator(ProofGenerator):
             return abstraction_map[predicate]
 
         abstraction_map[predicate] = z3.FreshBool()
-        print(f"abstracting predicate with variable {abstraction_map[predicate]}: {predicate}")
+        print(f'abstracting predicate with variable {abstraction_map[predicate]}: {predicate}')
         return abstraction_map[predicate]
 
-        # assert False, f"unable to encode predicate {predicate}"
+        # assert False, f'unable to encode predicate {predicate}'
 
     def encode_term(self, term: kore.Pattern, abstraction_map: Dict[kore.Pattern, z3.BoolRef]) -> z3.AstRef:
         """
@@ -166,12 +166,12 @@ class SMTProofGenerator(ProofGenerator):
 
             sort_id = sort.get_sort_id()
 
-            if sort_id == "SortInt":
+            if sort_id == 'SortInt':
                 return int(literal.content)
 
-            elif sort_id == "SortBool":
-                assert literal.content == "true" or literal.content == "false"
-                return literal.content == "true"
+            elif sort_id == 'SortBool':
+                assert literal.content == 'true' or literal.content == 'false'
+                return literal.content == 'true'
 
         elif isinstance(term, kore.Application):
             symbol_name = term.symbol.get_symbol_name()
@@ -184,8 +184,8 @@ class SMTProofGenerator(ProofGenerator):
             definition = term.symbol.definition
 
             # TODO: hacky, fix this
-            if isinstance(definition, kore.SymbolDefinition) and definition.has_attribute("smt-hook"):
-                smt_hook = definition.get_attribute_by_symbol("smt-hook")
+            if isinstance(definition, kore.SymbolDefinition) and definition.has_attribute('smt-hook'):
+                smt_hook = definition.get_attribute_by_symbol('smt-hook')
                 assert smt_hook is not None
 
                 smt_hook_arg = smt_hook.arguments[0]
@@ -193,7 +193,7 @@ class SMTProofGenerator(ProofGenerator):
                 template = smt_hook_arg.content
 
                 assert template in SMTProofGenerator.SMT_HOOK_TO_SMT_FUNCTION, \
-                       f"unsupported SMT hook {template} for {term}"
+                       f'unsupported SMT hook {template} for {term}'
 
                 return SMTProofGenerator.SMT_HOOK_TO_SMT_FUNCTION[template](
                     *(self.encode_term(arg, abstraction_map) for arg in term.arguments)
@@ -203,20 +203,20 @@ class SMTProofGenerator(ProofGenerator):
             assert isinstance(term.sort, kore.SortInstance)
             sort_id = term.sort.get_sort_id()
 
-            if sort_id == "SortInt":
+            if sort_id == 'SortInt':
                 return z3.Int(term.name)
 
-            elif sort_id == "SortBool":
+            elif sort_id == 'SortBool':
                 return z3.Bool(term.name)
 
         sort = KoreUtils.infer_sort(term)
 
-        if isinstance(sort, kore.SortInstance) and sort.get_sort_id() == "SortBool":
+        if isinstance(sort, kore.SortInstance) and sort.get_sort_id() == 'SortBool':
             if term in abstraction_map:
                 return abstraction_map[term]
 
             abstraction_map[term] = z3.FreshBool()
-            print(f"abstracting term with variable {abstraction_map[term]}: {term}")
+            print(f'abstracting term with variable {abstraction_map[term]}: {term}')
             return abstraction_map[term]
 
-        assert False, f"unable to encode term {term}"
+        assert False, f'unable to encode term {term}'

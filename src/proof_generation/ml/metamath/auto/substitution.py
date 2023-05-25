@@ -19,9 +19,9 @@ class SubstitutionProver:
         subst_var: Metavariable,
     ) -> StructuredStatement:
         return ProvableStatement(
-            "",
+            '',
             (
-                Application("#Substitution"),
+                Application('#Substitution'),
                 after_pattern,
                 before_pattern,
                 subst_pattern,
@@ -30,7 +30,7 @@ class SubstitutionProver:
         )
 
     @staticmethod
-    @Composer.add_hook("index")
+    @Composer.add_hook('index')
     def hook_index(composer: Composer, theorem: Theorem) -> None:
         substitution_lemma_info = SubstitutionProver.destruct_substitution_lemma(theorem)
         if substitution_lemma_info is not None:
@@ -44,7 +44,7 @@ class SubstitutionProver:
                     composer.substitution_lemmas[symbol] = theorem, order
 
     @staticmethod
-    @Composer.add_hook("remove")
+    @Composer.add_hook('remove')
     def hook_remove(composer: Composer, name: str) -> None:
         composer.substitution_lemmas = {
             symbol: (theorem, order)
@@ -66,7 +66,7 @@ class SubstitutionProver:
 
         head, after_pattern, before_pattern, subst_pattern, subst_var = theorem.statement.terms
 
-        if head != Application("#Substitution"):
+        if head != Application('#Substitution'):
             return None
 
         if not isinstance(after_pattern, Application) or \
@@ -85,7 +85,7 @@ class SubstitutionProver:
                 return None
 
             head, after_pattern2, before_pattern2, subst_pattern2, subst_var2 = essential.terms
-            if head != Application("#Substitution"):
+            if head != Application('#Substitution'):
                 return None
 
             if not isinstance(after_pattern2, Metavariable) or \
@@ -152,7 +152,7 @@ class SubstitutionProver:
             for index in indices:
                 assert index < len(after_pattern.subterms) and \
                        index < len(before_pattern.subterms), \
-                       f"ill-formed substitution lemma {theorem.statement}"
+                       f'ill-formed substitution lemma {theorem.statement}'
 
                 sub_after_pattern = after_pattern.subterms[index]
                 sub_before_pattern = before_pattern.subterms[index]
@@ -218,7 +218,7 @@ class SubstitutionProver:
 
         assert subst_var2 == subst_var1
 
-        return composer.get_theorem("notation-substitution").apply(
+        return composer.get_theorem('notation-substitution').apply(
             proof,
             NotationProver.prove_notation(composer, after_pattern1, after_pattern2),
             NotationProver.prove_notation(composer, before_pattern1, before_pattern2),
@@ -229,7 +229,7 @@ class SubstitutionProver:
     def check_and_cache(composer: Composer, proof: Proof) -> Proof:
         if len(composer.get_all_essentials()) != 0:
             return proof
-        return composer.cache_proof("substitution", proof)
+        return composer.cache_proof('substitution', proof)
 
     @staticmethod
     def prove_substitution(
@@ -241,7 +241,7 @@ class SubstitutionProver:
         hypotheses: List[Theorem] = [],
     ) -> Proof:
         target = SubstitutionProver.get_target(after_pattern, before_pattern, subst_pattern, subst_var)
-        cached_proof = composer.lookup_proof_cache("substitution", target)
+        cached_proof = composer.lookup_proof_cache('substitution', target)
         if cached_proof is not None:
             return cached_proof
 
@@ -255,7 +255,7 @@ class SubstitutionProver:
                     before_pattern,
                     subst_pattern,
                     subst_var,
-                    proof=composer.get_theorem("substitution-var-same").apply(
+                    proof=composer.get_theorem('substitution-var-same').apply(
                         xX=subst_var,
                         ph0=subst_pattern,
                     ),
@@ -272,7 +272,7 @@ class SubstitutionProver:
                     before_pattern,
                     subst_pattern,
                     subst_var,
-                    proof=composer.get_theorem("substitution-identity").apply(
+                    proof=composer.get_theorem('substitution-identity').apply(
                         xX=subst_var,
                         ph0=before_pattern,
                     ),
@@ -291,7 +291,7 @@ class SubstitutionProver:
                     before_pattern,
                     subst_pattern,
                     subst_var,
-                    proof=composer.get_theorem("substitution-disjoint").apply(
+                    proof=composer.get_theorem('substitution-disjoint').apply(
                         xX=subst_var,
                         ph0=before_pattern,
                         ph1=subst_pattern,
@@ -312,7 +312,7 @@ class SubstitutionProver:
             if proof is not None:
                 return SubstitutionProver.check_and_cache(composer, proof)
 
-        if TypecodeProver.prove_typecode(composer, "#Symbol", before_pattern) is not None:
+        if TypecodeProver.prove_typecode(composer, '#Symbol', before_pattern) is not None:
             return SubstitutionProver.check_and_cache(
                 composer,
                 SubstitutionProver.modulo_notation(
@@ -321,7 +321,7 @@ class SubstitutionProver:
                     before_pattern,
                     subst_pattern,
                     subst_var,
-                    proof=composer.get_theorem("substitution-symbol").apply(
+                    proof=composer.get_theorem('substitution-symbol').apply(
                         xX=subst_var,
                         ph0=subst_pattern,
                         sg0=before_pattern,
@@ -330,13 +330,13 @@ class SubstitutionProver:
             )
 
         if isinstance(before_pattern, Metavariable):
-            # TypecodeProver.prove_typecode(composer, "#Pattern", before_pattern) is not None:
+            # TypecodeProver.prove_typecode(composer, '#Pattern', before_pattern) is not None:
             # try to find a hypothesis that says so
             for hypothesis in hypotheses:
                 if hypothesis.statement.terms == target.terms:
                     return hypothesis.apply()
 
-        assert False, f"unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}"
+        assert False, f'unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}'
 
     @staticmethod
     def prove_substitution_statement(
@@ -348,7 +348,7 @@ class SubstitutionProver:
 
         assert len(
             statement.terms
-        ) == 5 and statement.terms[0] == Application("#Substitution"), f"not a substitution goal {statement}"
+        ) == 5 and statement.terms[0] == Application('#Substitution'), f'not a substitution goal {statement}'
         _, after, before, pattern, var = statement.terms
         assert isinstance(var, Metavariable)
         return SubstitutionProver.prove_substitution(

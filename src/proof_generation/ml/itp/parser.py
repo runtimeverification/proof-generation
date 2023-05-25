@@ -34,7 +34,7 @@ class ASTTransformer(Transformer[Tactical]):
         for arg in args:
             if isinstance(arg, tuple):
                 key, value = arg
-                assert key not in keyword_args, f"duplicate keyword {key}"
+                assert key not in keyword_args, f'duplicate keyword {key}'
                 keyword_args[key] = value
             else:
                 positional_args.append(arg)
@@ -110,9 +110,9 @@ value: STRING_LITERAL -> string
 
 tactical_parser = Lark(
     syntax,
-    start="tactical_or_empty",
-    parser="lalr",
-    lexer="standard",
+    start='tactical_or_empty',
+    parser='lalr',
+    lexer='standard',
     propagate_positions=True,
 )
 

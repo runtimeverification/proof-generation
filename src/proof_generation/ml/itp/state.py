@@ -30,7 +30,7 @@ from ml.metamath.auto.typecode import TypecodeProver
 
 from .extension import SchematicVariable
 
-StmtT = TypeVar("StmtT", bound=StructuredStatement)
+StmtT = TypeVar('StmtT', bound=StructuredStatement)
 
 
 class NoStateChangeException(Exception):
@@ -64,7 +64,7 @@ class Goal:
 
     @staticmethod
     def sanitize_goal_statement(statement: StructuredStatement, claim_label: Optional[str] = None) -> ProvableStatement:
-        label = "" if claim_label is None else f"[{claim_label}]"
+        label = '' if claim_label is None else f'[{claim_label}]'
         return ProvableStatement(label, statement.terms)
 
 
@@ -110,7 +110,7 @@ class ProofState:
         return decorator
 
     def get_tactic(self, name: str) -> Type[Tactic]:
-        assert name in ProofState.all_tactics, f"tactic {name} not found"
+        assert name in ProofState.all_tactics, f'tactic {name} not found'
         return ProofState.all_tactics[name].tactic_cls
 
     def __init__(self, composer: Composer, init_goal: StructuredStatement):
@@ -176,7 +176,7 @@ class ProofState:
             self.goal_dependencies[parent.goal_id] = []
 
         self.goal_dependencies[parent.goal_id].append(child.goal_id)
-        assert not self.has_dependency_cycle_from(parent), f"depdendency cycle detected from goal {parent.statement}"
+        assert not self.has_dependency_cycle_from(parent), f'depdendency cycle detected from goal {parent.statement}'
 
     def get_goal_dependencies(self, goal: Goal) -> List[Goal]:
         if goal.goal_id not in self.goal_dependencies:
@@ -208,7 +208,7 @@ class ProofState:
         return self.all_goals[goal_id]
 
     def get_top_goal(self) -> Goal:
-        assert len(self.current_goals), "no goals left"
+        assert len(self.current_goals), 'no goals left'
         return self.get_goal_by_id(self.current_goals[-1])
 
     def get_current_goal_statements(self) -> List[ProvableStatement]:
@@ -226,7 +226,7 @@ class ProofState:
         return self.get_top_goal().claim_label
 
     def resolve_top_goal(self, tactic: Tactic) -> Goal:
-        assert len(self.current_goals), "no goals left"
+        assert len(self.current_goals), 'no goals left'
         resolved_goal_id = self.current_goals.pop()
         self.goal_resolver[resolved_goal_id] = tactic
         return self.get_goal_by_id(resolved_goal_id)
@@ -287,7 +287,7 @@ class ProofState:
 
     def get_next_schematic_variable(self, typecode: str) -> SchematicVariable:
         num = len(self.schematic_vars)
-        var = SchematicVariable(f"${num}", typecode, num)
+        var = SchematicVariable(f'${num}', typecode, num)
         self.schematic_vars.append(var)
         return var
 
@@ -295,7 +295,7 @@ class ProofState:
         return self.schematic_vars[num]
 
     def get_schematic_variable_from_name(self, name: str) -> Optional[SchematicVariable]:
-        if name.startswith("$"):
+        if name.startswith('$'):
             return self.get_nth_schematic_variable(int(name[1:]))
         else:
             return None
@@ -304,13 +304,13 @@ class ProofState:
         # check validity of the substitution
         for var, term in subst.items():
             svar = self.get_schematic_variable_from_name(var)
-            assert svar is not None, f"{var} is not a schematic variable"
+            assert svar is not None, f'{var} is not a schematic variable'
             assert svar.num < len(self.schematic_vars)
 
             if svar.num in self.schematic_var_assignment:
                 assert (
                     self.schematic_var_assignment[svar.num] == term
-                ), f"both {self.schematic_var_assignment[svar.num]} and {term} are assigned to the schematic variable {svar}"
+                ), f'both {self.schematic_var_assignment[svar.num]} and {term} are assigned to the schematic variable {svar}'
             else:
                 self.schematic_var_assignment[svar.num] = term
 
@@ -340,7 +340,7 @@ class ProofState:
         """
 
         if isinstance(term, SchematicVariable):
-            assert (term.num in self.schematic_var_assignment), f"schematic variable {term.name} has not been assigned"
+            assert (term.num in self.schematic_var_assignment), f'schematic variable {term.name} has not been assigned'
             return self.resolve_schematic_variables(self.schematic_var_assignment[term.num])
 
         metavars = term.get_metavariables()
@@ -383,10 +383,10 @@ class ProofState:
         Generate a proof for the given goal by tracing
         through the DAG and obtaining subproofs
         """
-        assert (goal.goal_id not in trace), f"proof of goal {goal.statement} depends on itself"
+        assert (goal.goal_id not in trace), f'proof of goal {goal.statement} depends on itself'
 
         subproofs = [self.gen_proof_for_goal(dep, trace + [goal.goal_id]) for dep in self.get_goal_dependencies(goal)]
-        assert goal.goal_id in self.goal_resolver, "goal not resolved yet"
+        assert goal.goal_id in self.goal_resolver, 'goal not resolved yet'
         tactic = self.goal_resolver[goal.goal_id]
 
         return tactic.resolve(self, subproofs)
@@ -395,7 +395,7 @@ class ProofState:
         """
         Generate the proof for the initial goal
         """
-        assert not self.current_goals, "non empty goal stack"
+        assert not self.current_goals, 'non empty goal stack'
         init_goal = self.get_goal_by_id(0)
         return self.gen_proof_for_goal(init_goal)
 
@@ -442,14 +442,14 @@ class Tactic:
     def check_schematic_substitution(state: ProofState, substitution: Mapping[str, Term]) -> bool:
         for var, term in substitution.items():
             svar = state.get_schematic_variable_from_name(var)
-            assert svar is not None, f"missing schematic variable {svar}"
+            assert svar is not None, f'missing schematic variable {svar}'
             if not TypecodeProver.check_typecode(
                     state.composer,
                     svar.typecode,
                     term,
                     extension=lambda typecode, term: Tactic.typcode_extension(state, typecode, term),
             ):
-                if svar.typecode == "#Pattern" and isinstance(term, Application):
+                if svar.typecode == '#Pattern' and isinstance(term, Application):
                     continue
                 return False
         return True
@@ -488,7 +488,7 @@ class Tactic:
                 return None
             _, left, _, right = result
 
-            assert left.symbol == right.symbol, f"{left} != {right}"
+            assert left.symbol == right.symbol, f'{left} != {right}'
             applied_notation = True
 
             return [(left, right)]

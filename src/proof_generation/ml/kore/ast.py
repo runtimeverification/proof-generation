@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 from ml.utils.visitor import Visitor, TreeT, ResultT
 
-ParentT = TypeVar("ParentT")
+ParentT = TypeVar('ParentT')
 """
 Visits a Kore AST in post-order traversal
 """
@@ -36,7 +36,7 @@ class BaseAST(Generic[ParentT]):
 
     def get_parent(self) -> ParentT:
         if self.meta_parent is None:
-            self.error_with_position("does not have a parent")
+            self.error_with_position('does not have a parent')
             assert False  # to make mypy happy
         else:
             return self.meta_parent
@@ -46,7 +46,7 @@ class BaseAST(Generic[ParentT]):
 
     def error_with_position(self, msg: str, *args: Any, **kwargs: Any) -> NoReturn:
         if BaseAST.INCLUDE_PARSING_INFO:
-            err_msg = "at line {}, column {}: {}".format(self.meta_line, self.meta_column, msg.format(*args, **kwargs))
+            err_msg = 'at line {}, column {}: {}'.format(self.meta_line, self.meta_column, msg.format(*args, **kwargs))
         else:
             err_msg = msg.format(*args, **kwargs)
         raise Exception(err_msg)
@@ -111,7 +111,7 @@ class Definition(BaseAST[None], AttributeMixin):
         return visitor.postvisit_definition(self, *children)  # type: ignore
 
     def __str__(self) -> str:
-        return "definition {{\n{}\n}}".format("\n".join(map(str, self.module_map.values())))
+        return 'definition {{\n{}\n}}'.format('\n'.join(map(str, self.module_map.values())))
 
 
 class Module(BaseAST[Definition], AttributeMixin):
@@ -173,7 +173,7 @@ class Module(BaseAST[Definition], AttributeMixin):
         elif isinstance(sentence, Axiom):
             self.axioms.append(sentence)
         else:
-            raise Exception("unknown sentence type {}".format(type(sentence)))
+            raise Exception('unknown sentence type {}'.format(type(sentence)))
 
     def remove_sentence(self, sentence: Sentence) -> None:
         assert sentence in self.all_sentences
@@ -210,7 +210,7 @@ class Module(BaseAST[Definition], AttributeMixin):
         return visitor.postvisit_module(self, *children)  # type: ignore
 
     def __str__(self) -> str:
-        return "module {} {{\n{}\n}}".format(self.name, "\n".join(map(str, self.all_sentences)))
+        return 'module {} {{\n{}\n}}'.format(self.name, '\n'.join(map(str, self.all_sentences)))
 
 
 class Sentence(BaseAST[Module], AttributeMixin):
@@ -226,7 +226,7 @@ class Pattern(BaseAST[Module]):
         super().__init__()
 
     def __lt__(self, other: Any) -> bool:
-        raise NotImplementedError("__lt__ for ml.kore.ast.Pattern is not implemented.")
+        raise NotImplementedError('__lt__ for ml.kore.ast.Pattern is not implemented.')
 
     def __eq__(self, other: Any) -> bool:
         raise NotImplementedError()
@@ -244,7 +244,7 @@ class ImportStatement(Sentence):
         if isinstance(self.module, str):
             resolved_module = parent.get_parent().get_module_by_name(self.module)
             if resolved_module is None:
-                self.error_with_position("unable to find module {}", self.module)
+                self.error_with_position('unable to find module {}', self.module)
 
             self.module = resolved_module
 
@@ -255,7 +255,7 @@ class ImportStatement(Sentence):
 
     def __str__(self) -> str:
         module_name = (self.module.name if isinstance(self.module, Module) else self.module)
-        return "import {}".format(module_name)
+        return 'import {}'.format(module_name)
 
     def get_module_name(self) -> str:
         if isinstance(self.module, str):
@@ -292,7 +292,7 @@ class SortDefinition(Sentence):
         )
 
     def __str__(self) -> str:
-        return "sort {}({})".format(self.sort_id, ", ".join(map(str, self.sort_variables)))
+        return 'sort {}({})'.format(self.sort_id, ', '.join(map(str, self.sort_variables)))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, SortDefinition): return False
@@ -316,7 +316,7 @@ class SortInstance(BaseAST[Module]):
         if isinstance(self.definition, str):
             resloved_definition = parent.get_sort_by_id(self.definition)
             if resloved_definition is None:
-                self.error_with_position("unable to find sort {}", self.definition)
+                self.error_with_position('unable to find sort {}', self.definition)
 
             self.definition = resloved_definition
 
@@ -345,7 +345,7 @@ class SortInstance(BaseAST[Module]):
 
     def __str__(self) -> str:
         sort_id = (self.definition.sort_id if isinstance(self.definition, SortDefinition) else self.definition)
-        return "{}{{{}}}".format(sort_id, ", ".join(map(str, self.arguments)))
+        return '{}{{{}}}'.format(sort_id, ', '.join(map(str, self.arguments)))
 
     def get_sort_id(self) -> str:
         if isinstance(self.definition, str):
@@ -424,7 +424,7 @@ class SymbolDefinition(Sentence):
         ) < (other.symbol, other.sort_variables, other.input_sorts, other.output_sort)
 
     def __str__(self) -> str:
-        return "symbol {}({}): {}".format(self.symbol, ", ".join(map(str, self.input_sorts)), self.output_sort)
+        return 'symbol {}({}): {}'.format(self.symbol, ', '.join(map(str, self.input_sorts)), self.output_sort)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, SymbolDefinition): return False
@@ -452,7 +452,7 @@ class SymbolInstance(BaseAST[Module]):
             resolved_definition = parent.get_symbol_by_name(self.definition)
             if resolved_definition is None:
                 self.error_with_position(
-                    "unable to find symbol {} in module {}",
+                    'unable to find symbol {} in module {}',
                     self.definition,
                     parent.name,
                 )
@@ -476,7 +476,7 @@ class SymbolInstance(BaseAST[Module]):
 
     def __str__(self) -> str:
         symbol = (self.definition.symbol if isinstance(self.definition, SymbolDefinition) else self.definition)
-        return "{}{{{}}}".format(symbol, ", ".join(map(str, self.sort_arguments)))
+        return '{}{{{}}}'.format(symbol, ', '.join(map(str, self.sort_arguments)))
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, SymbolInstance):
@@ -527,8 +527,8 @@ class Axiom(Sentence):
         )
 
     def __str__(self) -> str:
-        return "{} {{{}}} {}".format(
-            "claim" if self.is_claim else "axiom", ", ".join(map(str, self.sort_variables)), self.pattern
+        return '{} {{{}}} {}'.format(
+            'claim' if self.is_claim else 'axiom', ', '.join(map(str, self.sort_variables)), self.pattern
         )
 
 
@@ -577,7 +577,7 @@ class AliasDefinition(Sentence):
         )
 
     def __str__(self) -> str:
-        return "alias {} where {} := {}".format(self.definition, self.lhs, self.rhs)
+        return 'alias {} where {} := {}'.format(self.definition, self.lhs, self.rhs)
 
 
 class Variable(Pattern):
@@ -616,7 +616,7 @@ class Variable(Pattern):
         return hash(self.name)
 
     def __str__(self) -> str:
-        return "{}:{}".format(self.name, self.sort)
+        return '{}:{}'.format(self.name, self.sort)
 
 
 class StringLiteral(Pattern):
@@ -677,42 +677,42 @@ class Application(Pattern):
         return (self.symbol, self.arguments) < (other.symbol, other.arguments)
 
     def __str__(self) -> str:
-        return "{}({})".format(self.symbol, ", ".join(map(str, self.arguments)))
+        return '{}({})'.format(self.symbol, ', '.join(map(str, self.arguments)))
 
 
 class MLPattern(Pattern):
-    TOP = "\\top"
-    BOTTOM = "\\bottom"
-    NOT = "\\not"
-    AND = "\\and"
-    OR = "\\or"
-    IMPLIES = "\\implies"
-    IFF = "\\iff"
+    TOP = '\\top'
+    BOTTOM = '\\bottom'
+    NOT = '\\not'
+    AND = '\\and'
+    OR = '\\or'
+    IMPLIES = '\\implies'
+    IFF = '\\iff'
 
-    EXISTS = "\\exists"
-    FORALL = "\\forall"
+    EXISTS = '\\exists'
+    FORALL = '\\forall'
 
-    MU = "\\mu"
-    NU = "\\nu"
+    MU = '\\mu'
+    NU = '\\nu'
 
-    CEIL = "\\ceil"
-    FLOOR = "\\floor"
+    CEIL = '\\ceil'
+    FLOOR = '\\floor'
 
-    EQUALS = "\\equals"
-    IN = "\\in"
+    EQUALS = '\\equals'
+    IN = '\\in'
 
-    NEXT = "\\next"
-    ALWAYS = "\\always"
-    CIRCULARITY = "\\circularity"
-    WELL_FOUNDED = "\\well-founded"
+    NEXT = '\\next'
+    ALWAYS = '\\always'
+    CIRCULARITY = '\\circularity'
+    WELL_FOUNDED = '\\well-founded'
 
-    REWRITES = "\\rewrites"
-    REWRITES_STAR = "\\rewrites-star"
-    REWRITES_PLUS = "\\rewrites-plus"
-    ONE_PATH_REACHES_STAR = "\\one-path-reaches-star"
-    ONE_PATH_REACHES_PLUS = "\\one-path-reaches-plus"
+    REWRITES = '\\rewrites'
+    REWRITES_STAR = '\\rewrites-star'
+    REWRITES_PLUS = '\\rewrites-plus'
+    ONE_PATH_REACHES_STAR = '\\one-path-reaches-star'
+    ONE_PATH_REACHES_PLUS = '\\one-path-reaches-plus'
 
-    DV = "\\dv"
+    DV = '\\dv'
 
     NUM_ARGUMENTS = {
         TOP: (1, 0),
@@ -806,8 +806,8 @@ class MLPattern(Pattern):
         )
 
     def __str__(self) -> str:
-        return "{}{{{}}}({})".format(
+        return '{}{{{}}}({})'.format(
             self.construct,
-            ", ".join(map(str, self.sorts)),
-            ", ".join(map(str, self.arguments)),
+            ', '.join(map(str, self.sorts)),
+            ', '.join(map(str, self.arguments)),
         )

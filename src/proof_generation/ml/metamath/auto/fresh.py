@@ -16,10 +16,10 @@ class FreshProver:
 
     @staticmethod
     def construct_target(var: Metavariable, term: Term) -> StructuredStatement:
-        return StructuredStatement("", (Application("#Fresh"), var, term))
+        return StructuredStatement('', (Application('#Fresh'), var, term))
 
     @staticmethod
-    @Composer.add_hook("index")
+    @Composer.add_hook('index')
     def hook_index(composer: Composer, theorem: Theorem) -> None:
         fresh_lemma_info = FreshProver.destruct_fresh_lemma(theorem)
         if fresh_lemma_info is not None:
@@ -28,7 +28,7 @@ class FreshProver:
                 composer.fresh_lemmas[symbol] = theorem, order
 
     @staticmethod
-    @Composer.add_hook("remove")
+    @Composer.add_hook('remove')
     def hook_remove(composer: Composer, name: str) -> None:
         composer.fresh_lemmas = {
             symbol: (theorem, order)
@@ -42,7 +42,7 @@ class FreshProver:
 
         head, var, term = theorem.statement.terms
 
-        if head != Application("#Fresh"):
+        if head != Application('#Fresh'):
             return None
 
         if not isinstance(var, Metavariable) or \
@@ -56,7 +56,7 @@ class FreshProver:
                 return None
 
             head, var2, term2 = essential.terms
-            if head != Application("#Fresh"):
+            if head != Application('#Fresh'):
                 return None
 
             if not isinstance(var2, Metavariable) or \
@@ -75,10 +75,10 @@ class FreshProver:
         target = FreshProver.construct_target(var, term)
 
         if composer.are_terms_disjoint(var, term):
-            return composer.get_theorem("fresh-disjoint").match_and_apply(target)
+            return composer.get_theorem('fresh-disjoint').match_and_apply(target)
 
-        if TypecodeProver.prove_typecode(composer, "#Symbol", term) is not None:
-            return composer.get_theorem("fresh-in-symbol").match_and_apply(target)
+        if TypecodeProver.prove_typecode(composer, '#Symbol', term) is not None:
+            return composer.get_theorem('fresh-in-symbol').match_and_apply(target)
 
         if isinstance(term, Metavariable):
             # try to find a statement in the hypotheses
@@ -87,46 +87,46 @@ class FreshProver:
                     return essential.apply()
 
         assert isinstance(term, Application), \
-               f"unable to prove #Fresh {var} {term}"
+               f'unable to prove #Fresh {var} {term}'
 
-        if term.symbol == "\\bot":
-            return composer.get_theorem("fresh-in-bot").match_and_apply(target)
-        elif term.symbol == "\\imp":
+        if term.symbol == '\\bot':
+            return composer.get_theorem('fresh-in-bot').match_and_apply(target)
+        elif term.symbol == '\\imp':
             left, right = MetamathUtils.destruct_imp(term)
-            return composer.get_theorem("fresh-in-imp").apply(
+            return composer.get_theorem('fresh-in-imp').apply(
                 FreshProver.prove_fresh(composer, var, left),
                 FreshProver.prove_fresh(composer, var, right),
             )
-        elif term.symbol == "\\app":
+        elif term.symbol == '\\app':
             left, right = MetamathUtils.destruct_app(term)
-            return composer.get_theorem("fresh-in-app").apply(
+            return composer.get_theorem('fresh-in-app').apply(
                 FreshProver.prove_fresh(composer, var, left),
                 FreshProver.prove_fresh(composer, var, right),
             )
-        elif term.symbol == "\\exists":
+        elif term.symbol == '\\exists':
             quant_var, body = MetamathUtils.destruct_exists(term)
 
             if var == quant_var:
-                return composer.get_theorem("fresh-in-exists-shadowed").match_and_apply(target)
+                return composer.get_theorem('fresh-in-exists-shadowed').match_and_apply(target)
             elif composer.are_terms_disjoint(var, quant_var):
-                return composer.get_theorem("fresh-in-exists").match_and_apply(
+                return composer.get_theorem('fresh-in-exists').match_and_apply(
                     target,
                     FreshProver.prove_fresh(composer, var, body),
                 )
 
-            assert False, f"unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint"
-        elif term.symbol == "\\mu":
+            assert False, f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint'
+        elif term.symbol == '\\mu':
             quant_var, body = MetamathUtils.destruct_mu(term)
 
             if var == quant_var:
-                return composer.get_theorem("fresh-in-mu-shadowed").match_and_apply(target)
+                return composer.get_theorem('fresh-in-mu-shadowed').match_and_apply(target)
             elif composer.are_terms_disjoint(var, quant_var):
-                return composer.get_theorem("fresh-in-mu").match_and_apply(
+                return composer.get_theorem('fresh-in-mu').match_and_apply(
                     target,
                     FreshProver.prove_fresh(composer, var, body),
                 )
 
-            assert False, f"unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint"
+            assert False, f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint'
 
         # try to find a lemma
         if term.symbol in composer.fresh_lemmas:
@@ -154,7 +154,7 @@ class FreshProver:
 
         _, var, term = statement.terms
         assert isinstance(var, Metavariable), \
-               f"ill-formed #Fresh statement {statement}"
+               f'ill-formed #Fresh statement {statement}'
 
         return FreshProver.prove_fresh(composer, var, term)
 

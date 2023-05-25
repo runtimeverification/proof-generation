@@ -7,7 +7,7 @@ from ml.utils.visitor import TreeT, ResultT, ChildrenResultT, UnionVisitor, Conj
 
 from .ast import *
 
-BaseASTT = TypeVar("BaseASTT", bound=BaseAST[Any])
+BaseASTT = TypeVar('BaseASTT', bound=BaseAST[Any])
 
 
 class VisitorStructure(Generic[TreeT, ResultT]):
@@ -212,7 +212,7 @@ class FullVisitorStructure(VisitorStructure[BaseASTT, ResultT]):
         ]
 
 
-T = TypeVar("T")
+T = TypeVar('T')
 KoreUnionVisitor = UnionVisitor[BaseAST[Any], T]
 
 
@@ -403,7 +403,7 @@ class SortSubstitutionVisitor(KoreVisitor[BaseASTT, BaseASTT], PatternAndSortVis
         for substitute in self.substitution.values():
             for free_sort_var in SortVariableVisitor().visit(substitute):
                 # assert free_sort_var in new_sort_variables, \
-                #        f"free sort variable {free_sort_var} after substitution"
+                #        f'free sort variable {free_sort_var} after substitution'
                 if free_sort_var not in new_sort_variables:
                     new_sort_variables.append(free_sort_var)
 

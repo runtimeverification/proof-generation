@@ -46,12 +46,12 @@ class StandaloneFileBackend(Backend):
         self.path = path
         self.compression = compression
 
-        # assert not os.path.exists(path), f"file {path} already exists"
+        # assert not os.path.exists(path), f'file {path} already exists'
 
         if compression:
-            self.file_handle: TextIO = lzma.open(path, "wt")
+            self.file_handle: TextIO = lzma.open(path, 'wt')
         else:
-            self.file_handle = open(path, "w")
+            self.file_handle = open(path, 'w')
 
     def __enter__(self) -> StandaloneFileBackend:
         return self
@@ -61,7 +61,7 @@ class StandaloneFileBackend(Backend):
 
     def dump_statement(self, segment: SegmentLabel, statement: Statement) -> None:
         Encoder.encode(self.file_handle, statement)
-        self.file_handle.write("\n")
+        self.file_handle.write('\n')
 
     def close(self) -> None:
         self.file_handle.close()
@@ -99,7 +99,7 @@ class MultipleFileBackend(Backend):
                 continue
 
             full_path = os.path.realpath(os.path.join(self.path, file_name))
-            file_handle = open(full_path, "w")
+            file_handle = open(full_path, 'w')
             node = MultipleFileBackend.Node(full_path, file_handle, dependencies)
             self.graph[label] = node
 
@@ -136,7 +136,7 @@ class MultipleFileBackend(Backend):
 
         stream = node.file_handle
         Encoder.encode(stream, statement)
-        stream.write("\n")
+        stream.write('\n')
 
     def close(self) -> None:
         for node in self.graph.values():

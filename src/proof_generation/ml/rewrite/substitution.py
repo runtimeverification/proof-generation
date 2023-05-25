@@ -12,7 +12,7 @@ from .encoder import KoreEncoder
 
 from .env import KoreComposer, ProofGenerator
 
-PAS = TypeVar("PAS", kore.Pattern, kore.Axiom, kore.Sort)
+PAS = TypeVar('PAS', kore.Pattern, kore.Axiom, kore.Sort)
 
 
 class SingleSubstitutionProofGenerator(ProofGenerator):
@@ -83,7 +83,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator):
             before_substitution = self.composer.encode_pattern(original)
 
         goal = mm.StructuredStatement(
-            "",
+            '',
             MetamathUtils.construct_substitution(
                 after_substitution,
                 before_substitution,
@@ -93,6 +93,6 @@ class SingleSubstitutionProofGenerator(ProofGenerator):
         )
 
         proof = SubstitutionProver.prove_substitution_statement(self.composer, goal)
-        proof = self.composer.cache_proof("substitution-cache", proof)
+        proof = self.composer.cache_proof('substitution-cache', proof)
 
         return proof, substituted

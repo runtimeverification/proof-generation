@@ -10,9 +10,9 @@ import argparse
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", nargs="?", help="input kore source, if not set then defaults to stdin")
+    parser.add_argument('input', nargs='?', help='input kore source, if not set then defaults to stdin')
     parser.add_argument(
-        "--definition", action="store_const", const=True, default=False, help="parse input as a definition"
+        '--definition', action='store_const', const=True, default=False, help='parse input as a definition'
     )
     args = parser.parse_args()
 
@@ -30,5 +30,5 @@ def main() -> None:
     KoreUtils.pretty_print(ast)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

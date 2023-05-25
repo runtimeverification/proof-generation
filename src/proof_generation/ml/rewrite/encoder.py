@@ -17,38 +17,38 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
     and constant symbols
     """
 
-    KORE_SYMBOL_PREFIX = "\\kore-symbol-"
-    KORE_SORT_PREFIX = "\\kore-sort-"
-    KORE_ELEMENT_VAR_PREFIX = "kore-element-var-"
-    KORE_SORT_VAR_PREFIX = "kore-sort-var-"
+    KORE_SYMBOL_PREFIX = '\\kore-symbol-'
+    KORE_SORT_PREFIX = '\\kore-sort-'
+    KORE_ELEMENT_VAR_PREFIX = 'kore-element-var-'
+    KORE_SORT_VAR_PREFIX = 'kore-sort-var-'
 
-    TOP = "\\kore-top"
-    BOTTOM = "\\kore-bottom"
-    NOT = "\\kore-not"
-    AND = "\\kore-and"
-    OR = "\\kore-or"
-    IMPLIES = "\\kore-implies"
-    IFF = "\\kore-iff"
-    CEIL = "\\kore-ceil"
-    FLOOR = "\\kore-floor"
-    EQUALS = "\\kore-equals"
-    IN = "\\kore-in"
-    ALWAYS = "\\kore-always"
-    CIRCULARITY = "\\kore-circularity"
-    WELL_FOUNDED = "\\kore-well-founded"
-    REWRITES = "\\kore-rewrites"
-    REWRITES_STAR = "\\kore-rewrites-star"
-    REWRITES_PLUS = "\\kore-rewrites-plus"
-    ONE_PATH_REACHES_STAR = "\\kore-one-path-reaches-star"
-    ONE_PATH_REACHES_PLUS = "\\kore-one-path-reaches-plus"
-    DV = "\\kore-dv"
-    IS_SORT = "\\kore-is-sort"
-    STRING = "\\kore-string"
+    TOP = '\\kore-top'
+    BOTTOM = '\\kore-bottom'
+    NOT = '\\kore-not'
+    AND = '\\kore-and'
+    OR = '\\kore-or'
+    IMPLIES = '\\kore-implies'
+    IFF = '\\kore-iff'
+    CEIL = '\\kore-ceil'
+    FLOOR = '\\kore-floor'
+    EQUALS = '\\kore-equals'
+    IN = '\\kore-in'
+    ALWAYS = '\\kore-always'
+    CIRCULARITY = '\\kore-circularity'
+    WELL_FOUNDED = '\\kore-well-founded'
+    REWRITES = '\\kore-rewrites'
+    REWRITES_STAR = '\\kore-rewrites-star'
+    REWRITES_PLUS = '\\kore-rewrites-plus'
+    ONE_PATH_REACHES_STAR = '\\kore-one-path-reaches-star'
+    ONE_PATH_REACHES_PLUS = '\\kore-one-path-reaches-plus'
+    DV = '\\kore-dv'
+    IS_SORT = '\\kore-is-sort'
+    STRING = '\\kore-string'
 
-    FORALL = "\\kore-forall"
-    EXISTS = "\\kore-exists"
-    FORALL_SORT = "\\kore-forall-sort"
-    VALID = "\\kore-valid"
+    FORALL = '\\kore-forall'
+    EXISTS = '\\kore-exists'
+    FORALL_SORT = '\\kore-forall-sort'
+    VALID = '\\kore-valid'
 
     LOGIC_CONSTRUCT_MAP = {
         kore.MLPattern.TOP: TOP,
@@ -84,8 +84,8 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         else:
             symbol_str = symbol.get_symbol_name()
 
-        if symbol_str == "inj":
-            return "\\kore-inj"
+        if symbol_str == 'inj':
+            return '\\kore-inj'
 
         return KoreEncoder.KORE_SYMBOL_PREFIX + symbol_str
 
@@ -96,8 +96,8 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
         else:
             sort_id = sort.get_sort_id()
 
-        if sort_id == "Unit":
-            return "\\unit-sort"
+        if sort_id == 'Unit':
+            return '\\unit-sort'
 
         return KoreEncoder.KORE_SORT_PREFIX + sort_id
 
@@ -167,13 +167,13 @@ class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):
 
     def postvisit_sort_variable(self, sort_variable: kore.SortVariable) -> mm.Term:
         encoded_var = KoreEncoder.encode_sort_variable(sort_variable)
-        self.metavariables[encoded_var] = "#ElementVariable"
+        self.metavariables[encoded_var] = '#ElementVariable'
         return mm.Metavariable(encoded_var)
 
     def postvisit_variable(self, var: kore.Variable) -> mm.Term:
         encoded_var = KoreEncoder.encode_variable(var)
-        # assert not var.is_set_variable, f"set variables are not supported: {var}"
-        self.metavariables[encoded_var] = "#ElementVariable" if not var.is_set_variable else "#SetVariable"
+        # assert not var.is_set_variable, f'set variables are not supported: {var}'
+        self.metavariables[encoded_var] = '#ElementVariable' if not var.is_set_variable else '#SetVariable'
         return mm.Metavariable(encoded_var)
 
     def postvisit_string_literal(self, literal: kore.StringLiteral) -> mm.Term:
@@ -242,7 +242,7 @@ class KoreDecoder:
 
         assert isinstance(term, mm.Application) and \
                MetamathUtils.is_kore_valid(term), \
-               f"unable to decode {term} as a claim"
+               f'unable to decode {term} as a claim'
 
         sort = self.decode_sort(term.subterms[0])
         body = self.decode_pattern(term.subterms[1], sort)
@@ -258,9 +258,9 @@ class KoreDecoder:
     def decode_pattern(self, term: mm.Term, sort: Optional[kore.Sort] = None) -> kore.Pattern:
         if isinstance(term, mm.Metavariable):
             assert sort is not None, \
-                   f"unable to decode {term} as a pattern variable without sorting information"
+                   f'unable to decode {term} as a pattern variable without sorting information'
             assert term.name.startswith(KoreEncoder.KORE_ELEMENT_VAR_PREFIX), \
-                   f"unable to decode {term} as a pattern variable"
+                   f'unable to decode {term} as a pattern variable'
             return kore.Variable(term.name[len(KoreEncoder.KORE_ELEMENT_VAR_PREFIX):], sort)
 
         assert isinstance(term, mm.Application)
@@ -270,11 +270,11 @@ class KoreDecoder:
             symbol_definition = self.module.get_symbol_by_name(symbol_name)
 
             assert symbol_definition is not None, \
-                   f"unable to decode {term} as a pattern: symbol {symbol_name} not found in module {self.module.name}"
+                   f'unable to decode {term} as a pattern: symbol {symbol_name} not found in module {self.module.name}'
 
             arity = len(symbol_definition.sort_variables) + len(symbol_definition.input_sorts)
             assert len(term.subterms) == arity, \
-                   f"unable to decode {term} as a pattern: unmatched arity"
+                   f'unable to decode {term} as a pattern: unmatched arity'
 
             sort_subterms = term.subterms[:len(symbol_definition.sort_variables)]
             pattern_subterms = term.subterms[len(symbol_definition.sort_variables):]
@@ -299,7 +299,7 @@ class KoreDecoder:
             if kore.MLPattern.is_binder_construct(kore_construct):
                 # <variable sort> <body sort> <variable> <body>
                 assert len(term.subterms) == 4, \
-                       f"unable to decode {term} as pattern: unexpected number of arguments"
+                       f'unable to decode {term} as pattern: unexpected number of arguments'
 
                 binder_var_sort = self.decode_sort(term.subterms[0])
                 body_sort = self.decode_sort(term.subterms[1])
@@ -309,7 +309,7 @@ class KoreDecoder:
                 return kore.MLPattern(kore_construct, [body_sort], [variable, body])
             else:
                 assert len(term.subterms) == num_sort_arguments + num_arguments, \
-                       f"unable to decode {term} as pattern: unexpected number of arguments"
+                       f'unable to decode {term} as pattern: unexpected number of arguments'
 
                 sort_arguments = [self.decode_sort(subterm) for subterm in term.subterms[:num_sort_arguments]]
                 assert len(sort_arguments) != 0
@@ -321,13 +321,13 @@ class KoreDecoder:
 
                 return kore.MLPattern(kore_construct, sort_arguments, pattern_arguments)
 
-        elif term.symbol == "\\kore-inj":
-            inj_definition = self.module.get_symbol_by_name("inj")
+        elif term.symbol == '\\kore-inj':
+            inj_definition = self.module.get_symbol_by_name('inj')
             assert inj_definition is not None, \
-                   f"module {self.module.name} have not defined an injection symbol"
+                   f'module {self.module.name} have not defined an injection symbol'
 
             assert len(term.subterms) == 3, \
-                   f"unable to decode {term} as pattern: unexpected number of arguments"
+                   f'unable to decode {term} as pattern: unexpected number of arguments'
 
             sort1, sort2 = self.decode_sort(term.subterms[0]), self.decode_sort(term.subterms[1])
             argument = self.decode_pattern(term.subterms[2], sort1)
@@ -342,29 +342,29 @@ class KoreDecoder:
             return kore.StringLiteral(value)
 
         else:
-            assert False, f"unable to decode {term} as pattern"
+            assert False, f'unable to decode {term} as pattern'
 
     def decode_sort(self, term: mm.Term) -> kore.Sort:
         if isinstance(term, mm.Metavariable):
             assert term.name.startswith(KoreEncoder.KORE_SORT_VAR_PREFIX), \
-                   f"unable to decode {term} as a sort"
+                   f'unable to decode {term} as a sort'
             return kore.SortVariable(term.name[len(KoreEncoder.KORE_SORT_VAR_PREFIX):])
 
         assert isinstance(term, mm.Application)
 
-        if term.symbol == "\\unit-sort":
-            sort_id = "Unit"
+        if term.symbol == '\\unit-sort':
+            sort_id = 'Unit'
         else:
             assert term.symbol.startswith(KoreEncoder.KORE_SORT_PREFIX), \
-                    f"unable to decode {term} as a sort"
+                    f'unable to decode {term} as a sort'
             sort_id = term.symbol[len(KoreEncoder.KORE_SORT_PREFIX):]
 
         sort_definition = self.module.get_sort_by_id(sort_id)
         assert sort_definition is not None, \
-               f"unable to decode {term} as a sort: sort {sort_id} does not exist in module {self.module.name}"
+               f'unable to decode {term} as a sort: sort {sort_id} does not exist in module {self.module.name}'
 
         assert len(term.subterms) == len(sort_definition.sort_variables), \
-               f"unable to decode {term} as a sort: unmatched number of arguments"
+               f'unable to decode {term} as a sort: unmatched number of arguments'
 
         sort_arguments = [self.decode_sort(subterm) for subterm in term.subterms]
 

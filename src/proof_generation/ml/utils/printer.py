@@ -8,18 +8,18 @@ class Printer:
     Base class for an printer
     """
 
-    def __init__(self, output: TextIO, tab: str = "  "):
+    def __init__(self, output: TextIO, tab: str = '  '):
         super().__init__()
         self.output = output
         self.tab = tab
-        self.current_indentation = ""
+        self.current_indentation = ''
         self.line_buffer: List[str] = []
 
     def indent(self) -> None:
         self.current_indentation += self.tab
 
     def deindent(self) -> None:
-        assert len(self.current_indentation) >= len(self.tab), "cannot de-indent further"
+        assert len(self.current_indentation) >= len(self.tab), 'cannot de-indent further'
         self.current_indentation = self.current_indentation[:-len(self.tab)]
 
     @contextmanager
@@ -42,10 +42,10 @@ class Printer:
         return True
 
     def write(self, msg: str) -> None:
-        for i, line in enumerate(msg.split("\n")):
+        for i, line in enumerate(msg.split('\n')):
             if i != 0:
                 self.flush()
-                self.output.write("\n")
+                self.output.write('\n')
 
             if self.is_line_buffer_empty():
                 self.line_buffer = [self.current_indentation]

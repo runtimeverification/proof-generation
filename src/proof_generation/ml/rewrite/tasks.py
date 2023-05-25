@@ -11,7 +11,7 @@ from ml.kore.utils import KoreUtils
 
 from .templates import KoreTemplates
 
-T = TypeVar("T", bound="WithSchema")
+T = TypeVar('T', bound='WithSchema')
 
 Schema = Any
 
@@ -69,7 +69,7 @@ class Substitution(WithSchema):
             elif isinstance(v, kore.Variable) and v not in subst:
                 subst[v] = k
             else:
-                assert False, f"duplicate key {k} or {v}"
+                assert False, f'duplicate key {k} or {v}'
         return subst
 
     def as_predicate(self, sort: kore.Sort) -> kore.Pattern:
@@ -96,7 +96,7 @@ class Substitution(WithSchema):
     @staticmethod
     def from_predicate(predicate: kore.Pattern) -> Substitution:
         assert isinstance(predicate, kore.MLPattern), \
-               f"{predicate} is not a substitution constraint"
+               f'{predicate} is not a substitution constraint'
 
         if predicate.construct == kore.MLPattern.AND:
             left, right = predicate.arguments
@@ -104,12 +104,12 @@ class Substitution(WithSchema):
         elif KoreUtils.is_equals(predicate):
             left, right = KoreUtils.destruct_equals(predicate)
             assert isinstance(left, kore.Variable), \
-                   f"{predicate} is not a substitution constraint"
+                   f'{predicate} is not a substitution constraint'
             return Substitution(((left, right), ))
         elif KoreUtils.is_top(predicate):
             return Substitution()
         else:
-            assert False, f"unexpected predicate {predicate}"
+            assert False, f'unexpected predicate {predicate}'
 
     def merge(self, other: Substitution) -> Substitution:
         return Substitution(tuple(set(self.substitution + other.substitution)))
@@ -153,8 +153,8 @@ class Substitution(WithSchema):
     def get_raw_schema() -> Any:
         return [
             {
-                "key": schema.And(str, schema.Use(parse_pattern)),
-                "value": schema.And(str, schema.Use(parse_pattern)),
+                'key': schema.And(str, schema.Use(parse_pattern)),
+                'value': schema.And(str, schema.Use(parse_pattern)),
             }
         ]
 
@@ -165,14 +165,14 @@ class Substitution(WithSchema):
 
         for item in obj:
             assert isinstance(item, dict)
-            assert "key" in item and isinstance(item["key"], kore.Variable)
-            assert "value" in item and isinstance(item["value"], kore.Pattern)
-            substitution.append((item["key"], item["value"]))
+            assert 'key' in item and isinstance(item['key'], kore.Variable)
+            assert 'value' in item and isinstance(item['value'], kore.Pattern)
+            substitution.append((item['key'], item['value']))
 
         return Substitution(tuple(substitution))
 
     def __str__(self) -> str:
-        items = [f"{k} |-> {v}" for k, v in self.substitution]
+        items = [f'{k} |-> {v}' for k, v in self.substitution]
         return f"{{ {', '.join(items)} }}"
 
 
@@ -215,17 +215,17 @@ class ConstrainedPattern(WithSchema):
                 top = KoreUtils.construct_top(KoreUtils.infer_sort(pattern))
                 return ConstrainedPattern(pattern, top)
             else:
-                return ConstrainedPattern(pattern, parse_pattern("\\top{SortGeneratedTopCell{}}()"))
+                return ConstrainedPattern(pattern, parse_pattern('\\top{SortGeneratedTopCell{}}()'))
 
     @staticmethod
     def get_raw_schema() -> Any:
         parse_and_strip_inj = lambda src: KoreTemplates.strip_inj(parse_pattern(src))
-        default_constraint = parse_pattern("\\top{SortGeneratedTopCell{}}()")
+        default_constraint = parse_pattern('\\top{SortGeneratedTopCell{}}()')
         return schema.Or(
             {
-                "term": schema.And(str, schema.Use(parse_and_strip_inj)),
-                schema.Optional("constraint", default=default_constraint): schema.And(str, schema.Use(parse_pattern)),
-                schema.Optional("substitution", default=Substitution()): Substitution.get_schema(),
+                'term': schema.And(str, schema.Use(parse_and_strip_inj)),
+                schema.Optional('constraint', default=default_constraint): schema.And(str, schema.Use(parse_pattern)),
+                schema.Optional('substitution', default=Substitution()): Substitution.get_schema(),
             },
 
             # or we allow a term without constraint
@@ -234,7 +234,7 @@ class ConstrainedPattern(WithSchema):
 
     @staticmethod
     def parse_from_object(obj: Any) -> ConstrainedPattern:
-        sort = kore.SortInstance("SortGeneratedTopCell", [])
+        sort = kore.SortInstance('SortGeneratedTopCell', [])
 
         if isinstance(obj, kore.Pattern):
             return ConstrainedPattern(
@@ -243,12 +243,12 @@ class ConstrainedPattern(WithSchema):
             )
 
         assert isinstance(obj, dict)
-        assert "term" in obj and isinstance(obj["term"], kore.Pattern)
-        assert "constraint" in obj and isinstance(obj["constraint"], kore.Pattern)
-        assert "substitution" in obj and isinstance(obj["substitution"], Substitution)
+        assert 'term' in obj and isinstance(obj['term'], kore.Pattern)
+        assert 'constraint' in obj and isinstance(obj['constraint'], kore.Pattern)
+        assert 'substitution' in obj and isinstance(obj['substitution'], Substitution)
 
         return ConstrainedPattern(
-            obj["term"], KoreUtils.construct_and(obj["constraint"], obj["substitution"].as_predicate(sort))
+            obj['term'], KoreUtils.construct_and(obj['constraint'], obj['substitution'].as_predicate(sort))
         )
 
     def __str__(self) -> str:
@@ -274,32 +274,32 @@ class AppliedRule(WithSchema):
     @staticmethod
     def get_raw_schema() -> Any:
         return {
-            "results": schema.And([ConstrainedPattern.get_schema()], schema.Use(tuple)),
-            schema.Optional("rule-id"): str,
-            schema.Optional("substitution"): Substitution.get_schema(),
+            'results': schema.And([ConstrainedPattern.get_schema()], schema.Use(tuple)),
+            schema.Optional('rule-id'): str,
+            schema.Optional('substitution'): Substitution.get_schema(),
         }
 
     @staticmethod
     def parse_from_object(obj: Any) -> AppliedRule:
         assert isinstance(obj, dict)
-        assert "results" in obj and isinstance(obj["results"], tuple)
+        assert 'results' in obj and isinstance(obj['results'], tuple)
 
-        if "rule-id" in obj:
-            assert isinstance(obj["rule-id"], str)
-            rule_id: Optional[str] = obj["rule-id"]
+        if 'rule-id' in obj:
+            assert isinstance(obj['rule-id'], str)
+            rule_id: Optional[str] = obj['rule-id']
         else:
             rule_id = None
 
-        if "substitution" in obj:
-            assert isinstance(obj["substitution"], Substitution)
-            substitution: Optional[Substitution] = obj["substitution"]
+        if 'substitution' in obj:
+            assert isinstance(obj['substitution'], Substitution)
+            substitution: Optional[Substitution] = obj['substitution']
         else:
             substitution = None
 
-        return AppliedRule(obj["results"], rule_id, substitution)
+        return AppliedRule(obj['results'], rule_id, substitution)
 
     def __str__(self) -> str:
-        return f"applied rule: {self.rule_id}, substitution: {self.substitution}"
+        return f'applied rule: {self.rule_id}, substitution: {self.substitution}'
 
 
 @dataclass
@@ -329,22 +329,22 @@ class RewritingStep(WithSchema):
     @staticmethod
     def get_raw_schema() -> Any:
         return {
-            "initial": ConstrainedPattern.get_schema(),
-            "applied-rules": schema.And([AppliedRule.get_schema()], schema.Use(tuple)),
-            "remainders": schema.And([ConstrainedPattern.get_schema()], schema.Use(tuple)),
+            'initial': ConstrainedPattern.get_schema(),
+            'applied-rules': schema.And([AppliedRule.get_schema()], schema.Use(tuple)),
+            'remainders': schema.And([ConstrainedPattern.get_schema()], schema.Use(tuple)),
         }
 
     @staticmethod
     def parse_from_object(obj: Any) -> RewritingStep:
         assert isinstance(obj, dict)
-        assert "initial" in obj and isinstance(obj["initial"], ConstrainedPattern)
-        assert "applied-rules" in obj and isinstance(obj["applied-rules"], tuple)
-        assert "remainders" in obj and isinstance(obj["remainders"], tuple)
-        return RewritingStep(obj["initial"], obj["applied-rules"], obj["remainders"])
+        assert 'initial' in obj and isinstance(obj['initial'], ConstrainedPattern)
+        assert 'applied-rules' in obj and isinstance(obj['applied-rules'], tuple)
+        assert 'remainders' in obj and isinstance(obj['remainders'], tuple)
+        return RewritingStep(obj['initial'], obj['applied-rules'], obj['remainders'])
 
     def __str__(self) -> str:
-        rules = "\n".join([f"- {rule}" for rule in self.applied_rules])
-        return f"applied rules:\n{rules}"
+        rules = '\n'.join([f'- {rule}' for rule in self.applied_rules])
+        return f'applied rules:\n{rules}'
 
 
 @dataclass
@@ -364,10 +364,10 @@ class ReachabilityTask(WithSchema):
     @staticmethod
     def get_raw_schema() -> Any:
         return {
-            "task": "reachability",
-            "claim": schema.And(str, schema.Use(parse_pattern)),
-            "claim-id": str,
-            "steps": schema.Or(
+            'task': 'reachability',
+            'claim': schema.And(str, schema.Use(parse_pattern)),
+            'claim-id': str,
+            'steps': schema.Or(
                 None,
                 schema.And([RewritingStep.get_schema()], schema.Use(tuple)),
             ),
@@ -376,19 +376,19 @@ class ReachabilityTask(WithSchema):
     @staticmethod
     def parse_from_object(obj: Any) -> ReachabilityTask:
         assert isinstance(obj, dict)
-        assert "claim" in obj and isinstance(obj["claim"], kore.Pattern)
-        assert "claim-id" in obj and isinstance(obj["claim-id"], str)
-        assert "steps" in obj and (isinstance(obj["steps"], tuple) or obj["steps"] is None)
-        steps = () if obj["steps"] is None else obj["steps"]
+        assert 'claim' in obj and isinstance(obj['claim'], kore.Pattern)
+        assert 'claim-id' in obj and isinstance(obj['claim-id'], str)
+        assert 'steps' in obj and (isinstance(obj['steps'], tuple) or obj['steps'] is None)
+        steps = () if obj['steps'] is None else obj['steps']
 
-        lhs, rhs = KoreUtils.destruct_implies(obj["claim"])
+        lhs, rhs = KoreUtils.destruct_implies(obj['claim'])
         assert isinstance(rhs, kore.Application)
         rhs, = rhs.arguments
 
         return ReachabilityTask(
             ConstrainedPattern.from_pattern(lhs),
             ConstrainedPattern.from_pattern(rhs),
-            obj["claim-id"],
+            obj['claim-id'],
             steps,
         )
 
@@ -426,10 +426,10 @@ class RewritingTask(WithSchema):
     @staticmethod
     def get_raw_schema() -> Any:
         return {
-            "task": "rewriting",
-            "initial": ConstrainedPattern.get_schema(),
-            "finals": schema.And([ConstrainedPattern.get_schema()], schema.Use(tuple)),
-            "steps": schema.Or(
+            'task': 'rewriting',
+            'initial': ConstrainedPattern.get_schema(),
+            'finals': schema.And([ConstrainedPattern.get_schema()], schema.Use(tuple)),
+            'steps': schema.Or(
                 None,
                 schema.And([RewritingStep.get_schema()], schema.Use(tuple)),
             ),
@@ -438,8 +438,8 @@ class RewritingTask(WithSchema):
     @staticmethod
     def parse_from_object(obj: Any) -> RewritingTask:
         assert isinstance(obj, dict)
-        assert "initial" in obj and isinstance(obj["initial"], ConstrainedPattern)
-        assert "finals" in obj and isinstance(obj["finals"], tuple)
-        assert "steps" in obj and (isinstance(obj["steps"], tuple) or obj["steps"] is None)
-        steps = () if obj["steps"] is None else obj["steps"]
-        return RewritingTask(obj["initial"], obj["finals"], steps)
+        assert 'initial' in obj and isinstance(obj['initial'], ConstrainedPattern)
+        assert 'finals' in obj and isinstance(obj['finals'], tuple)
+        assert 'steps' in obj and (isinstance(obj['steps'], tuple) or obj['steps'] is None)
+        steps = () if obj['steps'] is None else obj['steps']
+        return RewritingTask(obj['initial'], obj['finals'], steps)

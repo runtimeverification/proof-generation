@@ -43,10 +43,10 @@ Path to a subpattern of a pattern or an axiom
 """
 PatternPath = List[int]
 
-AST = TypeVar("AST", bound=BaseAST[Any])
-P = TypeVar("P", bound=Pattern)
-PA = TypeVar("PA", Pattern, Axiom)
-PAS = TypeVar("PAS", Pattern, Axiom, Sort)
+AST = TypeVar('AST', bound=BaseAST[Any])
+P = TypeVar('P', bound=Pattern)
+PA = TypeVar('PA', Pattern, Axiom)
+PAS = TypeVar('PAS', Pattern, Axiom, Sort)
 
 
 class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisitorStructure[BaseAST[Any], None]):
@@ -75,7 +75,7 @@ class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisito
         variables = alias_def.get_binding_variables()
 
         if len(application.arguments) != len(variables):
-            application.error_with_position("unmatched number of arguments in the use of alias")
+            application.error_with_position('unmatched number of arguments in the use of alias')
 
         assignment = {var: arg for var, arg in zip(variables, application.arguments)}
         assignment_visitor: PatternSubstitutionVisitor[Pattern] = PatternSubstitutionVisitor(assignment)
@@ -146,13 +146,13 @@ class KoreUtils:
         first, *rest = path
 
         if isinstance(ast, Axiom):
-            assert first == 0, f"axiom {ast} only have one immediate subpattern"
+            assert first == 0, f'axiom {ast} only have one immediate subpattern'
             return KoreUtils.get_subpattern_by_path(ast.pattern, rest)
 
         assert isinstance(ast, Application) or isinstance(ast, MLPattern
-                                                          ), "path {} does not exists in pattern {}".format(path, ast)
+                                                          ), 'path {} does not exists in pattern {}'.format(path, ast)
 
-        assert first < len(ast.arguments), f"path {path} does not exists in pattern {ast}"
+        assert first < len(ast.arguments), f'path {path} does not exists in pattern {ast}'
         return KoreUtils.get_subpattern_by_path(ast.arguments[first], rest)
 
     @staticmethod
@@ -165,7 +165,7 @@ class KoreUtils:
 
         assert len(path) != 0
         first, *rest = path
-        assert first == 0, f"axiom {axiom} only have one immediate subpattern"
+        assert first == 0, f'axiom {axiom} only have one immediate subpattern'
         axiom.pattern = KoreUtils.replace_path_by_pattern_in_pattern(axiom.pattern, rest, replacement)
         return axiom
 
@@ -178,10 +178,10 @@ class KoreUtils:
 
         assert isinstance(pattern, Application) or isinstance(
             pattern, MLPattern
-        ), "path {} does not exists in pattern {}".format(path, pattern)
+        ), 'path {} does not exists in pattern {}'.format(path, pattern)
 
         # Application and MLPattern all use .arguments for the list of arguments
-        assert first < len(pattern.arguments), "path {} does not exists in pattern {}".format(path, pattern)
+        assert first < len(pattern.arguments), 'path {} does not exists in pattern {}'.format(path, pattern)
         pattern.arguments[first] = KoreUtils.replace_path_by_pattern_in_pattern(
             pattern.arguments[first], rest, replacement
         )
@@ -309,7 +309,7 @@ class KoreUtils:
             sort_arguments = pattern.symbol.sort_arguments
 
             assert isinstance(symbol_def, SymbolDefinition), \
-                   f"cannot infer the sort of {pattern} without context"
+                   f'cannot infer the sort of {pattern} without context'
             assert len(sort_arguments) == len(symbol_def.sort_variables)
 
             substitution = {var: arg for var, arg in zip(symbol_def.sort_variables, sort_arguments)}
@@ -319,7 +319,7 @@ class KoreUtils:
             # NOTE: as a convention, the last sort in the sort arguments is the output sort
             return pattern.sorts[-1]
 
-        assert False, "unable to get the sort of pattern `{}`".format(pattern)
+        assert False, 'unable to get the sort of pattern `{}`'.format(pattern)
 
     @staticmethod
     def strip_forall(pattern: Pattern) -> Pattern:
@@ -395,7 +395,7 @@ class KoreUtils:
     @staticmethod
     def pretty_print(ast: BaseAST[Any], stream: TextIO = sys.stdout, *args: Any, **kwargs: Any) -> None:
         PrettyPrinter.encode(stream, ast, *args, **kwargs)
-        stream.write("\n")
+        stream.write('\n')
 
     @staticmethod
     def construct_top(sort: Sort) -> MLPattern:
@@ -427,7 +427,7 @@ class KoreUtils:
                (isinstance(left_sort, SortInstance) and \
                 isinstance(right_sort, SortInstance) and \
                 left_sort.get_sort_id() == right_sort.get_sort_id()), \
-               f"unmatched sort {left_sort} and {right_sort}"
+               f'unmatched sort {left_sort} and {right_sort}'
         return MLPattern(construct, [left_sort], [left, right])
 
     @staticmethod
@@ -479,7 +479,7 @@ class KoreUtils:
         left_sort = KoreUtils.infer_sort(left)
         right_sort = KoreUtils.infer_sort(right)
         assert left_sort == right_sort, \
-               f"unmatched sort {left_sort} and {right_sort}"
+               f'unmatched sort {left_sort} and {right_sort}'
         return MLPattern(MLPattern.EQUALS, [left_sort, output_sort], [left, right])
 
     @staticmethod
@@ -497,7 +497,7 @@ class KoreUtils:
         assert isinstance(pattern, MLPattern) and \
                pattern.construct == construct and \
                len(pattern.arguments) == MLPattern.get_number_of_arguments_for_construct(construct), \
-               f"expecting {pattern} to be a {construct}"
+               f'expecting {pattern} to be a {construct}'
         return pattern.arguments
 
     @staticmethod

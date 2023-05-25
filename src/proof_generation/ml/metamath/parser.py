@@ -28,12 +28,12 @@ class ASTTransformer(Transformer[BaseAST]):
 
     def disjoint_stmt(self, args: List[str]) -> DisjointStatement:
         for var in args:
-            assert (var in self.metavariables), "variable {} used before declaration".format(var)
+            assert (var in self.metavariables), 'variable {} used before declaration'.format(var)
         return DisjointStatement(tuple(map(Metavariable, args)))
 
     def floating_stmt(self, args: List[str]) -> FloatingStatement:
         label, typecode, variable = args
-        assert (variable in self.metavariables), "variable {} used before declaration".format(variable)
+        assert (variable in self.metavariables), 'variable {} used before declaration'.format(variable)
         return FloatingStatement(label, (Application(typecode), Metavariable(variable)))
 
     def parse_term(self, tokens: List[str]) -> Tuple[Term, List[str]]:
@@ -43,13 +43,13 @@ class ASTTransformer(Transformer[BaseAST]):
         assert len(tokens)
 
         first = tokens[0]
-        if first == "(":
+        if first == '(':
             # separate out sublist of tokens with balanced parentheses
             num_nested = 1
             for i, token in enumerate(tokens[1:]):
-                if token == "(":
+                if token == '(':
                     num_nested += 1
-                elif token == ")":
+                elif token == ')':
                     num_nested -= 1
                 if num_nested == 0:
                     break
@@ -57,8 +57,8 @@ class ASTTransformer(Transformer[BaseAST]):
             # offset to include the first token
             i += 1
 
-            assert num_nested == 0, "incorrectly nested term: {}".format(" ".join(tokens))
-            assert i > 2, "ill-formed s-expression: {}".format(" ".join(tokens))
+            assert num_nested == 0, 'incorrectly nested term: {}'.format(' '.join(tokens))
+            assert i > 2, 'ill-formed s-expression: {}'.format(' '.join(tokens))
 
             subterms = self.parse_terms(tokens[2:i])
             constant = tokens[1]
@@ -94,7 +94,7 @@ class ASTTransformer(Transformer[BaseAST]):
         script = list(args[-1])
         tokens = args[:-1]
         terms = self.parse_terms(tokens)
-        return ProvableStatement(label, terms, " ".join(script))
+        return ProvableStatement(label, terms, ' '.join(script))
 
     def block(self, args: List[Statement]) -> Block:
         return Block(tuple(args))
@@ -132,17 +132,17 @@ proof: token*
 
 database_parser = Lark(
     syntax,
-    start="database",
-    parser="lalr",
-    lexer="standard",
+    start='database',
+    parser='lalr',
+    lexer='standard',
     propagate_positions=True,
 )
 
 statement_parser = Lark(
     syntax,
-    start="stmt",
-    parser="lalr",
-    lexer="standard",
+    start='stmt',
+    parser='lalr',
+    lexer='standard',
     propagate_positions=True,
 )
 
@@ -155,7 +155,7 @@ def parse_database(src: str) -> Database:
 
 
 def parse_terms_with_metavariables(src: str, metavariables: Set[str] = set()) -> Terms:
-    tree = statement_parser.parse(f"l $a {src} $.")
+    tree = statement_parser.parse(f'l $a {src} $.')
     stmt = ASTTransformer(metavariables).transform(tree)
     assert isinstance(stmt, AxiomaticStatement)
     return stmt.terms
@@ -163,7 +163,7 @@ def parse_terms_with_metavariables(src: str, metavariables: Set[str] = set()) ->
 
 def parse_term_with_metavariables(src: str, metavariables: Set[str] = set()) -> Term:
     terms = parse_terms_with_metavariables(src, metavariables)
-    assert len(terms) == 1, f"syntax error: {src}"
+    assert len(terms) == 1, f'syntax error: {src}'
     return terms[0]
 
 
@@ -174,10 +174,10 @@ def flatten_includes(path: str, loaded: Set[str] = set(), trace: List[str] = [],
     path = os.path.realpath(path)
 
     if path in loaded:
-        return ""
+        return ''
 
     if path in trace:
-        raise Exception(f"recursivly loading {path}")
+        raise Exception(f'recursivly loading {path}')
 
     with open(path) as mm_file:
         source = mm_file.read()
@@ -186,7 +186,7 @@ def flatten_includes(path: str, loaded: Set[str] = set(), trace: List[str] = [],
             source = remove_proof(source)
 
         while True:
-            match = re.search(r"\$\[\s+([^\s]+)\s+\$\]", source)
+            match = re.search(r'\$\[\s+([^\s]+)\s+\$\]', source)
             if match is None:
                 break
 
@@ -205,8 +205,8 @@ def flatten_includes(path: str, loaded: Set[str] = set(), trace: List[str] = [],
 
 def remove_proof(src: str) -> str:
     # remove comments first
-    src = re.sub(r"\$\(((.|\n)(?<!\$\)))*\$\)", "", src)
-    return re.sub(r"\$=\s*[^\$]*\s*\$\.", "$= ? $.", src)
+    src = re.sub(r'\$\(((.|\n)(?<!\$\)))*\$\)', '', src)
+    return re.sub(r'\$=\s*[^\$]*\s*\$\.', '$= ? $.', src)
 
 
 def load_database(path: str, include_proof: bool = True) -> Database:

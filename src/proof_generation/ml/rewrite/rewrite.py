@@ -33,7 +33,7 @@ class RewriteProofGenerator(ProofGenerator):
     These functions can accept symbolic arguments
     """
     SYMBOLIC_FUNCTIONS = {
-        "LblisKResult",
+        'LblisKResult',
 
         # for top cell initialization
         "Lblproject'Coln'Pgm",
@@ -113,26 +113,26 @@ class RewriteProofGenerator(ProofGenerator):
 
             for step in task.steps:
                 for rule in step.applied_rules:
-                    if rule.rule_id is not None and rule.rule_id.startswith("claim-"):
+                    if rule.rule_id is not None and rule.rule_id.startswith('claim-'):
                         # ignore self-loops
                         if task.claim_id != rule.rule_id:
                             claim_dependency[task.claim_id].append(rule.rule_id)
 
         sorted_claims = self.sort_dependency_graph(claim_dependency)
         assert sorted_claims is not None, \
-               f"cycle in the claim dependency graph"
+               f'cycle in the claim dependency graph'
 
-        # self.proved_claims["claim-1"] = self.composer.load_fresh_claim_placeholder(
-        #     "claim",
+        # self.proved_claims['claim-1'] = self.composer.load_fresh_claim_placeholder(
+        #     'claim',
         #     KoreUtils.construct_one_path_reaches_plus(
-        #         claim_to_task["claim-1"].lhs.as_pattern(),
-        #         claim_to_task["claim-1"].rhs.as_pattern(),
+        #         claim_to_task['claim-1'].lhs.as_pattern(),
+        #         claim_to_task['claim-1'].rhs.as_pattern(),
         #     ),
         # )
-        # self.prove_one_path_reachability_claim(claim_to_task["claim-0"])
+        # self.prove_one_path_reachability_claim(claim_to_task['claim-0'])
 
         for claim_id in sorted_claims:
-            print(f"### proving {claim_id}")
+            print(f'### proving {claim_id}')
             proved_claim = self.prove_one_path_reachability_claim(claim_to_task[claim_id])
             self.proved_claims[claim_id] = proved_claim
 
@@ -214,20 +214,20 @@ class RewriteProofGenerator(ProofGenerator):
             ),
         )
 
-        assert len(task.steps) != 0, "trivial claim is not supported"
+        assert len(task.steps) != 0, 'trivial claim is not supported'
 
         self.preprocess_steps(task.steps)
 
-        print(f"### step 0")
+        print(f'### step 0')
         symbolic_execution = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_PLUS, task.steps[0])
 
         for i, step in enumerate(task.steps[1:], 1):
             if len(step.applied_rules) == 1 and step.applied_rules[0].rule_id == task.claim_id:
                 # claims will be resolved in the end
-                print(f"### step {i} using circularity")
+                print(f'### step {i} using circularity')
                 step_claim = self.prove_reachability_axiom_step(kore.MLPattern.ONE_PATH_REACHES_STAR, claim, step)
             else:
-                print(f"### step {i}")
+                print(f'### step {i}')
                 step_claim = self.prove_symbolic_step(kore.MLPattern.ONE_PATH_REACHES_STAR, step)
 
             symbolic_execution = self.connect_symbolic_steps(
@@ -264,7 +264,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # apply circularity
         final_claim = self.prove_circularity(final_claim)
-        final_claim = self.composer.load_provable_claim_as_theorem(f"goal-{task.claim_id}", final_claim)
+        final_claim = self.composer.load_provable_claim_as_theorem(f'goal-{task.claim_id}', final_claim)
 
         KoreUtils.pretty_print(final_claim.claim)
 
@@ -285,8 +285,8 @@ class RewriteProofGenerator(ProofGenerator):
         circular_assumption_stripped = KoreUtils.strip_forall(circular_assumption)
 
         assert circular_assumption_stripped == right, \
-               f"not an application of circularity: the circular assumption " \
-               f"{circular_assumption_stripped} is distinct from the conclusion {right}"
+               f'not an application of circularity: the circular assumption ' \
+               f'{circular_assumption_stripped} is distinct from the conclusion {right}'
 
         free_vars = list(KoreUtils.get_free_variables(provable.claim))
         free_vars.sort(key=lambda v: v.name, reverse=True)
@@ -301,7 +301,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # get a proof of |- WF -> forall ... phi
         provable = self.composer.apply_kore_lemma(
-            "kore-reachability-one-path-circularity-lemma",
+            'kore-reachability-one-path-circularity-lemma',
             provable,
         )
 
@@ -313,7 +313,7 @@ class RewriteProofGenerator(ProofGenerator):
         # (WF -> (... =>+ ...)) -> (... =>+ ...)
         # here phi = (... =>+ ...)
         remove_wf = self.composer.apply_kore_lemma(
-            "kore-reachability-permits-non-wf",
+            'kore-reachability-permits-non-wf',
             goal=self.composer.construct_claim(
                 KoreUtils.construct_implies(
                     KoreUtils.construct_implies(lhs, stripped_rhs),
@@ -387,7 +387,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # TODO: [exists] prove this
         return self.composer.load_fresh_claim_placeholder(
-            "prenex-exists",
+            'prenex-exists',
             KoreUtils.construct_implies(pattern, prenex_pattern),
         ), exists_vars[::-1], qf_pattern
 
@@ -425,7 +425,7 @@ class RewriteProofGenerator(ProofGenerator):
         )
 
         always_elim = self.composer.apply_kore_lemma(
-            "kore-always-elim",
+            'kore-always-elim',
             goal=self.composer.construct_claim(
                 KoreUtils.construct_implies(
                     KoreUtils.construct_always(quantified_claim.pattern),
@@ -448,19 +448,19 @@ class RewriteProofGenerator(ProofGenerator):
 
         # remove ensures clause
         axiom_instantiation = self.composer.apply_kore_lemma(
-            "kore-one-path-reaches-plus-subsumption-rhs-alt",
+            'kore-one-path-reaches-plus-subsumption-rhs-alt',
             axiom_instantiation,
             self.prop_gen.apply_and_elim_right(instantiated_rhs),
         )
 
         axiom_instantiation = self.composer.apply_kore_lemma(
-            "kore-one-path-reaches-plus-constraint-lemma-alt",
+            'kore-one-path-reaches-plus-constraint-lemma-alt',
             axiom_instantiation,
         )
 
         # weaken to reaches-plus
         axiom_instantiation = self.composer.apply_kore_lemma(
-            "kore-one-path-reaches-star-intro-alt3",
+            'kore-one-path-reaches-star-intro-alt3',
             axiom_instantiation,
         )
 
@@ -474,7 +474,7 @@ class RewriteProofGenerator(ProofGenerator):
                 appended_remainder = True
                 # |- axiom -> (remainder_constraint \/ lhs_constraint) /\ lhs =>* remainder \/ rhs
                 axiom_instantiation = self.composer.apply_kore_lemma(
-                    "kore-one-path-reaches-star-union-alt2",
+                    'kore-one-path-reaches-star-union-alt2',
                     self.apply_reachability_reflexivity(kore.MLPattern.ONE_PATH_REACHES_STAR, remainder.as_pattern()),
                     axiom_instantiation,
                 )
@@ -490,7 +490,7 @@ class RewriteProofGenerator(ProofGenerator):
         )
 
         axiom_instantiation = self.composer.apply_kore_lemma(
-            "kore-one-path-reaches-star-subsumption-lhs-alt",
+            'kore-one-path-reaches-star-subsumption-lhs-alt',
             subsumption_lhs,
             axiom_instantiation,
         )
@@ -498,7 +498,7 @@ class RewriteProofGenerator(ProofGenerator):
         # need to pass the LHS constraint to the RHS
         if not appended_remainder:
             axiom_instantiation = self.composer.apply_kore_lemma(
-                "kore-one-path-reaches-star-constraint-lemma-alt",
+                'kore-one-path-reaches-star-constraint-lemma-alt',
                 axiom_instantiation,
             )
         # TODO: is appended_remainder is true, we may still need to do this
@@ -515,8 +515,8 @@ class RewriteProofGenerator(ProofGenerator):
             prenex = True
             prenex_claim, exists_vars, instantiated_rhs = prenex_proof
             axiom_instantiation = self.composer.apply_kore_lemma(
-                "kore-one-path-reaches-star-subsumption-rhs-alt2"
-                if appended_remainder else "kore-one-path-reaches-star-subsumption-rhs-alt",
+                'kore-one-path-reaches-star-subsumption-rhs-alt2'
+                if appended_remainder else 'kore-one-path-reaches-star-subsumption-rhs-alt',
                 axiom_instantiation,
                 prenex_claim,
             )
@@ -540,7 +540,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             # TODO: [exists] prove this
             subsumption_rhs = self.composer.load_fresh_claim_placeholder(
-                "implies-compat-exists",
+                'implies-compat-exists',
                 KoreUtils.construct_implies(
                     subsumption_rhs_left,
                     ConstrainedPattern.from_pattern(subsumption_rhs_right).as_pattern(),
@@ -550,8 +550,8 @@ class RewriteProofGenerator(ProofGenerator):
         # if we have appended the remainder, then the RHS will be a disjunction
         # so we have to apply subsumption differently
         axiom_instantiation = self.composer.apply_kore_lemma(
-            "kore-one-path-reaches-star-subsumption-rhs-alt2"
-            if appended_remainder else "kore-one-path-reaches-star-subsumption-rhs-alt",
+            'kore-one-path-reaches-star-subsumption-rhs-alt2'
+            if appended_remainder else 'kore-one-path-reaches-star-subsumption-rhs-alt',
             axiom_instantiation,
             subsumption_rhs,
         )
@@ -573,7 +573,7 @@ class RewriteProofGenerator(ProofGenerator):
         if KoreUtils.is_or(initial):
             left, right = KoreUtils.destruct_or(initial)
             return self.composer.apply_kore_lemma(
-                "kore-or-elim-alt2",
+                'kore-or-elim-alt2',
                 self.prove_multiple_subsumptions(left, goal),
                 self.prove_multiple_subsumptions(right, goal),
             )
@@ -587,7 +587,7 @@ class RewriteProofGenerator(ProofGenerator):
         if constraint_unsat is not None:
             # if the constraint is unsatisfiable, the subsumption is trivial
             subsumption = self.composer.apply_kore_lemma(
-                "kore-not-elim",
+                'kore-not-elim',
                 constraint_unsat,
                 ph2=constrained_pattern1.pattern,
                 ph3=goal,
@@ -668,25 +668,25 @@ class RewriteProofGenerator(ProofGenerator):
 
         if premise == conclusion:
             # trivial implication
-            return self.composer.apply_kore_lemma("kore-implies-reflexivity", goal=claim)
+            return self.composer.apply_kore_lemma('kore-implies-reflexivity', goal=claim)
 
         # TODO: should probably change the name prove_requires_clause
         # check if conclusion is trivial
         conclusion_validity = self.prove_requires_clause(conclusion)
         if conclusion_validity is not None:
             return self.composer.apply_kore_lemma(
-                "kore-weakening",
+                'kore-weakening',
                 conclusion_validity,
                 ph1=premise,
             )
 
         # TODO: call SMT solver and check
-        # print("SMT proof obligation:")
+        # print('SMT proof obligation:')
         # KoreUtils.pretty_print(claim.pattern)
 
         provable = self.smt_gen.check_validity(claim)
         assert provable is not None, \
-               f"predicate {KoreUtils.construct_implies(premise, conclusion)} is not valid"
+               f'predicate {KoreUtils.construct_implies(premise, conclusion)} is not valid'
 
         return provable
 
@@ -717,7 +717,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             # TODO: should probably change the name prove_requires_clause
             constraint_imp = self.check_smt_implication(pattern1_constraint, pattern2_constraint)
-            claim = self.composer.apply_kore_lemma("kore-imp-conj-simplify", constraint_imp, claim)
+            claim = self.composer.apply_kore_lemma('kore-imp-conj-simplify', constraint_imp, claim)
 
         for equation, path in unification_result.applied_equations:
             claim = equation.replace_equal_subpattern(claim, [0, 1, 1] + path)  # rhs
@@ -748,7 +748,7 @@ class RewriteProofGenerator(ProofGenerator):
         constraint_imp = self.check_smt_implication(constraint, equation_pattern)
 
         all_metavars = {KoreEncoder.encode_variable(var) for var in PatternVariableVisitor().visit(pattern)}
-        fresh_var, = self.composer.gen_fresh_metavariables("#ElementVariable", 1, all_metavars)
+        fresh_var, = self.composer.gen_fresh_metavariables('#ElementVariable', 1, all_metavars)
 
         var = kore.Variable(fresh_var, equation_sort)
         var.resolve(self.composer.module)
@@ -764,7 +764,7 @@ class RewriteProofGenerator(ProofGenerator):
         )
 
         return self.composer.apply_kore_lemma(
-            "kore-equality-in-constraint",
+            'kore-equality-in-constraint',
             constraint_imp,
             x=var,
             ph4=template_term,
@@ -795,7 +795,7 @@ class RewriteProofGenerator(ProofGenerator):
                 KoreUtils.is_exists(pattern2_body):
                 var1, pattern1_body = KoreUtils.destruct_exists(pattern1_body)
                 var2, pattern2_body = KoreUtils.destruct_exists(pattern2_body)
-                assert var1 == var2, f"reordering of existential variables not supported, got {var1}, {var2}"
+                assert var1 == var2, f'reordering of existential variables not supported, got {var1}, {var2}'
                 exists_vars.append(var1)
 
                 if KoreUtils.is_and(pattern1_body):
@@ -813,11 +813,11 @@ class RewriteProofGenerator(ProofGenerator):
 
             # TODO: prove these FO rearrangements
             # lhs_rearrange = self.composer.load_fresh_claim_placeholder(
-            #     "exists-rearrange",
+            #     'exists-rearrange',
             #     KoreUtils.construct_implies(pattern1.as_pattern(), new_pattern1.as_pattern()),
             # )
             # rhs_rearrange = self.composer.load_fresh_claim_placeholder(
-            #     "exists-rearrange",
+            #     'exists-rearrange',
             #     KoreUtils.construct_implies(new_pattern2.as_pattern(), pattern2.as_pattern()),
             # )
 
@@ -832,7 +832,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             # TODO: [exists] implement this
             return self.composer.load_fresh_claim_placeholder(
-                "subsumption",
+                'subsumption',
                 KoreUtils.construct_implies(pattern1.as_pattern(), pattern2.as_pattern()),
             )
 
@@ -854,7 +854,7 @@ class RewriteProofGenerator(ProofGenerator):
                     .unify_patterns(pattern2_body, pattern1_body)
 
             assert unification_result is not None, \
-                   f"failed to unify {pattern1_body} and {pattern2_body}"
+                   f'failed to unify {pattern1_body} and {pattern2_body}'
 
             # KoreUtils.pretty_print(pattern1_body)
             # KoreUtils.pretty_print(pattern2_body)
@@ -875,7 +875,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             # TODO; [exists] actually prove this
             return self.composer.load_fresh_claim_placeholder(
-                "subsumption",
+                'subsumption',
                 KoreUtils.construct_implies(pattern1.as_pattern(), pattern2.as_pattern()),
             )
 
@@ -885,7 +885,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # we can not instantiate variables here so the substitution must be empty
         assert unification_result is not None and len(unification_result.substitution) == 0, \
-               f"failed to unify {pattern1_body} and {pattern2_body}"
+               f'failed to unify {pattern1_body} and {pattern2_body}'
 
         claim = self.prop_gen.apply_implies_reflexivity(
             ConstrainedPattern(pattern1_body, pattern1_constraint).as_pattern()
@@ -904,16 +904,16 @@ class RewriteProofGenerator(ProofGenerator):
             # implies the constraint the pattern2,
             # if they are not the same
             constraint_imp = self.check_smt_implication(pattern1_constraint, pattern2_constraint)
-            claim = self.composer.apply_kore_lemma("kore-imp-conj-simplify", constraint_imp, claim)
+            claim = self.composer.apply_kore_lemma('kore-imp-conj-simplify', constraint_imp, claim)
 
         lhs, rhs = KoreUtils.destruct_implies(claim.claim.pattern)
         assert lhs == pattern1.as_pattern() and rhs == pattern2.as_pattern(), \
-               f"unexpected result"
+               f'unexpected result'
 
         counter = self.pattern_subsumption_counter
         self.pattern_subsumption_counter += 1
 
-        return self.composer.load_provable_claim_as_theorem(f"pattern-subsumption-{counter}", claim)
+        return self.composer.load_provable_claim_as_theorem(f'pattern-subsumption-{counter}', claim)
 
     def prove_kore_is_predicate(
         self,
@@ -934,14 +934,14 @@ class RewriteProofGenerator(ProofGenerator):
 
         # TODO: actually prove this
         theorem = self.composer.load_proof_as_statement(
-            f"kore-is-predicate-lemma-{counter}",
+            f'kore-is-predicate-lemma-{counter}',
             Proof.from_script(
                 mm.StructuredStatement(
-                    "", (
-                        mm.Application("|-"),
-                        mm.Application("\\kore-is-predicate", (encoded_sort, encoded_constraint)),
+                    '', (
+                        mm.Application('|-'),
+                        mm.Application('\\kore-is-predicate', (encoded_sort, encoded_constraint)),
                     )
-                ), "?"
+                ), '?'
             )
         )
 
@@ -969,10 +969,10 @@ class RewriteProofGenerator(ProofGenerator):
 
         assert applied_rule.substitution is not None and \
                applied_rule.rule_id is not None, \
-               f"symbolic execution requires backend hints"
+               f'symbolic execution requires backend hints'
 
         assert len(applied_rule.results) == 1, \
-               f"splitting in equations is currently not supported"
+               f'splitting in equations is currently not supported'
         final = applied_rule.results[0]
 
         # applying either a claim or an axiom
@@ -989,12 +989,12 @@ class RewriteProofGenerator(ProofGenerator):
         oriented_substitution = applied_rule.substitution.orient(axiom_free_vars)
         rule_substitution, _ = oriented_substitution.split(axiom_free_vars)
         # print(applied_rule.rule_id)
-        # print("oriented_substitution")
-        # print("\n".join(list(map(lambda t: f"({t[0]}, {t[1]})", oriented_substitution.substitution))))
-        # print("rule_substitution")
-        # print("\n".join(list(map(lambda t: f"({t[0]}, {t[1]})", rule_substitution.substitution))))
-        # print("axiom_free_vars")
-        # print("\n".join(list(map(str, axiom_free_vars))))
+        # print('oriented_substitution')
+        # print('\n'.join(list(map(lambda t: f'({t[0]}, {t[1]})', oriented_substitution.substitution))))
+        # print('rule_substitution')
+        # print('\n'.join(list(map(lambda t: f'({t[0]}, {t[1]})', rule_substitution.substitution))))
+        # print('axiom_free_vars')
+        # print('\n'.join(list(map(str, axiom_free_vars))))
 
         rule_substitution_dict = rule_substitution.as_dict()
 
@@ -1007,7 +1007,7 @@ class RewriteProofGenerator(ProofGenerator):
         # unify the LHS with the initial pattern
         lhs_unification_result = unification_gen.unify_patterns(lhs, initial.pattern)
         assert lhs_unification_result is not None, \
-               f"unable to unify the LHS of {applied_rule.rule_id} with the initial pattern {initial.pattern}"
+               f'unable to unify the LHS of {applied_rule.rule_id} with the initial pattern {initial.pattern}'
 
         instantiated_axiom = self.fol_gen.apply_functional_substitution(
             rewrite_axiom,
@@ -1023,7 +1023,7 @@ class RewriteProofGenerator(ProofGenerator):
         assert requires is not None and ensures is not None
 
         if not KoreUtils.is_top(ensures):
-            print(f"removing non-empty ensures clause {ensures}")
+            print(f'removing non-empty ensures clause {ensures}')
 
         # remove ensures clause
         instantiated_axiom = self.apply_reachability_subsumption_right(
@@ -1087,35 +1087,35 @@ class RewriteProofGenerator(ProofGenerator):
 
         lhs1, left_constraints1, _, _ = self.destruct_rewrite_axiom(rewrite1, separate_rhs=False)
         lhs2, left_constraints2, _, _ = self.destruct_rewrite_axiom(rewrite2, separate_rhs=False)
-        assert lhs1 == lhs2, f"{lhs1} != {lhs2}"
+        assert lhs1 == lhs2, f'{lhs1} != {lhs2}'
         assert left_constraints1 is not None and left_constraints2 is not None
 
         if rewrite_type1 == kore.MLPattern.REWRITES_STAR:
             return self.composer.apply_kore_lemma(
-                "kore-rewrites-star-union",
+                'kore-rewrites-star-union',
                 rewrite1,
                 rewrite2,
             )
         elif rewrite_type1 == kore.MLPattern.REWRITES_STAR:
             return self.composer.apply_kore_lemma(
-                "kore-rewrites-plus-union",
+                'kore-rewrites-plus-union',
                 rewrite1,
                 rewrite2,
             )
         elif rewrite_type1 == kore.MLPattern.ONE_PATH_REACHES_STAR:
             return self.composer.apply_kore_lemma(
-                "kore-one-path-reaches-star-union",
+                'kore-one-path-reaches-star-union',
                 rewrite1,
                 rewrite2,
             )
         elif rewrite_type1 == kore.MLPattern.ONE_PATH_REACHES_PLUS:
             return self.composer.apply_kore_lemma(
-                "kore-one-path-reaches-plus-union",
+                'kore-one-path-reaches-plus-union',
                 rewrite1,
                 rewrite2,
             )
 
-        assert False, f"unsupported reachability type {rewrite_type1}"
+        assert False, f'unsupported reachability type {rewrite_type1}'
 
     def prove_symbolic_step(
         self,
@@ -1169,7 +1169,7 @@ class RewriteProofGenerator(ProofGenerator):
             self.prop_gen.apply_implies_reflexivity(lhs_term),
         )
 
-        theorem_name = self.composer.get_fresh_label("symbolic-step")
+        theorem_name = self.composer.get_fresh_label('symbolic-step')
 
         final_claim = self.apply_reachability_subsumption_left(constraint_splitting, step_claim)
         final_claim = self.composer.load_provable_claim_as_theorem(theorem_name, final_claim)
@@ -1187,7 +1187,7 @@ class RewriteProofGenerator(ProofGenerator):
         if KoreUtils.is_or(disjunction1):
             left, right = KoreUtils.destruct_or(disjunction1)
             return self.composer.apply_kore_lemma(
-                "kore-or-elim-alt2",
+                'kore-or-elim-alt2',
                 self.prove_trivial_disjunction_implication(left, disjunction2),
                 self.prove_trivial_disjunction_implication(right, disjunction2),
             )
@@ -1202,7 +1202,7 @@ class RewriteProofGenerator(ProofGenerator):
                 return self.prop_gen.apply_implies_transitivity(
                     self.prove_trivial_disjunction_implication(disjunction1, left),
                     self.composer.apply_kore_lemma(
-                        "kore-or-intro-left-alt2",
+                        'kore-or-intro-left-alt2',
                         goal=self.composer.construct_claim(KoreUtils.construct_implies(left, disjunction2), ),
                     ),
                 )
@@ -1210,12 +1210,12 @@ class RewriteProofGenerator(ProofGenerator):
                 return self.prop_gen.apply_implies_transitivity(
                     self.prove_trivial_disjunction_implication(disjunction1, right),
                     self.composer.apply_kore_lemma(
-                        "kore-or-intro-right-alt2",
+                        'kore-or-intro-right-alt2',
                         goal=self.composer.construct_claim(KoreUtils.construct_implies(right, disjunction2), ),
                     ),
                 )
 
-        assert False, f"failed to prove that {disjunction1} implies {disjunction2}"
+        assert False, f'failed to prove that {disjunction1} implies {disjunction2}'
 
         # disjuncts2 = KoreUtils.destruct_nested_or(disjunction2)
         # assert disjunction1 in disjuncts2
@@ -1230,7 +1230,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         # return self.prop_gen.apply_implies_transitivity(
         #     self.composer.apply_kore_lemma(
-        #         "kore-or-intro-left-alt2",
+        #         'kore-or-intro-left-alt2',
         #         goal=self.composer.construct_claim(
         #             KoreUtils.construct_implies(disjunction1, shuffled),
         #         ),
@@ -1315,14 +1315,14 @@ class RewriteProofGenerator(ProofGenerator):
                 step2 = self.apply_reachability_subsumption_left(simplification, step2)
                 break
         else:
-            assert False, f"unable to unify {lhs2} with any of the branches in {rhs1}"
+            assert False, f'unable to unify {lhs2} with any of the branches in {rhs1}'
 
         step1_has_premise = KoreUtils.is_implies(step1.claim.pattern)
         step2_has_premise = KoreUtils.is_implies(step2.claim.pattern)
 
         if len(branches1) == 1:
             # TODO: support the case when we have premises
-            # assert not step1_has_premise and not step2_has_premise, "not supported"
+            # assert not step1_has_premise and not step2_has_premise, 'not supported'
             return self.apply_reachability_transitivity(reachability, step1, step2)
 
         # now we assume there are at least 2 branches in step1
@@ -1335,25 +1335,25 @@ class RewriteProofGenerator(ProofGenerator):
         if not step1_has_premise and not step2_has_premise:
             if reachability == kore.MLPattern.REWRITES_STAR:
                 return self.composer.apply_kore_lemma(
-                    "kore-rewrites-star-branch",
+                    'kore-rewrites-star-branch',
                     self.apply_reachability_intro(kore.MLPattern.REWRITES_STAR, step1),
                     self.apply_reachability_intro(kore.MLPattern.REWRITES_STAR, step2),
                 )
             elif reachability == kore.MLPattern.REWRITES_PLUS:
                 return self.composer.apply_kore_lemma(
-                    "kore-rewrites-plus-branch",
+                    'kore-rewrites-plus-branch',
                     self.apply_reachability_intro(kore.MLPattern.REWRITES_PLUS, step1),
                     self.apply_reachability_intro(kore.MLPattern.REWRITES_STAR, step2),
                 )
             elif reachability == kore.MLPattern.ONE_PATH_REACHES_STAR:
                 return self.composer.apply_kore_lemma(
-                    "kore-one-path-reaches-star-branch",
+                    'kore-one-path-reaches-star-branch',
                     self.apply_reachability_intro(kore.MLPattern.ONE_PATH_REACHES_STAR, step1),
                     self.apply_reachability_intro(kore.MLPattern.ONE_PATH_REACHES_STAR, step2),
                 )
             elif reachability == kore.MLPattern.ONE_PATH_REACHES_PLUS:
                 return self.composer.apply_kore_lemma(
-                    "kore-one-path-reaches-plus-branch",
+                    'kore-one-path-reaches-plus-branch',
                     self.apply_reachability_intro(kore.MLPattern.ONE_PATH_REACHES_PLUS, step1),
                     self.apply_reachability_intro(kore.MLPattern.ONE_PATH_REACHES_STAR, step2),
                 )
@@ -1370,7 +1370,7 @@ class RewriteProofGenerator(ProofGenerator):
             # TODO: hacky
             if reachability == step1_reachability == kore.MLPattern.ONE_PATH_REACHES_PLUS:
                 assert KoreUtils.is_always(premise) or KoreUtils.is_circularity(premise), \
-                       f"premise not supported: {premise}"
+                       f'premise not supported: {premise}'
 
                 if KoreUtils.is_always(premise):
                     inner_premise, = KoreUtils.destruct_always(premise)
@@ -1386,13 +1386,13 @@ class RewriteProofGenerator(ProofGenerator):
 
                 if step2_reachability == kore.MLPattern.ONE_PATH_REACHES_PLUS:
                     step2 = self.composer.apply_kore_lemma(
-                        "kore-one-path-reaches-star-intro-alt3",
+                        'kore-one-path-reaches-star-intro-alt3',
                         step2,
                     )
 
-                return self.composer.apply_kore_lemma("kore-reachability-one-path-transitivity-alt", step1, step2)
+                return self.composer.apply_kore_lemma('kore-reachability-one-path-transitivity-alt', step1, step2)
 
-        assert False, f"unsupported reachbility type {reachability}"
+        assert False, f'unsupported reachbility type {reachability}'
 
     def preprocess_steps(self, steps: Tuple[RewritingStep, ...]) -> None:
         """
@@ -1447,23 +1447,23 @@ class RewriteProofGenerator(ProofGenerator):
                 # cannot find a final pattern that matches the branch
                 # then we will try to show that the constraint is
                 # unsatifiable and prune this branch
-                assert len(branches) > 1, "pruning the only branch"
+                assert len(branches) > 1, 'pruning the only branch'
 
                 constraint_unsat = self.check_smt_unsat(branch_constraint)
                 assert constraint_unsat is not None, \
-                       f"{branch_constraint} is not unsat"
+                       f'{branch_constraint} is not unsat'
 
                 rhs_shuffle = self.prop_gen.apply_iff_elim_left(self.prop_gen.shuffle_nested(kore.MLPattern.OR, rhs, i))
 
                 # connect with the existing claim
                 claim = self.composer.apply_kore_lemma(
-                    "kore-rewrites-star-subsumption-rhs",
+                    'kore-rewrites-star-subsumption-rhs',
                     claim,
                     rhs_shuffle,
                 )
 
                 # prune this branch
-                claim = self.composer.apply_kore_lemma("kore-rewrites-star-prune", constraint_unsat, claim)
+                claim = self.composer.apply_kore_lemma('kore-rewrites-star-prune', constraint_unsat, claim)
 
                 # recurse to prune the rest
                 return self.match_with_final_results(task, claim, start_from=i)
@@ -1476,7 +1476,7 @@ class RewriteProofGenerator(ProofGenerator):
         from the given hints
         """
 
-        print("preprocess rewriting task")
+        print('preprocess rewriting task')
         self.preprocess_steps(task.steps)
 
         initial_pattern = task.get_initial_pattern().as_pattern()
@@ -1486,7 +1486,7 @@ class RewriteProofGenerator(ProofGenerator):
         proved_steps: Dict[kore.Pattern, ProvableClaim] = {}
 
         for i, step in enumerate(task.steps):
-            print(f"######## symbolic step {i} ########")
+            print(f'######## symbolic step {i} ########')
 
             result = step.applied_rules[-1].results[0].as_pattern()
             for branch in step.applied_rules[:-1][::-1]:
@@ -1497,7 +1497,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             if step_goal in proved_steps:
                 claim = proved_steps[step_goal]
-                print("step already proved")
+                print('step already proved')
             else:
                 claim = self.prove_symbolic_step(kore.MLPattern.REWRITES_STAR, step)
                 proved_steps[step_goal] = claim
@@ -1507,7 +1507,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             if i + 1 != len(task.steps):
                 final_claim = self.composer.load_provable_claim_as_theorem(
-                    self.composer.get_fresh_label("intermediate-state"),
+                    self.composer.get_fresh_label('intermediate-state'),
                     final_claim,
                 )
 
@@ -1521,20 +1521,20 @@ class RewriteProofGenerator(ProofGenerator):
         # # self.add_free_variable_sorting_hypotheses(initial_pattern)
 
         # # simplify initial pattern
-        # print("######## simplifying initial claim ########")
+        # print('######## simplifying initial claim ########')
         # final_claim = self.apply_reachability_reflexivity(kore.MLPattern.REWRITES_STAR, initial_pattern)
         # final_claim = self.simplify_pattern(final_claim, [0, 1])
 
         # for i, claim in enumerate(step_claims):
-        #     print(f"######## connecting symbolic step {i} ########")
+        #     print(f'######## connecting symbolic step {i} ########')
         #     final_claim = self.connect_symbolic_steps(kore.MLPattern.REWRITES_STAR, final_claim, claim)
 
-        final_claim = self.composer.load_provable_claim_as_theorem("goal", final_claim)
+        final_claim = self.composer.load_provable_claim_as_theorem('goal', final_claim)
 
-        print(f"######## pruning unsatisfiable branch(es) ########")
+        print(f'######## pruning unsatisfiable branch(es) ########')
         final_claim = self.match_with_final_results(task, final_claim)
 
-        print("final claim:")
+        print('final claim:')
         KoreUtils.pretty_print(final_claim.claim)
 
         return final_claim
@@ -1554,7 +1554,7 @@ class RewriteProofGenerator(ProofGenerator):
             kore.MLPattern.REWRITES_PLUS,
             kore.MLPattern.ONE_PATH_REACHES_STAR,
             kore.MLPattern.ONE_PATH_REACHES_PLUS,
-        }, f"unexpected top-level construct {construct}"
+        }, f'unexpected top-level construct {construct}'
         return construct
 
     """
@@ -1562,34 +1562,34 @@ class RewriteProofGenerator(ProofGenerator):
     """
     REACHABILITY_INTRO_THEOREMS = {
         (kore.MLPattern.REWRITES, kore.MLPattern.REWRITES_STAR):
-        "kore-rewrites-star-intro",
+        'kore-rewrites-star-intro',
         (kore.MLPattern.REWRITES, kore.MLPattern.REWRITES_PLUS):
-        "kore-rewrites-plus-intro",
+        'kore-rewrites-plus-intro',
         (kore.MLPattern.REWRITES_PLUS, kore.MLPattern.REWRITES_STAR):
-        "kore-rewrites-star-intro-alt",
+        'kore-rewrites-star-intro-alt',
         (kore.MLPattern.REWRITES_STAR, kore.MLPattern.ONE_PATH_REACHES_STAR):
-        "kore-one-path-reaches-star-intro",
+        'kore-one-path-reaches-star-intro',
         (kore.MLPattern.REWRITES_PLUS, kore.MLPattern.ONE_PATH_REACHES_PLUS):
-        "kore-one-path-reaches-plus-intro",
+        'kore-one-path-reaches-plus-intro',
         (kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_STAR):
-        "kore-one-path-reaches-star-intro-alt",
+        'kore-one-path-reaches-star-intro-alt',
     }
     """
     (resulting type, src1, src2)
     """
     REACHABILITY_TRANS_THEOREMS = {
         (kore.MLPattern.REWRITES_PLUS, kore.MLPattern.REWRITES_PLUS, kore.MLPattern.REWRITES_STAR):
-        "kore-rewrites-plus-transitivity",
+        'kore-rewrites-plus-transitivity',
         (kore.MLPattern.REWRITES_STAR, kore.MLPattern.REWRITES_STAR, kore.MLPattern.REWRITES_STAR):
-        "kore-rewrites-star-transitivity",
+        'kore-rewrites-star-transitivity',
         (
             kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_STAR
         ):
-        "kore-one-path-reaches-plus-transitivity",
+        'kore-one-path-reaches-plus-transitivity',
         (
             kore.MLPattern.ONE_PATH_REACHES_STAR, kore.MLPattern.ONE_PATH_REACHES_STAR, kore.MLPattern.ONE_PATH_REACHES_STAR
         ):
-        "kore-one-path-reaches-star-transitivity",
+        'kore-one-path-reaches-star-transitivity',
     }
     """
     (resulting type, src1, src2)
@@ -1599,36 +1599,36 @@ class RewriteProofGenerator(ProofGenerator):
         (
             kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_PLUS, kore.MLPattern.ONE_PATH_REACHES_STAR
         ):
-        "kore-reachability-one-path-transitivity-alt2",
+        'kore-reachability-one-path-transitivity-alt2',
     }
 
     REACHABILITY_REFLEXIVITY_THEOREMS = {
-        kore.MLPattern.REWRITES_STAR: "kore-rewrites-star-reflexivity",
-        kore.MLPattern.ONE_PATH_REACHES_STAR: "kore-one-path-reaches-star-reflexivity",
+        kore.MLPattern.REWRITES_STAR: 'kore-rewrites-star-reflexivity',
+        kore.MLPattern.ONE_PATH_REACHES_STAR: 'kore-one-path-reaches-star-reflexivity',
     }
     """
     type: (left subsumption, right subsumption)
     """
     REACHABILITY_SUBSUMPTION_THEOREMS = {
-        kore.MLPattern.REWRITES: ("kore-rewrites-subsumption-lhs", "kore-rewrites-subsumption-rhs"),
-        kore.MLPattern.REWRITES_STAR: ("kore-rewrites-star-subsumption-lhs", "kore-rewrites-star-subsumption-rhs"),
-        kore.MLPattern.REWRITES_PLUS: ("kore-rewrites-plus-subsumption-lhs", "kore-rewrites-plus-subsumption-rhs"),
+        kore.MLPattern.REWRITES: ('kore-rewrites-subsumption-lhs', 'kore-rewrites-subsumption-rhs'),
+        kore.MLPattern.REWRITES_STAR: ('kore-rewrites-star-subsumption-lhs', 'kore-rewrites-star-subsumption-rhs'),
+        kore.MLPattern.REWRITES_PLUS: ('kore-rewrites-plus-subsumption-lhs', 'kore-rewrites-plus-subsumption-rhs'),
         kore.MLPattern.ONE_PATH_REACHES_STAR:
-        ("kore-one-path-reaches-star-subsumption-lhs", "kore-one-path-reaches-star-subsumption-rhs"),
+        ('kore-one-path-reaches-star-subsumption-lhs', 'kore-one-path-reaches-star-subsumption-rhs'),
         kore.MLPattern.ONE_PATH_REACHES_PLUS:
-        ("kore-one-path-reaches-plus-subsumption-lhs", "kore-one-path-reaches-plus-subsumption-rhs"),
+        ('kore-one-path-reaches-plus-subsumption-lhs', 'kore-one-path-reaches-plus-subsumption-rhs'),
     }
     REACHABILITY_WEAKENED_SUBSUMPTION_THEOREMS = {
         kore.MLPattern.ONE_PATH_REACHES_PLUS:
-        ("kore-one-path-reaches-plus-subsumption-lhs-alt", "kore-one-path-reaches-plus-subsumption-rhs-alt"),
-        kore.MLPattern.ONE_PATH_REACHES_STAR: ("kore-one-path-reaches-star-subsumption-lhs-alt", ""),
+        ('kore-one-path-reaches-plus-subsumption-lhs-alt', 'kore-one-path-reaches-plus-subsumption-rhs-alt'),
+        kore.MLPattern.ONE_PATH_REACHES_STAR: ('kore-one-path-reaches-star-subsumption-lhs-alt', ''),
     }
     """
     Propagate the constraint LHS to RHS
     """
     REACHABILITY_CONSTRAINT_LEMMA = {
-        kore.MLPattern.REWRITES: "kore-rewrites-constraint-lemma",
-        kore.MLPattern.ONE_PATH_REACHES_PLUS: "kore-one-path-reaches-plus-constraint-lemma",
+        kore.MLPattern.REWRITES: 'kore-rewrites-constraint-lemma',
+        kore.MLPattern.ONE_PATH_REACHES_PLUS: 'kore-one-path-reaches-plus-constraint-lemma',
     }
 
     def construct_reachability_claim(
@@ -1669,7 +1669,7 @@ class RewriteProofGenerator(ProofGenerator):
         path = self.get_reachability_conversion_path(given_type, target_type)
 
         assert path is not None, \
-               f"cannot convert {given_type} to {target_type}"
+               f'cannot convert {given_type} to {target_type}'
 
         for theorem_name in path:
             claim = self.composer.apply_kore_lemma(theorem_name, claim)
@@ -1687,7 +1687,7 @@ class RewriteProofGenerator(ProofGenerator):
         """
 
         if KoreUtils.is_implies(claim1.claim.pattern) or KoreUtils.is_implies(claim2.claim.pattern):
-            assert not KoreUtils.is_implies(claim1.claim.pattern), "unsupported"
+            assert not KoreUtils.is_implies(claim1.claim.pattern), 'unsupported'
             # TODO: right now we only support claim 2 to have premises
             table = RewriteProofGenerator.REACHABILITY_WEAKENED_TRANS_THEOREMS
         else:
@@ -1707,11 +1707,11 @@ class RewriteProofGenerator(ProofGenerator):
                         self.apply_reachability_intro(src2, claim2),
                     )
 
-        assert False, f"cannot apply transitivity on reachability types {claim_type1} and {claim_type2} to get {target_type}"
+        assert False, f'cannot apply transitivity on reachability types {claim_type1} and {claim_type2} to get {target_type}'
 
     def apply_reachability_reflexivity(self, target: ReachabilityType, pattern: kore.Pattern) -> ProvableClaim:
         assert target in RewriteProofGenerator.REACHABILITY_REFLEXIVITY_THEOREMS, \
-               f"{target} does not have a reflexivity theorem recorded"
+               f'{target} does not have a reflexivity theorem recorded'
 
         theorem_name = RewriteProofGenerator.REACHABILITY_REFLEXIVITY_THEOREMS[target]
 
@@ -1735,11 +1735,11 @@ class RewriteProofGenerator(ProofGenerator):
 
         given_type = self.get_reachability_type(claim)
         assert given_type in table, \
-               f"{given_type} does not have any subsumption theorem associated to it"
+               f'{given_type} does not have any subsumption theorem associated to it'
 
         theorem_name, _ = table[given_type]
         assert theorem_name is not None, \
-               f"{given_type} does not have a left subsumption theorem associated to it"
+               f'{given_type} does not have a left subsumption theorem associated to it'
 
         return self.composer.apply_kore_lemma(
             theorem_name,
@@ -1762,11 +1762,11 @@ class RewriteProofGenerator(ProofGenerator):
 
         given_type = self.get_reachability_type(claim)
         assert given_type in table, \
-               f"{given_type} does not have any subsumption theorem associated to it"
+               f'{given_type} does not have any subsumption theorem associated to it'
 
         _, theorem_name = table[given_type]
         assert theorem_name is not None, \
-               f"{given_type} does not have a right subsumption theorem associated to it"
+               f'{given_type} does not have a right subsumption theorem associated to it'
 
         return self.composer.apply_kore_lemma(
             theorem_name,
@@ -1782,7 +1782,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         given_type = self.get_reachability_type(claim)
         assert given_type in RewriteProofGenerator.REACHABILITY_CONSTRAINT_LEMMA, \
-               f"{given_type} does not have a constraint lemma associated to it"
+               f'{given_type} does not have a constraint lemma associated to it'
 
         theorem_name = RewriteProofGenerator.REACHABILITY_CONSTRAINT_LEMMA[given_type]
 
@@ -1814,7 +1814,7 @@ class RewriteProofGenerator(ProofGenerator):
 
         if KoreUtils.is_bottom(pattern):
             return self.composer.apply_kore_lemma(
-                "kore-not-bot",
+                'kore-not-bot',
                 goal=self.composer.construct_claim(KoreUtils.construct_not(pattern)),
             )
 
@@ -1831,7 +1831,7 @@ class RewriteProofGenerator(ProofGenerator):
             if right_proof is None:
                 return None
 
-            return self.composer.apply_kore_lemma("kore-de-morgan-alt", left_proof, right_proof)
+            return self.composer.apply_kore_lemma('kore-de-morgan-alt', left_proof, right_proof)
 
         elif KoreUtils.is_and(pattern):
             left, right = KoreUtils.destruct_and(pattern)
@@ -1839,7 +1839,7 @@ class RewriteProofGenerator(ProofGenerator):
             left_proof = self.prove_negation_requires(left)
             if left_proof is not None:
                 return self.composer.apply_kore_lemma(
-                    "kore-or-intro-left-alt",
+                    'kore-or-intro-left-alt',
                     left_proof,
                     ph2=right,
                 )
@@ -1847,7 +1847,7 @@ class RewriteProofGenerator(ProofGenerator):
             right_proof = self.prove_negation_requires(right)
             if right_proof is not None:
                 return self.composer.apply_kore_lemma(
-                    "kore-or-intro-right-alt",
+                    'kore-or-intro-right-alt',
                     right_proof,
                     ph1=left,
                 )
@@ -1871,7 +1871,7 @@ class RewriteProofGenerator(ProofGenerator):
             for var in quantified_variables[::-1]:
                 disjointness = self.fol_gen.apply_forall_intro(disjointness, var)
                 disjointness = self.composer.apply_kore_lemma(
-                    "kore-forall-not-to-exists",
+                    'kore-forall-not-to-exists',
                     disjointness,
                 )
 
@@ -1886,21 +1886,21 @@ class RewriteProofGenerator(ProofGenerator):
             try:
                 proof = self.disjoint_gen.prove_disjointness(left, right)
             except Exception as e:
-                print(f"failed to prove the disjointness of {left} and {right}: {e}")
+                print(f'failed to prove the disjointness of {left} and {right}: {e}')
                 return self.composer.load_fresh_claim_placeholder(
-                    "disjointness",
+                    'disjointness',
                     KoreUtils.construct_not(pattern),
                 )
 
             # |- ( \imp ( \in-sort x ph0 ) ( \not ( \and ... ... ) ) )
-            proof = self.composer.get_theorem("disjointness-exists").apply(proof)
+            proof = self.composer.get_theorem('disjointness-exists').apply(proof)
 
             # |- ( \imp ( \in-sort x ph0 ) ( \kore-valid R ( \kore-not R ( \kore-in ph0 R ... ... ) ) ) )
-            proof = self.composer.get_theorem("disjointness-to-not-in").apply(
+            proof = self.composer.get_theorem('disjointness-to-not-in').apply(
                 PredicateProver.auto,
                 # some technical requirements: the left pattern has to be non-empty
                 SortingProver.auto_rearrange_premise(
-                    self.composer.get_theorem("functional-imp-nonempty-alt"
+                    self.composer.get_theorem('functional-imp-nonempty-alt'
                                               ).apply(self.fol_gen.prove_functional(left), ),
                 ),
                 SortingProver.auto,
@@ -1926,7 +1926,7 @@ class RewriteProofGenerator(ProofGenerator):
         input_sort, output_sort = pattern.sorts
 
         provable = self.composer.apply_kore_lemma(
-            "kore-equals-reflexivity",
+            'kore-equals-reflexivity',
             ph0=output_sort,
             ph1=input_sort,
             ph2=lhs,
@@ -1963,12 +1963,12 @@ class RewriteProofGenerator(ProofGenerator):
             if left_proof is None or right_proof is None:
                 return None
 
-            return self.composer.apply_kore_lemma("kore-and-intro-alt", left_proof, right_proof)
+            return self.composer.apply_kore_lemma('kore-and-intro-alt', left_proof, right_proof)
 
         # if the pattern is top, then it's trivially true
         if pattern.construct == kore.MLPattern.TOP:
             sort = pattern.sorts[0]
-            return self.composer.apply_kore_lemma("kore-top-valid", ph0=sort)
+            return self.composer.apply_kore_lemma('kore-top-valid', ph0=sort)
 
         if pattern.construct == kore.MLPattern.EQUALS:
             return self.prove_equality(pattern)
@@ -1980,7 +1980,7 @@ class RewriteProofGenerator(ProofGenerator):
 
             if left == right:
                 return self.composer.apply_kore_lemma(
-                    "kore-in-reflexivity",
+                    'kore-in-reflexivity',
                     ph0=input_sort,
                     ph1=output_sort,
                     ph2=left,
@@ -2068,7 +2068,7 @@ class RewriteProofGenerator(ProofGenerator):
             return None
 
         instantiated_axiom = self.composer.apply_kore_lemma(
-            "kore-mp-alt",
+            'kore-mp-alt',
             instantiated_axiom,
             requires_proof,
         )
@@ -2077,7 +2077,7 @@ class RewriteProofGenerator(ProofGenerator):
         # since we assumed ensures is top, we can remove it as well
         # that is, from \and{R}(<equation>, top)
         # we can get <equation>
-        instantiated_axiom = self.composer.apply_kore_lemma("kore-anp-top", instantiated_axiom)
+        instantiated_axiom = self.composer.apply_kore_lemma('kore-anp-top', instantiated_axiom)
 
         return instantiated_axiom
 
@@ -2086,21 +2086,21 @@ class RewriteProofGenerator(ProofGenerator):
         Find and instantiate a anywhere/function axiom for the given (function) pattern
         """
 
-        assert isinstance(pattern, kore.Application), f"{pattern} is not an application"
+        assert isinstance(pattern, kore.Application), f'{pattern} is not an application'
 
         head_symbol = pattern.symbol
         assert (
             head_symbol in self.composer.equational_axioms
-        ), f"head symbol {head_symbol} does not have any equational axioms associated to it"
+        ), f'head symbol {head_symbol} does not have any equational axioms associated to it'
 
         non_owise_axioms = []
         owise_axiom = None
 
         for axiom in self.composer.equational_axioms[head_symbol]:
-            if axiom.claim.get_attribute_by_symbol("owise") is None:
+            if axiom.claim.get_attribute_by_symbol('owise') is None:
                 non_owise_axioms.append(axiom)
             else:
-                assert owise_axiom is None, "multiple otherwise axioms"
+                assert owise_axiom is None, 'multiple otherwise axioms'
                 owise_axiom = axiom
 
         # find an anywhere/function rule to rewrite
@@ -2115,14 +2115,14 @@ class RewriteProofGenerator(ProofGenerator):
             if instantiated is not None:
                 return instantiated
 
-        raise Exception(f"unable to find anywhere/function rule to rewrite term {pattern}")
+        raise Exception(f'unable to find anywhere/function rule to rewrite term {pattern}')
 
     def get_concrete_function_symbols(self) -> Set[str]:
         return set(self.hooked_symbol_evaluators.keys()).difference(RewriteProofGenerator.SYMBOLIC_FUNCTIONS)
 
     def is_simplifiable(self, pattern: kore.Pattern) -> bool:
         """
-        Checks if the given pattern is "simplifiable", that is, if
+        Checks if the given pattern is 'simplifiable', that is, if
         it contains duplicate injections and/or unevaluated functions
         """
 
@@ -2170,7 +2170,7 @@ class RewriteProofGenerator(ProofGenerator):
             # simplify nested inj
             nested_inj_path = InnermostNestedInjectionPathVisitor(self.composer).visit(subpattern)
             if nested_inj_path is not None:
-                print(f"> simplifying nested inj")
+                print(f'> simplifying nested inj')
                 provable = InjectionCombine(self.composer).replace_equal_subpattern(provable, path + nested_inj_path)
                 continue
 
@@ -2184,7 +2184,7 @@ class RewriteProofGenerator(ProofGenerator):
             if function_path is not None:
                 function_subpattern = KoreUtils.get_subpattern_by_path(subpattern, function_path)
                 assert isinstance(function_subpattern, kore.Application)
-                print(f"> rewriting anywhere/function {function_subpattern.symbol}")
+                print(f'> rewriting anywhere/function {function_subpattern.symbol}')
 
                 # if the symbol is bulitin, try the builtin evaluator
                 symbol_string = function_subpattern.symbol.get_symbol_name()
@@ -2270,7 +2270,7 @@ class InnermostFunctionPathVisitor(KoreVisitor[Union[kore.Pattern, kore.Axiom], 
             # we ignore it and leave it to the SMT solver
             cannot_evaluate = application.symbol not in self.composer.equational_axioms and symbol_name not in self.builtin_functions
             has_smt_hook = isinstance(application.symbol.definition, kore.SymbolDefinition) and \
-                           application.symbol.definition.has_attribute("smt-hook")
+                           application.symbol.definition.has_attribute('smt-hook')
             if cannot_evaluate and has_smt_hook:
                 return None
 
@@ -2304,23 +2304,23 @@ class BuiltinFunctionEvaluator(ProofGenerator):
 
     def parse_int(self, value: kore.Pattern) -> int:
         assert (isinstance(value, kore.MLPattern) and value.construct == kore.MLPattern.DV)
-        assert (isinstance(value.sorts[0], kore.SortInstance) and value.sorts[0].get_sort_id() == "SortInt")
+        assert (isinstance(value.sorts[0], kore.SortInstance) and value.sorts[0].get_sort_id() == 'SortInt')
 
         assert isinstance(value.arguments[0], kore.StringLiteral)
         return int(value.arguments[0].content)
 
     def parse_bool(self, value: kore.Pattern) -> bool:
         assert (isinstance(value, kore.MLPattern) and value.construct == kore.MLPattern.DV), \
-               f"expecting a domain value, got {value}"
-        assert (isinstance(value.sorts[0], kore.SortInstance) and value.sorts[0].get_sort_id() == "SortBool")
+               f'expecting a domain value, got {value}'
+        assert (isinstance(value.sorts[0], kore.SortInstance) and value.sorts[0].get_sort_id() == 'SortBool')
         assert isinstance(value.arguments[0], kore.StringLiteral)
-        return {"true": True, "false": False}[value.arguments[0].content]
+        return {'true': True, 'false': False}[value.arguments[0].content]
 
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         raise NotImplementedError()
 
     def build_equation(self, application: kore.Application, result: kore.Pattern) -> ProvableClaim:
-        sort_var = kore.SortVariable("R")
+        sort_var = kore.SortVariable('R')
         claim = self.composer.construct_claim(
             KoreUtils.construct_equals(sort_var, application, result),
             sort_variables=[sort_var],
@@ -2328,16 +2328,16 @@ class BuiltinFunctionEvaluator(ProofGenerator):
 
         # TODO: we need to generate a proof obligation for
         # this arithmetic fact
-        with self.composer.in_segment("dv"):
-            self.composer.load_comment("NOTE: domain value reasoning checked by external tool")
+        with self.composer.in_segment('dv'):
+            self.composer.load_comment('NOTE: domain value reasoning checked by external tool')
             provable_claim = self.composer.load_axiom(
                 claim,
-                f"{self.composer.sanitize_label_name(application.symbol.get_symbol_name())}-domain-fact-{self.axiom_counter}",
+                f'{self.composer.sanitize_label_name(application.symbol.get_symbol_name())}-domain-fact-{self.axiom_counter}',
                 comment=False,
                 provable=self.composer.dv_as_provable,
             )
 
-        print(f"> bulitin symbol proof obligation: {claim}")
+        print(f'> bulitin symbol proof obligation: {claim}')
 
         self.axiom_counter += 1
 
@@ -2354,7 +2354,7 @@ class BuiltinFunctionEvaluator(ProofGenerator):
         output_sort = KoreUtils.infer_sort(application)
 
         if type(result) is bool:
-            result_literal = "true" if result else "false"
+            result_literal = 'true' if result else 'false'
         else:
             result_literal = str(result)
 
@@ -2496,7 +2496,7 @@ class MapLookupEvaluator(BuiltinFunctionEvaluator):
         assert isinstance(map_pattern, kore.Application)
 
         found = self.lookup(map_pattern, key_pattern)
-        assert found is not None, f"key {key_pattern} does not exist in map pattern {map_pattern}"
+        assert found is not None, f'key {key_pattern} does not exist in map pattern {map_pattern}'
 
         return self.build_equation(application, found)
 
@@ -2586,7 +2586,7 @@ class BytesUnitEvaluator(BuiltinFunctionEvaluator):
 
     def prove_evaluation(self, application: kore.Application) -> ProvableClaim:
         sort = KoreUtils.infer_sort(application)
-        dv = kore.MLPattern(kore.MLPattern.DV, [sort], [kore.StringLiteral("")])
+        dv = kore.MLPattern(kore.MLPattern.DV, [sort], [kore.StringLiteral('')])
         return self.build_equation(application, dv)
 
 
@@ -2597,14 +2597,14 @@ class IfEvaluator(BuiltinFunctionEvaluator):
 
         assert isinstance(condition, kore.MLPattern) and \
                condition.construct == kore.MLPattern.DV, \
-               f"non-concrete condition {condition}"
+               f'non-concrete condition {condition}'
 
         literal, = condition.arguments
         assert isinstance(literal, kore.StringLiteral)
 
-        if literal.content == "true":
+        if literal.content == 'true':
             return self.build_equation(application, true_branch)
-        elif literal.content == "false":
+        elif literal.content == 'false':
             return self.build_equation(application, false_branch)
         else:
-            assert False, f"unexpected condition {condition}"
+            assert False, f'unexpected condition {condition}'

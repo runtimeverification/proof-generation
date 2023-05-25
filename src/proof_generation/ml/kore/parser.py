@@ -256,36 +256,36 @@ ml_pattern: ml_symbols "{" sorts "}" "(" patterns ")"
 
 definition_parser = Lark(
     syntax,
-    start="definition",
-    parser="lalr",
-    lexer="standard",
+    start='definition',
+    parser='lalr',
+    lexer='standard',
     propagate_positions=True,
 )
 
 # parser for an individual pattern
 pattern_parser = Lark(
     syntax,
-    start="pattern",
-    parser="lalr",
-    lexer="standard",
+    start='pattern',
+    parser='lalr',
+    lexer='standard',
     propagate_positions=True,
 )
 
 # parser for an individual axiom
 axiom_parser = Lark(
     syntax,
-    start="axiom",
-    parser="lalr",
-    lexer="standard",
+    start='axiom',
+    parser='lalr',
+    lexer='standard',
     propagate_positions=True,
 )
 
 # parser for an individual module
 module_parser = Lark(
     syntax,
-    start="module",
-    parser="lalr",
-    lexer="standard",
+    start='module',
+    parser='lalr',
+    lexer='standard',
     propagate_positions=True,
 )
 

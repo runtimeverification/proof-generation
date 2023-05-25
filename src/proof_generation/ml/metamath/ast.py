@@ -8,7 +8,7 @@ from ml.utils.visitor import Visitor, ResultT
 from ml.utils.printer import Printer
 
 
-class MetamathVisitor(Visitor["BaseAST", ResultT]):
+class MetamathVisitor(Visitor['BaseAST', ResultT]):
     """
     This is a less general version
     of metamath that preseves certain structures
@@ -169,7 +169,7 @@ class DisjointStatement(Statement):
 
 
 Terms = Tuple[Term, ...]
-StmtT = TypeVar("StmtT", bound="StructuredStatement")
+StmtT = TypeVar('StmtT', bound='StructuredStatement')
 
 
 @dataclass
@@ -192,8 +192,8 @@ class StructuredStatement(Statement):
 
 @dataclass
 class FloatingStatement(StructuredStatement):
-    typecode: str = field(default="", init=False)
-    metavariable: str = field(default="", init=False)
+    typecode: str = field(default='', init=False)
+    metavariable: str = field(default='', init=False)
 
     def __post_init__(self) -> None:
         assert len(self.terms) == 2 and \
@@ -268,7 +268,7 @@ class Encoder(Printer, Visitor[BaseAST, None]):
     Encoder for Metamath AST with options
     """
 
-    def __init__(self, output: TextIO, tab: str = "   ", omit_proof: bool = False):
+    def __init__(self, output: TextIO, tab: str = '   ', omit_proof: bool = False):
         super().__init__(output, tab)
         self.omit_proof = omit_proof
 
@@ -291,104 +291,104 @@ class Encoder(Printer, Visitor[BaseAST, None]):
         if len(application.subterms) == 0:
             self.write(application.symbol)
         else:
-            self.write("( ")
+            self.write('( ')
             self.write(application.symbol)
 
             for subterm in application.subterms:
-                self.write(" ")
-                assert isinstance(subterm, Term), "not a term: {}".format(subterm)
+                self.write(' ')
+                assert isinstance(subterm, Term), 'not a term: {}'.format(subterm)
                 self.visit(subterm)
 
-            self.write(" )")
+            self.write(' )')
 
     def postvisit_constant_statement(self, constant_statement: ConstantStatement) -> None:
-        self.write("$c")
+        self.write('$c')
         for constant in constant_statement.constants:
-            self.write(" ")
+            self.write(' ')
             self.write(constant)
-        self.write(" $.")
+        self.write(' $.')
 
     def postvisit_variable_statement(self, variable_statement: VariableStatement) -> None:
-        self.write("$v")
+        self.write('$v')
         for metavar in variable_statement.metavariables:
-            self.write(" ")
+            self.write(' ')
             self.visit(metavar)
-        self.write(" $.")
+        self.write(' $.')
 
     def postvisit_disjoint_statement(self, disjoint_statement: DisjointStatement) -> None:
-        self.write("$d")
+        self.write('$d')
         for metavar in disjoint_statement.metavariables:
-            self.write(" ")
+            self.write(' ')
             self.visit(metavar)
-        self.write(" $.")
+        self.write(' $.')
 
     def postvisit_comment(self, comment: Comment) -> None:
-        self.write("\n$(")
+        self.write('\n$(')
         if not comment.text[:-1].isspace():
-            self.write(" ")
+            self.write(' ')
 
         with self.indentation():
             self.write(comment.text)
 
         if not comment.text[-1:].isspace():
-            self.write(" ")
-        self.write("$)")
+            self.write(' ')
+        self.write('$)')
 
     def postvisit_include_statement(self, include: IncludeStatement) -> None:
-        self.write("$[ ")
+        self.write('$[ ')
         self.write(include.path)
-        self.write(" $]")
+        self.write(' $]')
 
     def get_statement_type(self, stmt: StructuredStatement) -> str:
         if isinstance(stmt, FloatingStatement):
-            return "f"
+            return 'f'
         elif isinstance(stmt, EssentialStatement):
-            return "e"
+            return 'e'
         elif isinstance(stmt, AxiomaticStatement):
-            return "a"
+            return 'a'
         elif isinstance(stmt, ProvableStatement):
-            return "p"
+            return 'p'
         else:
-            return "?"
+            return '?'
 
     def postvisit_structured_statement(self, stmt: StructuredStatement) -> None:
         if stmt.label:
             self.write(stmt.label)
-            self.write(" ")
+            self.write(' ')
 
-        self.write("$")
+        self.write('$')
         self.write(self.get_statement_type(stmt))
 
         for term in stmt.terms:
-            self.write(" ")
+            self.write(' ')
             self.visit(term)
 
         if isinstance(stmt, ProvableStatement):
             if stmt.proof is not None:
                 if self.omit_proof:
-                    self.write(" $= <omitted>")
+                    self.write(' $= <omitted>')
                 else:
-                    self.write(" $= ")
+                    self.write(' $= ')
                     self.write(stmt.proof)
             else:
-                self.write(" $= ?")
+                self.write(' $= ?')
 
-        self.write(" $.")
+        self.write(' $.')
 
     def postvisit_block(self, block: Block) -> None:
-        self.write("${ ")
+        self.write('${ ')
 
         with self.indentation():
             for i, stmt in enumerate(block.statements):
                 self.visit(stmt)
                 if i + 1 != len(block.statements):
-                    self.write("\n")
+                    self.write('\n')
                 else:
-                    self.write(" ")
+                    self.write(' ')
 
-        self.write("$}")
+        self.write('$}')
 
     def postvisit_database(self, database: Database) -> None:
         for stmt in database.statements:
             self.visit(stmt)
-            self.write("\n")
+            self.write('\n')

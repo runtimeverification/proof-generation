@@ -73,9 +73,9 @@ class UnificationResult:
         return UnificationResult(self.substitution, [(eqn.get_inverse(), path) for eqn, path in self.applied_equations])
 
     def __str__(self) -> str:
-        return "sigma = {{ {} }}, T = [ {} ]".format(
-            ", ".join([f"{a} = {b}" for a, b in self.substitution.items()]),
-            ", ".join([f"({e}, {p})" for e, p in self.applied_equations]),
+        return 'sigma = {{ {} }}, T = [ {} ]'.format(
+            ', '.join([f'{a} = {b}' for a, b in self.substitution.items()]),
+            ', '.join([f'({e}, {p})' for e, p in self.applied_equations]),
         )
 
 
@@ -122,14 +122,14 @@ class DuplicateConjunction(Equation):
             # phi /\ phi -> phi
             argument, _ = KoreUtils.destruct_and(subpattern)
 
-        sort_var = kore.SortVariable("R")
+        sort_var = kore.SortVariable('R')
         equality = self.composer.construct_claim(
             KoreUtils.construct_equals(sort_var, KoreUtils.construct_and(argument, argument), argument),
             sort_variables=[sort_var],
         )
 
         provable_equality = self.composer.apply_kore_lemma(
-            "kore-dup-and",
+            'kore-dup-and',
             goal=equality,
         )
 
@@ -163,7 +163,7 @@ class InjectionCombine(Equation):
         )
 
         sort_a, sort_b1 = subsubpattern.symbol.sort_arguments
-        assert sort_b1 == sort_b, f"ill-sorted injection {subpattern}"
+        assert sort_b1 == sort_b, f'ill-sorted injection {subpattern}'
 
         fol_gen = FOLProofGenerator(self.composer)
 
@@ -239,7 +239,7 @@ class MapCommutativity(Equation):
 
         # get the two variable (names) in the commutativity axiom
         map_sort = KoreUtils.infer_sort(subpattern)
-        assert map_sort in self.composer.map_commutativity_axiom, f"unable to find commutativity axiom for {map_sort}"
+        assert map_sort in self.composer.map_commutativity_axiom, f'unable to find commutativity axiom for {map_sort}'
         assert isinstance(map_sort, kore.SortInstance)
         comm_axiom = self.composer.map_commutativity_axiom[map_sort]
 
@@ -281,7 +281,7 @@ class MapAssociativity(Equation):
         assert KoreTemplates.is_map_merge_pattern(subpattern)
 
         map_sort = KoreUtils.infer_sort(subpattern)
-        assert map_sort in self.composer.map_associativity_axiom, f"unable to find associativity axiom for {map_sort}"
+        assert map_sort in self.composer.map_associativity_axiom, f'unable to find associativity axiom for {map_sort}'
         assert isinstance(map_sort, kore.SortInstance)
         assoc_axiom = self.composer.map_associativity_axiom[map_sort]
 
@@ -352,7 +352,7 @@ class MapRightUnit(Equation):
         assert KoreTemplates.is_map_pattern(subpattern)
 
         map_sort = KoreUtils.infer_sort(subpattern)
-        assert map_sort in self.composer.map_right_unit_axiom, f"unable to find right unit axiom for {map_sort}"
+        assert map_sort in self.composer.map_right_unit_axiom, f'unable to find right unit axiom for {map_sort}'
         assert isinstance(map_sort, kore.SortInstance)
         right_unit_axiom = self.composer.map_right_unit_axiom[map_sort]
 
@@ -439,7 +439,7 @@ class MapUnificationMixin(ABC):
             return pattern, []
 
         assert KoreTemplates.is_map_merge_pattern(pattern), \
-               f"expecting map merge, got {pattern}"
+               f'expecting map merge, got {pattern}'
 
         # swap & rotate such that the resulting map is of the form
         # merge(a, rest)
@@ -548,7 +548,7 @@ class MapUnificationMixin(ABC):
            not KoreTemplates.is_map_merge_pattern(pattern2):
             # fall back to the dumb strategy
             # TODO: simplify this
-            # print("fallback!")
+            # print('fallback!')
             # KoreUtils.pretty_print(pattern1)
             # KoreUtils.pretty_print(pattern2)
             return self.unify_concrete_map_patterns_with_sort(pattern1, pattern2)
@@ -674,9 +674,9 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
             if result is not None:
                 return result
 
-        # print("pattern1")
+        # print('pattern1')
         # KoreUtils.pretty_print(pattern1)
-        # print("pattern2")
+        # print('pattern2')
         # KoreUtils.pretty_print(pattern2)
 
         return None

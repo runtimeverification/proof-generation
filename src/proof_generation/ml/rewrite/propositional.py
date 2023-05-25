@@ -14,32 +14,32 @@ class PropositionalProofGenerator(ProofGenerator):
     """
 
     COMMUTATIVITY = {
-        kore.MLPattern.AND: "kore-and-commutativity",
-        kore.MLPattern.OR: "kore-or-commutativity",
+        kore.MLPattern.AND: 'kore-and-commutativity',
+        kore.MLPattern.OR: 'kore-or-commutativity',
     }
 
     ASSOCIATIVITY = {
-        kore.MLPattern.AND: "kore-and-associativity",
-        kore.MLPattern.OR: "kore-or-associativity",
+        kore.MLPattern.AND: 'kore-and-associativity',
+        kore.MLPattern.OR: 'kore-or-associativity',
     }
 
     IMPLIES_COMPAT = {
-        kore.MLPattern.AND: "kore-implies-compat-in-kore-and",
-        kore.MLPattern.OR: "kore-implies-compat-in-kore-or",
+        kore.MLPattern.AND: 'kore-implies-compat-in-kore-and',
+        kore.MLPattern.OR: 'kore-implies-compat-in-kore-or',
     }
 
     IFF_COMPAT = {
-        kore.MLPattern.AND: "kore-iff-compat-in-kore-and",
-        kore.MLPattern.OR: "kore-iff-compat-in-kore-or",
+        kore.MLPattern.AND: 'kore-iff-compat-in-kore-and',
+        kore.MLPattern.OR: 'kore-iff-compat-in-kore-or',
     }
 
     def apply_implies_reflexivity(self, pattern: kore.Pattern) -> ProvableClaim:
         claim = self.composer.construct_claim(KoreUtils.construct_implies(pattern, pattern))
-        return self.composer.apply_kore_lemma("kore-implies-reflexivity-alt", goal=claim)
+        return self.composer.apply_kore_lemma('kore-implies-reflexivity-alt', goal=claim)
 
     def apply_iff_reflexivity(self, pattern: kore.Pattern) -> ProvableClaim:
         claim = self.composer.construct_claim(KoreUtils.construct_iff(pattern, pattern))
-        return self.composer.apply_kore_lemma("kore-iff-reflexivity", goal=claim)
+        return self.composer.apply_kore_lemma('kore-iff-reflexivity', goal=claim)
 
     @staticmethod
     def destruct_implies_claim(claim: ProvableClaim) -> Tuple[kore.Pattern, kore.Pattern]:
@@ -54,16 +54,16 @@ class PropositionalProofGenerator(ProofGenerator):
     def apply_implies_transitivity(self, claim1: ProvableClaim, claim2: ProvableClaim) -> ProvableClaim:
         _, right1 = PropositionalProofGenerator.destruct_implies_claim(claim1)
         left2, _ = PropositionalProofGenerator.destruct_implies_claim(claim2)
-        assert right1 == left2, f"cannot connect {claim1.claim} and {claim2.claim}"
+        assert right1 == left2, f'cannot connect {claim1.claim} and {claim2.claim}'
 
-        return self.composer.apply_kore_lemma("kore-implies-transitivity-alt", claim1, claim2)
+        return self.composer.apply_kore_lemma('kore-implies-transitivity-alt', claim1, claim2)
 
     def apply_iff_transitivity(self, claim1: ProvableClaim, claim2: ProvableClaim) -> ProvableClaim:
         _, right1 = PropositionalProofGenerator.destruct_iff_claim(claim1)
         left2, _ = PropositionalProofGenerator.destruct_iff_claim(claim2)
-        assert right1 == left2, f"cannot connect {claim1.claim} and {claim2.claim}"
+        assert right1 == left2, f'cannot connect {claim1.claim} and {claim2.claim}'
 
-        return self.composer.apply_kore_lemma("kore-iff-transitivity", claim1, claim2)
+        return self.composer.apply_kore_lemma('kore-iff-transitivity', claim1, claim2)
 
     def apply_implies_multiple_transitivity(self, *claims: ProvableClaim) -> ProvableClaim:
         assert len(claims) > 0
@@ -93,7 +93,7 @@ class PropositionalProofGenerator(ProofGenerator):
         -------------
         phi2 <-> phi1
         """
-        return self.composer.apply_kore_lemma("kore-iff-symmetry", claim)
+        return self.composer.apply_kore_lemma('kore-iff-symmetry', claim)
 
     def apply_iff_elim_left(self, claim: ProvableClaim) -> ProvableClaim:
         """
@@ -101,7 +101,7 @@ class PropositionalProofGenerator(ProofGenerator):
         -------------
         phi1 -> phi2
         """
-        return self.composer.apply_kore_lemma("kore-iff-elim-left", claim)
+        return self.composer.apply_kore_lemma('kore-iff-elim-left', claim)
 
     def apply_iff_elim_right(self, claim: ProvableClaim) -> ProvableClaim:
         """
@@ -109,7 +109,7 @@ class PropositionalProofGenerator(ProofGenerator):
         -------------
         phi2 -> phi1
         """
-        return self.composer.apply_kore_lemma("kore-iff-elim-right", claim)
+        return self.composer.apply_kore_lemma('kore-iff-elim-right', claim)
 
     def apply_commutativity(self, construct: str, pattern: kore.Pattern) -> ProvableClaim:
         """
@@ -233,7 +233,7 @@ class PropositionalProofGenerator(ProofGenerator):
         """
 
         if not (isinstance(pattern, kore.MLPattern) and pattern.construct == construct):
-            assert n == 0, f"{n}^th conjunct does not exist in {pattern}"
+            assert n == 0, f'{n}^th conjunct does not exist in {pattern}'
             return self.apply_iff_reflexivity(pattern)
 
         left, right = KoreUtils.destruct_ml_pattern(construct, pattern)
@@ -304,7 +304,7 @@ class PropositionalProofGenerator(ProofGenerator):
 
             return shuffle
 
-        assert False, f"{n}^th conjunct does not exist in {pattern}"
+        assert False, f'{n}^th conjunct does not exist in {pattern}'
 
     def apply_weakening(self, claim: ProvableClaim, additional_premise: kore.Pattern) -> ProvableClaim:
         """
@@ -312,14 +312,14 @@ class PropositionalProofGenerator(ProofGenerator):
         return a proof of |- psi -> phi
         """
         return self.composer.apply_kore_lemma(
-            "kore-weakening",
+            'kore-weakening',
             claim,
             ph1=additional_premise,
         )
 
     def apply_mp(self, implication: ProvableClaim, premise: ProvableClaim) -> ProvableClaim:
         return self.composer.apply_kore_lemma(
-            "kore-mp-alt",
+            'kore-mp-alt',
             implication,
             premise,
         )
@@ -327,13 +327,13 @@ class PropositionalProofGenerator(ProofGenerator):
     def apply_and_elim_left(self, pattern: kore.Pattern) -> ProvableClaim:
         left, _ = KoreUtils.destruct_and(pattern)
         return self.composer.apply_kore_lemma(
-            "kore-and-elim-left-alt3",
+            'kore-and-elim-left-alt3',
             goal=self.composer.construct_claim(KoreUtils.construct_implies(pattern, left)),
         )
 
     def apply_and_elim_right(self, pattern: kore.Pattern) -> ProvableClaim:
         _, right = KoreUtils.destruct_and(pattern)
         return self.composer.apply_kore_lemma(
-            "kore-and-elim-right-alt3",
+            'kore-and-elim-right-alt3',
             goal=self.composer.construct_claim(KoreUtils.construct_implies(pattern, right)),
         )

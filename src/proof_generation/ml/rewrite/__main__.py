@@ -62,7 +62,7 @@ def load_tasks(module: Module, task_path: str) -> Tuple[Tuple[RewritingTask, ...
 
 
 def parse_smt_option(args: argparse.Namespace) -> SMTOption:
-    return SMTOption(args.smt_prelude, args.z3_tactic or "default", args.z3_timeout)
+    return SMTOption(args.smt_prelude, args.z3_tactic or 'default', args.z3_timeout)
 
 
 def prove_rewriting(
@@ -70,7 +70,7 @@ def prove_rewriting(
     task: RewritingTask,
     smt_option: SMTOption,
 ) -> None:
-    print("proving symbolic execution")
+    print('proving symbolic execution')
     gen = RewriteProofGenerator(composer, smt_option)
     gen.prove_symbolic_rewriting_task(task)
 
@@ -80,96 +80,96 @@ def prove_reachability(
     tasks: Tuple[ReachabilityTask, ...],
     smt_option: SMTOption,
 ) -> None:
-    print("proving one-path reachability")
+    print('proving one-path reachability')
     gen = RewriteProofGenerator(composer, smt_option)
     gen.prove_one_path_reachability_claims(tasks)
 
 
 def set_additional_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--standalone",
-        action="store_const",
+        '--standalone',
+        action='store_const',
         const=True,
         default=False,
-        help="Output a standalone proof object containing all proofs and prelude",
+        help='Output a standalone proof object containing all proofs and prelude',
     )
     parser.add_argument(
-        "-o",
-        "--output",
-        help="Directory to store the translated module and proof object",
+        '-o',
+        '--output',
+        help='Directory to store the translated module and proof object',
     )
-    parser.add_argument("--prelude", help="prelude mm file")
+    parser.add_argument('--prelude', help='prelude mm file')
     parser.add_argument(
-        "--task",
-        help="Task description file in YAML. we currently only support rewriting tasks",
+        '--task',
+        help='Task description file in YAML. we currently only support rewriting tasks',
     )
     parser.add_argument(
-        "--benchmark",
-        action="store_const",
+        '--benchmark',
+        action='store_const',
         const=True,
         default=False,
-        help="Output the time spent for translating module and proving rewriting",
+        help='Output the time spent for translating module and proving rewriting',
     )
     parser.add_argument(
-        "--dv-as-provable",
-        action="store_const",
+        '--dv-as-provable',
+        action='store_const',
         const=True,
         default=False,
-        help="Generate domain facts as provable instead of axiom",
+        help='Generate domain facts as provable instead of axiom',
     )
     parser.add_argument(
-        "--proof-cache-threshold",
+        '--proof-cache-threshold',
         type=int,
         default=ProofCache.THEOREM_CACHE_THRESHOLD,
-        help="Maximum uncached proof size",
+        help='Maximum uncached proof size',
     )
     parser.add_argument(
-        "--profile-mem",
-        action="store_const",
+        '--profile-mem',
+        action='store_const',
         const=True,
         default=False,
-        help="Enable profiler for memory usage",
+        help='Enable profiler for memory usage',
     )
     parser.add_argument(
-        "--profile-mem-n-top",
+        '--profile-mem-n-top',
         type=int,
         default=10,
-        help="Number of top memory-consuming items to show when the memory profiler is enable",
+        help='Number of top memory-consuming items to show when the memory profiler is enable',
     )
     parser.add_argument(
-        "--profile-mem-trace-limit",
+        '--profile-mem-trace-limit',
         type=int,
         default=1,
-        help="Trace limit of memory profiler, used only if the memory profiler is enabled",
+        help='Trace limit of memory profiler, used only if the memory profiler is enabled',
     )
     parser.add_argument(
-        "-c",
-        "--compress",
-        action="store_const",
+        '-c',
+        '--compress',
+        action='store_const',
         const=True,
         default=False,
         help=
-        "Compress the output proof object using the LZMA algorithm, currently only applicable in the standalone mode",
+        'Compress the output proof object using the LZMA algorithm, currently only applicable in the standalone mode',
     )
     parser.add_argument(
-        "--smt-prelude",
-        help="SMT prelude file",
+        '--smt-prelude',
+        help='SMT prelude file',
     )
     parser.add_argument(
-        "--z3-tactic",
-        help="Tactic to use for z3",
+        '--z3-tactic',
+        help='Tactic to use for z3',
     )
     parser.add_argument(
-        "--z3-timeout",
+        '--z3-timeout',
         type=int,
-        help="z3 timeout (in ms)",
+        help='z3 timeout (in ms)',
     )
 
 
 def get_arguments(argv: Optional[Sequence[str]]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("definition", help="Input Kore definition")
-    parser.add_argument("module", help="Entry module name")
+    parser.add_argument('definition', help='Input Kore definition')
+    parser.add_argument('module', help='Entry module name')
     set_additional_flags(parser)
     return parser.parse_args(argv)
 
@@ -180,14 +180,14 @@ def get_backend(args: argparse.Namespace) -> ContextManager[Backend]:
     """
 
     if args.standalone:
-        assert args.output is not None, "--standalone given without specifying the output file"
+        assert args.output is not None, '--standalone given without specifying the output file'
 
         if args.compress:
-            output_path = args.output + ".xz"
-            print(f"storing standalone and compressed proof object at {output_path}")
+            output_path = args.output + '.xz'
+            print(f'storing standalone and compressed proof object at {output_path}')
         else:
             output_path = args.output
-            print(f"storing standalone proof object at {output_path}")
+            print(f'storing standalone proof object at {output_path}')
 
         return StandaloneFileBackend(output_path, compression=args.compress)
 
@@ -200,16 +200,16 @@ def get_backend(args: argparse.Namespace) -> ContextManager[Backend]:
         # layout of the output proof object
         layout = (
             (None, None, ()),  # ignore all statements without assigned segment (e.g. prelude)
-            ("variable", "variable.mm", prelude_deps),
-            ("sort", "module-sort.mm", ("variable", )),
-            ("symbol", "module-symbol.mm", ("sort", )),
-            ("dv", "dv.mm", ("symbol", )),
-            ("module", "module-axiom.mm", ("dv", )),
-            ("substitution", "substitution.mm", ("module", )),
-            ("rewrite", "goal.mm", ("substitution", )),
+            ('variable', 'variable.mm', prelude_deps),
+            ('sort', 'module-sort.mm', ('variable', )),
+            ('symbol', 'module-symbol.mm', ('sort', )),
+            ('dv', 'dv.mm', ('symbol', )),
+            ('module', 'module-axiom.mm', ('dv', )),
+            ('substitution', 'substitution.mm', ('module', )),
+            ('rewrite', 'goal.mm', ('substitution', )),
         )
 
-        print(f"storing separated proof objects in {args.output}")
+        print(f'storing separated proof objects in {args.output}')
 
         return MultipleFileBackend(args.output, layout)
     else:
@@ -242,7 +242,7 @@ def run_on_arguments(args: argparse.Namespace) -> None:
         KorePreprocessor().preprocess(definition)
         module = definition.module_map[args.module]
 
-        with stopwatch.start("module"), env.in_segment("module"):
+        with stopwatch.start('module'), env.in_segment('module'):
             env.load_module(module)
 
         if args.task is not None:
@@ -252,22 +252,22 @@ def run_on_arguments(args: argparse.Namespace) -> None:
 
             if len(rewriting_tasks) != 0:
                 assert len(reachability_tasks) == 0 and len(rewriting_tasks) == 1
-                with stopwatch.start("rewrite"), env.in_segment("rewrite"):
+                with stopwatch.start('rewrite'), env.in_segment('rewrite'):
                     prove_rewriting(env, rewriting_tasks[0], smt_option)
 
             else:
                 assert len(reachability_tasks) != 0
-                with stopwatch.start("rewrite"), env.in_segment("rewrite"):
+                with stopwatch.start('rewrite'), env.in_segment('rewrite'):
                     prove_reachability(env, reachability_tasks, smt_option)
 
     if args.benchmark:
-        module_elapsed = stopwatch.get_elapsed("module")
-        rewrite_elapsed = stopwatch.get_elapsed("rewrite")
+        module_elapsed = stopwatch.get_elapsed('module')
+        rewrite_elapsed = stopwatch.get_elapsed('rewrite')
 
-        print("==================")
-        print(f"gen-module {module_elapsed}")
-        print(f"gen-rewrite {rewrite_elapsed}")
-        print(f"gen-total {module_elapsed + rewrite_elapsed}")
+        print('==================')
+        print(f'gen-module {module_elapsed}')
+        print(f'gen-rewrite {rewrite_elapsed}')
+        print(f'gen-total {module_elapsed + rewrite_elapsed}')
 
     if args.profile_mem:
         MemoryProfiler.print_current_snapshot(num_top_stats=args.profile_mem_n_top)
@@ -278,6 +278,6 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     run_on_arguments(get_arguments(argv))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.setrecursionlimit(4096)
     main()

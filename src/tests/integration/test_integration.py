@@ -30,24 +30,24 @@ class TestIntegrationBase(unittest.TestCase):
 
         assert os.path.isdir(self.output_proof_dir)
 
-        definitions_path = os.path.join("tests", "definitions")
-        integration_path = os.path.join("tests", "integration")
-        prelude_path = os.path.join("theory", "prelude.mm")
+        definitions_path = os.path.join('tests', 'definitions')
+        integration_path = os.path.join('tests', 'integration')
+        prelude_path = os.path.join('theory', 'prelude.mm')
 
         assert os.path.isdir(definitions_path) and \
                os.path.isdir(integration_path) and \
                os.path.isfile(prelude_path), \
-               "not in the right directory"
+               'not in the right directory'
 
-        task_path = os.path.join(integration_path, f"{pgm}.yml")
+        task_path = os.path.join(integration_path, f'{pgm}.yml')
         assert os.path.isfile(task_path), \
-               f"cannot find task file {task_path}"
+               f'cannot find task file {task_path}'
 
-        definition_name = pgm.split(".")[-1]
-        definition_path = os.path.join(definitions_path, f"{definition_name}.kore")
+        definition_name = pgm.split('.')[-1]
+        definition_path = os.path.join(definitions_path, f'{definition_name}.kore')
 
         assert os.path.isfile(definition_path), \
-               f"cannot find definition {definition_path} inferred from program name {pgm}"
+               f'cannot find definition {definition_path} inferred from program name {pgm}'
 
         module_name = definition_name.upper()
 
@@ -55,11 +55,11 @@ class TestIntegrationBase(unittest.TestCase):
             [
                 definition_path,
                 module_name,
-                "--prelude",
+                '--prelude',
                 prelude_path,
-                "--task",
+                '--task',
                 task_path,
-                # "--output",
+                # '--output',
                 # self.output_proof_dir,
             ]
         )
@@ -68,26 +68,26 @@ class TestIntegrationBase(unittest.TestCase):
 class TestRewriteProofGeneratorIntegeration(TestIntegrationBase):
     # TODO: verify using metamath
     def test_foo(self) -> None:
-        self.run_rewrite_proof_gen("pgm-1.foo")
+        self.run_rewrite_proof_gen('pgm-1.foo')
 
     def test_lambda(self) -> None:
-        self.run_rewrite_proof_gen("pgm-1.lambda-custom-substitution")
+        self.run_rewrite_proof_gen('pgm-1.lambda-custom-substitution')
 
     def test_imp(self) -> None:
-        self.run_rewrite_proof_gen("pgm-1.imp-custom-map")
+        self.run_rewrite_proof_gen('pgm-1.imp-custom-map')
 
     def test_map_test_comm(self) -> None:
-        self.run_rewrite_proof_gen("pgm-comm.map-test")
+        self.run_rewrite_proof_gen('pgm-comm.map-test')
 
     def test_map_test_ac(self) -> None:
-        self.run_rewrite_proof_gen("pgm-ac-hard.map-test")
+        self.run_rewrite_proof_gen('pgm-ac-hard.map-test')
 
     def test_map_test_unit(self) -> None:
-        self.run_rewrite_proof_gen("pgm-unit.map-test")
+        self.run_rewrite_proof_gen('pgm-unit.map-test')
 
     def test_map_test_acu(self) -> None:
-        self.run_rewrite_proof_gen("pgm-acu-hard.map-test")
+        self.run_rewrite_proof_gen('pgm-acu-hard.map-test')
 
     def test_owise(self) -> None:
         # a function with a owise rule and 3 other rules
-        self.run_rewrite_proof_gen("pgm.owise")
+        self.run_rewrite_proof_gen('pgm.owise')

@@ -24,7 +24,7 @@ from ml.rewrite.__main__ import run_on_arguments, set_additional_flags
 
 
 def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:  # type: ignore
-    command_str = " ".join([shlex.quote(frag) for frag in command])
+    command_str = ' '.join([shlex.quote(frag) for frag in command])
     print(f"{ANSI.in_gray('+ ' + command_str)}", file=sys.stderr)
     return subprocess.Popen(command, **kwargs)
 
@@ -56,11 +56,11 @@ def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
     # in the kore definition, but we are skipping that since we don't support map yet.
     proc = run_command(
         [
-            "kast",
-            "--directory",
+            'kast',
+            '--directory',
             kompiled_dir,
-            "--output",
-            "kore",
+            '--output',
+            'kore',
             pgm,
         ],
         stdout=subprocess.PIPE,
@@ -68,7 +68,7 @@ def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
     assert proc.stdout is not None
     init_config = proc.stdout.read().decode()
     exit_code = proc.wait()
-    assert exit_code == 0, f"kast failed with exit code {exit_code}"
+    assert exit_code == 0, f'kast failed with exit code {exit_code}'
 
     # generate snapshots from step 1 to the end
     # (the initial configuration has to be obtained differently)
@@ -80,13 +80,13 @@ def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
     while True:
         proc = run_command(
             [
-                "krun",
-                "--directory",
+                'krun',
+                '--directory',
                 kompiled_dir,
-                "--depth",
+                '--depth',
                 str(current_depth),
-                "--output",
-                "kore",
+                '--output',
+                'kore',
                 pgm,
             ],
             stdout=subprocess.PIPE,
@@ -94,7 +94,7 @@ def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
         assert proc.stdout is not None
         stdout = proc.stdout.read().decode()
         exit_code = proc.wait()
-        assert exit_code == 0, f"krun failed with exit code {exit_code}"
+        assert exit_code == 0, f'krun failed with exit code {exit_code}'
 
         if last_config != stdout:
             snapshots.append(stdout)
@@ -107,52 +107,52 @@ def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
     steps = []
     for from_pattern, to_pattern in zip(snapshots[:-1], snapshots[1:]):
         steps.append({
-            "initial": from_pattern,
-            "applied-rules": [{
-                "results": [to_pattern],
+            'initial': from_pattern,
+            'applied-rules': [{
+                'results': [to_pattern],
             }],
-            "remainders": [],
+            'remainders': [],
         })
 
     return {
-        "task": "rewriting",
+        'task': 'rewriting',
         # call the initializer: LblinitGeneratedTopCell({ $PGM -> <init config> })
-        "initial":
+        'initial':
         f"""LblinitGeneratedTopCell{{}}(Lbl'UndsPipe'-'-GT-Unds'{{}}(inj{{SortKConfigVar{{}},SortKItem{{}}}}(\\dv{{SortKConfigVar{{}}}}("$PGM")),{init_config}))""",
-        "finals": [snapshots[-1]],
-        "steps": steps,
+        'finals': [snapshots[-1]],
+        'steps': steps,
     }
 
 
 def gen_task(kompiled_dir: str, output_task_path: str, pgm: str, kore_definition: str, module_name: str) -> None:
-    if pgm.endswith(".kore"):
+    if pgm.endswith('.kore'):
         cmd = [
-            "kore-exec",
+            'kore-exec',
             kore_definition,
-            "--module",
+            '--module',
             module_name,
             # to print logs about rewriting and substitutions
-            "--trace-rewrites",
+            '--trace-rewrites',
             output_task_path,
-            "--pattern",
+            '--pattern',
             pgm,
         ]
     else:
         cmd = [
-            "krun",
-            "--directory",
+            'krun',
+            '--directory',
             kompiled_dir,
-            "--haskell-backend-command",
+            '--haskell-backend-command',
             # to print logs about rewriting and substitutions
-            f"kore-exec --trace-rewrites {output_task_path}",
-            "--output",
-            "none",
+            f'kore-exec --trace-rewrites {output_task_path}',
+            '--output',
+            'none',
             pgm,
         ]
 
     proc = run_command(cmd, stdout=subprocess.DEVNULL)
     exit_code = proc.wait()
-    assert exit_code == 0, f"krun/kore-exec failed with exit code {exit_code}"
+    assert exit_code == 0, f'krun/kore-exec failed with exit code {exit_code}'
 
 
 def gen_proof(args: argparse.Namespace) -> None:
@@ -171,51 +171,51 @@ def gen_proof(args: argparse.Namespace) -> None:
 
     # get kdef file name (without extension)
     kdef_basename = os.path.basename(kdef)
-    # assert kdef_basename.endswith(".k"), f"{kdef} should have .k suffix"
+    # assert kdef_basename.endswith('.k'), f'{kdef} should have .k suffix'
     kdef_name = kdef_basename[:-2]
     pgm_name, _ = os.path.splitext(os.path.basename(pgm))
 
     work_dir = os.path.dirname(kdef)
 
     # cache directory (storing kompiled data)
-    cache_dir = os.path.join(work_dir, f".ml-proof-cache-{kdef_name}")
+    cache_dir = os.path.join(work_dir, f'.ml-proof-cache-{kdef_name}')
     if not os.path.isdir(cache_dir):
         os.mkdir(cache_dir)
 
     ### step 1. kompile the given k definition
     if args.kompiled_dir is None:
-        print(f"- kompiling {kdef}")
+        print(f'- kompiling {kdef}')
 
-        kompiled_dir = os.path.join(cache_dir, f"{kdef_name}-kompiled")
-        kompile_timestamp = os.path.join(kompiled_dir, "timestamp")
+        kompiled_dir = os.path.join(cache_dir, f'{kdef_name}-kompiled')
+        kompile_timestamp = os.path.join(kompiled_dir, 'timestamp')
 
         if check_dependency_change([kompile_timestamp], [kdef]):
             proc = run_command(
                 [
-                    "kompile",
-                    "--backend",
-                    "haskell",
-                    "--directory",
+                    'kompile',
+                    '--backend',
+                    'haskell',
+                    '--directory',
                     cache_dir,
-                    "--main-module",
+                    '--main-module',
                     module,
-                    "--debug",
+                    '--debug',
                     kdef,
                 ]
             )
             exit_code = proc.wait()
-            assert exit_code == 0, f"kompiled failed with exit code {exit_code}"
+            assert exit_code == 0, f'kompiled failed with exit code {exit_code}'
     else:
-        print(f"- using an existing kompiled dir {args.kompiled_dir}")
+        print(f'- using an existing kompiled dir {args.kompiled_dir}')
         kompiled_dir = args.kompiled_dir
-        if kompiled_dir.endswith("/"):
+        if kompiled_dir.endswith('/'):
             kompiled_dir = kompiled_dir[:-1]
-        kompile_timestamp = os.path.join(kompiled_dir, "timestamp")
+        kompile_timestamp = os.path.join(kompiled_dir, 'timestamp')
 
     ### step 2. generate snapshots and rewriting information
-    print(f"- generating snapshots")
-    kore_definition = os.path.join(kompiled_dir, "definition.kore")
-    task_path = os.path.join(cache_dir, f"rewriting-task-{pgm_name}.yml")
+    print(f'- generating snapshots')
+    kore_definition = os.path.join(kompiled_dir, 'definition.kore')
+    task_path = os.path.join(cache_dir, f'rewriting-task-{pgm_name}.yml')
 
     if check_dependency_change([task_path], [kompile_timestamp, pgm]):
         with tempfile.NamedTemporaryFile(dir=cache_dir, mode='w') as tmp_file:
@@ -229,12 +229,12 @@ def gen_proof(args: argparse.Namespace) -> None:
             shutil.copy(tmp_file.name, task_path)
 
     ### step 3. generate proof object
-    print(f"- generating proof")
+    print(f'- generating proof')
 
     args.definition = kore_definition
     args.module = module
     if args.prelude is None:
-        args.prelude = "theory/prelude.mm"
+        args.prelude = 'theory/prelude.mm'
     args.task = task_path
 
     run_on_arguments(args)
@@ -242,24 +242,24 @@ def gen_proof(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("kdef", help="Input K definition")
-    parser.add_argument("module", help="Input main module name")
-    parser.add_argument("pgm", help="Program to run")
+    parser.add_argument('kdef', help='Input K definition')
+    parser.add_argument('module', help='Input main module name')
+    parser.add_argument('pgm', help='Program to run')
     parser.add_argument(
-        "--no-backend-hints",
-        action="store_const",
+        '--no-backend-hints',
+        action='store_const',
         const=True,
         default=False,
-        help="Do not use/expect hints from the backend but generate snapshots using well-defined interface",
+        help='Do not use/expect hints from the backend but generate snapshots using well-defined interface',
     )
     parser.add_argument(
-        "--kompiled-dir",
-        help="Use an existing compiled directory instead of rekompiling",
+        '--kompiled-dir',
+        help='Use an existing compiled directory instead of rekompiling',
     )
     set_additional_flags(parser)
     args = parser.parse_args()
     gen_proof(args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

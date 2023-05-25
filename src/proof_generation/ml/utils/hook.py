@@ -13,11 +13,11 @@ class Hookable:
 
     @staticmethod
     def get_hooks(cls_obj: Type[Hookable]) -> Dict[str, List[Callable[..., None]]]:
-        hooks = getattr(cls_obj, f"__{cls_obj.__name__}_hooks__", None)
+        hooks = getattr(cls_obj, f'__{cls_obj.__name__}_hooks__', None)
 
         if hooks is None:
             hooks = {}
-            setattr(cls_obj, f"__{cls_obj.__name__}_hooks__", hooks)
+            setattr(cls_obj, f'__{cls_obj.__name__}_hooks__', hooks)
 
         return hooks
 

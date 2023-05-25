@@ -19,27 +19,27 @@ class KorePreprocessor:
     """
 
     MISSING_FUNCTIONAL_AXIOMS = [
-        "kseq",
-        "dotk",
+        'kseq',
+        'dotk',
         "Lbl'Unds'Map'Unds'",
         "Lbl'UndsSlsh'Int'Unds'",  # TODO: this probably doesn't make sense since /Int is not defined on 0
         "Lbl'UndsPerc'Int'Unds'",
         "Lbl'Stop'ThreadCellMap",  # TODO: hacky
-        "LblThreadCellMapItem",
+        'LblThreadCellMapItem',
         "Lbl'Unds'ThreadCellMap'Unds'",
     ]
     MISSING_SUBSORT_AXIOMS = [
-        ("SortKConfigVar", "SortKItem"),
+        ('SortKConfigVar', 'SortKItem'),
     ]
 
     HOOKED_CONSTRUCTOR_SYMBOLS = [
-        "MAP.element",
-        "MAP.unit",
-        "MAP.concat",
-        "LIST.element",
-        "LIST.unit",
-        "LIST.concat",
-        "SET.unit",
+        'MAP.element',
+        'MAP.unit',
+        'MAP.concat',
+        'LIST.element',
+        'LIST.unit',
+        'LIST.concat',
+        'SET.unit',
     ]
 
     # HOOKED_CONSTRUCTOR_SYMBOLS = [
@@ -62,7 +62,7 @@ class KorePreprocessor:
                 hook = KoreTemplates.get_hook_function(symbol_def)
 
                 if hook is not None and hook in KorePreprocessor.HOOKED_CONSTRUCTOR_SYMBOLS:
-                    symbol_def.remove_attribute_by_symbol("function")
+                    symbol_def.remove_attribute_by_symbol('function')
 
     def add_missing_functional_axioms(self, definition: kore.Definition) -> None:
         # modules in which MISSING_FUNCTIONAL_AXIOMS
@@ -76,7 +76,7 @@ class KorePreprocessor:
                     defined_modules[symbol_name] = module, module.symbol_map[symbol_name]
                     break
             else:
-                print(f"symbol {symbol_name} is not defined, skipping functional axiom")
+                print(f'symbol {symbol_name} is not defined, skipping functional axiom')
 
         # ignore if the functional axiom exists
         for module in definition.module_map.values():
@@ -92,13 +92,13 @@ class KorePreprocessor:
         # add functional axioms
         for module, symbol_definition in defined_modules.values():
             assert len(symbol_definition.sort_variables) == 0, \
-                   f"sort-parametric symbol {symbol_definition.symbol} not supported"
+                   f'sort-parametric symbol {symbol_definition.symbol} not supported'
 
             input_vars: List[kore.Pattern] = [
-                kore.Variable(f"V{i + 1}", sort) for i, sort in enumerate(symbol_definition.input_sorts)
+                kore.Variable(f'V{i + 1}', sort) for i, sort in enumerate(symbol_definition.input_sorts)
             ]
-            output_var = kore.Variable(f"V0", symbol_definition.output_sort)
-            sort_var = kore.SortVariable("R")
+            output_var = kore.Variable(f'V0', symbol_definition.output_sort)
+            sort_var = kore.SortVariable('R')
 
             symbol_instance = kore.SymbolInstance(symbol_definition, [])
 
@@ -116,7 +116,7 @@ class KorePreprocessor:
                         )
                     ]
                 ),
-                (kore.Application(kore.SymbolInstance("functional", []), []), ),
+                (kore.Application(kore.SymbolInstance('functional', []), []), ),
             )
 
             module.add_sentence(axiom)
@@ -129,11 +129,11 @@ class KorePreprocessor:
         inj_definition: Optional[kore.SymbolDefinition] = None
 
         for module in definition.module_map.values():
-            if "inj" in module.symbol_map:
-                inj_definition = module.symbol_map["inj"]
+            if 'inj' in module.symbol_map:
+                inj_definition = module.symbol_map['inj']
                 break
         else:
-            print("injection symbol not found, skipping all subsort axioms")
+            print('injection symbol not found, skipping all subsort axioms')
             return
 
         for sort_id1, sort_id2 in KorePreprocessor.MISSING_SUBSORT_AXIOMS:
@@ -146,7 +146,7 @@ class KorePreprocessor:
 
             if sort_id1 not in sort_definition_modules or sort_id2 not in sort_definition_modules:
                 print(
-                    f"sort {sort_id1} or {sort_id2} is not defined, skipping subsorting axiom ({sort_id1}, {sort_id2})"
+                    f'sort {sort_id1} or {sort_id2} is not defined, skipping subsorting axiom ({sort_id1}, {sort_id2})'
                 )
             else:
                 missing_subsort_axioms.add((sort_id1, sort_id2))
@@ -173,13 +173,13 @@ class KorePreprocessor:
             assert len(sort_definition1.sort_variables) == 0 and \
                    len(sort_definition2.sort_variables) == 0
 
-            sort_var = kore.SortVariable("R")
+            sort_var = kore.SortVariable('R')
 
             input_sort = kore.SortInstance(sort_definition1, [])
             output_sort = kore.SortInstance(sort_definition2, [])
 
-            input_var = kore.Variable(f"From", input_sort)
-            output_var = kore.Variable(f"Val", output_sort)
+            input_var = kore.Variable(f'From', input_sort)
+            output_var = kore.Variable(f'Val', output_sort)
 
             inj_symbol = kore.SymbolInstance(inj_definition, [input_sort, output_sort])
 
@@ -197,7 +197,7 @@ class KorePreprocessor:
                         )
                     ]
                 ),
-                (kore.Application(kore.SymbolInstance("subsort", [input_sort, output_sort]), []), ),
+                (kore.Application(kore.SymbolInstance('subsort', [input_sort, output_sort]), []), ),
             )
 
             module.add_sentence(axiom)

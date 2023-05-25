@@ -170,7 +170,7 @@ class Proof:
         """
 
         number = n - 1
-        final_letter = chr(ord("A") + number % 20)
+        final_letter = chr(ord('A') + number % 20)
         if number < 20:
             return final_letter
 
@@ -179,25 +179,25 @@ class Proof:
         letters = []
         while True:
             number -= 1
-            letters.append(chr(ord("U") + ((number % 5))))
+            letters.append(chr(ord('U') + ((number % 5))))
             number //= 5
             if not number:
                 break
 
         letters.reverse()
         letters.append(final_letter)
-        return "".join(letters)
+        return ''.join(letters)
 
     @staticmethod
     def compress_script(mandatory: Iterable[str], proof: List[str]) -> str:
-        label_to_letter = {"?": "?"}
+        label_to_letter = {'?': '?'}
         mandatory_list = list(mandatory)
 
         # rank the labels by frequency
         frequency = {}
         for label in proof:
             # ? and mandatory labels are handled differently
-            if label == "?" or label in mandatory_list:
+            if label == '?' or label in mandatory_list:
                 continue
 
             if label not in frequency:
@@ -211,11 +211,11 @@ class Proof:
         for i, hyp in enumerate(mandatory_list + unique_labels):
             label_to_letter[hyp] = Proof.encode_index(i + 1)
 
-        labels_str = " ".join(["("] + unique_labels + [")"])
+        labels_str = ' '.join(['('] + unique_labels + [')'])
         letters = [label_to_letter[label] for label in proof]
-        letters_str = "".join(letters)
+        letters_str = ''.join(letters)
 
-        return labels_str + " " + letters_str
+        return labels_str + ' ' + letters_str
 
     def encode_normal(self) -> str:
         """
@@ -223,7 +223,7 @@ class Proof:
         """
         script: List[str] = []
         self.flatten(script)
-        return " ".join(script)
+        return ' '.join(script)
 
     def encode_compressed(self, mandatory_hypotheses: Iterable[str]) -> str:
         """
@@ -299,7 +299,7 @@ class Theorem:
                     essential_proofs.append(existing_essentials.statement.label)
                     break
             else:
-                assert False, f"unable to prove obligation {essential} from existing hypotheses"
+                assert False, f'unable to prove obligation {essential} from existing hypotheses'
 
         return Proof.from_script(
             self.statement,
@@ -316,7 +316,7 @@ class Theorem:
         """
         substitution = Unification.match_statements(self.statement, target)
         assert (substitution is not None
-                ), "failed to unify the target statement `{}` and the theorem `{}`".format(target, self.statement)
+                ), 'failed to unify the target statement `{}` and the theorem `{}`'.format(target, self.statement)
 
         for lhs, rhs in substitution:
             if not isinstance(lhs, Metavariable):
@@ -326,8 +326,8 @@ class Theorem:
 
             if var in kwargs:
                 assert self.is_meta_substitution_consistent(kwargs[var], rhs), (
-                    "metavariable assignment to {} is not consistent: "
-                    "`{}` and `{}` are both assigned to it".format(var, kwargs[var], rhs)
+                    'metavariable assignment to {} is not consistent: '
+                    '`{}` and `{}` are both assigned to it'.format(var, kwargs[var], rhs)
                 )
             else:
                 kwargs[var] = rhs
@@ -364,14 +364,14 @@ class Theorem:
         substitution: Dict[str, Union[Proof, Term]] = dict(metavar_substitution)
 
         assert len(essential_proofs) == len(self.context.essentials), (
-            "unmatched number of subproofs for "
-            "essential statements, expecting {}, {} given".format(len(self.context.essentials), len(essential_proofs))
+            'unmatched number of subproofs for '
+            'essential statements, expecting {}, {} given'.format(len(self.context.essentials), len(essential_proofs))
         )
 
         if target is not None:
             match_substitution = Unification.match_statements(self.statement, target)
             assert match_substitution is not None, \
-                   f"failed to unify the target statement `{target}` and the theorem `{self.statement}`"
+                   f'failed to unify the target statement `{target}` and the theorem `{self.statement}`'
 
             for lhs, rhs in match_substitution:
                 if not isinstance(lhs, Metavariable):
@@ -381,8 +381,8 @@ class Theorem:
 
                 if var in substitution:
                     assert self.is_meta_substitution_consistent(substitution[var], rhs), \
-                           f"metavariable assignment to {var} is not consistent: " \
-                           f"`{substitution[var]}` and `{rhs}` are both assigned to it"
+                           f'metavariable assignment to {var} is not consistent: ' \
+                           f'`{substitution[var]}` and `{rhs}` are both assigned to it'
                 else:
                     substitution[var] = rhs
 
@@ -392,18 +392,18 @@ class Theorem:
             if isinstance(essential_proof, AutoProof):
                 continue
 
-            assert isinstance(essential_proof, Proof), f"wrong proof {essential_proof} of {essential}"
+            assert isinstance(essential_proof, Proof), f'wrong proof {essential_proof} of {essential}'
 
             solution = Unification.match_lists_of_terms_as_instance(essential.terms, essential_proof.conclusion)
-            assert solution is not None, f"`{essential_proof}` is not an instance of `{essential}`"
+            assert solution is not None, f'`{essential_proof}` is not an instance of `{essential}`'
 
             # check that the unification solution is consistent with
             # the metavariable assignment
             for var, term in solution.items():
                 if var in substitution:
                     assert self.is_meta_substitution_consistent(substitution[var], term), \
-                           f"metavariable assignment to {var} is not consistent: " \
-                           f"`{substitution[var]}` and `{term}` are both assigned to it"
+                           f'metavariable assignment to {var} is not consistent: ' \
+                           f'`{substitution[var]}` and `{term}` are both assigned to it'
 
                 else:
                     # update metavar_substitution to reflect this assignment
@@ -427,7 +427,7 @@ class Theorem:
             typecode = floating.typecode
             var = floating.metavariable
 
-            assert var in metavar_substitution, f"assignment to metavariable `{var}` cannot be inferred"
+            assert var in metavar_substitution, f'assignment to metavariable `{var}` cannot be inferred'
 
             # this can either be a direct proof,
             # or a term, in which case we will try to
@@ -440,22 +440,22 @@ class Theorem:
                 )
 
                 assert typecode_proof is not None, \
-                       f"a term `{metavar_substituted}` is given for metavariable `{var}`, " \
+                       f'a term `{metavar_substituted}` is given for metavariable `{var}`, ' \
                        f"but we couldn't prove that `{typecode} {metavar_substituted}`"
             else:
                 # should be a proof
-                assert isinstance(metavar_substituted, Proof), f"{metavar_substituted} is not a proof"
+                assert isinstance(metavar_substituted, Proof), f'{metavar_substituted} is not a proof'
                 typecode_proof = metavar_substituted
 
             # check that the proof is in the right form (for floating statements)
             assert len(typecode_proof.conclusion) == 2, \
-                   f"wrong proof for `{typecode} {var}`, got {typecode_proof}"
+                   f'wrong proof for `{typecode} {var}`, got {typecode_proof}'
 
             proved_typecode, proved_term = typecode_proof.conclusion
 
             assert isinstance(proved_typecode, Application) and \
                    proved_typecode.symbol == typecode, \
-                   f"wrong proof for `{typecode} {var}`, got {typecode_proof}"
+                   f'wrong proof for `{typecode} {var}`, got {typecode_proof}'
 
             substitution[var] = proved_term
             floating_proofs.append(typecode_proof)
@@ -472,7 +472,7 @@ class Theorem:
                     final_essential_proofs.append(proof.prove(self.composer, essential_instance))
                 except Exception:
                     print_exc()
-                    assert (False), f"unable to automatically generate proof for {essential_instance}"
+                    assert (False), f'unable to automatically generate proof for {essential_instance}'
 
         return floating_proofs + final_essential_proofs, substitution
 
@@ -562,14 +562,14 @@ class ProofCache:
         """
         Get the next available label with the given prefix
         """
-        domain = re.sub(r"[^a-zA-Z0-9_\-.]", "", domain)
+        domain = re.sub(r'[^a-zA-Z0-9_\-.]', '', domain)
 
         if domain not in self.label_map:
             self.label_map[domain] = 0
 
         idx = self.label_map[domain]
         self.label_map[domain] += 1
-        return f"{domain}-{idx}"
+        return f'{domain}-{idx}'
 
     def lookup(self, domain: str, statement_or_terms: Union[StructuredStatement, Terms]) -> Optional[Proof]:
         """
@@ -819,7 +819,7 @@ class Composer(Hookable):
         Same as find_theorem but raises an exception if not found
         """
         theorem = self.find_theorem(name)
-        assert theorem is not None, f"cannot find theorem {name}"
+        assert theorem is not None, f'cannot find theorem {name}'
         return theorem
 
     def get_theorems_of_typecode(self, typecode: str) -> List[Theorem]:
@@ -840,7 +840,7 @@ class Composer(Hookable):
                     self.theorems_by_typecode[stmt.terms[0].symbol].pop(i)
                     break
 
-        Composer.run_hooks("remove", self, name)
+        Composer.run_hooks('remove', self, name)
 
     def add_theorem_for_typecode(self, typecode: str, theorem: Theorem) -> None:
         if typecode not in self.theorems_by_typecode:
@@ -937,7 +937,7 @@ class Composer(Hookable):
         if (len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0):
             self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])
 
-        Composer.run_hooks("index", self, self.theorems[stmt.label])
+        Composer.run_hooks('index', self, self.theorems[stmt.label])
 
     def push_context(self) -> None:
         self.context = Context(prev=self.context)
@@ -1045,12 +1045,12 @@ class Composer(Hookable):
         """
 
         if top_level:
-            assert stop_at is None, "cannot set top_level and stop_at at the same time"
+            assert stop_at is None, 'cannot set top_level and stop_at at the same time'
             assert not isinstance(ast, Block), \
-                   "cannot load a block directly at the top level"
+                   'cannot load a block directly at the top level'
 
         if isinstance(ast, Database):
-            assert self.context.prev is None, "loading a database at non-top level"
+            assert self.context.prev is None, 'loading a database at non-top level'
             for statement in ast.statements:
                 theorem = self.load(statement, index=index, stop_at=stop_at)
                 if theorem is not None and theorem.statement.label == stop_at:

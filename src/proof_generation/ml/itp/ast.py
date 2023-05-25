@@ -34,7 +34,7 @@ class Options(BaseAST):
                 self.kwargs.items(),
             ))
 
-        return ", ".join(output)
+        return ', '.join(output)
 
     def empty(self) -> bool:
         return not self.args and not self.kwargs
@@ -57,7 +57,7 @@ class AtomicTactical(Tactical):
         self.options = options
 
     def __str__(self) -> str:
-        return f"{self.tactic}" + (f" {self.options}" if not self.options.empty() else "")
+        return f'{self.tactic}' + (f' {self.options}' if not self.options.empty() else '')
 
     def apply(self, state: ProofState) -> ProofState:
         tactic_class = state.get_tactic(self.tactic)
@@ -74,7 +74,7 @@ class OrTactical(Tactical):
         self.tacticals = tacticals
 
     def __str__(self) -> str:
-        return " | ".join(map(str, self.tacticals))
+        return ' | '.join(map(str, self.tacticals))
 
     def apply(self, state: ProofState) -> ProofState:
         assert len(self.tacticals) != 0
@@ -96,9 +96,9 @@ class OrTactical(Tactical):
         msg = []
 
         for tactical, exception in zip(self.tacticals, exceptions):
-            msg.append(f"  {tactical}: {exception}")
+            msg.append(f'  {tactical}: {exception}')
 
-        raise Exception("all tacticals failed:\n" + "\n".join(msg))
+        raise Exception('all tacticals failed:\n' + '\n'.join(msg))
 
 
 class AndTactical(Tactical):
@@ -111,7 +111,7 @@ class AndTactical(Tactical):
         self.tacticals = tacticals
 
     def __str__(self) -> str:
-        return " & ".join(map(str, self.tacticals))
+        return ' & '.join(map(str, self.tacticals))
 
     def apply(self, state: ProofState) -> ProofState:
         assert len(self.tacticals) != 0
@@ -142,7 +142,7 @@ class PlusTactical(Tactical):
         self.tactical = tactical
 
     def __str__(self) -> str:
-        return f"({self.tactical})+"
+        return f'({self.tactical})+'
 
     def apply(self, state: ProofState) -> ProofState:
         count = 0
@@ -176,7 +176,7 @@ class StarTactical(Tactical):
         self.tactical = tactical
 
     def __str__(self) -> str:
-        return f"({self.tactical})*"
+        return f'({self.tactical})*'
 
     def apply(self, state: ProofState) -> ProofState:
         no_state_change = True

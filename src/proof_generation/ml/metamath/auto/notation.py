@@ -7,27 +7,27 @@ from .unification import Unification
 
 
 class NotationProver:
-    SYMBOL = "#Notation"
-    SYM = "notation-symmetry"
-    REFL = "notation-reflexivity"
-    TRANS = "notation-transitivity"
+    SYMBOL = '#Notation'
+    SYM = 'notation-symmetry'
+    REFL = 'notation-reflexivity'
+    TRANS = 'notation-transitivity'
     """
     Labels for the notation congruence axioms
     for metalevel relations, along with the indices
     pointing to subterms that need to be expanded
     """
     METALEVEL_CONGRUENCE_AXIOMS = {
-        "|-": ("notation-proof", [1]),
-        "#Fresh": ("notation-fresh", [2]),
-        "#Positive": ("notation-positive", [2]),
-        "#Negative": ("notation-negative", [2]),
-        "#ApplicationContext": ("notation-application-context", [2]),
-        "#Substitution": ("notation-substitution", [1, 2, 3]),
-        "#Notation": ("notation-notation", [1, 2]),
+        '|-': ('notation-proof', [1]),
+        '#Fresh': ('notation-fresh', [2]),
+        '#Positive': ('notation-positive', [2]),
+        '#Negative': ('notation-negative', [2]),
+        '#ApplicationContext': ('notation-application-context', [2]),
+        '#Substitution': ('notation-substitution', [1, 2, 3]),
+        '#Notation': ('notation-notation', [1, 2]),
     }
 
     @staticmethod
-    @Composer.add_hook("index")
+    @Composer.add_hook('index')
     def hook_index(composer: Composer, theorem: Theorem) -> None:
         """
         Called in composer every time when a new theorem is indexed
@@ -37,8 +37,8 @@ class NotationProver:
             from_symbol, to_symbol = sugar_axiom_info
 
             assert from_symbol not in composer.notation_axiom_graph, \
-                   f"symbol {from_symbol} can be rewritten to both " \
-                   f"{to_symbol} (through {theorem.statement.label}) and {composer.notation_axiom_graph[from_symbol][1]}"
+                   f'symbol {from_symbol} can be rewritten to both ' \
+                   f'{to_symbol} (through {theorem.statement.label}) and {composer.notation_axiom_graph[from_symbol][1]}'
 
             composer.notation_axiom_graph[from_symbol] = theorem, to_symbol
             return
@@ -51,7 +51,7 @@ class NotationProver:
             return  # otherwise we just ignore it
 
     @staticmethod
-    @Composer.add_hook("remove")
+    @Composer.add_hook('remove')
     def hook_remove(composer: Composer, name: str) -> None:
         """
         Remove a theorem from the index
@@ -131,7 +131,7 @@ class NotationProver:
 
         head, lhs, rhs = theorem.statement.terms
 
-        if head != Application("#Notation"):
+        if head != Application('#Notation'):
             return None
 
         if not isinstance(lhs, Application) or not isinstance(rhs, Application):
@@ -169,7 +169,7 @@ class NotationProver:
 
         head, lhs, rhs = theorem.statement.terms
 
-        if head != Application("#Notation"):
+        if head != Application('#Notation'):
             return None
 
         if not (isinstance(lhs, Application) and \
@@ -210,7 +210,7 @@ class NotationProver:
     @staticmethod
     def format_target(left: Term, right: Term) -> StructuredStatement:
         return ProvableStatement(
-            "",
+            '',
             (
                 Application(NotationProver.SYMBOL),
                 left,
@@ -225,11 +225,11 @@ class NotationProver:
         """
 
         assert len(axiom.statement.terms) == 3, \
-               f"invalid sugar axiom {axiom.statement}"
+               f'invalid sugar axiom {axiom.statement}'
 
         substitution = Unification.match_terms_as_instance(axiom.statement.terms[1], term)
         assert substitution is not None, \
-               f"invalid sugar axiom {axiom.statement}"
+               f'invalid sugar axiom {axiom.statement}'
 
         new_term = axiom.statement.terms[2].substitute(substitution)
         assert isinstance(new_term, Application)
@@ -312,7 +312,7 @@ class NotationProver:
         Expand the top level construct once without proof
         """
         assert term.symbol in composer.notation_axiom_graph, \
-               f"unable to expand the top level construct of {term} further"
+               f'unable to expand the top level construct of {term} further'
         theorem, _ = composer.notation_axiom_graph[term.symbol]
         return NotationProver.apply_sugar_axiom(theorem, term)
 
@@ -359,12 +359,12 @@ class NotationProver:
                     return theorem.apply()
                 elif theorem.statement.terms == symmetric_target.terms:
                     return composer.get_theorem(NotationProver.SYM).apply(theorem.apply())
-            assert False, f"unable to show {left} === {right}"
+            assert False, f'unable to show {left} === {right}'
 
         # TODO: add this case
         if (isinstance(left, Metavariable) and not isinstance(right, Metavariable)
                 or not isinstance(left, Metavariable) and isinstance(right, Metavariable)):
-            assert False, f"proving {left} === {right} is not currently supported"
+            assert False, f'proving {left} === {right} is not currently supported'
 
         assert isinstance(left, Application) and isinstance(right, Application)
 
@@ -377,13 +377,13 @@ class NotationProver:
                     # show that the nth subterms are equal
                     assert n < len(left.subterms) and n < len(
                         right.subterms
-                    ), f"ill-formed congruence axiom {theorem.statement.label}"
+                    ), f'ill-formed congruence axiom {theorem.statement.label}'
 
                     subproof = NotationProver.prove_notation(composer, left.subterms[n], right.subterms[n])
                     subproofs.append(subproof)
 
                 proof = theorem.match_and_apply(target, *subproofs)
-                assert proof.is_proof_of(target), f"congruence axiom gave unexpected result"
+                assert proof.is_proof_of(target), f'congruence axiom gave unexpected result'
 
                 return proof
             elif left.symbol in composer.notation_axiom_graph:
@@ -402,12 +402,12 @@ class NotationProver:
                     ),
                 )
 
-            assert False, f"failed to show {left} === {right}"
+            assert False, f'failed to show {left} === {right}'
 
         # try to rewrite both terms to a common head symbol
         result = NotationProver.rewrite_to_same_head_symbol(composer, left, right)
         assert result is not None, \
-               f"cannot rewrite {left} and {right} to have the same head symbol"
+               f'cannot rewrite {left} and {right} to have the same head symbol'
         left_proof, left, right_proof, right = result
 
         proof = NotationProver.prove_notation(composer, left, right)
@@ -423,7 +423,7 @@ class NotationProver:
                                          ).apply(proof,
                                                  composer.get_theorem(NotationProver.SYM).apply(right_proof))
 
-        return composer.cache_proof("notation-cache", proof)
+        return composer.cache_proof('notation-cache', proof)
 
     @staticmethod
     def expand_sugar(composer: Composer, term: Term, target_symbol: Optional[str] = None) -> Term:
@@ -451,7 +451,7 @@ class NotationProver:
                 sugar_axiom, _ = composer.notation_axiom_graph[term.symbol]
 
                 substitution = Unification.match_terms_as_instance(sugar_axiom.statement.terms[1], term)
-                assert (substitution is not None), f"ill-formed sugar axiom {sugar_axiom.statement}"
+                assert (substitution is not None), f'ill-formed sugar axiom {sugar_axiom.statement}'
 
                 reduction_proof = sugar_axiom.apply(**substitution)
                 expanded = reduction_proof.conclusion[2]
@@ -462,7 +462,7 @@ class NotationProver:
                     composer, expanded, target_symbol=target_symbol
                 )
                 proof = composer.get_theorem(NotationProver.TRANS).apply(reduction_proof, proof)
-                return expanded, composer.cache_proof("notation-cache", proof)
+                return expanded, composer.cache_proof('notation-cache', proof)
 
         if len(term.subterms) == 0:
             return term, composer.get_theorem(NotationProver.REFL).apply(ph0=term)
@@ -487,12 +487,12 @@ class NotationProver:
 
             reordered_subproofs = []
             for n in order:
-                assert n < len(subproofs), f"ill-formed congruence axiom {congruence_lemma.statement.label}"
+                assert n < len(subproofs), f'ill-formed congruence axiom {congruence_lemma.statement.label}'
                 reordered_subproofs.append(subproofs[n])
 
             target = NotationProver.format_target(term, final_term)
             proof = congruence_lemma.match_and_apply(target, *reordered_subproofs)
-            return final_term, composer.cache_proof("notation-cache", proof)
+            return final_term, composer.cache_proof('notation-cache', proof)
         else:
             # otherwise resort to the dumb way
             return final_term, NotationProver.prove_notation(composer, term, final_term)
@@ -512,14 +512,14 @@ class NotationProver:
 
         meta_relation = target.terms[0].symbol
         assert meta_relation in NotationProver.METALEVEL_CONGRUENCE_AXIOMS, \
-               f"metalevel relation not supported: {target}"
+               f'metalevel relation not supported: {target}'
 
         theorem_label, positions = NotationProver.METALEVEL_CONGRUENCE_AXIOMS[meta_relation]
         notation_proofs = []
 
         # prove notation at each subpattern
         for position in positions:
-            assert position < len(target.terms), f"ill-formed goal: {target}"
+            assert position < len(target.terms), f'ill-formed goal: {target}'
 
             original_term = target.terms[position]
             expanded_term = source.conclusion[position]
@@ -534,7 +534,7 @@ class NotationProver:
         )
 
         assert proof.is_proof_of(target), \
-               f"unable to show {target} from {proof} using only notations"
+               f'unable to show {target} from {proof} using only notations'
 
         return proof
 
