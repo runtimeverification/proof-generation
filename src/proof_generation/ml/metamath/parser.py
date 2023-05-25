@@ -66,7 +66,7 @@ class ASTTransformer(Transformer[BaseAST]):
         if first == '(':
             # separate out sublist of tokens with balanced parentheses
             num_nested = 1
-            for i, token in enumerate(tokens[1:]):
+            for i, token in enumerate(tokens[1:]):  # noqa: B007
                 if token == '(':
                     num_nested += 1
                 elif token == ')':

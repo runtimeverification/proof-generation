@@ -573,7 +573,7 @@ class MapUnificationMixin(ABC):
         # find an item with the same key in pattern2
         pattern2_items = KoreTemplates.destruct_map_pattern(pattern2)
 
-        for i, (k, _) in enumerate(pattern2_items):
+        for i, (k, _) in enumerate(pattern2_items):  # noqa: B007
             if k == key:
                 break
         else:
