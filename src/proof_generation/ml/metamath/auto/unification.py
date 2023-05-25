@@ -1,6 +1,13 @@
-from typing import Optional, List, Tuple, Mapping, Dict, Callable, Collection, Type, Any
+from __future__ import annotations
 
-from ..ast import Metavariable, Term, Application, StructuredStatement
+from typing import TYPE_CHECKING
+
+from ..ast import Application, Metavariable
+
+if TYPE_CHECKING:
+    from typing import Any, Callable, Collection, Dict, List, Mapping, Optional, Tuple, Type
+
+    from ..ast import StructuredStatement, Term
 
 
 class Unification:

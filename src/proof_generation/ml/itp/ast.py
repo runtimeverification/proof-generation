@@ -2,9 +2,14 @@
 Syntax trees of the proof script
 """
 
+from __future__ import annotations
 
-from .state import ProofState, NoStateChangeException
+from typing import TYPE_CHECKING
 
+from .state import NoStateChangeException
+
+if TYPE_CHECKING:
+    from .state import ProofState
 
 
 class BaseAST:

@@ -1,11 +1,37 @@
-from typing import Set, List, Dict, Tuple, Mapping, Any, Generic, TypeVar
+from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, Generic, Set, Tuple, TypeVar
 
-from ml.utils.visitor import TreeT, ResultT, ChildrenResultT, UnionVisitor, ConjunctionVisitor, DisjunctionVisitor
+from ..utils.visitor import ConjunctionVisitor, DisjunctionVisitor, ResultT, TreeT, UnionVisitor
+from .ast import (
+    AliasDefinition,
+    Application,
+    Axiom,
+    BaseAST,
+    Definition,
+    ImportStatement,
+    KoreVisitor,
+    MLPattern,
+    Module,
+    SortDefinition,
+    SortInstance,
+    SortVariable,
+    StringLiteral,
+    SymbolDefinition,
+    SymbolInstance,
+    Variable,
+)
 
-from .ast import *
+if TYPE_CHECKING:
+    from typing import Dict, List, Mapping
+
+    from ..utils.visitor import ChildrenResultT
+    from .ast import Pattern, Sort
+
 
 BaseASTT = TypeVar('BaseASTT', bound=BaseAST[Any])
+T = TypeVar('T')
+KoreUnionVisitor = UnionVisitor[BaseAST[Any], T]
 
 
 class VisitorStructure(Generic[TreeT, ResultT]):
@@ -208,10 +234,6 @@ class FullVisitorStructure(VisitorStructure[BaseASTT, ResultT]):
             [self.visit(sort) for sort in ml_pattern.sorts],  # type: ignore[arg-type]
             [self.visit(arg) for arg in ml_pattern.arguments],  # type: ignore[arg-type]
         ]
-
-
-T = TypeVar('T')
-KoreUnionVisitor = UnionVisitor[BaseAST[Any], T]
 
 
 class FreePatternVariableVisitor(KoreUnionVisitor[Variable], PatternOnlyVisitorStructure[BaseAST[Any], Set[Variable]]):

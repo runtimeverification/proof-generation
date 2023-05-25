@@ -1,28 +1,32 @@
-from typing import Optional, List, Tuple, Union, Set, Dict
+from __future__ import annotations
 
+from typing import TYPE_CHECKING, Optional, Union
 
-from ml.kore import ast as kore
-from ml.kore.utils import KoreUtils, PatternPath
-from ml.kore.ast import KoreVisitor
-from ml.kore.visitors import PatternVariableVisitor
-
-from ml.metamath import ast as mm
-from ml.metamath.composer import Proof
-from ml.metamath.auto.sorting import SortingProver
-from ml.metamath.auto.predicate import PredicateProver
-
-from .encoder import KoreEncoder
-
-from .env import KoreComposer, ProofGenerator, ProvableClaim
-from .fol import FOLProofGenerator
-from .unification import UnificationProofGenerator, InjectionCombine, UnificationResult, ConstraintEquation
-from .templates import KoreTemplates
+from ..kore import ast as kore
+from ..kore.ast import KoreVisitor
+from ..kore.utils import KoreUtils, PatternPath
+from ..kore.visitors import PatternVariableVisitor
+from ..metamath import ast as mm
+from ..metamath.auto.predicate import PredicateProver
+from ..metamath.auto.sorting import SortingProver
+from ..metamath.composer import Proof
 from .disjointness import DisjointnessProofGenerator
+from .encoder import KoreEncoder
+from .env import ProofGenerator, ProvableClaim
+from .fol import FOLProofGenerator
 from .propositional import PropositionalProofGenerator
-from .smt import SMTProofGenerator, SMTOption
-from .tasks import RewritingStep, RewritingTask, ReachabilityTask, ConstrainedPattern, AppliedRule
+from .smt import SMTOption, SMTProofGenerator
+from .tasks import ConstrainedPattern
+from .templates import KoreTemplates
+from .unification import ConstraintEquation, InjectionCombine, UnificationProofGenerator, UnificationResult
 
-ReachabilityType = str
+if TYPE_CHECKING:
+    from typing import Dict, List, Set, Tuple
+
+    from .env import KoreComposer
+    from .tasks import AppliedRule, ReachabilityTask, RewritingStep, RewritingTask
+
+    ReachabilityType = str
 
 
 class RewriteProofGenerator(ProofGenerator):

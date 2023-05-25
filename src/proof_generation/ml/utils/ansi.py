@@ -1,7 +1,6 @@
-from typing import List, Any, Callable
-
 import os
 import sys
+from typing import Any, Callable, List
 
 
 class ANSIStyler(type):

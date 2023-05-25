@@ -1,35 +1,23 @@
 from __future__ import annotations
 
-from typing import (
-    List,
-    Optional,
-    Mapping,
-    Set,
-    Callable,
-    Tuple,
-    Any,
-    Dict,
-    Union,
-    NamedTuple,
-    Type,
-    TypeVar,
-    Iterable,
-)
 from abc import abstractmethod
+from typing import TYPE_CHECKING, NamedTuple
 
-from ml.metamath.ast import StructuredStatement, Metavariable, Term, Terms, ProvableStatement, Application
-from ml.metamath.composer import Composer, Theorem, Proof
-from ml.metamath.parser import (
-    parse_term_with_metavariables,
-    parse_terms_with_metavariables,
-)
-from ml.metamath.auto.notation import NotationProver
-from ml.metamath.auto.unification import Unification
-from ml.metamath.auto.typecode import TypecodeProver
-
+from ..metamath.ast import Application, Metavariable, ProvableStatement
+from ..metamath.auto.notation import NotationProver
+from ..metamath.auto.typecode import TypecodeProver
+from ..metamath.auto.unification import Unification
+from ..metamath.composer import Theorem
+from ..metamath.parser import parse_term_with_metavariables, parse_terms_with_metavariables
 from .extension import SchematicVariable
 
-StmtT = TypeVar('StmtT', bound=StructuredStatement)
+if TYPE_CHECKING:
+    from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple, Type, TypeVar, Union
+
+    from ..metamath.ast import StructuredStatement, Term, Terms
+    from ..metamath.composer import Composer, Proof
+
+    StmtT = TypeVar('StmtT', bound=StructuredStatement)
 
 
 class NoStateChangeException(Exception):

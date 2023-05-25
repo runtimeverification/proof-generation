@@ -1,9 +1,15 @@
+from __future__ import annotations
 
-from ..ast import StructuredStatement, Term, Application
-from ..composer import Composer, MethodAutoProof, Proof
+from typing import TYPE_CHECKING
+
+from ..ast import Application, StructuredStatement
+from ..composer import MethodAutoProof
 from ..utils import MetamathUtils
-
 from .notation import NotationProver
+
+if TYPE_CHECKING:
+    from ..ast import Term
+    from ..composer import Composer, Proof
 
 
 class PredicateProver:

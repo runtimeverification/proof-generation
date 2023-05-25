@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional, Callable
+from typing import TYPE_CHECKING
 
-from ..ast import Application, FloatingStatement, Metavariable, ProvableStatement, Term
-from ..composer import Composer, Proof
-
-from .unification import Unification
+from ..ast import Application, FloatingStatement, Metavariable, ProvableStatement
+from ..composer import Proof
 from .positive import PositiveProver
+from .unification import Unification
 
+if TYPE_CHECKING:
+    from typing import Callable, Optional
+
+    from ..ast import Term
+    from ..composer import Composer
 
 
 class TypecodeProver:

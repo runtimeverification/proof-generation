@@ -1,10 +1,16 @@
-import re
-import os
-import csv
-import argparse
+from __future__ import annotations
 
-from ml.metamath.parser import load_database
-from ml.metamath.composer import Composer, Theorem
+import argparse
+import csv
+import os
+import re
+from typing import TYPE_CHECKING
+
+from ..ml.metamath.composer import Composer
+from ..ml.metamath.parser import load_database
+
+if TYPE_CHECKING:
+    from ..ml.metamath.composer import Theorem
 
 
 def decode_index(index: str) -> int:

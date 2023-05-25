@@ -1,6 +1,5 @@
-from typing import TextIO, Generator, List
-
 from contextlib import contextmanager
+from typing import Generator, List, TextIO
 
 
 class Printer:

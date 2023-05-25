@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Optional, Any, Dict, Tuple, TypeVar, Type, Set
 from dataclasses import dataclass
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Type, TypeVar
 
 import schema  # type: ignore
 
-from ml.kore import ast as kore
-from ml.kore.parser import parse_pattern
-from ml.kore.utils import KoreUtils
-
+from ..kore import ast as kore
+from ..kore.parser import parse_pattern
+from ..kore.utils import KoreUtils
 from .templates import KoreTemplates
 
 T = TypeVar('T', bound='WithSchema')

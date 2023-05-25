@@ -2,23 +2,27 @@
 Some automated tactics
 """
 
-from typing import Optional, Tuple, List, Union, Dict
+from __future__ import annotations
 
-from ml.metamath.ast import Application, Term, Metavariable, ProvableStatement
-from ml.metamath.composer import Theorem, Proof
-from ml.metamath.utils import MetamathUtils
+from typing import TYPE_CHECKING, List, Tuple
 
-from ml.metamath.auto.notation import NotationProver
-from ml.metamath.auto.substitution import SubstitutionProver
-from ml.metamath.auto.sorting import SortingProver
-from ml.metamath.auto.context import ApplicationContextProver
-from ml.metamath.auto.fresh import FreshProver
-from ml.metamath.auto.typecode import TypecodeProver
-from ml.metamath.auto.positive import PositiveProver
-
-from .state import ProofState, Goal, NoStateChangeException, Tactic
-from .tactics import ApplyTactic
+from ..metamath.ast import Application, Metavariable, ProvableStatement, Term
+from ..metamath.auto.context import ApplicationContextProver
+from ..metamath.auto.fresh import FreshProver
+from ..metamath.auto.notation import NotationProver
+from ..metamath.auto.positive import PositiveProver
+from ..metamath.auto.sorting import SortingProver
+from ..metamath.auto.substitution import SubstitutionProver
+from ..metamath.auto.typecode import TypecodeProver
+from ..metamath.utils import MetamathUtils
 from .extension import SchematicVariable
+from .state import Goal, NoStateChangeException, ProofState, Tactic
+from .tactics import ApplyTactic
+
+if TYPE_CHECKING:
+    from typing import Dict, Optional, Union
+
+    from ..metamath.composer import Proof, Theorem
 
 
 @ProofState.register_tactic('search')

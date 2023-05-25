@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import List, Union, Optional, Any, Dict, Set, TypeVar, Generic, NoReturn, Tuple
 
 from collections import OrderedDict
+from typing import Any, Dict, Generic, List, NoReturn, Optional, Set, Tuple, TypeVar, Union
 
-from ml.utils.visitor import Visitor, TreeT, ResultT
+from ..utils.visitor import ResultT, TreeT, Visitor
 
 ParentT = TypeVar('ParentT')
 """

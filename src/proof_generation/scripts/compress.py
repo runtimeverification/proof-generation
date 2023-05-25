@@ -1,11 +1,10 @@
-from typing import List, Optional, Tuple
-
-from ml.metamath.parser import load_database
-from ml.metamath.composer import Composer, Proof
-
+import argparse
 import os
 import re
-import argparse
+from typing import List, Optional, Tuple
+
+from ..ml.metamath.composer import Composer, Proof
+from ..ml.metamath.parser import load_database
 
 
 def locate_comment_segment(comment_segments: List[Tuple[int, int]], pos: int) -> Optional[Tuple[int, int]]:

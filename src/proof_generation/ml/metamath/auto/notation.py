@@ -1,9 +1,16 @@
-from typing import Optional, Tuple
+from __future__ import annotations
 
-from ..ast import Metavariable, Term, Application, StructuredStatement, ProvableStatement
-from ..composer import Composer, Theorem, MethodAutoProof, Proof
+from typing import TYPE_CHECKING
 
+from ..ast import Application, Metavariable, ProvableStatement
+from ..composer import Composer, MethodAutoProof
 from .unification import Unification
+
+if TYPE_CHECKING:
+    from typing import Optional, Tuple
+
+    from ..ast import StructuredStatement, Term
+    from ..composer import Proof, Theorem
 
 
 class NotationProver:

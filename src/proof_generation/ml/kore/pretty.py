@@ -1,32 +1,32 @@
 from __future__ import annotations
 
-from typing import List, Union, TextIO, Any
-
 from io import StringIO
+from typing import TYPE_CHECKING, Any
 
-from ml.utils.ansi import ANSI
-from ml.utils.printer import Printer
+from ..utils.ansi import ANSI
+from ..utils.printer import Printer
+from .ast import BaseAST, KoreVisitor
 
-from .ast import (
-    BaseAST,
-    Axiom,
-    Axiom,
-    Sort,
-    SortInstance,
-    SortDefinition,
-    SymbolDefinition,
-    Variable,
-    Module,
-    Definition,
-    AliasDefinition,
-    Application,
-    MLPattern,
-    SortVariable,
-    ImportStatement,
-    SymbolInstance,
-    StringLiteral,
-    KoreVisitor,
-)
+if TYPE_CHECKING:
+    from typing import List, TextIO, Union
+
+    from .ast import (
+        AliasDefinition,
+        Application,
+        Axiom,
+        Definition,
+        ImportStatement,
+        MLPattern,
+        Module,
+        Sort,
+        SortDefinition,
+        SortInstance,
+        SortVariable,
+        StringLiteral,
+        SymbolDefinition,
+        SymbolInstance,
+        Variable,
+    )
 
 
 class PrettyPrinter(Printer, KoreVisitor[BaseAST[Any], None]):

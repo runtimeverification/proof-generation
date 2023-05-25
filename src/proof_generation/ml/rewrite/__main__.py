@@ -1,29 +1,32 @@
+from __future__ import annotations
+
+import argparse
+import code
 import os
 import sys
-import code
-import argparse
-
-from typing import Tuple, Optional, Sequence, ContextManager, Union
 from contextlib import nullcontext
+from typing import TYPE_CHECKING
 
-import yaml
 import schema  # type: ignore
+import yaml
 
-from ml.utils.profiler import MemoryProfiler
-from ml.utils.stopwatch import Stopwatch
-
-from ml.kore.parser import parse_definition
-from ml.kore.ast import Module
-
-from ml.metamath.parser import load_database
-from ml.metamath.composer import ProofCache
-from ml.metamath.backend import Backend, StandaloneFileBackend, MultipleFileBackend, NullBackend
-
+from ..kore.parser import parse_definition
+from ..metamath.backend import MultipleFileBackend, NullBackend, StandaloneFileBackend
+from ..metamath.composer import ProofCache
+from ..metamath.parser import load_database
+from ..utils.profiler import MemoryProfiler
+from ..utils.stopwatch import Stopwatch
 from .env import KoreComposer
-from .rewrite import RewriteProofGenerator
 from .preprocessor import KorePreprocessor
-from .tasks import RewritingTask, ReachabilityTask
+from .rewrite import RewriteProofGenerator
 from .smt import SMTOption
+from .tasks import ReachabilityTask, RewritingTask
+
+if TYPE_CHECKING:
+    from typing import ContextManager, Optional, Sequence, Tuple, Union
+
+    from ..kore.ast import Module
+    from ..metamath.backend import Backend
 
 
 def load_tasks(module: Module, task_path: str) -> Tuple[Tuple[RewritingTask, ...], Tuple[ReachabilityTask, ...]]:

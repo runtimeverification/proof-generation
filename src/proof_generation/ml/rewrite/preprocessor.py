@@ -1,8 +1,7 @@
-from typing import Dict, Tuple, List, Set, Optional
+from typing import Dict, List, Optional, Set, Tuple
 
-import ml.kore.ast as kore
-from ml.kore.utils import KoreUtils
-
+from ..kore import ast as kore
+from ..kore.utils import KoreUtils
 from .templates import KoreTemplates
 
 

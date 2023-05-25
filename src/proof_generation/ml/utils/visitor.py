@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, TypeVar, Generic, Union, Callable, Set
+from typing import Any, Callable, Generic, List, Set, TypeVar, Union
 
 TreeT = TypeVar('TreeT', contravariant=True)
 ResultT = TypeVar('ResultT')

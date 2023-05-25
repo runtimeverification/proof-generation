@@ -1,21 +1,25 @@
-from typing import Mapping, Dict, Optional, Union
+from __future__ import annotations
 
-from ml.kore import ast as kore
-from ml.kore.visitors import PatternVariableVisitor, SortVariableVisitor
-from ml.kore.utils import KoreUtils, PatternPath
+from typing import TYPE_CHECKING
 
-from ml.metamath import ast as mm
-from ml.metamath.composer import Proof
-from ml.metamath.utils import MetamathUtils
-from ml.metamath.auto.sorting import SortingProver
-from ml.metamath.auto.substitution import SubstitutionProver
-from ml.metamath.auto.fresh import FreshProver
-from ml.metamath.auto.predicate import PredicateProver
-
+from ..kore import ast as kore
+from ..kore.utils import KoreUtils
+from ..kore.visitors import PatternVariableVisitor, SortVariableVisitor
+from ..metamath import ast as mm
+from ..metamath.auto.fresh import FreshProver
+from ..metamath.auto.predicate import PredicateProver
+from ..metamath.auto.sorting import SortingProver
+from ..metamath.auto.substitution import SubstitutionProver
+from ..metamath.utils import MetamathUtils
+from .encoder import KoreDecoder, KoreEncoder
 from .env import ProofGenerator, ProvableClaim
-from .encoder import KoreEncoder, KoreDecoder
 from .propositional import PropositionalProofGenerator
 
+if TYPE_CHECKING:
+    from typing import Dict, Mapping, Optional, Union
+
+    from ..kore.utils import PatternPath
+    from ..metamath.composer import Proof
 
 class FOLProofGenerator(ProofGenerator):
     """

@@ -1,26 +1,26 @@
 from __future__ import annotations
 
-from typing import Optional, Union, List, Tuple, Mapping, Set, Dict, Type, Any
-
 import re
+from typing import TYPE_CHECKING
 
-
-from ml.kore import ast as kore
-from ml.kore.utils import KoreUtils
-from ml.kore.visitors import FreePatternVariableVisitor
-
-from ml.metamath import ast as mm
-from ml.metamath.composer import Composer, Theorem, Proof, AutoProof
-from ml.metamath.utils import MetamathUtils
-from ml.metamath.auto.substitution import SubstitutionProver
-from ml.metamath.auto.context import ApplicationContextProver
-from ml.metamath.auto.sorting import SortingProver
-from ml.metamath.auto.fresh import FreshProver
-from ml.metamath.auto.predicate import PredicateProver
-
-from .encoder import KoreEncoder, KoreDecoder
+from ..kore import ast as kore
+from ..kore.utils import KoreUtils
+from ..kore.visitors import FreePatternVariableVisitor
+from ..metamath import ast as mm
+from ..metamath.auto.context import ApplicationContextProver
+from ..metamath.auto.fresh import FreshProver
+from ..metamath.auto.predicate import PredicateProver
+from ..metamath.auto.sorting import SortingProver
+from ..metamath.auto.substitution import SubstitutionProver
+from ..metamath.composer import Composer, Proof, Theorem
+from ..metamath.utils import MetamathUtils
+from .encoder import KoreDecoder, KoreEncoder
 from .templates import KoreTemplates
 
+if TYPE_CHECKING:
+    from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Type, Union
+
+    from ..metamath.composer import AutoProof
 
 class ProofGenerator:
 

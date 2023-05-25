@@ -1,7 +1,7 @@
-from .interactive import InteractiveState
 import argparse
 
-from ml.metamath.composer import ProofCache
+from ..metamath.composer import ProofCache
+from .interactive import InteractiveState
 
 ProofCache.DISABLED = True
 

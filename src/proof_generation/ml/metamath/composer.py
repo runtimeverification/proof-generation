@@ -1,25 +1,36 @@
 from __future__ import annotations
 
-from traceback import print_exc
-from contextlib import contextmanager
-
-from typing import List, Tuple, Mapping, Callable, Dict, Collection, Set, Union, Any, Optional, Iterable, Generator, overload
-from dataclasses import dataclass, field
-
 import re
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from traceback import print_exc
+from typing import TYPE_CHECKING, overload
 
-
-from ml.utils.hook import Hookable
-
+from ..utils.hook import Hookable
+from .ast import (
+    Application,
+    Block,
+    ConclusionStatement,
+    ConstantStatement,
+    Database,
+    DisjointStatement,
+    EssentialStatement,
+    FloatingStatement,
+    Metavariable,
+    ProvableStatement,
+    Statement,
+    StructuredStatement,
+    Term,
+    VariableStatement,
+)
 from .auto.unification import Unification
-import ml.metamath.auto
+from .backend import DEFAULT_SEGMENT, NullBackend
 
-from .ast import *
-from .backend import Backend, NullBackend, SegmentLabel, DEFAULT_SEGMENT
-
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    pass
+    from typing import Any, Callable, Collection, Dict, Generator, Iterable, List, Mapping, Optional, Set, Tuple, Union
+
+    from .ast import Terms
+    from .backend import Backend, SegmentLabel
 
 
 @dataclass
@@ -433,7 +444,9 @@ class Theorem:
             metavar_substituted = metavar_substitution[var]
 
             if isinstance(metavar_substituted, Term):
-                typecode_proof = ml.metamath.auto.typecode.TypecodeProver.prove_typecode(
+                from .auto.typecode import TypecodeProver  # avoid circular import
+
+                typecode_proof = TypecodeProver.prove_typecode(
                     self.composer, typecode, metavar_substituted
                 )
 

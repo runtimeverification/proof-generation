@@ -1,17 +1,21 @@
-from typing import Union, Tuple, TypeVar
+from __future__ import annotations
 
-from ml.kore import ast as kore
-from ml.kore.utils import KoreUtils
+from typing import TYPE_CHECKING
 
-from ml.metamath import ast as mm
-from ml.metamath.composer import Proof
-from ml.metamath.auto.substitution import SubstitutionProver
-from ml.metamath.utils import MetamathUtils
+from ..kore import ast as kore
+from ..kore.utils import KoreUtils
+from ..metamath import ast as mm
+from ..metamath.auto.substitution import SubstitutionProver
+from ..metamath.utils import MetamathUtils
+from .env import ProofGenerator
 
+if TYPE_CHECKING:
+    from typing import Tuple, TypeVar, Union
 
-from .env import KoreComposer, ProofGenerator
+    from ..metamath.composer import Proof
+    from .env import KoreComposer
 
-PAS = TypeVar('PAS', kore.Pattern, kore.Axiom, kore.Sort)
+    PAS = TypeVar('PAS', kore.Pattern, kore.Axiom, kore.Sort)
 
 
 class SingleSubstitutionProofGenerator(ProofGenerator):

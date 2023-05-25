@@ -1,5 +1,12 @@
-from ..ast import StructuredStatement
-from ..composer import Composer, MethodAutoProof, Proof
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from ..composer import MethodAutoProof
+
+if TYPE_CHECKING:
+    from ..ast import StructuredStatement
+    from ..composer import Composer, Proof
 
 
 class HypothesisProver:

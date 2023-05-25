@@ -1,10 +1,15 @@
-from typing import Tuple
+from __future__ import annotations
 
-from ml.kore import ast as kore
-from ml.kore.utils import KoreUtils
+from typing import TYPE_CHECKING
 
+from ..kore import ast as kore
+from ..kore.utils import KoreUtils
+from .env import ProofGenerator
 
-from .env import ProofGenerator, ProvableClaim
+if TYPE_CHECKING:
+    from typing import Tuple
+
+    from .env import ProvableClaim
 
 
 class PropositionalProofGenerator(ProofGenerator):

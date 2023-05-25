@@ -1,14 +1,13 @@
-from typing import List, IO, Tuple, Any, Union, Dict
-
+import argparse
+import csv
 import os
 import re
-import sys
-import csv
 import shlex
-import argparse
 import subprocess
+import sys
+from typing import IO, Any, Dict, List, Tuple, Union
 
-from ml.utils.ansi import ANSI
+from ..ml.utils.ansi import ANSI
 
 STATS_LABELS = [
     'gen-module',

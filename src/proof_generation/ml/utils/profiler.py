@@ -1,6 +1,5 @@
-from typing import Any, Generator
-
 from contextlib import contextmanager
+from typing import Any, Generator
 
 try:
     import tracemalloc

@@ -1,8 +1,15 @@
-from typing import Optional, List, Tuple, Any, Union
+from __future__ import annotations
 
-from lark import Lark, Transformer, Token
+from typing import TYPE_CHECKING
+
+from lark import Lark, Transformer
 
 from .ast import AndTactical, AtomicTactical, Options, OrTactical, PlusTactical, StarTactical, Tactical
+
+if TYPE_CHECKING:
+    from typing import Any, List, Optional, Tuple, Union
+
+    from lark import Token
 
 
 class ASTTransformer(Transformer[Tactical]):

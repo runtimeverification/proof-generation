@@ -1,10 +1,17 @@
-from typing import Optional, Tuple, List, Callable
+from __future__ import annotations
 
-from ..ast import Metavariable, Term, Application, StructuredStatement, ProvableStatement
-from ..composer import Composer, Theorem, MethodAutoProof, Proof
+from typing import TYPE_CHECKING
+
+from ..ast import Application, Metavariable, ProvableStatement, StructuredStatement
+from ..composer import MethodAutoProof
 from ..utils import MetamathUtils
-
 from .unification import Unification
+
+if TYPE_CHECKING:
+    from typing import Callable, List, Optional, Tuple
+
+    from ..ast import Term
+    from ..composer import Composer, Proof, Theorem
 
 
 class SortingProver:

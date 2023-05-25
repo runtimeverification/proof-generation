@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Any, Dict, List, Type
+from typing import Any, Callable, Dict, List, Type
 
 
 class Hookable:

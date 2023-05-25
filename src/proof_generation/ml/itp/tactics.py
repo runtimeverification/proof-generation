@@ -1,11 +1,18 @@
-from typing import Optional, List, Dict, Any, Callable
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from ml.metamath.ast import Term, StructuredStatement, EssentialStatement, ProvableStatement
-from ml.metamath.composer import Theorem, Proof, TheoremContext
-from ml.metamath.auto.notation import NotationProver
+from ..metamath.ast import EssentialStatement, ProvableStatement
+from ..metamath.auto.notation import NotationProver
+from ..metamath.composer import Theorem, TheoremContext
+from .state import Goal, ProofState, Tactic
 
-from .state import ProofState, Goal, Tactic
+if TYPE_CHECKING:
+    from typing import Any, Callable, Dict, List, Optional
+
+    from ..metamath.ast import StructuredStatement, Term
+    from ..metamath.composer import Proof
 
 
 @dataclass

@@ -1,7 +1,35 @@
-from typing import List, Any, Optional, Callable
-from lark import Lark, Transformer, Tree, Token
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from lark import Lark, Transformer
 from lark.visitors import v_args
-from .ast import AliasDefinition, Application, Axiom, BaseAST, Definition, ImportStatement, MLPattern, Module, Pattern, Sentence, Sort, SortDefinition, SortInstance, SortVariable, StringLiteral, SymbolDefinition, SymbolInstance, Variable
+
+from .ast import (
+    AliasDefinition,
+    Application,
+    Axiom,
+    BaseAST,
+    Definition,
+    ImportStatement,
+    MLPattern,
+    Module,
+    Pattern,
+    SortDefinition,
+    SortInstance,
+    SortVariable,
+    StringLiteral,
+    SymbolDefinition,
+    SymbolInstance,
+    Variable,
+)
+
+if TYPE_CHECKING:
+    from typing import Callable, List, Optional
+
+    from lark import Token, Tree
+
+    from .ast import Sentence, Sort
 
 
 def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:

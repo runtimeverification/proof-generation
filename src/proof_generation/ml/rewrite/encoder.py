@@ -1,13 +1,11 @@
-from typing import Optional, Set, Union, Dict, Tuple, Any
-
+from typing import Any, Dict, Optional, Set, Tuple, Union
 from urllib.parse import quote_plus, unquote_plus
 
-from ml.kore import ast as kore
-from ml.kore.ast import KoreVisitor
-from ml.kore.utils import KoreUtils
-
-from ml.metamath import ast as mm
-from ml.metamath.utils import MetamathUtils
+from ..kore import ast as kore
+from ..kore.ast import KoreVisitor
+from ..kore.utils import KoreUtils
+from ..metamath import ast as mm
+from ..metamath.utils import MetamathUtils
 
 
 class KoreEncoder(KoreVisitor[kore.BaseAST[Any], mm.Term]):

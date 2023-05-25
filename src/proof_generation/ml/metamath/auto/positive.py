@@ -1,12 +1,17 @@
-from typing import Tuple, Optional
+from __future__ import annotations
 
-from ..ast import StructuredStatement, Term, Metavariable, Application
-from ..composer import Composer, Theorem, MethodAutoProof, Proof
+from typing import TYPE_CHECKING
+
+from ..ast import Application, Metavariable, StructuredStatement
+from ..composer import Composer, MethodAutoProof
 from ..utils import MetamathUtils
-
 from .notation import NotationProver
 
-import ml.metamath.auto as auto
+if TYPE_CHECKING:
+    from typing import Optional, Tuple
+
+    from ..ast import Term
+    from ..composer import Proof, Theorem
 
 
 class PositiveProver:
@@ -116,15 +121,17 @@ class PositiveProver:
 
     @staticmethod
     def prove_positive(composer: Composer, var: Metavariable, term: Term) -> Proof:
+        from ..auto.typecode import TypecodeProver  # avoid circular import
+
         target = PositiveProver.construct_positive_target(var, term)
 
         if composer.are_terms_disjoint(var, term):
             return composer.get_theorem('positive-disjoint').match_and_apply(target)
 
-        if auto.typecode.TypecodeProver.prove_typecode(composer, '#Variable', term) is not None:
+        if TypecodeProver.prove_typecode(composer, '#Variable', term) is not None:
             return composer.get_theorem('positive-in-var').match_and_apply(target)
 
-        if auto.typecode.TypecodeProver.prove_typecode(composer, '#Symbol', term) is not None:
+        if TypecodeProver.prove_typecode(composer, '#Symbol', term) is not None:
             return composer.get_theorem('positive-in-symbol').match_and_apply(target)
 
         for essential in composer.get_all_essentials():
@@ -172,12 +179,14 @@ class PositiveProver:
 
     @staticmethod
     def prove_negative(composer: Composer, var: Metavariable, term: Term) -> Proof:
+        from ..auto.typecode import TypecodeProver  # avoid circular import
+
         target = PositiveProver.construct_negative_target(var, term)
 
         if composer.are_terms_disjoint(var, term):
             return composer.get_theorem('negative-disjoint').match_and_apply(target)
 
-        if auto.typecode.TypecodeProver.prove_typecode(composer, '#Symbol', term) is not None:
+        if TypecodeProver.prove_typecode(composer, '#Symbol', term) is not None:
             return composer.get_theorem('negative-in-symbol').match_and_apply(target)
 
         for essential in composer.get_all_essentials():

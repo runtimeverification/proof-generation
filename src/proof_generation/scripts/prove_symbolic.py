@@ -1,20 +1,16 @@
-from typing import List, Dict, Any
-
+import argparse
 import os
-import sys
 import shlex
 import shutil
-import argparse
-import tempfile
 import subprocess
+import sys
+import tempfile
+from typing import Any, Dict, List
 
 import yaml
 
-
-
-from ml.utils.ansi import ANSI
-
-from ml.rewrite.__main__ import run_on_arguments, set_additional_flags
+from ..ml.rewrite.__main__ import run_on_arguments, set_additional_flags
+from ..ml.utils.ansi import ANSI
 
 
 def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:  # type: ignore

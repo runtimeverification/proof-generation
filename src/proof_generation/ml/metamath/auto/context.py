@@ -1,9 +1,16 @@
-from typing import List
+from __future__ import annotations
 
-from ..ast import Metavariable, Term, Application, ProvableStatement, StructuredStatement
-from ..composer import Composer, Theorem, MethodAutoProof, Proof
+from typing import TYPE_CHECKING
 
+from ..ast import Application, Metavariable, ProvableStatement
+from ..composer import MethodAutoProof
 from .notation import NotationProver
+
+if TYPE_CHECKING:
+    from typing import List
+
+    from ..ast import StructuredStatement, Term
+    from ..composer import Composer, Proof, Theorem
 
 
 class ApplicationContextProver:

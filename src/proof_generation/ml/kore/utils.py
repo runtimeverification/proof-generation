@@ -1,48 +1,48 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Tuple, Optional, TypeVar, Union, Dict, TextIO, Any, Iterable, Set
-
 import sys
-
+from typing import TYPE_CHECKING, Any, List
 
 from .ast import (
-    Pattern,
-    BaseAST,
-    Axiom,
-    Axiom,
-    Sort,
-    SortInstance,
-    SymbolDefinition,
-    Variable,
-    Module,
-    AliasDefinition,
     Application,
+    Axiom,
+    BaseAST,
+    KoreVisitor,
     MLPattern,
+    SortInstance,
     SortVariable,
     StringLiteral,
-    KoreVisitor,
-)
-from .visitors import (
-    PatternOnlyVisitorStructure,
-    PatternSubstitutionVisitor,
-    SortSubstitutionVisitor,
-    CopyVisitor,
-    FreePatternVariableVisitor,
-    QuantifierTester,
-    PatternVariableVisitor,
-    SortVariableVisitor,
-    PatternVariableRenamer,
+    SymbolDefinition,
+    Variable,
 )
 from .pretty import PrettyPrinter
+from .visitors import (
+    CopyVisitor,
+    FreePatternVariableVisitor,
+    PatternOnlyVisitorStructure,
+    PatternSubstitutionVisitor,
+    PatternVariableRenamer,
+    PatternVariableVisitor,
+    QuantifierTester,
+    SortSubstitutionVisitor,
+    SortVariableVisitor,
+)
+
+if TYPE_CHECKING:
+    from typing import Dict, Iterable, Mapping, Optional, Set, TextIO, Tuple, TypeVar, Union
+
+    from .ast import AliasDefinition, Module, Pattern, Sort
+
+    AST = TypeVar('AST', bound=BaseAST[Any])
+    P = TypeVar('P', bound=Pattern)
+    PA = TypeVar('PA', Pattern, Axiom)
+    PAS = TypeVar('PAS', Pattern, Axiom, Sort)
+
+
 """
 Path to a subpattern of a pattern or an axiom
 """
 PatternPath = List[int]
-
-AST = TypeVar('AST', bound=BaseAST[Any])
-P = TypeVar('P', bound=Pattern)
-PA = TypeVar('PA', Pattern, Axiom)
-PAS = TypeVar('PAS', Pattern, Axiom, Sort)
 
 
 class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisitorStructure[BaseAST[Any], None]):

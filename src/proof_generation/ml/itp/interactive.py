@@ -1,26 +1,27 @@
 from __future__ import annotations
 
-from typing import Optional, List, Callable, Any, Tuple
-
 import readline
 import traceback
+from typing import TYPE_CHECKING
 
-from ml.metamath.ast import Encoder
-from ml.metamath.parser import load_database
-from ml.metamath.composer import Composer, Theorem
+from ..itp.parser import parse_tactical
+from ..itp.state import NoStateChangeException, ProofState
+from ..metamath.ast import Encoder
+from ..metamath.composer import Composer
+from ..metamath.parser import load_database
+from ..utils.ansi import ANSI
 
-from ml.itp.ast import Tactical
-from ml.itp.parser import parse_tactical
-from ml.itp.state import ProofState, NoStateChangeException
+if TYPE_CHECKING:
+    from typing import Any, Callable, List, Optional, Tuple
 
-from ml.utils.ansi import ANSI
+    from ..itp.ast import Tactical
+    from ..metamath.composer import Theorem
 
+    HandlerT = Callable[..., Any]
 
 readline.parse_and_bind('tab: complete')
 
 TAB = '  '
-
-HandlerT = Callable[..., Any]
 
 
 class BuiltinCommand:

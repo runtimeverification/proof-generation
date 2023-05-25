@@ -2,11 +2,10 @@
 Extensions to the metamath AST as in proof.metamath.ast
 """
 
-from typing import Any
 from dataclasses import dataclass
+from typing import Any
 
-
-from ml.metamath.ast import Metavariable
+from ..metamath.ast import Metavariable
 
 
 @dataclass

@@ -1,9 +1,7 @@
-from typing import Dict, Generator
-
 import time
-
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from typing import Dict, Generator
 
 
 @dataclass

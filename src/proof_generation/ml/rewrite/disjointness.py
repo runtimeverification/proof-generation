@@ -1,18 +1,21 @@
-from typing import List, Union
+from __future__ import annotations
 
 from traceback import print_exc
+from typing import TYPE_CHECKING
 
-from ml.kore import ast as kore
-from ml.kore.utils import KoreUtils
-from ml.kore.visitors import FreePatternVariableVisitor
-
-from ml.metamath import ast as mm
-from ml.metamath.composer import Proof
-from ml.metamath.auto.substitution import SubstitutionProver
-from ml.metamath.auto.sorting import SortingProver
-
-from .env import ProofGenerator
+from ..kore import ast as kore
+from ..kore.utils import KoreUtils
+from ..kore.visitors import FreePatternVariableVisitor
+from ..metamath import ast as mm
+from ..metamath.auto.sorting import SortingProver
+from ..metamath.auto.substitution import SubstitutionProver
 from .encoder import KoreEncoder
+from .env import ProofGenerator
+
+if TYPE_CHECKING:
+    from typing import List, Union
+
+    from ..metamath.composer import Proof
 
 
 class DisjointnessProofGenerator(ProofGenerator):

@@ -1,11 +1,32 @@
-from typing import Tuple, List, Set, Iterable
+from __future__ import annotations
 
 import os
 import re
+from typing import TYPE_CHECKING
 
-from lark import Lark, Transformer, Token
+from lark import Lark, Transformer
 
-from .ast import Application, AxiomaticStatement, BaseAST, Block, ConstantStatement, Database, DisjointStatement, EssentialStatement, FloatingStatement, Metavariable, ProvableStatement, Statement, Term, Terms, VariableStatement
+from .ast import (
+    Application,
+    AxiomaticStatement,
+    BaseAST,
+    Block,
+    ConstantStatement,
+    Database,
+    DisjointStatement,
+    EssentialStatement,
+    FloatingStatement,
+    Metavariable,
+    ProvableStatement,
+    VariableStatement,
+)
+
+if TYPE_CHECKING:
+    from typing import Iterable, List, Set, Tuple
+
+    from lark import Token
+
+    from .ast import Statement, Term, Terms
 
 
 class ASTTransformer(Transformer[BaseAST]):

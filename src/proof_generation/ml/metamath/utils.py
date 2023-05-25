@@ -1,6 +1,13 @@
-from typing import Tuple, Sequence, Union, Optional
+from __future__ import annotations
 
-from .ast import Application, Metavariable, StructuredStatement, Term, Terms
+from typing import TYPE_CHECKING
+
+from .ast import Application, Metavariable, StructuredStatement
+
+if TYPE_CHECKING:
+    from typing import Optional, Sequence, Tuple, Union
+
+    from .ast import Term, Terms
 
 
 class MetamathUtils:

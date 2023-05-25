@@ -1,7 +1,14 @@
-from typing import Optional, Tuple, Union
+from __future__ import annotations
 
-import ml.kore.ast as kore
-from ml.kore.utils import KoreUtils, PatternPath
+from typing import TYPE_CHECKING
+
+from ..kore import ast as kore
+from ..kore.utils import KoreUtils
+
+if TYPE_CHECKING:
+    from typing import Optional, Tuple, Union
+
+    from ..kore.utils import PatternPath
 
 
 class KoreTemplates:

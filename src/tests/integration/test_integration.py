@@ -1,10 +1,9 @@
-import unittest
-
 import os
 import shutil
 import tempfile
+import unittest
 
-from ml.rewrite.__main__ import main as rewrite_main
+from proof_generation.ml.rewrite.__main__ import main as rewrite_main
 
 
 class TestIntegrationBase(unittest.TestCase):

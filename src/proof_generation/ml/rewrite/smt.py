@@ -1,12 +1,18 @@
-from typing import Dict, Callable, Optional, Union
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import z3  # type: ignore
 
-from ml.kore import ast as kore
-from ml.kore.utils import KoreUtils
+from ..kore import ast as kore
+from ..kore.utils import KoreUtils
+from .env import ProofGenerator
 
-from .env import KoreComposer, ProofGenerator, ProvableClaim
+if TYPE_CHECKING:
+    from typing import Callable, Dict, Optional, Union
+
+    from .env import KoreComposer, ProvableClaim
 
 
 @dataclass

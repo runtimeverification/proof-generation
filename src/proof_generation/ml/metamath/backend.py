@@ -1,15 +1,21 @@
 from __future__ import annotations
 
-from typing import Tuple, Dict, Optional, TextIO, Any
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
-
-import os
 import lzma
+import os
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from .ast import Statement, Encoder, IncludeStatement
+from .ast import Encoder, IncludeStatement
 
-SegmentLabel = Optional[str]
+if TYPE_CHECKING:
+    from typing import Any, Dict, Optional, TextIO, Tuple
+
+    from .ast import Statement
+
+    SegmentLabel = Optional[str]
+
+
 DEFAULT_SEGMENT = None
 
 

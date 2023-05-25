@@ -1,11 +1,18 @@
-from typing import Optional, Tuple
+from __future__ import annotations
 
-from ..ast import StructuredStatement, Term, Metavariable, Application
-from ..composer import Composer, Theorem, MethodAutoProof, Proof
+from typing import TYPE_CHECKING
+
+from ..ast import Application, Metavariable, StructuredStatement
+from ..composer import Composer, MethodAutoProof
 from ..utils import MetamathUtils
-
 from .notation import NotationProver
 from .typecode import TypecodeProver
+
+if TYPE_CHECKING:
+    from typing import Optional, Tuple
+
+    from ..ast import Term
+    from ..composer import Proof, Theorem
 
 
 class FreshProver:

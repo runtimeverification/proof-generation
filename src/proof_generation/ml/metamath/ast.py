@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TextIO, Optional, List, Set, Any, Mapping, Tuple, TypeVar
-from io import StringIO
 from dataclasses import dataclass, field
+from io import StringIO
+from typing import Any, List, Mapping, Optional, Set, TextIO, Tuple, TypeVar
 
-from ml.utils.visitor import Visitor, ResultT
-from ml.utils.printer import Printer
+from ..utils.printer import Printer
+from ..utils.visitor import ResultT, Visitor
 
 
 class MetamathVisitor(Visitor['BaseAST', ResultT]):

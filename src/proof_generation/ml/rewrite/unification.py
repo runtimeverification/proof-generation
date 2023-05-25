@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-
-from typing import List, Tuple, Optional, Dict, Union, Iterable
-from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from ml.kore import ast as kore
-from ml.kore.visitors import FreePatternVariableVisitor
-from ml.kore.utils import KoreUtils, PatternPath
-
-
-from .env import ProofGenerator, KoreComposer, ProvableClaim
+from ..kore import ast as kore
+from ..kore.utils import KoreUtils
+from ..kore.visitors import FreePatternVariableVisitor
+from .env import ProofGenerator
 from .fol import FOLProofGenerator
 from .templates import KoreTemplates
+
+if TYPE_CHECKING:
+    from typing import Dict, Iterable, List, Optional, Tuple, Union
+
+    from ..kore.utils import PatternPath
+    from .env import KoreComposer, ProvableClaim
 
 # AppliedEquation = List[Tuple[Equation, PatternPath]]
 

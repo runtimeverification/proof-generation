@@ -1,23 +1,18 @@
-from typing import List, Tuple, Any, TextIO
-
+import argparse
 import os
-import sys
 import shlex
 import shutil
-import argparse
 import subprocess
-
-
+import sys
 from tempfile import NamedTemporaryFile, TemporaryDirectory
+from typing import Any, List, TextIO, Tuple
 
-import ml.kore.ast as kore
-from ml.kore.parser import parse_definition
-from ml.kore.visitors import PatternSubstitutionVisitor
-from ml.kore.utils import KoreUtils
-
-from ml.utils.ansi import ANSI
-
-from ml.rewrite.__main__ import run_on_arguments, set_additional_flags
+from ..ml.kore import ast as kore
+from ..ml.kore.parser import parse_definition
+from ..ml.kore.utils import KoreUtils
+from ..ml.kore.visitors import PatternSubstitutionVisitor
+from ..ml.rewrite.__main__ import run_on_arguments, set_additional_flags
+from ..ml.utils.ansi import ANSI
 
 
 def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:  # type: ignore
