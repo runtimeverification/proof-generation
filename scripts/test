@@ -52,8 +52,17 @@ metamath-verify-all() {
     done
 }
 
+extract-lemma-tests() {
+    input_mm=$1; shift
+    thm_label=$1; shift
+    output_mm=$1; shift
+    python -m scripts.extract_lemma "$input_mm" "$thm_label" "$output_mm"
+    # metamath-verify "$output_mm"
+}
+
 static-checks
 unit-tests
 build-metamath
 metamath-verify-all theory/matching-logic*.mm theory/prelude.mm
+extract-lemma-tests theory/prelude.mm imp-reflexivity .build/imp-reflexivity-extracted.mm
 
