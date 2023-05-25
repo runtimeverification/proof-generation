@@ -1116,7 +1116,7 @@ class RewriteProofGenerator(ProofGenerator):
                 rewrite2,
             )
 
-        assert False, f'unsupported reachability type {rewrite_type1}'
+        raise AssertionError(f'unsupported reachability type {rewrite_type1}')
 
     def prove_symbolic_step(
         self,
@@ -1216,7 +1216,7 @@ class RewriteProofGenerator(ProofGenerator):
                     ),
                 )
 
-        assert False, f'failed to prove that {disjunction1} implies {disjunction2}'
+        raise AssertionError(f'failed to prove that {disjunction1} implies {disjunction2}')
 
         # disjuncts2 = KoreUtils.destruct_nested_or(disjunction2)
         # assert disjunction1 in disjuncts2
@@ -1316,7 +1316,7 @@ class RewriteProofGenerator(ProofGenerator):
                 step2 = self.apply_reachability_subsumption_left(simplification, step2)
                 break
         else:
-            assert False, f'unable to unify {lhs2} with any of the branches in {rhs1}'
+            raise AssertionError(f'unable to unify {lhs2} with any of the branches in {rhs1}')
 
         step1_has_premise = KoreUtils.is_implies(step1.claim.pattern)
         step2_has_premise = KoreUtils.is_implies(step2.claim.pattern)
@@ -1393,7 +1393,7 @@ class RewriteProofGenerator(ProofGenerator):
 
                 return self.composer.apply_kore_lemma('kore-reachability-one-path-transitivity-alt', step1, step2)
 
-        assert False, f'unsupported reachbility type {reachability}'
+        raise AssertionError(f'unsupported reachbility type {reachability}')
 
     def preprocess_steps(self, steps: Tuple[RewritingStep, ...]) -> None:
         """
@@ -1708,7 +1708,7 @@ class RewriteProofGenerator(ProofGenerator):
                         self.apply_reachability_intro(src2, claim2),
                     )
 
-        assert False, f'cannot apply transitivity on reachability types {claim_type1} and {claim_type2} to get {target_type}'
+        raise AssertionError(f'cannot apply transitivity on reachability types {claim_type1} and {claim_type2} to get {target_type}')
 
     def apply_reachability_reflexivity(self, target: ReachabilityType, pattern: kore.Pattern) -> ProvableClaim:
         assert target in RewriteProofGenerator.REACHABILITY_REFLEXIVITY_THEOREMS, \
@@ -2608,4 +2608,4 @@ class IfEvaluator(BuiltinFunctionEvaluator):
         elif literal.content == 'false':
             return self.build_equation(application, false_branch)
         else:
-            assert False, f'unexpected condition {condition}'
+            raise AssertionError(f'unexpected condition {condition}')

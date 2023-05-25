@@ -68,7 +68,7 @@ class Substitution(WithSchema):
             elif isinstance(v, kore.Variable) and v not in subst:
                 subst[v] = k
             else:
-                assert False, f'duplicate key {k} or {v}'
+                raise AssertionError(f'duplicate key {k} or {v}')
         return subst
 
     def as_predicate(self, sort: kore.Sort) -> kore.Pattern:
@@ -108,7 +108,7 @@ class Substitution(WithSchema):
         elif KoreUtils.is_top(predicate):
             return Substitution()
         else:
-            assert False, f'unexpected predicate {predicate}'
+            raise AssertionError(f'unexpected predicate {predicate}')
 
     def merge(self, other: Substitution) -> Substitution:
         return Substitution(tuple(set(self.substitution + other.substitution)))

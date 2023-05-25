@@ -527,7 +527,7 @@ class DisjointnessProofGenerator(ProofGenerator):
             )
 
         else:
-            assert False, f'unable to find axiom to show the disjointness of sorts {dv_sort} and {right_sort}'
+            raise AssertionError(f'unable to find axiom to show the disjointness of sorts {dv_sort} and {right_sort}')
 
         right_var_encoded = KoreEncoder.encode_variable(right)
         dv_encoded = self.composer.encode_pattern(left)
@@ -583,7 +583,7 @@ class DisjointnessProofGenerator(ProofGenerator):
                     else:
                         return self.prove_argument_disjointness(left, right, i, subproof)
 
-                assert False, f'failed to show disjointness of {left} and {right}'
+                raise AssertionError(f'failed to show disjointness of {left} and {right}')
             else:
                 # different symbols, use no confusion axiom for different constructors
                 return self.prove_diff_constructor_disjointness(left, right)
@@ -607,4 +607,4 @@ class DisjointnessProofGenerator(ProofGenerator):
 
             # TODO: handle parametric sorts
 
-            assert False, f'unable to prove that {left} is not in sort {right.sort}'
+            raise AssertionError(f'unable to prove that {left} is not in sort {right.sort}')

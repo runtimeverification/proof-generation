@@ -37,7 +37,7 @@ class BaseAST(Generic[ParentT]):
     def get_parent(self) -> ParentT:
         if self.meta_parent is None:
             self.error_with_position('does not have a parent')
-            assert False  # to make mypy happy
+            raise AssertionError()  # to make mypy happy
         else:
             return self.meta_parent
 

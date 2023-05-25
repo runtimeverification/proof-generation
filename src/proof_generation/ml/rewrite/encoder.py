@@ -339,7 +339,7 @@ class KoreDecoder:
             return kore.StringLiteral(value)
 
         else:
-            assert False, f'unable to decode {term} as pattern'
+            raise AssertionError(f'unable to decode {term} as pattern')
 
     def decode_sort(self, term: mm.Term) -> kore.Sort:
         if isinstance(term, mm.Metavariable):

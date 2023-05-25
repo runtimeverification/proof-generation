@@ -308,7 +308,7 @@ class PropositionalProofGenerator(ProofGenerator):
 
             return shuffle
 
-        assert False, f'{n}^th conjunct does not exist in {pattern}'
+        raise AssertionError(f'{n}^th conjunct does not exist in {pattern}')
 
     def apply_weakening(self, claim: ProvableClaim, additional_premise: kore.Pattern) -> ProvableClaim:
         """

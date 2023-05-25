@@ -121,7 +121,7 @@ class FreshProver:
                     FreshProver.prove_fresh(composer, var, body),
                 )
 
-            assert False, f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint'
+            raise AssertionError(f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint')
         elif term.symbol == '\\mu':
             quant_var, body = MetamathUtils.destruct_mu(term)
 
@@ -133,7 +133,7 @@ class FreshProver:
                     FreshProver.prove_fresh(composer, var, body),
                 )
 
-            assert False, f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint'
+            raise AssertionError(f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint')
 
         # try to find a lemma
         if term.symbol in composer.fresh_lemmas:

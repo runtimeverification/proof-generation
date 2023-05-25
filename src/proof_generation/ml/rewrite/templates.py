@@ -276,7 +276,7 @@ class KoreTemplates:
             return KoreTemplates.destruct_map_pattern(KoreTemplates.get_map_merge_left(pattern)) + \
                    KoreTemplates.destruct_map_pattern(KoreTemplates.get_map_merge_right(pattern))
 
-        assert False, f'not a map pattern {pattern}'
+        raise AssertionError(f'not a map pattern {pattern}')
 
     @staticmethod
     def get_map_merge_left(pattern: kore.Pattern) -> kore.Pattern:
@@ -346,10 +346,10 @@ class KoreTemplates:
                 if rest is None: return None
                 return [1] + rest
 
-            # assert False, f'map {pattern} index out of bound {n}'
+            # raise AssertionError(f'map {pattern} index out of bound {n}')
             return None
 
-        assert False, f'not a map {pattern}'
+        raise AssertionError(f'not a map {pattern}')
 
     @staticmethod
     def get_path_to_smallest_key_in_map_pattern(pattern: kore.Pattern) -> Tuple[kore.Pattern, PatternPath]:
@@ -389,7 +389,7 @@ class KoreTemplates:
         elif q.arguments[0] < p.arguments[0]:
             return q, [1] + lq  # right
 
-        assert False, f'same key in map: {p.arguments[0]} and {q.arguments[0]}'
+        raise AssertionError(f'same key in map: {p.arguments[0]} and {q.arguments[0]}')
 
     @staticmethod
     def strip_inj(pattern: kore.Pattern) -> kore.Pattern:

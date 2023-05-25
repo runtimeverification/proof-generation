@@ -157,7 +157,7 @@ class SMTProofGenerator(ProofGenerator):
         print(f'abstracting predicate with variable {abstraction_map[predicate]}: {predicate}')
         return abstraction_map[predicate]
 
-        # assert False, f'unable to encode predicate {predicate}'
+        # raise AssertionError(f'unable to encode predicate {predicate}')
 
     def encode_term(self, term: kore.Pattern, abstraction_map: Dict[kore.Pattern, z3.BoolRef]) -> z3.AstRef:
         """
@@ -225,4 +225,4 @@ class SMTProofGenerator(ProofGenerator):
             print(f'abstracting term with variable {abstraction_map[term]}: {term}')
             return abstraction_map[term]
 
-        assert False, f'unable to encode term {term}'
+        raise AssertionError(f'unable to encode term {term}')

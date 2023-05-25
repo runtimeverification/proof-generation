@@ -308,7 +308,7 @@ class Theorem:
                     essential_proofs.append(existing_essentials.statement.label)
                     break
             else:
-                assert False, f'unable to prove obligation {essential} from existing hypotheses'
+                raise AssertionError(f'unable to prove obligation {essential} from existing hypotheses')
 
         return Proof.from_script(
             self.statement,
@@ -483,7 +483,7 @@ class Theorem:
                     final_essential_proofs.append(proof.prove(self.composer, essential_instance))
                 except Exception:
                     print_exc()
-                    assert (False), f'unable to automatically generate proof for {essential_instance}'
+                    raise AssertionError(f'unable to automatically generate proof for {essential_instance}')
 
         return floating_proofs + final_essential_proofs, substitution
 

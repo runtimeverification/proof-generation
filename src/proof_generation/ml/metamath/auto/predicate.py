@@ -96,6 +96,6 @@ class PredicateProver:
             sort, term = MetamathUtils.destruct_kore_is_predicate(body)
             return PredicateProver.prove_kore_predicate(composer, sort, term)
 
-        assert False, f'cannot prove {statement} using the predicate prover'
+        raise AssertionError(f'cannot prove {statement} using the predicate prover')
 
     auto = MethodAutoProof(prove_statement.__func__)  # type: ignore

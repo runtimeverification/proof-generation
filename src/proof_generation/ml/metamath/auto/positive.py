@@ -115,7 +115,7 @@ class PositiveProver:
             elif essential.terms[0] == Application('#Negative'):
                 subproofs.append(PositiveProver.prove_negative(composer, var, term.subterms[index]))
             else:
-                assert False, f'ill-formed positive/negative lemma {lemma.statement}'
+                raise AssertionError(f'ill-formed positive/negative lemma {lemma.statement}')
 
         return lemma.match_and_apply(target, *subproofs)
 
@@ -251,6 +251,6 @@ class PositiveProver:
         elif head == Application('#Negative'):
             return PositiveProver.prove_negative(composer, var, term)
         else:
-            assert False, f'not a #Positive or #Negative statement {statement}'
+            raise AssertionError(f'not a #Positive or #Negative statement {statement}')
 
     auto = MethodAutoProof(prove_statement.__func__)  # type: ignore

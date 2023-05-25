@@ -403,7 +403,7 @@ class FOLProofGenerator(ProofGenerator):
                 if pattern.symbol.definition == self.composer.sort_injection_symbol:
                     return self.prove_inj_functional(pattern)
 
-                assert False, f'cannot find functional axiom for symbol instance {pattern.symbol}'
+                raise AssertionError(f'cannot find functional axiom for symbol instance {pattern.symbol}')
 
             functional_axiom = self.composer.functional_axioms[pattern.symbol]
 
@@ -461,7 +461,7 @@ class FOLProofGenerator(ProofGenerator):
 
             return self.composer.domain_value_functional_axioms[sort, literal]
 
-        assert False, f'unable to prove {pattern} is funtional'
+        raise AssertionError(f'unable to prove {pattern} is funtional')
 
     def get_inj_instance(self, sort1: kore.Sort, sort2: kore.Sort, sort3: kore.Sort) -> ProvableClaim:
         """

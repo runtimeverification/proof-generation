@@ -94,7 +94,7 @@ class ApplyTactic(Tactic):
         if self.theorem is not None:
             return self.theorem
 
-        assert False, f'cannot find theorem {name}'
+        raise AssertionError(f'cannot find theorem {name}')
 
     def apply(self, state: ProofState, *args: str, **options: str) -> None:
         theorem_name, = args
@@ -302,7 +302,7 @@ class FromTactic(Tactic):
                 state.add_goal_dependency(goal, state.get_goal_by_id(claim.goal_id))
                 continue
 
-            assert False, f'unable to find hypothesis {name}'
+            raise AssertionError(f'unable to find hypothesis {name}')
 
         return hypotheses
 
@@ -319,7 +319,7 @@ class FromTactic(Tactic):
                 self.claim_goal = state.get_goal_by_id(claim.goal_id)
                 return self.theorem
 
-        assert False, f'unable to find theorem {name}'
+        raise AssertionError(f'unable to find theorem {name}')
 
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         assert len(args) >= 1, 'expecting at least one argument'

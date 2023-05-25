@@ -1235,7 +1235,7 @@ class KoreComposer(Composer):
                     )
                     essential_proofs.append(essential_proof)
             else:
-                assert False, f'cannot infer which proof to assign for hypothesis {essential}'
+                raise AssertionError(f'cannot infer which proof to assign for hypothesis {essential}')
 
         assert essential_claim_index == len(essential_provable_claims), \
                'too many essential proofs given'

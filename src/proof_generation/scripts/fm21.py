@@ -56,7 +56,7 @@ def get_metamath_steps(theorem: Theorem, compressed_proof: str) -> int:
                 break
             j += 1
         else:
-            assert False, f'unexpected ending {proof[i:]}'
+            raise AssertionError(f'unexpected ending {proof[i:]}')
 
         index = decode_index(proof[i:j + 1])
         assert index <= len(index_table), f'index {index} does not exists'

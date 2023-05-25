@@ -315,7 +315,7 @@ class KoreUtils:
             # NOTE: as a convention, the last sort in the sort arguments is the output sort
             return pattern.sorts[-1]
 
-        assert False, 'unable to get the sort of pattern `{}`'.format(pattern)
+        raise AssertionError('unable to get the sort of pattern `{}`'.format(pattern))
 
     @staticmethod
     def strip_forall(pattern: Pattern) -> Pattern:

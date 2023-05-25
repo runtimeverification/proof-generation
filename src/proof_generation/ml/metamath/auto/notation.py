@@ -366,12 +366,12 @@ class NotationProver:
                     return theorem.apply()
                 elif theorem.statement.terms == symmetric_target.terms:
                     return composer.get_theorem(NotationProver.SYM).apply(theorem.apply())
-            assert False, f'unable to show {left} === {right}'
+            raise AssertionError(f'unable to show {left} === {right}')
 
         # TODO: add this case
         if (isinstance(left, Metavariable) and not isinstance(right, Metavariable)
                 or not isinstance(left, Metavariable) and isinstance(right, Metavariable)):
-            assert False, f'proving {left} === {right} is not currently supported'
+            raise AssertionError(f'proving {left} === {right} is not currently supported')
 
         assert isinstance(left, Application) and isinstance(right, Application)
 
@@ -409,7 +409,7 @@ class NotationProver:
                     ),
                 )
 
-            assert False, f'failed to show {left} === {right}'
+            raise AssertionError(f'failed to show {left} === {right}')
 
         # try to rewrite both terms to a common head symbol
         result = NotationProver.rewrite_to_same_head_symbol(composer, left, right)

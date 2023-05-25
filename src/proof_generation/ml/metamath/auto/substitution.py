@@ -340,7 +340,7 @@ class SubstitutionProver:
                 if hypothesis.statement.terms == target.terms:
                     return hypothesis.apply()
 
-        assert False, f'unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}'
+        raise AssertionError(f'unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}')
 
     @staticmethod
     def prove_substitution_statement(

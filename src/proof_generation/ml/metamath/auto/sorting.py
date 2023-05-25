@@ -192,7 +192,7 @@ class SortingProver:
             if proof.is_proof_of(statement):
                 break
         else:
-            assert False, f'unable to prove {statement}'
+            raise AssertionError(f'unable to prove {statement}')
 
         return proof
 

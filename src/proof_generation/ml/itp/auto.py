@@ -645,7 +645,7 @@ class TautologyTactic(Tactic):
                     self.reduce_to_cnf(state, reduced),
                 )
 
-        assert False, f'unable to reduce {term} to cnf'
+        raise AssertionError(f'unable to reduce {term} to cnf')
 
     def reduce_to_conjunctive(self, state: ProofState, term: Term) -> Proof:
         r"""
@@ -716,7 +716,7 @@ class TautologyTactic(Tactic):
         if term.symbol == '\\top':
             return state.composer.get_theorem('top-to-or').as_proof()
 
-        assert False, f'unable to reduce pattern {term}'
+        raise AssertionError(f'unable to reduce pattern {term}')
 
     def permute_junction(self, state: ProofState, cnf: Term, position: int, connective: str = 'and') -> Proof:
         """
