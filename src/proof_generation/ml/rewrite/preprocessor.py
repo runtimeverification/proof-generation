@@ -1,7 +1,6 @@
 from typing import Dict, Tuple, List, Set, Optional
 
 import ml.kore.ast as kore
-from ml.kore.parser import parse_axiom
 from ml.kore.utils import KoreUtils
 
 from .templates import KoreTemplates

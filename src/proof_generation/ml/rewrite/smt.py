@@ -1,5 +1,5 @@
 from typing import Dict, Callable, Optional, Union
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import z3  # type: ignore
 

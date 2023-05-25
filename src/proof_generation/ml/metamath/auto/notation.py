@@ -1,6 +1,6 @@
-from typing import Optional, List, Tuple, Mapping, Dict
+from typing import Optional, Tuple
 
-from ..ast import Metavariable, Term, Statement, Application, StructuredStatement, ProvableStatement
+from ..ast import Metavariable, Term, Application, StructuredStatement, ProvableStatement
 from ..composer import Composer, Theorem, MethodAutoProof, Proof
 
 from .unification import Unification

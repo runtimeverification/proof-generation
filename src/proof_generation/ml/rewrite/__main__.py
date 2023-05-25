@@ -1,12 +1,9 @@
-import re
 import os
 import sys
-import time
 import code
 import argparse
 
-from typing import List, Tuple, Optional, Sequence, ContextManager, Union, Dict
-from io import StringIO
+from typing import Tuple, Optional, Sequence, ContextManager, Union
 from contextlib import nullcontext
 
 import yaml
@@ -15,20 +12,16 @@ import schema  # type: ignore
 from ml.utils.profiler import MemoryProfiler
 from ml.utils.stopwatch import Stopwatch
 
-from ml.kore.parser import parse_definition, parse_pattern, parse_axiom
-from ml.kore.visitors import FreePatternVariableVisitor, PatternSubstitutionVisitor
-from ml.kore.ast import StringLiteral, MLPattern, Module, Pattern, Claim
-from ml.kore.utils import KoreUtils
+from ml.kore.parser import parse_definition
+from ml.kore.ast import Module
 
 from ml.metamath.parser import load_database
-from ml.metamath.ast import Statement, StructuredStatement, IncludeStatement, Comment
-from ml.metamath.composer import Composer, ProofCache
-from ml.metamath.backend import Backend, StandaloneFileBackend, MultipleFileBackend, NullBackend, SegmentLabel
+from ml.metamath.composer import ProofCache
+from ml.metamath.backend import Backend, StandaloneFileBackend, MultipleFileBackend, NullBackend
 
 from .env import KoreComposer
 from .rewrite import RewriteProofGenerator
 from .preprocessor import KorePreprocessor
-from .disjointness import DisjointnessProofGenerator
 from .tasks import RewritingTask, ReachabilityTask
 from .smt import SMTOption
 

@@ -1,14 +1,13 @@
-from typing import List, Union, Tuple, TypeVar, Any
+from typing import Union, Tuple, TypeVar
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Theorem, Proof
+from ml.metamath.composer import Proof
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.utils import MetamathUtils
 
-from .encoder import KoreEncoder
 
 from .env import KoreComposer, ProofGenerator
 

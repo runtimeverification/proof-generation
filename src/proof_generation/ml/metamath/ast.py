@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TextIO, Optional, List, Set, Union, Iterable, Any, Dict, Mapping, Tuple, Collection, NamedTuple, TypeVar
+from typing import TextIO, Optional, List, Set, Any, Mapping, Tuple, TypeVar
 from io import StringIO
 from dataclasses import dataclass, field
 

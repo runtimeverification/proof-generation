@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import Any, List, TypeVar, Generic, Union, Callable, Set
-from abc import abstractmethod
 
 TreeT = TypeVar('TreeT', contravariant=True)
 ResultT = TypeVar('ResultT')

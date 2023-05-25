@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from typing import Optional, Union, List, Tuple, Mapping, Set, TextIO, Dict, Type, Any, Iterable, Generator
+from typing import Optional, Union, List, Tuple, Mapping, Set, Dict, Type, Any
 
 import re
 
-from contextlib import contextmanager
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
-from ml.kore.visitors import FreePatternVariableVisitor, ApplicationSubpatternTester
+from ml.kore.visitors import FreePatternVariableVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Composer, Theorem, Context, Proof, AutoProof
+from ml.metamath.composer import Composer, Theorem, Proof, AutoProof
 from ml.metamath.utils import MetamathUtils
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.context import ApplicationContextProver

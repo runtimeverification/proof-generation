@@ -3,7 +3,6 @@ from typing import Any
 import unittest
 
 import ml.kore.ast as kore
-from ml.kore.utils import KoreUtils
 from ml.kore.parser import parse_pattern, parse_axiom, parse_module
 from ml.rewrite.encoder import KoreEncoder
 

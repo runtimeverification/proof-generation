@@ -1,7 +1,7 @@
-from typing import Mapping, Optional, Tuple, List, Dict, Callable
+from typing import Optional, Tuple, List, Callable
 
-from ..ast import Metavariable, Term, Application, Statement, StructuredStatement, ProvableStatement
-from ..composer import Composer, Theorem, MethodAutoProof, ProofCache, Proof
+from ..ast import Metavariable, Term, Application, StructuredStatement, ProvableStatement
+from ..composer import Composer, Theorem, MethodAutoProof, Proof
 from ..utils import MetamathUtils
 
 from .unification import Unification

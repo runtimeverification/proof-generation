@@ -4,7 +4,6 @@ from typing import (
     List,
     Optional,
     Mapping,
-    NewType,
     Set,
     Callable,
     Tuple,
@@ -19,7 +18,7 @@ from typing import (
 from abc import abstractmethod
 
 from ml.metamath.ast import StructuredStatement, Metavariable, Term, Terms, ProvableStatement, Application
-from ml.metamath.composer import Composer, Theorem, Context, Proof, TheoremContext
+from ml.metamath.composer import Composer, Theorem, Proof
 from ml.metamath.parser import (
     parse_term_with_metavariables,
     parse_terms_with_metavariables,
@@ -38,7 +37,6 @@ class NoStateChangeException(Exception):
     Tactic should raise this exception when there
     is no change in the proof state
     """
-    pass
 
 
 class Goal:

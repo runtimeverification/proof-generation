@@ -8,7 +8,6 @@ from ml.utils.ansi import ANSI
 from ml.utils.printer import Printer
 
 from .ast import (
-    Pattern,
     BaseAST,
     Axiom,
     Axiom,

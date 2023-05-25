@@ -1,8 +1,6 @@
-from typing import Set, List, Dict, Tuple, Mapping, TextIO, Any, Generic, TypeVar
+from typing import Set, List, Dict, Tuple, Mapping, Any, Generic, TypeVar
 
-import re
 
-from ml.utils.ansi import ANSI
 from ml.utils.visitor import TreeT, ResultT, ChildrenResultT, UnionVisitor, ConjunctionVisitor, DisjunctionVisitor
 
 from .ast import *

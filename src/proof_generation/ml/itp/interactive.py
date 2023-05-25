@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Optional, List, Iterable, TypeVar, Callable, Any, Tuple
+from typing import Optional, List, Callable, Any, Tuple
 
 import readline
 import traceback
 
-from ml.metamath.ast import StructuredStatement, Statement, Application, Metavariable, Encoder
+from ml.metamath.ast import Encoder
 from ml.metamath.parser import load_database
 from ml.metamath.composer import Composer, Theorem
 
@@ -15,8 +15,6 @@ from ml.itp.state import ProofState, NoStateChangeException
 
 from ml.utils.ansi import ANSI
 
-import ml.itp.auto
-import ml.itp.tactics
 
 readline.parse_and_bind('tab: complete')
 

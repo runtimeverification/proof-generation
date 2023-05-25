@@ -1,13 +1,11 @@
-from typing import Mapping, Optional, List, Tuple, Dict, Any, Callable
+from typing import Optional, List, Dict, Any, Callable
 from dataclasses import dataclass
 
-from ml.metamath.ast import Term, StructuredStatement, Statement, Application, Metavariable, EssentialStatement, ProvableStatement
-from ml.metamath.composer import Theorem, Context, Proof, TheoremContext
+from ml.metamath.ast import Term, StructuredStatement, EssentialStatement, ProvableStatement
+from ml.metamath.composer import Theorem, Proof, TheoremContext
 from ml.metamath.auto.notation import NotationProver
-from ml.metamath.auto.typecode import TypecodeProver
 
 from .state import ProofState, Goal, Tactic
-from .extension import SchematicVariable
 
 
 @dataclass

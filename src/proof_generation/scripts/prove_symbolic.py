@@ -1,7 +1,6 @@
-from typing import List, Optional, Mapping, Tuple, BinaryIO, Dict, Any
+from typing import List, Dict, Any
 
 import os
-import re
 import sys
 import shlex
 import shutil
@@ -11,12 +10,7 @@ import subprocess
 
 import yaml
 
-from tempfile import NamedTemporaryFile
 
-import ml.kore.ast as kore
-from ml.kore.ast import KoreVisitor
-from ml.kore.parser import parse_definition, parse_pattern
-from ml.kore.visitors import PatternOnlyVisitorStructure
 
 from ml.utils.ansi import ANSI
 

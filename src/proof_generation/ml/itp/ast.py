@@ -2,11 +2,9 @@
 Syntax trees of the proof script
 """
 
-from typing import List
 
 from .state import ProofState, NoStateChangeException
 
-from ml.metamath.parser import parse_term_with_metavariables
 
 
 class BaseAST:

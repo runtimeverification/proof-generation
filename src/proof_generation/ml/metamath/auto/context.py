@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from ..ast import Metavariable, Term, Application, ProvableStatement, StructuredStatement
 from ..composer import Composer, Theorem, MethodAutoProof, Proof

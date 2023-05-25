@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import copy
 
-from typing import List, Tuple, NewType, Optional, Mapping, Dict, Union, Iterable
+from typing import List, Tuple, Optional, Dict, Union, Iterable
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
@@ -10,9 +9,6 @@ from ml.kore import ast as kore
 from ml.kore.visitors import FreePatternVariableVisitor
 from ml.kore.utils import KoreUtils, PatternPath
 
-from ml.metamath import ast as mm
-from ml.metamath.composer import Proof
-from ml.metamath.auto.typecode import TypecodeProver
 
 from .env import ProofGenerator, KoreComposer, ProvableClaim
 from .fol import FOLProofGenerator

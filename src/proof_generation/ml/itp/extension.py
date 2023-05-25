@@ -2,13 +2,11 @@
 Extensions to the metamath AST as in proof.metamath.ast
 """
 
-from typing import Optional, Any
+from typing import Any
 from dataclasses import dataclass
 
-from ml.utils.visitor import ResultT
 
-from ml.metamath.ast import StructuredStatement, Metavariable, Term, MetamathVisitor
-from ml.metamath.composer import Composer, Proof
+from ml.metamath.ast import Metavariable
 
 
 @dataclass

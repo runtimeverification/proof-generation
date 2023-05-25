@@ -1,8 +1,7 @@
-from typing import Optional, Tuple, List, Union
+from typing import Optional, Tuple, Union
 
 import ml.kore.ast as kore
 from ml.kore.utils import KoreUtils, PatternPath
-from ml.kore.parser import parse_axiom, parse_pattern
 
 
 class KoreTemplates:

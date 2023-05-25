@@ -1,7 +1,5 @@
-from typing import Optional, List, Tuple, Mapping, Union, Set, Dict
-from enum import Enum
+from typing import Optional, List, Tuple, Union, Set, Dict
 
-from traceback import print_exc
 
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils, PatternPath
@@ -9,7 +7,7 @@ from ml.kore.ast import KoreVisitor
 from ml.kore.visitors import PatternVariableVisitor
 
 from ml.metamath import ast as mm
-from ml.metamath.composer import Theorem, Proof
+from ml.metamath.composer import Proof
 from ml.metamath.auto.sorting import SortingProver
 from ml.metamath.auto.predicate import PredicateProver
 
@@ -21,9 +19,8 @@ from .unification import UnificationProofGenerator, InjectionCombine, Unificatio
 from .templates import KoreTemplates
 from .disjointness import DisjointnessProofGenerator
 from .propositional import PropositionalProofGenerator
-from .substitution import SingleSubstitutionProofGenerator
 from .smt import SMTProofGenerator, SMTOption
-from .tasks import RewritingStep, RewritingTask, ReachabilityTask, ConstrainedPattern, Substitution, AppliedRule
+from .tasks import RewritingStep, RewritingTask, ReachabilityTask, ConstrainedPattern, AppliedRule
 
 ReachabilityType = str
 
@@ -809,7 +806,7 @@ class RewriteProofGenerator(ProofGenerator):
             new_pattern1 = ConstrainedPattern(pattern1_body, pattern1_constraint)
             new_pattern2 = ConstrainedPattern(pattern2_body, pattern2_constraint)
 
-            inner_subsumption = self.prove_constrained_pattern_subsumption(new_pattern1, new_pattern2)
+            self.prove_constrained_pattern_subsumption(new_pattern1, new_pattern2)
 
             # TODO: prove these FO rearrangements
             # lhs_rearrange = self.composer.load_fresh_claim_placeholder(

@@ -1,20 +1,17 @@
-from typing import List, Optional, Mapping, Tuple, BinaryIO, Dict, Any, TextIO
+from typing import List, Tuple, Any, TextIO
 
 import os
-import re
 import sys
 import shlex
 import shutil
 import argparse
 import subprocess
 
-import yaml
 
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import ml.kore.ast as kore
-from ml.kore.ast import KoreVisitor
-from ml.kore.parser import parse_definition, parse_pattern
+from ml.kore.parser import parse_definition
 from ml.kore.visitors import PatternSubstitutionVisitor
 from ml.kore.utils import KoreUtils
 

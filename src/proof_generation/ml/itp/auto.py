@@ -4,11 +4,10 @@ Some automated tactics
 
 from typing import Optional, Tuple, List, Union, Dict
 
-from ml.metamath.ast import Application, Term, Metavariable, StructuredStatement, Statement, ProvableStatement
+from ml.metamath.ast import Application, Term, Metavariable, ProvableStatement
 from ml.metamath.composer import Theorem, Proof
 from ml.metamath.utils import MetamathUtils
 
-from ml.metamath.auto.unification import Unification
 from ml.metamath.auto.notation import NotationProver
 from ml.metamath.auto.substitution import SubstitutionProver
 from ml.metamath.auto.sorting import SortingProver

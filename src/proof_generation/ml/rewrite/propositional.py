@@ -3,7 +3,6 @@ from typing import Tuple
 from ml.kore import ast as kore
 from ml.kore.utils import KoreUtils
 
-from ml.metamath.auto.sorting import SortingProver
 
 from .env import ProofGenerator, ProvableClaim
 

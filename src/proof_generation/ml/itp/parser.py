@@ -2,7 +2,7 @@ from typing import Optional, List, Tuple, Any, Union
 
 from lark import Lark, Transformer, Token
 
-from .ast import *
+from .ast import AndTactical, AtomicTactical, Options, OrTactical, PlusTactical, StarTactical, Tactical
 
 
 class ASTTransformer(Transformer[Tactical]):

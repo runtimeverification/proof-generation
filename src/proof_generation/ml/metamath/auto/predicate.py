@@ -1,11 +1,9 @@
-from typing import Optional, Tuple
 
-from ..ast import StructuredStatement, Term, Metavariable, Application
-from ..composer import Composer, Theorem, MethodAutoProof, Proof
+from ..ast import StructuredStatement, Term, Application
+from ..composer import Composer, MethodAutoProof, Proof
 from ..utils import MetamathUtils
 
 from .notation import NotationProver
-from .typecode import TypecodeProver
 
 
 class PredicateProver:

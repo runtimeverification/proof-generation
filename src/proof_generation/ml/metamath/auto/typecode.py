@@ -2,14 +2,12 @@ from __future__ import annotations
 
 from typing import Optional, Callable
 
-from ..ast import *
+from ..ast import Application, FloatingStatement, Metavariable, ProvableStatement, Term
 from ..composer import Composer, Proof
-from ..utils import MetamathUtils
 
 from .unification import Unification
 from .positive import PositiveProver
 
-import ml.metamath.auto as auto
 
 
 class TypecodeProver:

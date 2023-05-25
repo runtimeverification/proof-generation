@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Tuple, Optional, NewType, TypeVar, Union, Dict, TextIO, Any, Iterable, Set
+from typing import Mapping, List, Tuple, Optional, TypeVar, Union, Dict, TextIO, Any, Iterable, Set
 
 import sys
 
-from io import StringIO
 
 from .ast import (
     Pattern,
@@ -13,18 +12,15 @@ from .ast import (
     Axiom,
     Sort,
     SortInstance,
-    SortDefinition,
     SymbolDefinition,
     Variable,
     Module,
-    Definition,
     AliasDefinition,
     Application,
     MLPattern,
     SortVariable,
     StringLiteral,
     KoreVisitor,
-    Claim,
 )
 from .visitors import (
     PatternOnlyVisitorStructure,

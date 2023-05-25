@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Mapping, List, Optional, Any, Dict, Callable, Tuple, TypeVar, Type, Set
-from dataclasses import dataclass, field
+from typing import Mapping, List, Optional, Any, Dict, Tuple, TypeVar, Type, Set
+from dataclasses import dataclass
 
 import schema  # type: ignore
 

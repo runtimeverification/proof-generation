@@ -1,6 +1,5 @@
 from typing import Any, Generator
 
-import linecache
 from contextlib import contextmanager
 
 try:

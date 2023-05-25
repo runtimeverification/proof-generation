@@ -1,4 +1,4 @@
-from typing import TextIO, Optional, Set, Union, Dict, Tuple, Any
+from typing import Optional, Set, Union, Dict, Tuple, Any
 
 from urllib.parse import quote_plus, unquote_plus
 
@@ -7,7 +7,6 @@ from ml.kore.ast import KoreVisitor
 from ml.kore.utils import KoreUtils
 
 from ml.metamath import ast as mm
-from ml.metamath.ast import MetamathVisitor
 from ml.metamath.utils import MetamathUtils
 
 

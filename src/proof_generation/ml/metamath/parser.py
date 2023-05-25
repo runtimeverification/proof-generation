@@ -1,12 +1,11 @@
-from typing import Tuple, Mapping, List, Set, Iterable
+from typing import Tuple, List, Set, Iterable
 
 import os
 import re
 
 from lark import Lark, Transformer, Token
-from lark.visitors import v_args
 
-from .ast import *
+from .ast import Application, AxiomaticStatement, BaseAST, Block, ConstantStatement, Database, DisjointStatement, EssentialStatement, FloatingStatement, Metavariable, ProvableStatement, Statement, Term, Terms, VariableStatement
 
 
 class ASTTransformer(Transformer[BaseAST]):

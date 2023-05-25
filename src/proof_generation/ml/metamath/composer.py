@@ -3,12 +3,11 @@ from __future__ import annotations
 from traceback import print_exc
 from contextlib import contextmanager
 
-from typing import List, Tuple, Mapping, Callable, Dict, Sequence, Collection, Set, Union, Any, Optional, Iterable, TextIO, Generator, overload
+from typing import List, Tuple, Mapping, Callable, Dict, Collection, Set, Union, Any, Optional, Iterable, Generator, overload
 from dataclasses import dataclass, field
 
 import re
 
-from io import StringIO
 
 from ml.utils.hook import Hookable
 
@@ -17,11 +16,10 @@ import ml.metamath.auto
 
 from .ast import *
 from .backend import Backend, NullBackend, SegmentLabel, DEFAULT_SEGMENT
-from .utils import MetamathUtils
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from .auto.typecode import TypecodeProver
+    pass
 
 
 @dataclass

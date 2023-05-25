@@ -1,7 +1,7 @@
-from typing import Tuple, List, Any, Optional, Callable
+from typing import List, Any, Optional, Callable
 from lark import Lark, Transformer, Tree, Token
 from lark.visitors import v_args
-from .ast import *
+from .ast import AliasDefinition, Application, Axiom, BaseAST, Definition, ImportStatement, MLPattern, Module, Pattern, Sentence, Sort, SortDefinition, SortInstance, SortVariable, StringLiteral, SymbolDefinition, SymbolInstance, Variable
 
 
 def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:

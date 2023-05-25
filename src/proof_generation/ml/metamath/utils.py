@@ -1,6 +1,6 @@
 from typing import Tuple, Sequence, Union, Optional
 
-from .ast import *
+from .ast import Application, Metavariable, StructuredStatement, Term, Terms
 
 
 class MetamathUtils:
