@@ -10,7 +10,10 @@ This repository contains:
 -   An automated prover that can generate proofs of concrete rewriting in Kore,
     given a Kore definition and a trace
 
-## Usage
+## Installation
+
+Prerequsites: `python >= 3.10`, `pip >= 20.0.2`, `poetry >= 1.3.2`.
+
 
 1. Clone all submodules
 
@@ -20,7 +23,7 @@ This repository contains:
 
 2. Install Z3 4.8.10 from [https://github.com/Z3Prover/z3/releases/tag/z3-4.8.10](https://github.com/Z3Prover/z3/releases/tag/z3-4.8.10)
 
-2. Compile the customized K framework. The following commands are tested on Ubuntu 22.04, for other distributions you might need suitable commands to install required packages.
+3. Compile the customized K framework. The following commands are tested on Ubuntu 22.04, for other distributions you might need suitable commands to install required packages.
 
     ```
     pushd deps/k
@@ -39,13 +42,16 @@ Finally, add K binaries to `PATH` (NOTE: this needs to be run every time the ter
 
     export PATH=$(realpath deps/k/k-distribution/target/release/k/bin):$PATH
 
-3. Install Python prerequisites (NOTE: Python 3.7+ is required)
-
-    python3 -m pip install -r requirements.txt
-
 4. Install Metamath for verification
 
     sudo apt-get install metamath
+
+5. Build and install
+
+```bash
+make build
+pip install dist/*.whl
+```
 
 ## Examples of generating proofs for concrete rewriting
 
@@ -69,3 +75,15 @@ Once that's done, you can use Metamath to verify the proof:
     0 10%  20%  30%  40%  50%  60%  70%  80%  90% 100%
     ..................................................
     MM>
+
+
+## For Developers
+
+Use `make` to run common tasks (see the [Makefile](Makefile) for a complete list of available targets).
+
+* `make build`: Build wheel
+* `make check`: Check code style
+* `make format`: Format code
+* `make test-unit`: Run unit tests
+
+For interactive use, spawn a shell with `poetry shell` (after `poetry install`), then run an interpreter.

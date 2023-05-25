@@ -1,27 +1,57 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "proof-generation"
 version = "0.1.0"
 description = "Proof generation for the K Framework"
-authors = ["Your Name <you@example.com>"]
+authors = [
+    "Runtime Verification, Inc. <contact@runtimeverification.com>",
+]
 license = "BSD-3-Clause"
 readme = "README.md"
-packages = [{include = "ml"}]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 lark-parser = "^0.12.0"
-schema = "^0.7.5"
 pyyaml = "^6.0"
+schema = "^0.7.5"
 z3-solver = "^4.12.1.0"
 
-
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.2.0"
-pytest = "^7.3.1"
-yapf = "^0.33.0"
-flake8 = "^6.0.0"
+autoflake = "*"
+black = "*"
+flake8 = "*"
+flake8-bugbear = "*"
+flake8-comprehensions = "*"
+flake8-quotes = "*"
+flake8-type-checking = "*"
+isort = "*"
+mypy = "*"
+pep8-naming = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-mock = "*"
+pytest-xdist = "*"
+pyupgrade = "*"
 types-pyyaml = "^6.0.12.10"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.autoflake]
+recursive = true
+expand-star-imports = true
+remove-all-unused-imports = true
+ignore-init-module-imports = true
+remove-duplicate-keys = true
+remove-unused-variables = true
+
+[tool.black]
+line-length = 120
+skip-string-normalization = true
+
+[tool.mypy]
+disallow_untyped_defs = true
