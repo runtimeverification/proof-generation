@@ -33,7 +33,7 @@ class ANSIStyler(type):
         'italic': 3,
     }
 
-    def get_code(class_obj, styles: List[str]) -> str:
+    def get_code(cls, styles: List[str]) -> str:
         """
         Supported combinations:
             - <color> - single foreground color
@@ -91,14 +91,14 @@ class ANSIStyler(type):
 
         return ''.join(codes)
 
-    def __getattr__(class_obj, key: str) -> Any:
+    def __getattr__(cls, key: str) -> Any:
         if key.startswith('in_'):
             styles = key[len('in_'):].split('_')
 
             def f(msg: str) -> str:
                 if not ANSI.supports_color():
                     return msg
-                return f'{class_obj.get_code(styles)}{msg}{ANSIStyler.RESET}'
+                return f'{cls.get_code(styles)}{msg}{ANSIStyler.RESET}'
 
             return f
 
