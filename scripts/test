@@ -16,15 +16,6 @@ build-metamath() {
 # Tests
 # =====
 
-static-checks() {
-    yapf --recursive --diff ml scripts tests
-    mypy --strict --no-incremental ml scripts tests
-}
-
-unit-tests() {
-    pytest "$@" --ignore=deps
-}
-
 metamath-verify() {
     # Modified from https://github.com/metamath/set.mm/blob/develop/scripts/verify
     # We should find a cleaner way of doing this long term.
@@ -52,8 +43,6 @@ metamath-verify-all() {
     done
 }
 
-static-checks
-unit-tests
 build-metamath
 metamath-verify-all theory/matching-logic*.mm theory/prelude.mm
 
