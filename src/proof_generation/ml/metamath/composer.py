@@ -214,7 +214,7 @@ class Proof:
 
             frequency[label] += 1
 
-        sorted_frequency = sorted(list(frequency.items()), reverse=True, key=lambda t: t[1])
+        sorted_frequency = sorted(frequency.items(), reverse=True, key=lambda t: t[1])
         unique_labels = [label for label, _ in sorted_frequency]
 
         for i, hyp in enumerate(mandatory_list + unique_labels):
@@ -615,7 +615,7 @@ class ProofCache:
 
         # cache the proof as a theorem
         if not no_theorem_cache and \
-           len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD * sum(map(lambda t: t.get_size(), terms)):
+           len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD * sum(t.get_size() for t in terms):
             self.stat_theorem_cache += 1
 
             # do not index the cached statements

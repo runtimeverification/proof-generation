@@ -29,13 +29,10 @@ class Options(BaseAST):
         output = []
 
         if self.args:
-            output += list(map(lambda s: '"{}"'.format(s.replace('"', '\\"')), self.args))
+            output += ['"{}"'.format(arg.replace('"', '\\"')) for arg in self.args]
 
         if self.kwargs:
-            output += list(map(
-                lambda t: '{} = "{}"'.format(t[0], t[1].replace('"', '\\"')),
-                self.kwargs.items(),
-            ))
+            output += ['{} = "{}"'.format(key, value.replace('"', '\\"')) for key, value in self.kwargs.items()]
 
         return ', '.join(output)
 

@@ -45,7 +45,7 @@ class ApplyTactic(Tactic):
         """
 
         # sort the metavariables to making things a bit more deterministic
-        metavars = sorted(list(theorem.get_metavariables()))
+        metavars = sorted(theorem.get_metavariables())
         new_subst = dict(subst)
 
         for metavar in new_subst:

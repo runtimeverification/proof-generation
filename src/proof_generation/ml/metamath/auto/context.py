@@ -85,7 +85,7 @@ class ApplicationContextProver:
 
         raise AssertionError(
             f'failed to prove {pattern} is a context over variable ' +
-            f"{var} under assumptions {', '.join(map(lambda t: str(t.statement), hypotheses))}"
+            f"{var} under assumptions {', '.join(str(t.statement) for t in hypotheses)}"
         )
 
     @staticmethod

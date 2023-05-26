@@ -118,7 +118,7 @@ class Application(Term):
         return visitor.proxy_visit_application(self)  # type: ignore
 
     def get_size(self) -> int:
-        return 1 + sum(map(lambda t: t.get_size(), self.subterms))
+        return 1 + sum(term.get_size() for term in self.subterms)
 
     def __hash__(self) -> int:
         if self.hash_cache is not None:

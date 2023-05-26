@@ -300,7 +300,7 @@ class InteractiveState:
 
     @BuiltinCommand.add('script', help_message='print all tactics applied')
     def command_script(self) -> None:
-        print('\n'.join(map(lambda t: str(t[1]), self.undo_states)))
+        print('\n'.join(str(state[1]) for state in self.undo_states))
 
     @BuiltinCommand.add('help', help_message='print this help message')
     def command_help(self) -> None:
