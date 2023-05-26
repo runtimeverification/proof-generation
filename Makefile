@@ -19,6 +19,16 @@ build:
 poetry-install:
 	$(POETRY) install
 
+# Dependencies
+
+.PHONY: deps
+deps: deps-metamath
+
+.PHONY: deps-metamath
+deps-metamath: deps/metamath-exe/src/metamath
+
+deps/metamath-exe/src/metamath: $(wildcard deps/metamath-exe/src/*.c)
+	gcc $^ -o $@
 
 # Tests
 
