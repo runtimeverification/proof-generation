@@ -1,12 +1,14 @@
 POETRY     := poetry
 POETRY_RUN := $(POETRY) run
 
-default: check test-unit
-
-all: check cov
+export PATH := $(PWD)/.build/bin:$(PATH)
 
 # Disable all implicit recipes, e.g. those for building C programs.
 .SUFFIXES:
+
+default: check test-unit
+
+all: check cov
 
 .PHONY: clean
 clean:
@@ -24,7 +26,7 @@ poetry-install:
 
 # Dependencies
 
-METAMATH_EXE := deps/metamath-exe/src/metamath
+METAMATH_EXE := .build/bin/metamath
 
 .PHONY: deps
 deps: deps-metamath
@@ -32,8 +34,8 @@ deps: deps-metamath
 .PHONY: deps-metamath
 deps-metamath: $(METAMATH_EXE)
 
-$(METAMATH_EXE): $(wildcard deps/metamath-exe/src/*.c)
-	gcc $^ -o $@
+$(METAMATH_EXE): deps/metamath-exe/README.TXT
+	cd deps/metamath-exe/ && autoreconf -i && ./configure --prefix=$(PWD)/.build && make install
 
 
 # Tests
@@ -46,8 +48,6 @@ test: test-all
 test-all : test-metamath
 
 test-metamath : $(addsuffix .verify, $(wildcard theory/*.mm))
-
-export PATH := $(dir $(METAMATH_EXE)):$(PATH)
 
 theory/%.mm.verify : theory/%.mm $(METAMATH_EXE)
 	bin/metamath-verify $<
