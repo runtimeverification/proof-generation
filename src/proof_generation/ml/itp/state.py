@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, NamedTuple, Tuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from ..metamath.ast import Application, Metavariable, ProvableStatement
 from ..metamath.auto.notation import NotationProver
