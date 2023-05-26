@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 from ..kore import ast as kore
 from ..kore.utils import KoreUtils
@@ -750,7 +750,7 @@ class KoreComposer(Composer):
             with self.new_context(top_level=True):
                 substitution_rule_name = label + '-substitution'
                 essentials = []
-                essential_theorems = []
+                essential_theorems: Tuple[Theorem, ...] = ()
 
                 for i in range(arity):
                     after = subpattern_vars[i]
@@ -768,7 +768,7 @@ class KoreComposer(Composer):
                     )
 
                     essentials.append(essential)
-                    essential_theorems.append(self.load(essential))
+                    essential_theorems += (self.load(essential),)
 
                 # prove the substitution rule
                 subst_proof = SubstitutionProver.prove_substitution(
@@ -823,7 +823,7 @@ class KoreComposer(Composer):
                     proof = ApplicationContextProver.prove_application_context_statement(
                         self,
                         conclusion,
-                        [Theorem(self, assumption)],
+                        (Theorem(self, assumption),),
                     )
                     theorem = self.load_proof_as_statement(app_ctx_rule_name, proof)
                     lemmas.append(theorem)

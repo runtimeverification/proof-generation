@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 from ..ast import Application, Metavariable, ProvableStatement
 from ..composer import MethodAutoProof
@@ -38,7 +38,7 @@ class ApplicationContextProver:
         composer: Composer,
         var: Metavariable,
         pattern: Term,
-        hypotheses: list[Theorem] = [],
+        hypotheses: Tuple[Theorem, ...] = (),
     ) -> Proof:
         target = ApplicationContextProver.get_target(var, pattern)
 
@@ -95,7 +95,7 @@ class ApplicationContextProver:
         composer: Composer,
         var: Metavariable,
         pattern: Term,
-        hypotheses: list[Theorem] = [],
+        hypotheses: Tuple[Theorem, ...] = (),
     ) -> Proof:
         expanded_pattern, notation_proof = NotationProver.expand_sugar_with_proof(composer, pattern)
         subproof = ApplicationContextProver.prove_application_context_desugared(
@@ -110,7 +110,7 @@ class ApplicationContextProver:
     def prove_application_context_statement(
         composer: Composer,
         statement: StructuredStatement,
-        hypotheses: list[Theorem] = [],
+        hypotheses: Tuple[Theorem, ...] = (),
     ) -> Proof:
         assert (
             len(statement.terms) == 3

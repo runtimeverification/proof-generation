@@ -66,10 +66,10 @@ class SearchTactic(Tactic):
         found = []
 
         theorems = (
-            list(state.composer.theorems.values())
+            tuple(state.composer.theorems.values())
             + state.get_all_essentials_for_top_goal()
-            + [claim.theorem for claim in state.get_all_global_claims()]
-            + [claim.theorem for claim in state.get_all_local_claims()]
+            + tuple(claim.theorem for claim in state.get_all_global_claims())
+            + tuple(claim.theorem for claim in state.get_all_local_claims())
         )
 
         for theorem in theorems:

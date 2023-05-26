@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple, Tuple
 
 from ..metamath.ast import Application, Metavariable, ProvableStatement
 from ..metamath.auto.notation import NotationProver
@@ -149,11 +149,11 @@ class ProofState:
         else:
             return self.composer.find_essential(name)
 
-    def get_all_essentials_for_top_goal(self) -> list[Theorem]:
+    def get_all_essentials_for_top_goal(self) -> Tuple[Theorem, ...]:
         top_goal = self.get_top_goal()
         if top_goal.claim_label is not None:
             claim = self.claims[top_goal.claim_label]
-            return [Theorem(self.composer, essential) for essential in claim.theorem.context.essentials]
+            return tuple(Theorem(self.composer, essential) for essential in claim.theorem.context.essentials)
         else:
             return self.composer.get_all_essentials()
 
@@ -366,14 +366,14 @@ class ProofState:
         tactic.apply(copied, *args, **kwargs)
         return copied
 
-    def gen_proof_for_goal(self, goal: Goal, trace: list[int] = []) -> Proof:
+    def gen_proof_for_goal(self, goal: Goal, trace: Tuple[int, ...] = ()) -> Proof:
         """
         Generate a proof for the given goal by tracing
         through the DAG and obtaining subproofs
         """
         assert goal.goal_id not in trace, f'proof of goal {goal.statement} depends on itself'
 
-        subproofs = [self.gen_proof_for_goal(dep, trace + [goal.goal_id]) for dep in self.get_goal_dependencies(goal)]
+        subproofs = [self.gen_proof_for_goal(dep, trace + (goal.goal_id,)) for dep in self.get_goal_dependencies(goal)]
         assert goal.goal_id in self.goal_resolver, 'goal not resolved yet'
         tactic = self.goal_resolver[goal.goal_id]
 
@@ -406,11 +406,11 @@ class Tactic:
         raise NotImplementedError()
 
     def parse_terms(self, state: ProofState, src: str) -> Terms:
-        return parse_terms_with_metavariables(src, set(state.composer.get_all_metavariables()))
+        return parse_terms_with_metavariables(src, frozenset(state.composer.get_all_metavariables()))
 
     def parse_substitution(self, state: ProofState, options: Mapping[str, str]) -> dict[str, Term]:
         substitution = {}
-        all_metavars = set(state.composer.get_all_metavariables())
+        all_metavars = frozenset(state.composer.get_all_metavariables())
 
         for key, value in options.items():
             assert type(value) is str

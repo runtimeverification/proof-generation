@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 
 class ASTTransformer(Transformer[BaseAST]):
-    def __init__(self, metavariables: Iterable[str] = []) -> None:
+    def __init__(self, metavariables: Iterable[str] = ()) -> None:
         super().__init__()
         self.metavariables = list(metavariables)
 
@@ -173,20 +173,20 @@ def parse_database(src: str) -> Database:
     return ast
 
 
-def parse_terms_with_metavariables(src: str, metavariables: set[str] = set()) -> Terms:
+def parse_terms_with_metavariables(src: str, metavariables: frozenset[str] = frozenset()) -> Terms:
     tree = statement_parser.parse(f'l $a {src} $.')
     stmt = ASTTransformer(metavariables).transform(tree)
     assert isinstance(stmt, AxiomaticStatement)
     return stmt.terms
 
 
-def parse_term_with_metavariables(src: str, metavariables: set[str] = set()) -> Term:
+def parse_term_with_metavariables(src: str, metavariables: frozenset[str] = frozenset()) -> Term:
     terms = parse_terms_with_metavariables(src, metavariables)
     assert len(terms) == 1, f'syntax error: {src}'
     return terms[0]
 
 
-def flatten_includes(path: str, loaded: set[str] = set(), trace: list[str] = [], include_proof: bool = True) -> str:
+def flatten_includes(path: str, loaded: set[str], trace: tuple[str, ...] = (), include_proof: bool = True) -> str:
     """
     Load a file and resolve all includes
     """
@@ -214,7 +214,7 @@ def flatten_includes(path: str, loaded: set[str] = set(), trace: list[str] = [],
             # if not os.path.isabs(include_path):
             #     include_path = os.path.join(os.path.dirname(path), include_path)
 
-            included_source = flatten_includes(include_path, loaded, trace=trace + [path], include_proof=include_proof)
+            included_source = flatten_includes(include_path, loaded, trace=trace + (path,), include_proof=include_proof)
             source = source[: match.start()] + included_source + source[match.end() :]
 
     loaded.add(path)

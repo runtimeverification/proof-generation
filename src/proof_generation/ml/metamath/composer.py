@@ -4,7 +4,7 @@ import re
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from traceback import print_exc
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Tuple, overload
 
 from ..utils.hook import Hookable
 from .ast import (
@@ -663,7 +663,7 @@ class Context:
     """
 
     floatings: list[FloatingStatement] = field(default_factory=lambda: [])
-    essentials: list[EssentialStatement] = field(default_factory=lambda: [])
+    essentials: Tuple[EssentialStatement, ...] = ()
     disjoints: list[DisjointStatement] = field(default_factory=lambda: [])
     statements: list[Statement] = field(default_factory=lambda: [])  # all statements in the context
     prev: Context | None = None
@@ -708,7 +708,7 @@ class Context:
         self.floatings.append(floating)
 
     def add_essential(self, essential: EssentialStatement) -> None:
-        self.essentials.append(essential)
+        self.essentials = self.essentials + (essential,)
 
     def add_disjoint(self, disjoint: DisjointStatement) -> None:
         self.disjoints.append(disjoint)
@@ -756,17 +756,17 @@ class Context:
         else:
             return None
 
-    def get_all_essentials(self) -> list[EssentialStatement]:
+    def get_all_essentials(self) -> Tuple[EssentialStatement, ...]:
         if self.prev is not None:
             return self.prev.get_all_essentials() + self.essentials
         else:
-            return self.essentials.copy()
+            return self.essentials
 
     def get_all_disjoints(self) -> list[DisjointStatement]:
         if self.prev is not None:
             return self.prev.get_all_disjoints() + self.disjoints
         else:
-            return self.disjoints.copy()
+            return self.disjoints
 
     def are_metavariables_disjoint(self, metavars: Collection[str]) -> bool:
         """
@@ -872,8 +872,8 @@ class Composer(Hookable):
         else:
             return None
 
-    def get_all_essentials(self) -> list[Theorem]:
-        return [Theorem(self, essential) for essential in self.context.get_all_essentials()]
+    def get_all_essentials(self) -> Tuple[Theorem, ...]:
+        return tuple(Theorem(self, essential) for essential in self.context.get_all_essentials())
 
     def get_all_disjoints(self) -> list[DisjointStatement]:
         return self.context.get_all_disjoints()
