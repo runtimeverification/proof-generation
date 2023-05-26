@@ -22,6 +22,9 @@ class SMTOption:
     timeout: int | None = None  # in ms
 
 
+DEFAULT_SMTOPTION: SMTOption = SMTOption()
+
+
 class SMTProofGenerator(ProofGenerator):
     HOOKED_FUNCTION_TO_SMT_FUNCTION: dict[str, Callable[..., z3.AstRef]] = {
         "Lbl'UndsPlus'Int'Unds'": lambda a, b: a + b,
@@ -64,7 +67,7 @@ class SMTProofGenerator(ProofGenerator):
     def __init__(
         self,
         composer: KoreComposer,
-        option: SMTOption = SMTOption(),
+        option: SMTOption = DEFAULT_SMTOPTION,
     ):
         super().__init__(composer)
 

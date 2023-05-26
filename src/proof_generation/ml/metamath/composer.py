@@ -24,7 +24,7 @@ from .ast import (
     VariableStatement,
 )
 from .auto.unification import Unification
-from .backend import DEFAULT_SEGMENT, NullBackend
+from .backend import DEFAULT_SEGMENT
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Collection, Generator, Iterable, Mapping
@@ -795,7 +795,7 @@ class Composer(Hookable):
     emitting metamath statements and proofs
     """
 
-    def __init__(self, *, backend: Backend = NullBackend()) -> None:
+    def __init__(self, *, backend: Backend) -> None:
         self.context = Context()  # outermost context for a database
         self.theorems: dict[str, Theorem] = {}  # label -> Theorem
         self.theorems_by_typecode: dict[str, list[Theorem]] = {}  # typecode -> [ Theorem ], sorted theorems by typecode

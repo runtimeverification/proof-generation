@@ -2,6 +2,7 @@ import argparse
 import os
 import re
 
+from ..ml.metamath.backend import NullBackend
 from ..ml.metamath.composer import Composer, Proof
 from ..ml.metamath.parser import load_database
 
@@ -142,7 +143,7 @@ def main() -> None:
 
         with open(input_path) as input_file:
             ast = load_database(input_path, include_proof=False)
-            composer: Composer = Composer()
+            composer: Composer = Composer(backend=NullBackend())
             composer.load(ast)
 
             print(f'loaded database {input_path}')

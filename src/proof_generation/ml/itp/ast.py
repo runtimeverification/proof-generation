@@ -38,6 +38,9 @@ class Options(BaseAST):
         return not self.args and not self.kwargs
 
 
+DEFAULT_OPTIONS: Options = Options()
+
+
 class Tactical(BaseAST):
     def apply(self, state: ProofState) -> ProofState:
         raise NotImplementedError()
@@ -48,7 +51,7 @@ class AtomicTactical(Tactical):
     A single tactic with no combinators
     """
 
-    def __init__(self, tactic: str, options: Options = Options()):
+    def __init__(self, tactic: str, options: Options = DEFAULT_OPTIONS):
         super().__init__()
         self.tactic = tactic
         self.options = options

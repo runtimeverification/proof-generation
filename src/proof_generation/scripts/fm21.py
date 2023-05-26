@@ -6,6 +6,7 @@ import os
 import re
 from typing import TYPE_CHECKING
 
+from ..ml.metamath.backend import NullBackend
 from ..ml.metamath.composer import Composer
 from ..ml.metamath.parser import load_database
 
@@ -71,7 +72,7 @@ def get_metamath_steps(theorem: Theorem, compressed_proof: str) -> int:
 
 def collect_stats(writer: csv.DictWriter[str], path: str) -> int:
     database = load_database(path, include_proof=False)
-    composer = Composer()
+    composer = Composer(backend=NullBackend())
     composer.load(database)
 
     with open(path) as f:

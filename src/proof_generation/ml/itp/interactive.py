@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from ..itp.parser import parse_tactical
 from ..itp.state import NoStateChangeException, ProofState
 from ..metamath.ast import Encoder
+from ..metamath.backend import NullBackend
 from ..metamath.composer import Composer
 from ..metamath.parser import load_database
 from ..utils.ansi import ANSI
@@ -71,7 +72,7 @@ class InteractiveState:
         self.init_from_theory_and_goal(theory_path, goal_name)
 
     def init_from_theory_and_goal(self, theory_path: str, goal_name: str) -> None:
-        composer = Composer()
+        composer = Composer(backend=NullBackend())
         database = load_database(theory_path, include_proof=False)
         goal = composer.load(database, stop_at=goal_name)
         assert goal is not None, f'failed to load goal {goal_name}'

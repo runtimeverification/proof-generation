@@ -15,7 +15,7 @@ from .encoder import KoreEncoder
 from .env import ProofGenerator, ProvableClaim
 from .fol import FOLProofGenerator
 from .propositional import PropositionalProofGenerator
-from .smt import SMTOption, SMTProofGenerator
+from .smt import DEFAULT_SMTOPTION, SMTProofGenerator
 from .tasks import ConstrainedPattern
 from .templates import KoreTemplates
 from .unification import ConstraintEquation, InjectionCombine, UnificationProofGenerator, UnificationResult
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     pass
 
     from .env import KoreComposer
+    from .smt import SMTOption
     from .tasks import AppliedRule, ReachabilityTask, RewritingStep, RewritingTask
 
     ReachabilityType = str
@@ -44,7 +45,7 @@ class RewriteProofGenerator(ProofGenerator):
     Generate proofs for rewriting related claims
     """
 
-    def __init__(self, composer: KoreComposer, smt_option: SMTOption = SMTOption()):
+    def __init__(self, composer: KoreComposer, smt_option: SMTOption = DEFAULT_SMTOPTION):
         super().__init__(composer)
         self.owise_assumption_counter = 0
         self.rewrite_claim_counter = 0

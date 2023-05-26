@@ -37,10 +37,12 @@ class PrettyPrinter(Printer, KoreVisitor[BaseAST[Any], None]):
     COLOR_SORT_VARIABLE = lambda x: x
     COLOR_VARIABLE = lambda x: x
 
+    DEFAULT_TAB: str = ANSI.in_gray('|') + '  ' if ANSI.supports_color() else '   '
+
     def __init__(
         self,
         output: TextIO,
-        tab: str = ANSI.in_gray('|') + '  ' if ANSI.supports_color() else '   ',
+        tab: str = DEFAULT_TAB,
         limit: int = 80,  # if the encoded version exceeds this limit length, try to print arguments on a new line
         demangle: bool = True,  # demangle kore labels
         compact: bool = False,  # force compact format
