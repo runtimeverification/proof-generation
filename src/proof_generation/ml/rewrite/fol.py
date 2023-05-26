@@ -418,7 +418,7 @@ class FOLProofGenerator(ProofGenerator):
                    f'ill-formed functional axiom {functional_axiom.claim}'
 
             # instantiate the axiom with arguments
-            for axiom_var, argument in zip(rhs.arguments, pattern.arguments):
+            for axiom_var, argument in zip(rhs.arguments, pattern.arguments, strict=True):
                 assert isinstance(axiom_var, kore.Variable)
                 argument_is_functional = self.prove_kore_functional(argument)
                 functional_axiom = self.apply_functional_substitution_raw(

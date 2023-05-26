@@ -396,7 +396,7 @@ class Theorem:
                     substitution[var] = rhs
 
         # TODO: check proofs for essential statements
-        for essential, essential_proof in zip(self.context.essentials, essential_proofs):
+        for essential, essential_proof in zip(self.context.essentials, essential_proofs, strict=True):
             # auto proofs will be resolved later
             if isinstance(essential_proof, AutoProof):
                 continue
@@ -513,7 +513,7 @@ class Theorem:
 
         hyp_labels = self.context.get_all_mandatory_labels()
         assert len(subproofs) == len(hyp_labels)
-        hyp_proof_map = dict(zip(hyp_labels, subproofs))
+        hyp_proof_map = dict(zip(hyp_labels, subproofs, strict=True))
 
         # create an inlined proof
         proof_script: List[str] = []

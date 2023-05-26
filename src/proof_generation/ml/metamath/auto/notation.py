@@ -189,7 +189,7 @@ class NotationProver:
         order_of_metavars = {}
 
         # check that all children of the applications are metavariables
-        for i, (s1, s2) in enumerate(zip(lhs.subterms, rhs.subterms)):
+        for i, (s1, s2) in enumerate(zip(lhs.subterms, rhs.subterms, strict=True)):
             if not isinstance(s1, Metavariable) or not isinstance(s2, Metavariable):
                 return None
             order_of_metavars[s1.name, s2.name] = i

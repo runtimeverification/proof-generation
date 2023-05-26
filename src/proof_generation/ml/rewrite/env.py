@@ -391,7 +391,7 @@ class KoreComposer(Composer):
         # by pattern variables since \\kore-is-sort implies they are singletons
         sort_var_subst = {
             KoreEncoder.encode_sort_variable(element_var): pattern_var
-            for element_var, pattern_var in zip(symbol_definition.sort_variables, sort_pattern_vars)
+            for element_var, pattern_var in zip(symbol_definition.sort_variables, sort_pattern_vars, strict=True)
         }
 
         encoded_output_sort = self.encode_pattern(symbol_definition.output_sort)
@@ -412,7 +412,7 @@ class KoreComposer(Composer):
             sorting_axiom_hypotheses.append(mm.Application('\\kore-is-sort', (v, )))
 
         # add hypotheses for pattern arguments
-        for v, sort in zip(argument_pattern_vars, symbol_definition.input_sorts):
+        for v, sort in zip(argument_pattern_vars, symbol_definition.input_sorts, strict=True):
             encoded_sort = self.encode_pattern(sort)
             encoded_sort = encoded_sort.substitute(sort_var_subst)
             sorting_axiom_hypotheses.append(mm.Application('\\in-sort', (v, encoded_sort)))
@@ -464,7 +464,7 @@ class KoreComposer(Composer):
 
         conjunctions = tuple(
             mm.Application('\\and', (left_arg, right_arg))
-            for left_arg, right_arg in zip(arg_pattern_vars_left, arg_pattern_vars_right)
+            for left_arg, right_arg in zip(arg_pattern_vars_left, arg_pattern_vars_right, strict=True)
         )
 
         right_conj_pattern = mm.Application(encoded_symbol, sort_pattern_vars + conjunctions)
@@ -1025,7 +1025,7 @@ class KoreComposer(Composer):
 
                     application = kore.Application(
                         kore.SymbolInstance(constructor, []),
-                        [kore.Variable(var, sort) for var, sort in zip(variables, constructor.input_sorts)],
+                        [kore.Variable(var, sort) for var, sort in zip(variables, constructor.input_sorts, strict=True)],
                     )
 
                     components.append(application)

@@ -724,7 +724,7 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         # unify subpatterns
         unification: UnificationResult = UnificationResult()
 
-        for index, (subpattern1, subpattern2) in enumerate(zip(pattern1.arguments, pattern2.arguments)):
+        for index, (subpattern1, subpattern2) in enumerate(zip(pattern1.arguments, pattern2.arguments, strict=True)):
             subunification = self.unify_patterns(subpattern1, subpattern2)
             if subunification is None:
                 return None
@@ -758,7 +758,7 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         # unify subpatterns
         unification = UnificationResult()
 
-        for index, (subpattern1, subpattern2) in enumerate(zip(pattern1.arguments, pattern2.arguments)):
+        for index, (subpattern1, subpattern2) in enumerate(zip(pattern1.arguments, pattern2.arguments, strict=True)):
             subunification = self.unify_patterns(subpattern1, subpattern2)
             if subunification is None:
                 return None

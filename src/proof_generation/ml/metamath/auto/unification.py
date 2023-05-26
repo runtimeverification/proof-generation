@@ -55,7 +55,7 @@ class Unification:
                     if len(left.subterms) != len(right.subterms):
                         return None
 
-                    equations.extend(zip(left.subterms, right.subterms))
+                    equations.extend(zip(left.subterms, right.subterms, strict=True))
 
             elif isinstance(left, variable_class):
                 # check for recursive equations
@@ -91,7 +91,7 @@ class Unification:
                          **kwargs: Any) -> Optional[Mapping[str, Term]]:
         if len(stmt1.terms) != len(stmt2.terms):
             return None
-        return Unification.unify(list(zip(stmt1.terms, stmt2.terms)), **kwargs)
+        return Unification.unify(list(zip(stmt1.terms, stmt2.terms, strict=True)), **kwargs)
 
     @staticmethod
     def match_terms(term1: Term, term2: Term) -> Optional[List[Tuple[Term, Term]]]:
@@ -102,7 +102,7 @@ class Unification:
         if isinstance(term1, Application) and isinstance(term2, Application):
             if term1.symbol == term2.symbol and len(term1.subterms) == len(term2.subterms):
                 matching = []
-                for subterm1, subterm2 in zip(term1.subterms, term2.subterms):
+                for subterm1, subterm2 in zip(term1.subterms, term2.subterms, strict=True):
                     submatching = Unification.match_terms(subterm1, subterm2)
                     if submatching is None:
                         return None
@@ -123,7 +123,7 @@ class Unification:
         if len(terms1) != len(terms2):
             return None
 
-        for term1, term2 in zip(terms1, terms2):
+        for term1, term2 in zip(terms1, terms2, strict=True):
             submatching = Unification.match_terms(term1, term2)
             if submatching is None:
                 return None

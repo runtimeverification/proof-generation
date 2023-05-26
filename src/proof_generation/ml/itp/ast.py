@@ -95,7 +95,7 @@ class OrTactical(Tactical):
 
         msg = []
 
-        for tactical, exception in zip(self.tacticals, exceptions):
+        for tactical, exception in zip(self.tacticals, exceptions, strict=True):
             msg.append(f'  {tactical}: {exception}')
 
         raise Exception('all tacticals failed:\n' + '\n'.join(msg))

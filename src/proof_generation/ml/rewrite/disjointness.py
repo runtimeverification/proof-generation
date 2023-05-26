@@ -575,7 +575,7 @@ class DisjointnessProofGenerator(ProofGenerator):
                     right.arguments
                 ), f'same head but different numbers of arguments: {left} vs {right}'
 
-                for i, (left_arg, right_arg) in enumerate(zip(left.arguments, right.arguments)):
+                for i, (left_arg, right_arg) in enumerate(zip(left.arguments, right.arguments, strict=True)):
                     try:
                         subproof = self.prove_disjointness(left_arg, right_arg)
                     except Exception:

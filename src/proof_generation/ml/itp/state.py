@@ -502,4 +502,4 @@ class Tactic:
     ) -> Optional[Tuple[Mapping[str, Term], bool]]:
         if len(left.terms) != len(right.terms):
             return None
-        return Tactic.unify(state, list(zip(left.terms, right.terms)), *args, **kwargs)
+        return Tactic.unify(state, list(zip(left.terms, right.terms, strict=True)), *args, **kwargs)

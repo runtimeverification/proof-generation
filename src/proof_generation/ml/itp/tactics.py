@@ -350,10 +350,10 @@ class FromTactic(Tactic):
 
         # unify the essentials
         equations = []
-        for theorem_essential, hypothesis in zip(theorem_essentials, hypotheses):
+        for theorem_essential, hypothesis in zip(theorem_essentials, hypotheses, strict=True):
             assert len(theorem_essential.terms) == len(hypothesis.statement.terms), \
                    f'unable to unify hypotheses {theorem_essential} and {hypothesis.statement}'
-            equations.extend(list(zip(theorem_essential.terms, hypothesis.statement.terms)))
+            equations.extend(list(zip(theorem_essential.terms, hypothesis.statement.terms, strict=True)))
 
         result = Tactic.unify(state, equations)
         assert result is not None, \

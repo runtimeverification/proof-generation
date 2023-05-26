@@ -73,7 +73,7 @@ class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisito
         if len(application.arguments) != len(variables):
             application.error_with_position('unmatched number of arguments in the use of alias')
 
-        assignment = dict(zip(variables, application.arguments))
+        assignment = dict(zip(variables, application.arguments, strict=True))
         assignment_visitor: PatternSubstitutionVisitor[Pattern] = PatternSubstitutionVisitor(assignment)
 
         copied_rhs = KoreUtils.copy_ast(alias_def.get_parent(), alias_def.rhs)
@@ -281,7 +281,7 @@ class KoreUtils:
 
         substitution: Dict[SortVariable, Sort] = {}
 
-        for sub1, sub2 in zip(sort1.arguments, sort2.arguments):
+        for sub1, sub2 in zip(sort1.arguments, sort2.arguments, strict=True):
             sub_substitution = KoreUtils.unify_sorts(sub1, sub2)
             if sub_substitution is None:
                 return None
@@ -308,7 +308,7 @@ class KoreUtils:
                    f'cannot infer the sort of {pattern} without context'
             assert len(sort_arguments) == len(symbol_def.sort_variables)
 
-            substitution = dict(zip(symbol_def.sort_variables, sort_arguments))
+            substitution = dict(zip(symbol_def.sort_variables, sort_arguments, strict=True))
             return KoreUtils.copy_and_substitute_sort(symbol_def.output_sort, substitution)
 
         if isinstance(pattern, MLPattern):
