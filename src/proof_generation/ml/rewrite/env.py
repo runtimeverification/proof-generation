@@ -22,7 +22,9 @@ if TYPE_CHECKING:
 
     from ..metamath.composer import AutoProof
 
+
 class ProofGenerator:
+    composer: KoreComposer
 
     def __init__(self, composer: KoreComposer):
         self.composer = composer
