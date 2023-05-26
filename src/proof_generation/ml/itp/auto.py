@@ -4,7 +4,7 @@ Some automated tactics
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from ..metamath.ast import Application, Metavariable, ProvableStatement, Term
 from ..metamath.auto.context import ApplicationContextProver
@@ -20,7 +20,7 @@ from .state import Goal, NoStateChangeException, ProofState, Tactic
 from .tactics import ApplyTactic
 
 if TYPE_CHECKING:
-    from typing import Dict, Optional, Union
+    pass
 
     from ..metamath.composer import Proof, Theorem
 
@@ -52,23 +52,25 @@ class SearchTactic(Tactic):
         return size
 
     @staticmethod
-    def get_typecode_of_metavariable(state: ProofState, var: Metavariable) -> Optional[str]:
+    def get_typecode_of_metavariable(state: ProofState, var: Metavariable) -> str | None:
         if isinstance(var, SchematicVariable):
             return var.typecode
         return state.composer.find_metavariable(var.name)
 
     @staticmethod
-    def find_closest_matches_for_top_goal(state: ProofState) -> List[Tuple[int, Theorem]]:
+    def find_closest_matches_for_top_goal(state: ProofState) -> list[tuple[int, Theorem]]:
         """
         Find the closest matches for the top goal
         """
         statement = state.get_top_goal().statement
         found = []
 
-        theorems = list(state.composer.theorems.values()) + \
-                   state.get_all_essentials_for_top_goal() + \
-                   [ claim.theorem for claim in state.get_all_global_claims() ] + \
-                   [ claim.theorem for claim in state.get_all_local_claims() ]
+        theorems = (
+            list(state.composer.theorems.values())
+            + state.get_all_essentials_for_top_goal()
+            + [claim.theorem for claim in state.get_all_global_claims()]
+            + [claim.theorem for claim in state.get_all_local_claims()]
+        )
 
         for theorem in theorems:
             if theorem.statement.label is None:
@@ -119,7 +121,7 @@ class SearchTactic(Tactic):
 
     def apply(self, state: ProofState, *args: str, **_: str) -> None:
         if len(args) == 0:
-            limit: Optional[int] = 7
+            limit: int | None = 7
         else:
             if args[0] == 'all':
                 limit = None
@@ -134,7 +136,7 @@ class SearchTactic(Tactic):
 
         raise NoStateChangeException()
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         raise NotImplementedError()
 
 
@@ -147,20 +149,20 @@ class WellFormednessTactic(Tactic):
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
-        assert len(statement.terms) == 2 and \
-               isinstance(statement.terms[0], Application) and \
-               len(statement.terms[0].subterms) == 0, \
-               f'goal {statement} is not an well-formedness claim'
+        assert (
+            len(statement.terms) == 2
+            and isinstance(statement.terms[0], Application)
+            and len(statement.terms[0].subterms) == 0
+        ), f'goal {statement} is not an well-formedness claim'
 
         _, right = statement.terms
         assert state.is_concrete(right), f'RHS {right} is not concrete'
 
         proof = TypecodeProver.prove_typecode(state.composer, statement.terms[0].symbol, right)
-        assert proof is not None, \
-               f'unable to prove {statement} as a well-formedness claim'
+        assert proof is not None, f'unable to prove {statement} as a well-formedness claim'
         self.proof = proof
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         return self.proof
 
 
@@ -185,7 +187,7 @@ class NotationTactic(Tactic):
 
         self.proof = NotationProver.prove_notation(state.composer, left, right)
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         return self.proof
 
 
@@ -198,10 +200,12 @@ class DesugarTactic(Tactic):
     in the current goal
     """
 
-    def find_kore_symbol(self, state: ProofState, term: Term) -> Optional[str]:
+    def find_kore_symbol(self, state: ProofState, term: Term) -> str | None:
         if isinstance(term, Application):
-            if (term.symbol.startswith('\\kore-')
-                    and NotationProver.find_sugar_axiom(state.composer, term.symbol) is not None):
+            if (
+                term.symbol.startswith('\\kore-')
+                and NotationProver.find_sugar_axiom(state.composer, term.symbol) is not None
+            ):
                 return term.symbol
 
             for subterm in term.subterms:
@@ -223,7 +227,7 @@ class DesugarTactic(Tactic):
                 return term
             term = NotationProver.expand_sugar(state.composer, term, target_symbol=symbol)
 
-    def desugar(self, state: ProofState, term: Term, target_symbol: Optional[str] = None) -> Term:
+    def desugar(self, state: ProofState, term: Term, target_symbol: str | None = None) -> Term:
         if self.tactic_name == 'desugar-kore':
             return self.desugar_kore(state, term)
         else:
@@ -238,7 +242,7 @@ class DesugarTactic(Tactic):
 
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         if len(args) == 0:
-            target_symbol: Optional[str] = None
+            target_symbol: str | None = None
         else:
             target_symbol = args[0]
 
@@ -248,11 +252,11 @@ class DesugarTactic(Tactic):
 
         typecode = statement.terms[0]
 
-        assert isinstance(typecode, Application) and len(typecode.subterms) == 0, \
-               f'missing typecode: {statement}'
+        assert isinstance(typecode, Application) and len(typecode.subterms) == 0, f'missing typecode: {statement}'
 
-        assert typecode.symbol in NotationProver.METALEVEL_CONGRUENCE_AXIOMS, \
-               f'unsupported metalevel relation: {statement}'
+        assert (
+            typecode.symbol in NotationProver.METALEVEL_CONGRUENCE_AXIOMS
+        ), f'unsupported metalevel relation: {statement}'
 
         theorem_label, positions = NotationProver.METALEVEL_CONGRUENCE_AXIOMS[typecode.symbol]
 
@@ -274,7 +278,7 @@ class DesugarTactic(Tactic):
 
         state.push_derived_goal(goal, ProvableStatement(statement.label, tuple(desugared_terms)))
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         assert len(subproofs) == 1
         return self.theorem.apply(
             subproofs[0],
@@ -296,64 +300,61 @@ class SubstitutionTactic(Tactic):
             hypotheses=state.composer.get_all_essentials(),
         )
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         return self.proof
 
 
 @ProofState.register_tactic('sorting')
 class SortingTactic(Tactic):
-
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
-        assert len(statement.terms
-                   ) == 2 and statement.terms[0] == Application('|-'), f'not a provability goal {statement}'
+        assert len(statement.terms) == 2 and statement.terms[0] == Application(
+            '|-'
+        ), f'not a provability goal {statement}'
         self.proof = SortingProver.prove_sorting_statement(state.composer, statement)
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         return self.proof
 
 
 @ProofState.register_tactic('context')
 class ApplicationContextTactic(Tactic):
-
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
         self.proof = ApplicationContextProver.prove_application_context_statement(state.composer, statement)
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         return self.proof
 
 
 @ProofState.register_tactic('fresh')
 class FreshTactic(Tactic):
-
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
-        assert len(statement.terms
-                   ) == 3 and statement.terms[0] == Application('#Fresh'), f'not a #Fresh goal {statement}'
+        assert len(statement.terms) == 3 and statement.terms[0] == Application(
+            '#Fresh'
+        ), f'not a #Fresh goal {statement}'
         self.proof = FreshProver.prove_fresh_statement(state.composer, statement)
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         return self.proof
 
 
 @ProofState.register_tactic('positive')
 @ProofState.register_tactic('negative')
 class PositiveTactic(Tactic):
-
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
-        assert len(statement.terms) == 3 and \
-               (statement.terms[0] == Application('#Positive') or
-                statement.terms[0] == Application('#Negative')), \
-               f'not a #Positive or #Negative goal {statement}'
+        assert len(statement.terms) == 3 and (
+            statement.terms[0] == Application('#Positive') or statement.terms[0] == Application('#Negative')
+        ), f'not a #Positive or #Negative goal {statement}'
         self.proof = PositiveProver.prove_statement(state.composer, statement)
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         return self.proof
 
 
@@ -414,29 +415,33 @@ class TautologyTactic(Tactic):
 
         return False
 
-    def decompose_iff(self, proof: Proof) -> Tuple[Term, Term]:
+    def decompose_iff(self, proof: Proof) -> tuple[Term, Term]:
         assert (
-            len(proof.conclusion) == 2 and isinstance(proof.conclusion[1], Application)
-            and proof.conclusion[1].symbol == '\\iff' and len(proof.conclusion[1].subterms) == 2
+            len(proof.conclusion) == 2
+            and isinstance(proof.conclusion[1], Application)
+            and proof.conclusion[1].symbol == '\\iff'
+            and len(proof.conclusion[1].subterms) == 2
         )
         lhs, rhs = proof.conclusion[1].subterms
         return lhs, rhs
 
-    def decompose_imp(self, proof: Proof) -> Tuple[Term, Term]:
+    def decompose_imp(self, proof: Proof) -> tuple[Term, Term]:
         assert (
-            len(proof.conclusion) == 2 and isinstance(proof.conclusion[1], Application)
-            and proof.conclusion[1].symbol == '\\imp' and len(proof.conclusion[1].subterms) == 2
+            len(proof.conclusion) == 2
+            and isinstance(proof.conclusion[1], Application)
+            and proof.conclusion[1].symbol == '\\imp'
+            and len(proof.conclusion[1].subterms) == 2
         )
         lhs, rhs = proof.conclusion[1].subterms
         return lhs, rhs
 
-    def junction_to_list(self, term: Term, connective: str = 'and') -> List[Term]:
+    def junction_to_list(self, term: Term, connective: str = 'and') -> list[Term]:
         if isinstance(term, Application) and term.symbol == f'\\{connective}':
             return [term.subterms[0]] + self.junction_to_list(term.subterms[1], connective)
         else:
             return [term]
 
-    def list_to_junction(self, terms: List[Term], connective: str = 'and', reverse: bool = False) -> Term:
+    def list_to_junction(self, terms: list[Term], connective: str = 'and', reverse: bool = False) -> Term:
         assert len(terms)
 
         if len(terms) > 1:
@@ -460,9 +465,7 @@ class TautologyTactic(Tactic):
     def apply_iff_reflexivity(self, state: ProofState, term: Term) -> Proof:
         return state.composer.get_theorem('iff-reflexivity').apply(ph0=term)
 
-    def apply_iff_congruence(
-        self, state: ProofState, *terms_or_proofs: Union[Proof, Term], connective: str = 'and'
-    ) -> Proof:
+    def apply_iff_congruence(self, state: ProofState, *terms_or_proofs: Proof | Term, connective: str = 'and') -> Proof:
         theorem = state.composer.get_theorem(f'rule-iff-compat-in-{connective}')
         proofs = [
             self.apply_iff_reflexivity(state, term_or_proof) if isinstance(term_or_proof, Term) else term_or_proof
@@ -515,7 +518,7 @@ class TautologyTactic(Tactic):
 
             # apply associativity repeatedly to merge two "cons" lists
             for i in range(len(left_conjuncts) - 1):
-                ph0 = self.list_to_junction(left_conjuncts[i + 1:], connective, reverse=True)
+                ph0 = self.list_to_junction(left_conjuncts[i + 1 :], connective, reverse=True)
                 ph1 = left_conjuncts[i]
                 ph2 = self.list_to_junction(left_conjuncts[:i][::-1] + right_conjuncts, connective)
                 step = state.composer.get_theorem(f'{connective}-associativity').apply(ph0=ph0, ph1=ph1, ph2=ph2)
@@ -611,7 +614,7 @@ class TautologyTactic(Tactic):
                 )
 
         elif term.symbol == '\\not':
-            (subterm, ) = term.subterms
+            (subterm,) = term.subterms
 
             if isinstance(subterm, Metavariable):
                 return self.apply_iff_reflexivity(state, term)
@@ -634,8 +637,10 @@ class TautologyTactic(Tactic):
                 )
 
             if subterm.symbol == '\\not':
-                (subsubterm, ) = subterm.subterms
-                dn_elim_proof = state.composer.get_theorem('double-negation').apply(ph0=subsubterm, )
+                (subsubterm,) = subterm.subterms
+                dn_elim_proof = state.composer.get_theorem('double-negation').apply(
+                    ph0=subsubterm,
+                )
 
                 _, reduced = self.decompose_iff(dn_elim_proof)
 
@@ -812,7 +817,9 @@ class TautologyTactic(Tactic):
                     duplicate_pair = positive_vars[literal.name], i
             else:
                 assert (
-                    isinstance(literal, Application) and literal.symbol == '\\not' and len(literal.subterms) == 1
+                    isinstance(literal, Application)
+                    and literal.symbol == '\\not'
+                    and len(literal.subterms) == 1
                     and isinstance(literal.subterms[0], Metavariable)
                 )
                 if literal.subterms[0].name not in negative_vars:
@@ -983,11 +990,11 @@ class TautologyTactic(Tactic):
             self.simplify_cnf(state, simplified_cnf, i + 1),
         )
 
-    def is_clause_tautology(self, clause: List[Term]) -> bool:
+    def is_clause_tautology(self, clause: list[Term]) -> bool:
         """
         A clause is a tautology iff it contains a pair of complementing literals
         """
-        literal_map: Dict[Metavariable, bool] = {}
+        literal_map: dict[Metavariable, bool] = {}
 
         for literal in clause:
             if isinstance(literal, Metavariable):
@@ -1008,7 +1015,7 @@ class TautologyTactic(Tactic):
 
         return False
 
-    def is_clause_new(self, clauses: List[List[Term]], clause: List[Term]) -> bool:
+    def is_clause_new(self, clauses: list[list[Term]], clause: list[Term]) -> bool:
         """
         Test if any of the existing clauses is equivalent to the given clause
         or if the current clause is a tautology
@@ -1022,7 +1029,7 @@ class TautologyTactic(Tactic):
 
         return True
 
-    def find_path_to_falsum(self, clauses: List[List[Term]]) -> Optional[List[Tuple[int, int, Metavariable]]]:
+    def find_path_to_falsum(self, clauses: list[list[Term]]) -> list[tuple[int, int, Metavariable]] | None:
         """
         Given a list of clauses, find a path of resolutions that
         will lead to falsum (using a naive BFS algorithm)
@@ -1031,7 +1038,7 @@ class TautologyTactic(Tactic):
         where var occurs in c1 and (not var) occurs in c2
         """
         # [ ( clauses (conjunction of disjunctions of literals), path (negative var position, positive var position, variable) ) ]
-        queue_type = List[Tuple[List[List[Term]], List[Tuple[int, int, Metavariable]]]]
+        queue_type = list[tuple[list[list[Term]], list[tuple[int, int, Metavariable]]]]
         queue: queue_type = [(clauses, [])]
         initial_length = len(clauses)
         current_depth = 0
@@ -1048,9 +1055,10 @@ class TautologyTactic(Tactic):
             # clause
 
             # record all positive and negative occurrences of variables
-            positive_occurences: Dict[Metavariable, List[Tuple[int, int]]] = {
-            }  # metavar -> [ ( position of the clause, position of the literal ) ]
-            negative_occurences: Dict[Metavariable, List[Tuple[int, int]]] = {}  # ^ same
+            positive_occurences: dict[
+                Metavariable, list[tuple[int, int]]
+            ] = {}  # metavar -> [ ( position of the clause, position of the literal ) ]
+            negative_occurences: dict[Metavariable, list[tuple[int, int]]] = {}  # ^ same
 
             for i, clause in enumerate(clauses):
                 for j, literal in enumerate(clause):
@@ -1074,7 +1082,8 @@ class TautologyTactic(Tactic):
                 candidates = [
                     (pos_clause, pos_literal, neg_clause, neg_literal)
                     for pos_clause, pos_literal in positive_occurences[var]
-                    for neg_clause, neg_literal in negative_occurences[var] if pos_clause != neg_clause
+                    for neg_clause, neg_literal in negative_occurences[var]
+                    if pos_clause != neg_clause
                 ]
 
                 for pos_clause, pos_literal, neg_clause, neg_literal in candidates:
@@ -1130,7 +1139,7 @@ class TautologyTactic(Tactic):
 
         clauses = [self.junction_to_list(conjunct, 'or') for conjunct in self.junction_to_list(cnf)]
         pos_literal = clauses[pos_clause].index(var)
-        neg_literal = clauses[neg_clause].index(Application('\\not', (var, )))
+        neg_literal = clauses[neg_clause].index(Application('\\not', (var,)))
 
         # print(var, pos_clause, neg_clause)
 
@@ -1318,8 +1327,9 @@ class TautologyTactic(Tactic):
 
         resolution_proof = state.composer.get_theorem('rule-imp-transitivity').apply(
             state.composer.get_theorem('rule-iff-elim-left').apply(
-                state.composer.get_theorem('rule-iff-symmetry'
-                                           ).apply(state.composer.get_theorem('and-idempotency').apply(ph0=cnf), ),
+                state.composer.get_theorem('rule-iff-symmetry').apply(
+                    state.composer.get_theorem('and-idempotency').apply(ph0=cnf),
+                ),
             ),
             resolution_proof,
         )
@@ -1340,8 +1350,9 @@ class TautologyTactic(Tactic):
     def apply(self, state: ProofState, *args: str, **kwargs: str) -> None:
         goal = state.resolve_top_goal(self)
         statement = goal.statement
-        assert len(statement.terms
-                   ) == 2 and statement.terms[0] == Application('|-'), f'{statement} is not a provability claim'
+        assert len(statement.terms) == 2 and statement.terms[0] == Application(
+            '|-'
+        ), f'{statement} is not a provability claim'
         assert state.is_concrete(statement), f'{statement} still have schematic variables'
 
         _, goal_term = statement.terms
@@ -1349,7 +1360,7 @@ class TautologyTactic(Tactic):
         print('expanding the goal')
         assert self.is_propositional(state, goal_term), f'goal {statement} is not propositional'
 
-        negated_goal_term = Application('\\not', (goal_term, ))
+        negated_goal_term = Application('\\not', (goal_term,))
 
         print('reducing the negation of the goal to CNF')
 
@@ -1406,5 +1417,5 @@ class TautologyTactic(Tactic):
 
         self.goal_proof = goal_proof
 
-    def resolve(self, state: ProofState, subproofs: List[Proof]) -> Proof:
+    def resolve(self, state: ProofState, subproofs: list[Proof]) -> Proof:
         return self.goal_proof

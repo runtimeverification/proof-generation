@@ -13,7 +13,7 @@ from .encoder import KoreEncoder
 from .env import ProofGenerator
 
 if TYPE_CHECKING:
-    from typing import List, Union
+    pass
 
     from ..metamath.composer import Proof
 
@@ -32,7 +32,7 @@ class DisjointnessProofGenerator(ProofGenerator):
     does NOT unify with a pattern.
     """
 
-    def get_free_vars_in_pattern(self, pattern: kore.Pattern) -> List[kore.Variable]:
+    def get_free_vars_in_pattern(self, pattern: kore.Pattern) -> list[kore.Variable]:
         free_vars = FreePatternVariableVisitor().visit(pattern)
         return sorted(free_vars, key=lambda v: v.name, reverse=True)
 
@@ -63,14 +63,12 @@ class DisjointnessProofGenerator(ProofGenerator):
         not (<left> /\ exists x1, ..., xn. <right>)
         all free variables should be exitentially quantified
         """
-        left_term = (
-            self.existentially_quantify_free_variables(left) if quantify else self.composer.encode_pattern(left)
-        )
+        left_term = self.existentially_quantify_free_variables(left) if quantify else self.composer.encode_pattern(left)
         right_term = (
             self.existentially_quantify_free_variables(right) if quantify else self.composer.encode_pattern(right)
         )
 
-        return mm.Application('\\not', (mm.Application('\\and', (left_term, right_term)), ))
+        return mm.Application('\\not', (mm.Application('\\and', (left_term, right_term)),))
 
     def get_disjointness_statement(
         self,
@@ -95,7 +93,7 @@ class DisjointnessProofGenerator(ProofGenerator):
         """
 
         metavars = app.get_metavariables()
-        (free_var_name, ) = self.composer.gen_fresh_metavariables('#ElementVariable', 1, metavars)
+        (free_var_name,) = self.composer.gen_fresh_metavariables('#ElementVariable', 1, metavars)
         free_var = mm.Metavariable(free_var_name)
 
         # f(..., xX, ...)
@@ -130,7 +128,7 @@ class DisjointnessProofGenerator(ProofGenerator):
         ith_arg = app.subterms[i]
 
         # base case, nothing to propagation, return imp-reflexivity
-        if (not isinstance(ith_arg, mm.Application) or ith_arg.symbol != '\\sorted-exists'):
+        if not isinstance(ith_arg, mm.Application) or ith_arg.symbol != '\\sorted-exists':
             return self.composer.get_theorem('imp-reflexivity').apply(ph0=app)
 
         ith_arg_body = ith_arg.subterms[2]
@@ -216,7 +214,8 @@ class DisjointnessProofGenerator(ProofGenerator):
 
         # |- ph0 -> ph1
         assert (
-            len(imp.conclusion) == 2 and isinstance(imp.conclusion[1], mm.Application)
+            len(imp.conclusion) == 2
+            and isinstance(imp.conclusion[1], mm.Application)
             and imp.conclusion[1].symbol == '\\imp'
         )
         lhs, rhs = imp.conclusion[1].subterms
@@ -334,8 +333,9 @@ class DisjointnessProofGenerator(ProofGenerator):
             )
         )
 
-        assert isinstance(not_conj.conclusion[1],
-                          mm.Application) and isinstance(not_conj.conclusion[1].subterms[0], mm.Application)
+        assert isinstance(not_conj.conclusion[1], mm.Application) and isinstance(
+            not_conj.conclusion[1].subterms[0], mm.Application
+        )
         _, rhs = not_conj.conclusion[1].subterms[0].subterms
         assert isinstance(rhs, mm.Application)
         exists_propagation = self.propagate_exists_out(rhs, i)
@@ -354,8 +354,9 @@ class DisjointnessProofGenerator(ProofGenerator):
     def prove_diff_constructor_disjointness(self, left: kore.Application, right: kore.Application) -> Proof:
         # symmetry
         # self.composer.get_no_confusion_diff_constructor(left.symbol.definition, right.symbol.definition)
-        assert isinstance(left.symbol.definition, kore.SymbolDefinition) and \
-               isinstance(right.symbol.definition, kore.SymbolDefinition)
+        assert isinstance(left.symbol.definition, kore.SymbolDefinition) and isinstance(
+            right.symbol.definition, kore.SymbolDefinition
+        )
         no_confusion = self.composer.get_no_confusion_diff_constructor(left.symbol.definition, right.symbol.definition)
         assert no_confusion is not None, f'unable to find no confusion axiom for {left.symbol} and {right.symbol}'
 
@@ -386,7 +387,7 @@ class DisjointnessProofGenerator(ProofGenerator):
         return disjointness_proof
 
     def prove_disjointness_with_disjunction(
-        self, left: kore.Pattern, components: List[Union[kore.Variable, kore.Application]]
+        self, left: kore.Pattern, components: list[kore.Variable | kore.Application]
     ) -> Proof:
         """
         Prove that the left pattern is disjoint from
@@ -411,7 +412,8 @@ class DisjointnessProofGenerator(ProofGenerator):
         """
 
         assert (
-            isinstance(right.sort, kore.SortInstance) and right.sort in self.composer.no_junk_axioms
+            isinstance(right.sort, kore.SortInstance)
+            and right.sort in self.composer.no_junk_axioms
             and right.sort in self.composer.sort_components
         ), f'unable to find no junk axiom for sort {right.sort}'
 
@@ -459,8 +461,9 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
         # propagate out the existential quantifiers at the body of the injection
-        assert isinstance(disjointness_proof.conclusion[1],
-                          mm.Application) and isinstance(disjointness_proof.conclusion[1].subterms[0], mm.Application)
+        assert isinstance(disjointness_proof.conclusion[1], mm.Application) and isinstance(
+            disjointness_proof.conclusion[1].subterms[0], mm.Application
+        )
         rhs = disjointness_proof.conclusion[1].subterms[0].subterms[1]
         assert isinstance(rhs, mm.Application)
         exists_propagation = self.propagate_exists_out(rhs, 2)
@@ -471,8 +474,7 @@ class DisjointnessProofGenerator(ProofGenerator):
         )
 
     def prove_hooked_sort_disjointness(self, left: kore.Application, var: kore.Variable) -> Proof:
-        assert isinstance(var.sort, kore.SortInstance) and \
-               isinstance(left.symbol.definition, kore.SymbolDefinition)
+        assert isinstance(var.sort, kore.SortInstance) and isinstance(left.symbol.definition, kore.SymbolDefinition)
 
         no_confusion = self.composer.get_no_confusion_hooked_sort(var.sort, left.symbol.definition)
         assert no_confusion is not None
@@ -485,13 +487,15 @@ class DisjointnessProofGenerator(ProofGenerator):
                 mm.Application('|-'),
                 mm.Application(
                     '\\not',
-                    (mm.Application(
-                        '\\and',
-                        (
-                            encoded_left,
-                            mm.Application('\\inh', (encoded_sort, )),
+                    (
+                        mm.Application(
+                            '\\and',
+                            (
+                                encoded_left,
+                                mm.Application('\\inh', (encoded_sort,)),
+                            ),
                         ),
-                    ), ),
+                    ),
                 ),
             ),
         )
@@ -506,20 +510,23 @@ class DisjointnessProofGenerator(ProofGenerator):
         Try to prove that a dv pattern is disjoint from a sort
         """
         dv_sort = left.sorts[0]
-        assert isinstance(dv_sort, kore.SortInstance) and \
-               len(dv_sort.arguments) == 0, f'parametric hooked sort {dv_sort} is not supported'
+        assert (
+            isinstance(dv_sort, kore.SortInstance) and len(dv_sort.arguments) == 0
+        ), f'parametric hooked sort {dv_sort} is not supported'
 
         right_sort = right.sort
-        assert isinstance(right_sort, kore.SortInstance) and \
-               len(right_sort.arguments) == 0, f'parametric sort {right_sort} not supported'
+        assert (
+            isinstance(right_sort, kore.SortInstance) and len(right_sort.arguments) == 0
+        ), f'parametric sort {right_sort} not supported'
 
         dv_sort_encoded_id = KoreEncoder.encode_sort(dv_sort.get_sort_id())
         right_sort_encoded_id = KoreEncoder.encode_sort(right_sort.get_sort_id())
 
         # look up disjointness axiom
         if (dv_sort_encoded_id, right_sort_encoded_id) in self.composer.hooked_sort_disjoint_axioms:
-            disjoint_axiom = self.composer.hooked_sort_disjoint_axioms[dv_sort_encoded_id,
-                                                                       right_sort_encoded_id].as_proof()
+            disjoint_axiom = self.composer.hooked_sort_disjoint_axioms[
+                dv_sort_encoded_id, right_sort_encoded_id
+            ].as_proof()
 
         elif (right_sort_encoded_id, dv_sort_encoded_id) in self.composer.hooked_sort_disjoint_axioms:
             disjoint_axiom = self.composer.get_theorem('disjointness-symmetry').apply(
@@ -563,8 +570,10 @@ class DisjointnessProofGenerator(ProofGenerator):
 
             # if both symbols are injections
             # it's enough to prove that the inner patterns are disjoint
-            if (left.symbol.definition == self.composer.sort_injection_symbol
-                    and right.symbol.definition == self.composer.sort_injection_symbol):
+            if (
+                left.symbol.definition == self.composer.sort_injection_symbol
+                and right.symbol.definition == self.composer.sort_injection_symbol
+            ):
                 assert isinstance(right, kore.Application)
                 return self.prove_inj_disjointness(left, right)
             elif left.symbol == right.symbol:
@@ -600,8 +609,9 @@ class DisjointnessProofGenerator(ProofGenerator):
             assert isinstance(left, kore.Application), f'left pattern {left} should be an application'
 
             # right is a variable of a hooked sort
-            assert isinstance(right.sort, kore.SortInstance) and \
-                   isinstance(left.symbol.definition, kore.SymbolDefinition)
+            assert isinstance(right.sort, kore.SortInstance) and isinstance(
+                left.symbol.definition, kore.SymbolDefinition
+            )
             if self.composer.get_no_confusion_hooked_sort(right.sort, left.symbol.definition) is not None:
                 return self.prove_hooked_sort_disjointness(left, right)
 

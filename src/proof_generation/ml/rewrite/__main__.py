@@ -23,13 +23,14 @@ from .smt import SMTOption
 from .tasks import ReachabilityTask, RewritingTask
 
 if TYPE_CHECKING:
-    from typing import ContextManager, Optional, Sequence, Tuple, Union
+    from collections.abc import Sequence
+    from typing import ContextManager
 
     from ..kore.ast import Module
     from ..metamath.backend import Backend
 
 
-def load_tasks(module: Module, task_path: str) -> Tuple[Tuple[RewritingTask, ...], Tuple[ReachabilityTask, ...]]:
+def load_tasks(module: Module, task_path: str) -> tuple[tuple[RewritingTask, ...], tuple[ReachabilityTask, ...]]:
     """
     Load all tasks in the document.
     We are expecting either a single rewriting task
@@ -40,7 +41,7 @@ def load_tasks(module: Module, task_path: str) -> Tuple[Tuple[RewritingTask, ...
         reachability_tasks = []
 
         for doc in yaml.load_all(task_file, Loader=yaml.Loader):
-            task: Union[RewritingTask, ReachabilityTask] = schema.Schema(
+            task: RewritingTask | ReachabilityTask = schema.Schema(
                 schema.Or(
                     ReachabilityTask.get_schema(),
                     RewritingTask.get_schema(),
@@ -73,7 +74,7 @@ def prove_rewriting(
 
 def prove_reachability(
     composer: KoreComposer,
-    tasks: Tuple[ReachabilityTask, ...],
+    tasks: tuple[ReachabilityTask, ...],
     smt_option: SMTOption,
 ) -> None:
     print('proving one-path reachability')
@@ -144,8 +145,7 @@ def set_additional_flags(parser: argparse.ArgumentParser) -> None:
         action='store_const',
         const=True,
         default=False,
-        help=
-        'Compress the output proof object using the LZMA algorithm, currently only applicable in the standalone mode',
+        help='Compress the output proof object using the LZMA algorithm, currently only applicable in the standalone mode',
     )
     parser.add_argument(
         '--smt-prelude',
@@ -162,7 +162,7 @@ def set_additional_flags(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def get_arguments(argv: Optional[Sequence[str]]) -> argparse.Namespace:
+def get_arguments(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('definition', help='Input Kore definition')
     parser.add_argument('module', help='Entry module name')
@@ -189,7 +189,7 @@ def get_backend(args: argparse.Namespace) -> ContextManager[Backend]:
 
     elif args.output is not None:
         if args.prelude is not None:
-            prelude_deps: Tuple[str, ...] = (os.path.realpath(args.prelude), )
+            prelude_deps: tuple[str, ...] = (os.path.realpath(args.prelude),)
         else:
             prelude_deps = ()
 
@@ -197,12 +197,12 @@ def get_backend(args: argparse.Namespace) -> ContextManager[Backend]:
         layout = (
             (None, None, ()),  # ignore all statements without assigned segment (e.g. prelude)
             ('variable', 'variable.mm', prelude_deps),
-            ('sort', 'module-sort.mm', ('variable', )),
-            ('symbol', 'module-symbol.mm', ('sort', )),
-            ('dv', 'dv.mm', ('symbol', )),
-            ('module', 'module-axiom.mm', ('dv', )),
-            ('substitution', 'substitution.mm', ('module', )),
-            ('rewrite', 'goal.mm', ('substitution', )),
+            ('sort', 'module-sort.mm', ('variable',)),
+            ('symbol', 'module-symbol.mm', ('sort',)),
+            ('dv', 'dv.mm', ('symbol',)),
+            ('module', 'module-axiom.mm', ('dv',)),
+            ('substitution', 'substitution.mm', ('module',)),
+            ('rewrite', 'goal.mm', ('substitution',)),
         )
 
         print(f'storing separated proof objects in {args.output}')
@@ -270,7 +270,7 @@ def run_on_arguments(args: argparse.Namespace) -> None:
         code.interact(local={**globals(), **vars()})
 
 
-def main(argv: Optional[Sequence[str]] = None) -> None:
+def main(argv: Sequence[str] | None = None) -> None:
     run_on_arguments(get_arguments(argv))
 
 

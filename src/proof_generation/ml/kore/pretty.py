@@ -8,7 +8,7 @@ from ..utils.printer import Printer
 from .ast import BaseAST, KoreVisitor
 
 if TYPE_CHECKING:
-    from typing import List, TextIO, Union
+    from typing import TextIO
 
     from .ast import (
         AliasDefinition,
@@ -120,7 +120,7 @@ class PrettyPrinter(Printer, KoreVisitor[BaseAST[Any], None]):
                 is_literal = not is_literal
                 i += 1
             elif is_literal and i + 4 <= len(label):
-                code = label[i:i + 4]
+                code = label[i : i + 4]
                 symbol = PrettyPrinter.DEMANGLE_LABEL_MAP.get(code, code)
                 result += symbol
                 i += 4
@@ -130,7 +130,7 @@ class PrettyPrinter(Printer, KoreVisitor[BaseAST[Any], None]):
 
         return result[3:] if result.startswith('Lbl') else result
 
-    def write_sort_arguments(self, sorts: Union[List[Sort], List[SortVariable]]) -> None:
+    def write_sort_arguments(self, sorts: list[Sort] | list[SortVariable]) -> None:
         if self.skip_empty_sorts and len(sorts) == 0:
             return
 
@@ -253,7 +253,8 @@ class PrettyPrinter(Printer, KoreVisitor[BaseAST[Any], None]):
         """
         Decide if the given ast should be printed using the compact format
         """
-        if self.compact: return True
+        if self.compact:
+            return True
 
         for line in PrettyPrinter.encode_string(ast, compact=True).split('\n'):
             if len(line) > self.limit:

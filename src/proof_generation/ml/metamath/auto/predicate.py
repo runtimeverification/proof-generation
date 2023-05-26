@@ -13,10 +13,9 @@ if TYPE_CHECKING:
 
 
 class PredicateProver:
-
     @staticmethod
     def construct_target(term: Term) -> StructuredStatement:
-        return StructuredStatement('', MetamathUtils.construct_provable(Application('\\is-predicate', (term, ))))
+        return StructuredStatement('', MetamathUtils.construct_provable(Application('\\is-predicate', (term,))))
 
     @staticmethod
     def construct_kore_target(sort: Term, term: Term) -> StructuredStatement:
@@ -37,7 +36,7 @@ class PredicateProver:
             return composer.get_theorem('predicate-intro-top').apply()
 
         if MetamathUtils.is_floor(term):
-            subterm, = MetamathUtils.destruct_floor(term)
+            (subterm,) = MetamathUtils.destruct_floor(term)
             return composer.get_theorem('lemma-floor-is-predicate').apply(ph0=subterm)
 
         if MetamathUtils.is_kore_is_sort(term):
@@ -67,8 +66,9 @@ class PredicateProver:
 
         if MetamathUtils.is_kore_not(term):
             _, subterm = MetamathUtils.destruct_kore_not(term)
-            return composer.get_theorem('kore-is-predicate-not-alt'
-                                        ).apply(PredicateProver.prove_kore_predicate(composer, sort, subterm), )
+            return composer.get_theorem('kore-is-predicate-not-alt').apply(
+                PredicateProver.prove_kore_predicate(composer, sort, subterm),
+            )
 
         if MetamathUtils.is_kore_floor(term):
             return composer.get_theorem('kore-floor-is-predicate').match_and_apply(
@@ -89,7 +89,7 @@ class PredicateProver:
         body = MetamathUtils.destruct_provable(statement.terms)
 
         if MetamathUtils.is_is_predicate(body):
-            term, = MetamathUtils.destruct_is_predicate(body)
+            (term,) = MetamathUtils.destruct_is_predicate(body)
             return PredicateProver.prove_predicate(composer, term)
 
         elif MetamathUtils.is_kore_is_predicate(body):

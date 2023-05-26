@@ -8,7 +8,7 @@ from ..utils import MetamathUtils
 from .notation import NotationProver
 
 if TYPE_CHECKING:
-    from typing import Optional, Tuple
+    pass
 
     from ..ast import Term
     from ..composer import Proof, Theorem
@@ -50,24 +50,23 @@ class PositiveProver:
     def hook_remove(composer: Composer, name: str) -> None:
         composer.positive_lemmas = {
             (sign, symbol): (theorem, order)
-            for (sign, symbol), (theorem, order) in composer.positive_lemmas.items() if theorem.statement.label != name
+            for (sign, symbol), (theorem, order) in composer.positive_lemmas.items()
+            if theorem.statement.label != name
         }
 
     @staticmethod
-    def destruct_lemma(theorem: Theorem) -> Optional[Tuple[bool, str, Tuple[int, ...]]]:
+    def destruct_lemma(theorem: Theorem) -> tuple[bool, str, tuple[int, ...]] | None:
         if len(theorem.statement.terms) != 3:
             return None
 
         head, var, term = theorem.statement.terms
 
-        if head != Application('#Positive') and \
-           head != Application('#Negative'):
+        if head != Application('#Positive') and head != Application('#Negative'):
             return None
 
         sign = head == Application('#Positive')
 
-        if not isinstance(var, Metavariable) or \
-           not isinstance(term, Application):
+        if not isinstance(var, Metavariable) or not isinstance(term, Application):
             return None
 
         indices = []
@@ -77,12 +76,10 @@ class PositiveProver:
                 return None
 
             head, var2, term2 = essential.terms
-            if head != Application('#Positive') and \
-               head != Application('#Negative'):
+            if head != Application('#Positive') and head != Application('#Negative'):
                 return None
 
-            if not isinstance(var2, Metavariable) or \
-               not isinstance(term2, Metavariable):
+            if not isinstance(var2, Metavariable) or not isinstance(term2, Metavariable):
                 return None
 
             if term2 not in term.subterms or var != var2:
@@ -99,13 +96,12 @@ class PositiveProver:
         term: Application,
         target: StructuredStatement,
         lemma: Theorem,
-        order: Tuple[int, ...],
+        order: tuple[int, ...],
     ) -> Proof:
         subproofs = []
 
         for i, index in enumerate(order):
-            assert index < len(term.subterms) and \
-                    i < len(lemma.context.essentials)
+            assert index < len(term.subterms) and i < len(lemma.context.essentials)
 
             essential = lemma.context.essentials[i]
             assert len(essential.terms) == 3
@@ -138,8 +134,7 @@ class PositiveProver:
             if essential.statement.terms == target.terms:
                 return essential.apply()
 
-        assert isinstance(term, Application), \
-               f'unable to prove #Positive {var} {term}'
+        assert isinstance(term, Application), f'unable to prove #Positive {var} {term}'
 
         if term.symbol == '\\bot':
             return composer.get_theorem('positive-in-bot').match_and_apply(target)
@@ -193,8 +188,7 @@ class PositiveProver:
             if essential.statement.terms == target.terms:
                 return essential.apply()
 
-        assert isinstance(term, Application), \
-               f'unable to prove #Negative {var} {term}'
+        assert isinstance(term, Application), f'unable to prove #Negative {var} {term}'
 
         if term.symbol == '\\bot':
             return composer.get_theorem('negative-in-bot').match_and_apply(target)
@@ -243,8 +237,7 @@ class PositiveProver:
         assert len(statement.terms) == 3
         head, var, term = statement.terms
 
-        assert isinstance(var, Metavariable), \
-               f'ill-formed statement {statement}'
+        assert isinstance(var, Metavariable), f'ill-formed statement {statement}'
 
         if head == Application('#Positive'):
             return PositiveProver.prove_positive(composer, var, term)

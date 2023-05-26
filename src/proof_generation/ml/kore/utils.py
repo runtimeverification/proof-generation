@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 from .ast import (
     Application,
@@ -29,7 +29,8 @@ from .visitors import (
 )
 
 if TYPE_CHECKING:
-    from typing import Dict, Iterable, Mapping, Optional, Set, TextIO, Tuple, TypeVar, Union
+    from collections.abc import Iterable, Mapping
+    from typing import TextIO, TypeVar
 
     from .ast import AliasDefinition, Module, Pattern, Sort
 
@@ -42,7 +43,7 @@ if TYPE_CHECKING:
 """
 Path to a subpattern of a pattern or an axiom
 """
-PatternPath = List[int]
+PatternPath = list[int]
 
 
 class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisitorStructure[BaseAST[Any], None]):
@@ -54,7 +55,7 @@ class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisito
     def __init__(self, alias_definitions: Iterable[AliasDefinition]):
         super().__init__()
         self.changed = False
-        self.alias_map: Dict[str, AliasDefinition] = {}
+        self.alias_map: dict[str, AliasDefinition] = {}
 
         for alias_def in alias_definitions:
             self.alias_map[alias_def.definition.symbol] = alias_def
@@ -87,7 +88,7 @@ class AliasDefinitionExpander(KoreVisitor[BaseAST[Any], None], PatternOnlyVisito
             if symbol_name in self.alias_map:
                 axiom.pattern = AliasDefinitionExpander.expand_alias_def(axiom.pattern, self.alias_map[symbol_name])
 
-    def expand_in_application_or_ml_pattern(self, pattern: Union[Application, MLPattern]) -> None:
+    def expand_in_application_or_ml_pattern(self, pattern: Application | MLPattern) -> None:
         for i, arg in enumerate(pattern.arguments):
             if isinstance(arg, Application):
                 symbol_name = arg.symbol.get_symbol_name()
@@ -119,14 +120,14 @@ class KoreUtils:
 
     @staticmethod
     def copy_and_substitute_pattern(
-        ast: PAS, substitution: Mapping[Variable, Pattern], module: Optional[Module] = None
+        ast: PAS, substitution: Mapping[Variable, Pattern], module: Module | None = None
     ) -> PAS:
         copied = KoreUtils.copy_ast(module or ast.get_parent(), ast)
         return PatternSubstitutionVisitor(substitution).visit(copied)  # type: ignore
 
     @staticmethod
     def copy_and_substitute_sort(
-        ast: PAS, substitution: Mapping[SortVariable, Sort], module: Optional[Module] = None
+        ast: PAS, substitution: Mapping[SortVariable, Sort], module: Module | None = None
     ) -> PAS:
         """
         Note that the substitution should be sort variable -> sort
@@ -135,7 +136,7 @@ class KoreUtils:
         return SortSubstitutionVisitor(substitution).visit(copied)  # type: ignore
 
     @staticmethod
-    def get_subpattern_by_path(ast: Union[Pattern, Axiom], path: PatternPath) -> Union[Pattern, Axiom]:
+    def get_subpattern_by_path(ast: Pattern | Axiom, path: PatternPath) -> Pattern | Axiom:
         if not path:
             return ast
 
@@ -145,8 +146,9 @@ class KoreUtils:
             assert first == 0, f'axiom {ast} only have one immediate subpattern'
             return KoreUtils.get_subpattern_by_path(ast.pattern, rest)
 
-        assert isinstance(ast, Application) or isinstance(ast, MLPattern
-                                                          ), 'path {} does not exists in pattern {}'.format(path, ast)
+        assert isinstance(ast, Application) or isinstance(
+            ast, MLPattern
+        ), f'path {path} does not exists in pattern {ast}'
 
         assert first < len(ast.arguments), f'path {path} does not exists in pattern {ast}'
         return KoreUtils.get_subpattern_by_path(ast.arguments[first], rest)
@@ -174,10 +176,10 @@ class KoreUtils:
 
         assert isinstance(pattern, Application) or isinstance(
             pattern, MLPattern
-        ), 'path {} does not exists in pattern {}'.format(path, pattern)
+        ), f'path {path} does not exists in pattern {pattern}'
 
         # Application and MLPattern all use .arguments for the list of arguments
-        assert first < len(pattern.arguments), 'path {} does not exists in pattern {}'.format(path, pattern)
+        assert first < len(pattern.arguments), f'path {path} does not exists in pattern {pattern}'
         pattern.arguments[first] = KoreUtils.replace_path_by_pattern_in_pattern(
             pattern.arguments[first], rest, replacement
         )
@@ -213,11 +215,11 @@ class KoreUtils:
             module.remove_sentence(alias_def)
 
     @staticmethod
-    def get_free_variables(ast: BaseAST[Any]) -> Set[Variable]:
+    def get_free_variables(ast: BaseAST[Any]) -> set[Variable]:
         return FreePatternVariableVisitor().visit(ast)
 
     @staticmethod
-    def get_free_sort_variables(ast: BaseAST[Any]) -> Set[SortVariable]:
+    def get_free_sort_variables(ast: BaseAST[Any]) -> set[SortVariable]:
         return SortVariableVisitor().visit(ast)
 
     @staticmethod
@@ -247,7 +249,7 @@ class KoreUtils:
             KoreUtils.quantify_all_free_variables_in_axiom(axiom)
 
     @staticmethod
-    def rename_variable_with_prefix(axiom: Axiom, prefix: str) -> Tuple[Axiom, Dict[Variable, Variable]]:
+    def rename_variable_with_prefix(axiom: Axiom, prefix: str) -> tuple[Axiom, dict[Variable, Variable]]:
         """
         Return a new axiom with all variables renamed to the form <prefix><E|S><number>
         """
@@ -264,7 +266,7 @@ class KoreUtils:
         return new_pattern, renaming
 
     @staticmethod
-    def unify_sorts(sort1: Sort, sort2: Sort) -> Optional[Mapping[SortVariable, Sort]]:
+    def unify_sorts(sort1: Sort, sort2: Sort) -> Mapping[SortVariable, Sort] | None:
         if isinstance(sort1, SortVariable):
             return {sort1: sort2}
 
@@ -279,7 +281,7 @@ class KoreUtils:
         if len(sort1.arguments) != len(sort2.arguments):
             return None
 
-        substitution: Dict[SortVariable, Sort] = {}
+        substitution: dict[SortVariable, Sort] = {}
 
         for sub1, sub2 in zip(sort1.arguments, sort2.arguments, strict=True):
             sub_substitution = KoreUtils.unify_sorts(sub1, sub2)
@@ -304,8 +306,7 @@ class KoreUtils:
             symbol_def = pattern.symbol.definition
             sort_arguments = pattern.symbol.sort_arguments
 
-            assert isinstance(symbol_def, SymbolDefinition), \
-                   f'cannot infer the sort of {pattern} without context'
+            assert isinstance(symbol_def, SymbolDefinition), f'cannot infer the sort of {pattern} without context'
             assert len(sort_arguments) == len(symbol_def.sort_variables)
 
             substitution = dict(zip(symbol_def.sort_variables, sort_arguments, strict=True))
@@ -315,7 +316,7 @@ class KoreUtils:
             # NOTE: as a convention, the last sort in the sort arguments is the output sort
             return pattern.sorts[-1]
 
-        raise AssertionError('unable to get the sort of pattern `{}`'.format(pattern))
+        raise AssertionError(f'unable to get the sort of pattern `{pattern}`')
 
     @staticmethod
     def strip_forall(pattern: Pattern) -> Pattern:
@@ -333,7 +334,7 @@ class KoreUtils:
         return pattern
 
     @staticmethod
-    def decompose_junction(pattern: Pattern, construct: str) -> List[Pattern]:
+    def decompose_junction(pattern: Pattern, construct: str) -> list[Pattern]:
         """
         NOTE: here a single pattern that doesn't start with the specified construct
         is also considered a junction (of a single clause)
@@ -349,7 +350,7 @@ class KoreUtils:
         return junction
 
     @staticmethod
-    def decompose_disjunction(pattern: Pattern) -> List[Pattern]:
+    def decompose_disjunction(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.decompose_junction(pattern, MLPattern.OR)
 
     @staticmethod
@@ -419,11 +420,11 @@ class KoreUtils:
     def construct_binary_ml_pattern(construct: str, left: Pattern, right: Pattern) -> MLPattern:
         left_sort = KoreUtils.infer_sort(left)
         right_sort = KoreUtils.infer_sort(right)
-        assert left_sort == right_sort or \
-               (isinstance(left_sort, SortInstance) and \
-                isinstance(right_sort, SortInstance) and \
-                left_sort.get_sort_id() == right_sort.get_sort_id()), \
-               f'unmatched sort {left_sort} and {right_sort}'
+        assert left_sort == right_sort or (
+            isinstance(left_sort, SortInstance)
+            and isinstance(right_sort, SortInstance)
+            and left_sort.get_sort_id() == right_sort.get_sort_id()
+        ), f'unmatched sort {left_sort} and {right_sort}'
         return MLPattern(construct, [left_sort], [left, right])
 
     @staticmethod
@@ -474,8 +475,7 @@ class KoreUtils:
     def construct_equals(output_sort: Sort, left: Pattern, right: Pattern) -> MLPattern:
         left_sort = KoreUtils.infer_sort(left)
         right_sort = KoreUtils.infer_sort(right)
-        assert left_sort == right_sort, \
-               f'unmatched sort {left_sort} and {right_sort}'
+        assert left_sort == right_sort, f'unmatched sort {left_sort} and {right_sort}'
         return MLPattern(MLPattern.EQUALS, [left_sort, output_sort], [left, right])
 
     @staticmethod
@@ -489,90 +489,91 @@ class KoreUtils:
         return MLPattern(MLPattern.FORALL, [sort], [var, pattern])
 
     @staticmethod
-    def destruct_ml_pattern(construct: str, pattern: Pattern) -> List[Pattern]:
-        assert isinstance(pattern, MLPattern) and \
-               pattern.construct == construct and \
-               len(pattern.arguments) == MLPattern.get_number_of_arguments_for_construct(construct), \
-               f'expecting {pattern} to be a {construct}'
+    def destruct_ml_pattern(construct: str, pattern: Pattern) -> list[Pattern]:
+        assert (
+            isinstance(pattern, MLPattern)
+            and pattern.construct == construct
+            and len(pattern.arguments) == MLPattern.get_number_of_arguments_for_construct(construct)
+        ), f'expecting {pattern} to be a {construct}'
         return pattern.arguments
 
     @staticmethod
-    def destruct_and(pattern: Pattern) -> List[Pattern]:
+    def destruct_and(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.AND, pattern)
 
     @staticmethod
-    def destruct_or(pattern: Pattern) -> List[Pattern]:
+    def destruct_or(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.OR, pattern)
 
     @staticmethod
-    def destruct_always(pattern: Pattern) -> List[Pattern]:
+    def destruct_always(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.ALWAYS, pattern)
 
     @staticmethod
-    def destruct_circularity(pattern: Pattern) -> List[Pattern]:
+    def destruct_circularity(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.CIRCULARITY, pattern)
 
     @staticmethod
-    def destruct_rewrites(pattern: Pattern) -> List[Pattern]:
+    def destruct_rewrites(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.REWRITES, pattern)
 
     @staticmethod
-    def destruct_rewrites_star(pattern: Pattern) -> List[Pattern]:
+    def destruct_rewrites_star(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.REWRITES_STAR, pattern)
 
     @staticmethod
-    def destruct_rewrites_plus(pattern: Pattern) -> List[Pattern]:
+    def destruct_rewrites_plus(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.REWRITES_PLUS, pattern)
 
     @staticmethod
-    def destruct_one_path_reaches_star(pattern: Pattern) -> List[Pattern]:
+    def destruct_one_path_reaches_star(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.ONE_PATH_REACHES_STAR, pattern)
 
     @staticmethod
-    def destruct_one_path_reaches_plus(pattern: Pattern) -> List[Pattern]:
+    def destruct_one_path_reaches_plus(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.ONE_PATH_REACHES_PLUS, pattern)
 
     @staticmethod
-    def destruct_equals(pattern: Pattern) -> List[Pattern]:
+    def destruct_equals(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.EQUALS, pattern)
 
     @staticmethod
-    def destruct_implies(pattern: Pattern) -> List[Pattern]:
+    def destruct_implies(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.IMPLIES, pattern)
 
     @staticmethod
-    def destruct_not(pattern: Pattern) -> List[Pattern]:
+    def destruct_not(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.NOT, pattern)
 
     @staticmethod
-    def destruct_iff(pattern: Pattern) -> List[Pattern]:
+    def destruct_iff(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.IFF, pattern)
 
     @staticmethod
-    def destruct_ceil(pattern: Pattern) -> List[Pattern]:
+    def destruct_ceil(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.CEIL, pattern)
 
     @staticmethod
-    def destruct_in(pattern: Pattern) -> List[Pattern]:
+    def destruct_in(pattern: Pattern) -> list[Pattern]:
         return KoreUtils.destruct_ml_pattern(MLPattern.IN, pattern)
 
     @staticmethod
-    def destruct_exists(pattern: Pattern) -> Tuple[Variable, Pattern]:
+    def destruct_exists(pattern: Pattern) -> tuple[Variable, Pattern]:
         var, body = KoreUtils.destruct_ml_pattern(MLPattern.EXISTS, pattern)
         assert isinstance(var, Variable)
         return var, body
 
     @staticmethod
-    def destruct_forall(pattern: Pattern) -> Tuple[Variable, Pattern]:
+    def destruct_forall(pattern: Pattern) -> tuple[Variable, Pattern]:
         var, body = KoreUtils.destruct_ml_pattern(MLPattern.FORALL, pattern)
         assert isinstance(var, Variable)
         return var, body
 
     @staticmethod
-    def destruct_dv(pattern: Pattern) -> Tuple[Sort, StringLiteral]:
-        value, = KoreUtils.destruct_ml_pattern(MLPattern.DV, pattern)
+    def destruct_dv(pattern: Pattern) -> tuple[Sort, StringLiteral]:
+        (value,) = KoreUtils.destruct_ml_pattern(MLPattern.DV, pattern)
         assert isinstance(pattern, MLPattern) and isinstance(value, StringLiteral)
-        sort, = pattern.sorts
+        (sort,) = pattern.sorts
         return sort, value
 
     @staticmethod
@@ -644,18 +645,19 @@ class KoreUtils:
         return isinstance(pattern, MLPattern) and pattern.construct == MLPattern.DV
 
     @staticmethod
-    def destruct_nested_ml_pattern(construct: str, pattern: Pattern) -> Tuple[Pattern, ...]:
+    def destruct_nested_ml_pattern(construct: str, pattern: Pattern) -> tuple[Pattern, ...]:
         if isinstance(pattern, MLPattern) and pattern.construct == construct:
             left, right = KoreUtils.destruct_ml_pattern(construct, pattern)
-            return KoreUtils.destruct_nested_ml_pattern(construct, left) + \
-                   KoreUtils.destruct_nested_ml_pattern(construct, right)
+            return KoreUtils.destruct_nested_ml_pattern(construct, left) + KoreUtils.destruct_nested_ml_pattern(
+                construct, right
+            )
         else:
-            return pattern,
+            return (pattern,)
 
     @staticmethod
-    def destruct_nested_and(pattern: Pattern) -> Tuple[Pattern, ...]:
+    def destruct_nested_and(pattern: Pattern) -> tuple[Pattern, ...]:
         return KoreUtils.destruct_nested_ml_pattern(MLPattern.AND, pattern)
 
     @staticmethod
-    def destruct_nested_or(pattern: Pattern) -> Tuple[Pattern, ...]:
+    def destruct_nested_or(pattern: Pattern) -> tuple[Pattern, ...]:
         return KoreUtils.destruct_nested_ml_pattern(MLPattern.OR, pattern)

@@ -1,6 +1,7 @@
 import os
 import sys
-from typing import Any, Callable, List
+from collections.abc import Callable
+from typing import Any
 
 
 class ANSIStyler(type):
@@ -33,7 +34,7 @@ class ANSIStyler(type):
         'italic': 3,
     }
 
-    def get_code(cls, styles: List[str]) -> str:
+    def get_code(cls, styles: list[str]) -> str:
         """
         Supported combinations:
             - <color> - single foreground color
@@ -51,8 +52,7 @@ class ANSIStyler(type):
 
             if style == 'rgb' and i + 4 < len(styles):
                 kind = styles[i + 1]
-                assert kind == 'fg' or kind == 'bg', \
-                       f'invalid kind {kind}'
+                assert kind == 'fg' or kind == 'bg', f'invalid kind {kind}'
 
                 r = int(styles[i + 2])
                 g = int(styles[i + 3])
@@ -93,7 +93,7 @@ class ANSIStyler(type):
 
     def __getattr__(cls, key: str) -> Any:
         if key.startswith('in_'):
-            styles = key[len('in_'):].split('_')
+            styles = key[len('in_') :].split('_')
 
             def f(msg: str) -> str:
                 if not ANSI.supports_color():

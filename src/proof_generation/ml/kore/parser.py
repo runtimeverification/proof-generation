@@ -25,7 +25,7 @@ from .ast import (
 )
 
 if TYPE_CHECKING:
-    from typing import Callable, List, Optional
+    from collections.abc import Callable
 
     from lark import Token, Tree
 
@@ -54,53 +54,52 @@ def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class ASTTransformer(Transformer[BaseAST[Any]]):
-
-    def identifier(self, args: List[Token]) -> str:
+    def identifier(self, args: list[Token]) -> str:
         assert isinstance(args[0].value, str)
         return args[0].value
 
-    def symbol_id(self, args: List[Token]) -> str:
+    def symbol_id(self, args: list[Token]) -> str:
         assert isinstance(args[0].value, str)
         return args[0].value
 
-    def set_var_id(self, args: List[Token]) -> str:
+    def set_var_id(self, args: list[Token]) -> str:
         assert isinstance(args[0].value, str)
         return args[0].value
 
-    def string_literal(self, args: List[Token]) -> str:
+    def string_literal(self, args: list[Token]) -> str:
         assert isinstance(args[0].value, str)
         literal = args[0].value
         assert literal.startswith('"') and literal.endswith('"')
         return literal[1:-1]
 
-    def ml_symbols(self, args: List[Token]) -> str:
+    def ml_symbols(self, args: list[Token]) -> str:
         assert isinstance(args[0].value, str)
         return args[0].value
 
     @meta_info
-    def definition(self, args: List[Any]) -> Definition:
+    def definition(self, args: list[Any]) -> Definition:
         attributes, *modules = args
         return Definition(modules, attributes)
 
     @meta_info
-    def module(self, args: List[Any]) -> Module:
+    def module(self, args: list[Any]) -> Module:
         name = args[0]
         sentences = args[1:-1]
         attributes = args[-1]
         return Module(name, sentences, attributes)
 
-    def sentence(self, args: List[Sentence]) -> Sentence:
+    def sentence(self, args: list[Sentence]) -> Sentence:
         return args[0]
 
     @meta_info
-    def sort_variable(self, args: List[str]) -> SortVariable:
+    def sort_variable(self, args: list[str]) -> SortVariable:
         return SortVariable(str(args[0]))
 
-    def sort_variables(self, args: List[SortVariable]) -> List[SortVariable]:
+    def sort_variables(self, args: list[SortVariable]) -> list[SortVariable]:
         return args
 
     @meta_info
-    def sort(self, args: List[Any]) -> Sort:
+    def sort(self, args: list[Any]) -> Sort:
         if len(args) == 1:
             assert isinstance(args[0], SortVariable)
             return args[0]
@@ -108,84 +107,84 @@ class ASTTransformer(Transformer[BaseAST[Any]]):
             sort_id, sort_arguments = args
             return SortInstance(sort_id, sort_arguments)
 
-    def sorts(self, args: List[Sort]) -> List[Sort]:
+    def sorts(self, args: list[Sort]) -> list[Sort]:
         return args
 
-    def attribute(self, args: List[Application]) -> Application:
+    def attribute(self, args: list[Application]) -> Application:
         return args[0]
 
-    def attributes(self, args: List[Application]) -> List[Application]:
+    def attributes(self, args: list[Application]) -> list[Application]:
         return args
 
     @meta_info
-    def sort_definition(self, args: List[Any]) -> SortDefinition:
+    def sort_definition(self, args: list[Any]) -> SortDefinition:
         sort_id, sort_vars, attributes = args
         return SortDefinition(sort_id, sort_vars, attributes, hooked=False)
 
     @meta_info
-    def hooked_sort_definition(self, args: List[Any]) -> SortDefinition:
+    def hooked_sort_definition(self, args: list[Any]) -> SortDefinition:
         sort_id, sort_vars, attributes = args
         return SortDefinition(sort_id, sort_vars, attributes, hooked=True)
 
     @meta_info
-    def symbol_definition(self, args: List[Any]) -> SymbolDefinition:
+    def symbol_definition(self, args: list[Any]) -> SymbolDefinition:
         symbol, sort_variables, input_sorts, output_sort, attributes = args
         return SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, attributes, hooked=False)
 
     @meta_info
-    def hooked_symbol_definition(self, args: List[Any]) -> SymbolDefinition:
+    def hooked_symbol_definition(self, args: list[Any]) -> SymbolDefinition:
         symbol, sort_variables, input_sorts, output_sort, attributes = args
         return SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, attributes, hooked=True)
 
     @meta_info
-    def axiom(self, args: List[Any]) -> Axiom:
+    def axiom(self, args: list[Any]) -> Axiom:
         sort_variables, pattern, attributes = args
         return Axiom(sort_variables, pattern, attributes, is_claim=False)
 
     @meta_info
-    def claim(self, args: List[Any]) -> Axiom:
+    def claim(self, args: list[Any]) -> Axiom:
         sort_variables, pattern, attributes = args
         return Axiom(sort_variables, pattern, attributes, is_claim=True)
 
     @meta_info
-    def import_statement(self, args: List[Any]) -> ImportStatement:
+    def import_statement(self, args: list[Any]) -> ImportStatement:
         module_name, attributes = args
         return ImportStatement(module_name, attributes)
 
     @meta_info
-    def alias_definition(self, args: List[Any]) -> AliasDefinition:
+    def alias_definition(self, args: list[Any]) -> AliasDefinition:
         symbol, sort_variables, input_sorts, output_sort, lhs, rhs, attributes = args
         definition = SymbolDefinition(symbol, sort_variables, input_sorts, output_sort, hooked=False)
         return AliasDefinition(definition, lhs, rhs, attributes)
 
     # patterns
-    def pattern(self, args: List[Pattern]) -> Pattern:
+    def pattern(self, args: list[Pattern]) -> Pattern:
         return args[0]
 
-    def patterns(self, args: List[Pattern]) -> List[Pattern]:
+    def patterns(self, args: list[Pattern]) -> list[Pattern]:
         return args
 
     @meta_info
-    def string_literal_pattern(self, args: List[str]) -> StringLiteral:
+    def string_literal_pattern(self, args: list[str]) -> StringLiteral:
         return StringLiteral(args[0])
 
     @meta_info
-    def element_variable(self, args: List[Any]) -> Variable:
+    def element_variable(self, args: list[Any]) -> Variable:
         name, sort = args
         return Variable(str(name), sort, is_set_variable=False)
 
     @meta_info
-    def set_variable(self, args: List[Any]) -> Variable:
+    def set_variable(self, args: list[Any]) -> Variable:
         name, sort = args
         return Variable(str(name), sort, is_set_variable=True)
 
     @meta_info
-    def application_pattern(self, args: List[Any]) -> Application:
+    def application_pattern(self, args: list[Any]) -> Application:
         symbol, sort_arguments, arguments = args
         return Application(SymbolInstance(symbol, sort_arguments), arguments)
 
     @meta_info
-    def ml_pattern(self, args: List[Any]) -> MLPattern:
+    def ml_pattern(self, args: list[Any]) -> MLPattern:
         symbol, sort_arguments, arguments = args
         return MLPattern(symbol, sort_arguments, arguments)
 
@@ -325,7 +324,7 @@ def parse_definition(src: str) -> Definition:
     return defn
 
 
-def parse_pattern(src: str, module: Optional[Module] = None) -> Pattern:
+def parse_pattern(src: str, module: Module | None = None) -> Pattern:
     tree = pattern_parser.parse(src)
     pattern = ASTTransformer().transform(tree)
     assert isinstance(pattern, Pattern)
@@ -336,7 +335,7 @@ def parse_pattern(src: str, module: Optional[Module] = None) -> Pattern:
     return pattern
 
 
-def parse_axiom(src: str, module: Optional[Module] = None) -> Axiom:
+def parse_axiom(src: str, module: Module | None = None) -> Axiom:
     tree = axiom_parser.parse(src)
     axiom = ASTTransformer().transform(tree)
     assert isinstance(axiom, Axiom)

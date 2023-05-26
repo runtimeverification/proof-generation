@@ -27,7 +27,8 @@ from .auto.unification import Unification
 from .backend import DEFAULT_SEGMENT, NullBackend
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Collection, Dict, Generator, Iterable, List, Mapping, Optional, Set, Tuple, Union
+    from collections.abc import Callable, Collection, Generator, Iterable, Mapping
+    from typing import Any
 
     from .ast import Terms
     from .backend import Backend, SegmentLabel
@@ -51,24 +52,24 @@ class Proof:
       - a Proof, which can only be used for non-leaf nodes
       - a list of label, which can only be used for leaf nodes (unparsed Metamath proof format)
     """
-    nodes: Tuple[Union[str, Tuple[str, ...]], ...]
+    nodes: tuple[str | tuple[str, ...], ...]
     """
     conclusions for each dag
     NOTE: node_to_conclusion[0] == self.internal_conclusions
     """
-    node_to_conclusion: Tuple[Terms, ...]
+    node_to_conclusion: tuple[Terms, ...]
     """
     A proof DAG should have a unique source at 0
     if a node has no out-edges, it MAY NOT have an entry in self.dag
     """
-    dag: Dict[int, Tuple[int, ...]]
+    dag: dict[int, tuple[int, ...]]
 
     @staticmethod
-    def from_script(statement: StructuredStatement, script: Union[str, Iterable[str]]) -> Proof:
+    def from_script(statement: StructuredStatement, script: str | Iterable[str]) -> Proof:
         """
         Make a proof from the normal proof format as a list of labels
         """
-        return Proof(statement.terms, (script if isinstance(script, str) else tuple(script), ), (statement.terms, ), {})
+        return Proof(statement.terms, (script if isinstance(script, str) else tuple(script),), (statement.terms,), {})
 
     @staticmethod
     def from_application(statement: StructuredStatement, root: str, children: Collection[Proof]) -> Proof:
@@ -76,20 +77,20 @@ class Proof:
         Combine the proof DAGs
         """
 
-        dag: Dict[int, Tuple[int, ...]] = {}
-        nodes: List[Union[str, Tuple[str, ...]]] = [root]
-        node_to_conclusion: List[Terms] = [statement.terms]
-        children_of_root: List[int] = []
+        dag: dict[int, tuple[int, ...]] = {}
+        nodes: list[str | tuple[str, ...]] = [root]
+        node_to_conclusion: list[Terms] = [statement.terms]
+        children_of_root: list[int] = []
 
         next_node = 1
-        conclusion_to_node: Dict[Terms, int] = {}
+        conclusion_to_node: dict[Terms, int] = {}
 
         # a greedy algorithm to combine common subproofs
         for subproof in children:
             # add each subproof as a disjoint subtree in the new proof
             prev_num_nodes = next_node
-            node_map: Dict[int, int] = {}
-            new_conclusion_to_node: Dict[Terms, int] = {}
+            node_map: dict[int, int] = {}
+            new_conclusion_to_node: dict[Terms, int] = {}
 
             # add all nodes in the subproof
             for i, item in enumerate(subproof.nodes):
@@ -139,10 +140,10 @@ class Proof:
     def is_leaf(self, node: int) -> bool:
         return node not in self.dag
 
-    def get_children_of(self, node: int) -> Tuple[int, ...]:
+    def get_children_of(self, node: int) -> tuple[int, ...]:
         return self.dag.get(node, ())
 
-    def flatten(self, output_script: List[str], root: int = 0) -> None:
+    def flatten(self, output_script: list[str], root: int = 0) -> None:
         """
         Flatten encodes a recursive hierarchy of proofs
         as the normal Metamath proof format
@@ -188,7 +189,7 @@ class Proof:
         letters = []
         while True:
             number -= 1
-            letters.append(chr(ord('U') + ((number % 5))))
+            letters.append(chr(ord('U') + (number % 5)))
             number //= 5
             if not number:
                 break
@@ -198,7 +199,7 @@ class Proof:
         return ''.join(letters)
 
     @staticmethod
-    def compress_script(mandatory: Iterable[str], proof: List[str]) -> str:
+    def compress_script(mandatory: Iterable[str], proof: list[str]) -> str:
         label_to_letter = {'?': '?'}
         mandatory_list = list(mandatory)
 
@@ -230,7 +231,7 @@ class Proof:
         """
         Encode a proof in the normal format (i.e. a list of space-separated labels)
         """
-        script: List[str] = []
+        script: list[str] = []
         self.flatten(script)
         return ' '.join(script)
 
@@ -241,7 +242,7 @@ class Proof:
         of the statement in the order they are defined
         """
         # TODO: share subtrees
-        script: List[str] = []
+        script: list[str] = []
         self.flatten(script)
         return Proof.compress_script(mandatory_hypotheses, script)
 
@@ -257,7 +258,6 @@ class AutoProof:
 
 
 class MethodAutoProof(AutoProof):
-
     def __init__(self, method: Callable[[Composer, StructuredStatement], Proof]):
         self.method = method
 
@@ -270,20 +270,21 @@ class Theorem:
     """
     A Theorem is any (structured) statement that can be used in a proof
     """
+
     composer: Composer
     statement: StructuredStatement
     context: TheoremContext = field(default_factory=lambda: TheoremContext())
 
-    def get_metavariables(self) -> Set[str]:
+    def get_metavariables(self) -> set[str]:
         """
         Get all metavariables that are active
         """
         return set(self.context.get_all_floating_metavariables())
 
-    def get_all_mandatory_labels(self) -> Tuple[str, ...]:
+    def get_all_mandatory_labels(self) -> tuple[str, ...]:
         return self.context.get_all_mandatory_labels()
 
-    def is_meta_substitution_consistent(self, substituted: Union[Proof, Term], term: Term) -> bool:
+    def is_meta_substitution_consistent(self, substituted: Proof | Term, term: Term) -> bool:
         if isinstance(substituted, Proof):
             assert len(substituted.conclusion) == 2
             return substituted.conclusion[1] == term
@@ -312,20 +313,19 @@ class Theorem:
 
         return Proof.from_script(
             self.statement,
-            self.context.get_all_floating_labels() + tuple(essential_proofs) + (self.statement.label, ),
+            self.context.get_all_floating_labels() + tuple(essential_proofs) + (self.statement.label,),
         )
 
-    def match_and_apply(
-        self, target: StructuredStatement, *args: Union[Proof, AutoProof], **kwargs: Union[Proof, Term]
-    ) -> Proof:
+    def match_and_apply(self, target: StructuredStatement, *args: Proof | AutoProof, **kwargs: Proof | Term) -> Proof:
         """
         Unify the theorem statement with a target,
         infer as many metavariables as possible, and
         then call self.apply
         """
         substitution = Unification.match_statements(self.statement, target)
-        assert (substitution is not None
-                ), 'failed to unify the target statement `{}` and the theorem `{}`'.format(target, self.statement)
+        assert (
+            substitution is not None
+        ), f'failed to unify the target statement `{target}` and the theorem `{self.statement}`'
 
         for lhs, rhs in substitution:
             if not isinstance(lhs, Metavariable):
@@ -334,9 +334,10 @@ class Theorem:
             var = lhs.name
 
             if var in kwargs:
-                assert self.is_meta_substitution_consistent(kwargs[var], rhs), (
-                    'metavariable assignment to {} is not consistent: '
-                    '`{}` and `{}` are both assigned to it'.format(var, kwargs[var], rhs)
+                assert self.is_meta_substitution_consistent(
+                    kwargs[var], rhs
+                ), 'metavariable assignment to {} is not consistent: ' '`{}` and `{}` are both assigned to it'.format(
+                    var, kwargs[var], rhs
                 )
             else:
                 kwargs[var] = rhs
@@ -346,8 +347,8 @@ class Theorem:
     @overload
     def infer_metavariable_substitution(
         self,
-        target: Optional[StructuredStatement],
-        essential_proofs: Tuple[Union[Proof, AutoProof], ...],
+        target: StructuredStatement | None,
+        essential_proofs: tuple[Proof | AutoProof, ...],
         metavar_substitution: Mapping[str, Term],
     ) -> Mapping[str, Term]:
         ...
@@ -355,32 +356,34 @@ class Theorem:
     @overload
     def infer_metavariable_substitution(
         self,
-        target: Optional[StructuredStatement],
-        essential_proofs: Tuple[Union[Proof, AutoProof], ...],
-        metavar_substitution: Mapping[str, Union[Proof, Term]],
-    ) -> Mapping[str, Union[Proof, Term]]:
+        target: StructuredStatement | None,
+        essential_proofs: tuple[Proof | AutoProof, ...],
+        metavar_substitution: Mapping[str, Proof | Term],
+    ) -> Mapping[str, Proof | Term]:
         ...
 
     def infer_metavariable_substitution(
         self,
-        target: Optional[StructuredStatement],
-        essential_proofs: Tuple[Union[Proof, AutoProof], ...],
-        metavar_substitution: Mapping[str, Union[Proof, Term]],
-    ) -> Mapping[str, Union[Proof, Term]]:
+        target: StructuredStatement | None,
+        essential_proofs: tuple[Proof | AutoProof, ...],
+        metavar_substitution: Mapping[str, Proof | Term],
+    ) -> Mapping[str, Proof | Term]:
         """
         Infer the metavariable substitution using the given information
         """
-        substitution: Dict[str, Union[Proof, Term]] = dict(metavar_substitution)
+        substitution: dict[str, Proof | Term] = dict(metavar_substitution)
 
-        assert len(essential_proofs) == len(self.context.essentials), (
-            'unmatched number of subproofs for '
-            'essential statements, expecting {}, {} given'.format(len(self.context.essentials), len(essential_proofs))
+        assert len(essential_proofs) == len(
+            self.context.essentials
+        ), 'unmatched number of subproofs for ' 'essential statements, expecting {}, {} given'.format(
+            len(self.context.essentials), len(essential_proofs)
         )
 
         if target is not None:
             match_substitution = Unification.match_statements(self.statement, target)
-            assert match_substitution is not None, \
-                   f'failed to unify the target statement `{target}` and the theorem `{self.statement}`'
+            assert (
+                match_substitution is not None
+            ), f'failed to unify the target statement `{target}` and the theorem `{self.statement}`'
 
             for lhs, rhs in match_substitution:
                 if not isinstance(lhs, Metavariable):
@@ -389,9 +392,10 @@ class Theorem:
                 var = lhs.name
 
                 if var in substitution:
-                    assert self.is_meta_substitution_consistent(substitution[var], rhs), \
-                           f'metavariable assignment to {var} is not consistent: ' \
-                           f'`{substitution[var]}` and `{rhs}` are both assigned to it'
+                    assert self.is_meta_substitution_consistent(substitution[var], rhs), (
+                        f'metavariable assignment to {var} is not consistent: '
+                        f'`{substitution[var]}` and `{rhs}` are both assigned to it'
+                    )
                 else:
                     substitution[var] = rhs
 
@@ -410,9 +414,10 @@ class Theorem:
             # the metavariable assignment
             for var, term in solution.items():
                 if var in substitution:
-                    assert self.is_meta_substitution_consistent(substitution[var], term), \
-                           f'metavariable assignment to {var} is not consistent: ' \
-                           f'`{substitution[var]}` and `{term}` are both assigned to it'
+                    assert self.is_meta_substitution_consistent(substitution[var], term), (
+                        f'metavariable assignment to {var} is not consistent: '
+                        f'`{substitution[var]}` and `{term}` are both assigned to it'
+                    )
 
                 else:
                     # update metavar_substitution to reflect this assignment
@@ -422,14 +427,14 @@ class Theorem:
 
     def infer_hypothesis_proofs(
         self,
-        essential_proofs: Tuple[Union[Proof, AutoProof], ...],
-        metavar_substitution: Mapping[str, Union[Proof, Term]],
-    ) -> Tuple[List[Proof], Mapping[str, Term]]:
+        essential_proofs: tuple[Proof | AutoProof, ...],
+        metavar_substitution: Mapping[str, Proof | Term],
+    ) -> tuple[list[Proof], Mapping[str, Term]]:
         """
         Infer a list of subproofs for the hypotheses from the information given
         """
         metavar_substitution = self.infer_metavariable_substitution(None, essential_proofs, metavar_substitution)
-        substitution: Dict[str, Term] = {}
+        substitution: dict[str, Term] = {}
         floating_proofs = []
 
         for floating in self.context.floatings:
@@ -446,33 +451,31 @@ class Theorem:
             if isinstance(metavar_substituted, Term):
                 from .auto.typecode import TypecodeProver  # avoid circular import
 
-                typecode_proof = TypecodeProver.prove_typecode(
-                    self.composer, typecode, metavar_substituted
-                )
+                typecode_proof = TypecodeProver.prove_typecode(self.composer, typecode, metavar_substituted)
 
-                assert typecode_proof is not None, \
-                       f'a term `{metavar_substituted}` is given for metavariable `{var}`, ' \
-                       f"but we couldn't prove that `{typecode} {metavar_substituted}`"
+                assert typecode_proof is not None, (
+                    f'a term `{metavar_substituted}` is given for metavariable `{var}`, '
+                    f"but we couldn't prove that `{typecode} {metavar_substituted}`"
+                )
             else:
                 # should be a proof
                 assert isinstance(metavar_substituted, Proof), f'{metavar_substituted} is not a proof'
                 typecode_proof = metavar_substituted
 
             # check that the proof is in the right form (for floating statements)
-            assert len(typecode_proof.conclusion) == 2, \
-                   f'wrong proof for `{typecode} {var}`, got {typecode_proof}'
+            assert len(typecode_proof.conclusion) == 2, f'wrong proof for `{typecode} {var}`, got {typecode_proof}'
 
             proved_typecode, proved_term = typecode_proof.conclusion
 
-            assert isinstance(proved_typecode, Application) and \
-                   proved_typecode.symbol == typecode, \
-                   f'wrong proof for `{typecode} {var}`, got {typecode_proof}'
+            assert (
+                isinstance(proved_typecode, Application) and proved_typecode.symbol == typecode
+            ), f'wrong proof for `{typecode} {var}`, got {typecode_proof}'
 
             substitution[var] = proved_term
             floating_proofs.append(typecode_proof)
 
         # resolve all auto proof
-        final_essential_proofs: List[Proof] = []
+        final_essential_proofs: list[Proof] = []
 
         for i, proof in enumerate(essential_proofs):
             if isinstance(proof, Proof):
@@ -487,7 +490,7 @@ class Theorem:
 
         return floating_proofs + final_essential_proofs, substitution
 
-    def apply(self, *essential_proofs: Union[Proof, AutoProof], **metavar_substitution: Union[Proof, Term]) -> Proof:
+    def apply(self, *essential_proofs: Proof | AutoProof, **metavar_substitution: Proof | Term) -> Proof:
         """
         Applies the theorem, given the following arguments:
         - a list of essential proofs, from which we may infer some of
@@ -501,8 +504,7 @@ class Theorem:
         return Proof.from_application(instance, self.statement.label, subproofs)
 
     def inline_apply(
-        self, proof_of_theorem: Proof, *essential_proofs: Union[Proof, AutoProof], **metavar_substitution: Union[Proof,
-                                                                                                                 Term]
+        self, proof_of_theorem: Proof, *essential_proofs: Proof | AutoProof, **metavar_substitution: (Proof | Term)
     ) -> Proof:
         """
         Instead of explicitly referencing the labeled statement,
@@ -516,14 +518,14 @@ class Theorem:
         hyp_proof_map = dict(zip(hyp_labels, subproofs, strict=True))
 
         # create an inlined proof
-        proof_script: List[str] = []
+        proof_script: list[str] = []
         proof_of_theorem.flatten(proof_script)
 
         new_proof_script = []
 
         for label in proof_script:
             if label in hyp_proof_map:
-                script: List[str] = []
+                script: list[str] = []
                 hyp_proof_map[label].flatten(script)
                 new_proof_script.extend(script)
             else:
@@ -562,8 +564,8 @@ class ProofCache:
 
     def __init__(self, composer: Composer):
         self.composer = composer
-        self.cache_map: Dict[str, Dict[Tuple[Term, ...], Proof]] = {}  # label prefix -> (terms -> proof)
-        self.label_map: Dict[str, int] = {}  # label prefix -> next index
+        self.cache_map: dict[str, dict[tuple[Term, ...], Proof]] = {}  # label prefix -> (terms -> proof)
+        self.label_map: dict[str, int] = {}  # label prefix -> next index
 
         self.stat_cache_hit = 0
         self.stat_cache_miss = 0
@@ -582,7 +584,7 @@ class ProofCache:
         self.label_map[domain] += 1
         return f'{domain}-{idx}'
 
-    def lookup(self, domain: str, statement_or_terms: Union[StructuredStatement, Terms]) -> Optional[Proof]:
+    def lookup(self, domain: str, statement_or_terms: StructuredStatement | Terms) -> Proof | None:
         """
         Find an existing cached proof by looking up the statement
         """
@@ -614,8 +616,7 @@ class ProofCache:
         self.stat_cache_miss += 1
 
         # cache the proof as a theorem
-        if not no_theorem_cache and \
-           len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD * sum(t.get_size() for t in terms):
+        if not no_theorem_cache and len(proof) > ProofCache.THEOREM_CACHE_THRESHOLD * sum(t.get_size() for t in terms):
             self.stat_theorem_cache += 1
 
             # do not index the cached statements
@@ -637,20 +638,20 @@ class TheoremContext:
     Theorem context is a flattened snapshot of Context
     """
 
-    floatings: Tuple[FloatingStatement, ...] = ()
-    essentials: Tuple[EssentialStatement, ...] = ()
-    disjoints: Tuple[DisjointStatement, ...] = ()
+    floatings: tuple[FloatingStatement, ...] = ()
+    essentials: tuple[EssentialStatement, ...] = ()
+    disjoints: tuple[DisjointStatement, ...] = ()
 
-    def get_all_floating_labels(self) -> Tuple[str, ...]:
+    def get_all_floating_labels(self) -> tuple[str, ...]:
         return tuple(floating.label for floating in self.floatings)
 
-    def get_all_floating_metavariables(self) -> Tuple[str, ...]:
+    def get_all_floating_metavariables(self) -> tuple[str, ...]:
         return tuple(floating.metavariable for floating in self.floatings)
 
-    def get_all_essential_labels(self) -> Tuple[str, ...]:
+    def get_all_essential_labels(self) -> tuple[str, ...]:
         return tuple(essential.label for essential in self.essentials)
 
-    def get_all_mandatory_labels(self) -> Tuple[str, ...]:
+    def get_all_mandatory_labels(self) -> tuple[str, ...]:
         return self.get_all_floating_labels() + self.get_all_essential_labels()
 
 
@@ -661,11 +662,11 @@ class Context:
     which includes active floating, essential, and disjoint statements
     """
 
-    floatings: List[FloatingStatement] = field(default_factory=lambda: [])
-    essentials: List[EssentialStatement] = field(default_factory=lambda: [])
-    disjoints: List[DisjointStatement] = field(default_factory=lambda: [])
-    statements: List[Statement] = field(default_factory=lambda: [])  # all statements in the context
-    prev: Optional[Context] = None
+    floatings: list[FloatingStatement] = field(default_factory=lambda: [])
+    essentials: list[EssentialStatement] = field(default_factory=lambda: [])
+    disjoints: list[DisjointStatement] = field(default_factory=lambda: [])
+    statements: list[Statement] = field(default_factory=lambda: [])  # all statements in the context
+    prev: Context | None = None
 
     def flatten(self, statement: StructuredStatement) -> TheoremContext:
         """
@@ -712,7 +713,7 @@ class Context:
     def add_disjoint(self, disjoint: DisjointStatement) -> None:
         self.disjoints.append(disjoint)
 
-    def find_floatings(self, metavariables: Set[str]) -> List[FloatingStatement]:
+    def find_floatings(self, metavariables: set[str]) -> list[FloatingStatement]:
         """
         return a fraction of self.metavariables according to the given set
         """
@@ -722,7 +723,7 @@ class Context:
         else:
             return fraction
 
-    def find_floatings_of_typecode(self, expected_typcode: str) -> List[str]:
+    def find_floatings_of_typecode(self, expected_typcode: str) -> list[str]:
         """
         return all metavariables of the given typecode
         """
@@ -732,20 +733,20 @@ class Context:
         else:
             return current
 
-    def get_all_floatings(self) -> List[FloatingStatement]:
+    def get_all_floatings(self) -> list[FloatingStatement]:
         if self.prev is not None:
             return self.prev.get_all_floatings() + self.floatings
         else:
             return self.floatings.copy()
 
-    def get_all_floating_metavariables(self) -> List[str]:
+    def get_all_floating_metavariables(self) -> list[str]:
         metavars = [floating.metavariable for floating in self.floatings]
         if self.prev is not None:
             return self.prev.get_all_floating_metavariables() + metavars
         else:
             return metavars
 
-    def find_essential(self, label: str) -> Optional[StructuredStatement]:
+    def find_essential(self, label: str) -> StructuredStatement | None:
         for essential in self.essentials:
             if essential.label == label:
                 return essential
@@ -755,13 +756,13 @@ class Context:
         else:
             return None
 
-    def get_all_essentials(self) -> List[EssentialStatement]:
+    def get_all_essentials(self) -> list[EssentialStatement]:
         if self.prev is not None:
             return self.prev.get_all_essentials() + self.essentials
         else:
             return self.essentials.copy()
 
-    def get_all_disjoints(self) -> List[DisjointStatement]:
+    def get_all_disjoints(self) -> list[DisjointStatement]:
         if self.prev is not None:
             return self.prev.get_all_disjoints() + self.disjoints
         else:
@@ -796,8 +797,8 @@ class Composer(Hookable):
 
     def __init__(self, *, backend: Backend = NullBackend()) -> None:
         self.context = Context()  # outermost context for a database
-        self.theorems: Dict[str, Theorem] = {}  # label -> Theorem
-        self.theorems_by_typecode: Dict[str, List[Theorem]] = {}  # typecode -> [ Theorem ], sorted theorems by typecode
+        self.theorems: dict[str, Theorem] = {}  # label -> Theorem
+        self.theorems_by_typecode: dict[str, list[Theorem]] = {}  # typecode -> [ Theorem ], sorted theorems by typecode
         self.proof_cache = ProofCache(self)
 
         # mark each statement with a unique "segment label"
@@ -806,23 +807,25 @@ class Composer(Hookable):
         # the stack is used so that one can mark a set
         # of setences in another segment and restore the old
         # segment
-        self.segment_stack: List[SegmentLabel] = [DEFAULT_SEGMENT]  # a stack of current segments
+        self.segment_stack: list[SegmentLabel] = [DEFAULT_SEGMENT]  # a stack of current segments
         self.backend = backend
 
-        self.notation_axiom_graph: Dict[str, Tuple[Theorem, str]] = {}  # symbol -> (theorem, symbol)
-        self.notation_congruence: Dict[str, Tuple[Theorem,
-                                                  Tuple[int, ...]]] = {}  # symbol -> [ (theorem, order of subterms) ]
+        self.notation_axiom_graph: dict[str, tuple[Theorem, str]] = {}  # symbol -> (theorem, symbol)
+        self.notation_congruence: dict[
+            str, tuple[Theorem, tuple[int, ...]]
+        ] = {}  # symbol -> [ (theorem, order of subterms) ]
 
-        self.substitution_lemmas: Dict[str, Tuple[Theorem,
-                                                  Tuple[int, ...]]] = {}  # symbol -> [ (theorem, order of subterms) ]
+        self.substitution_lemmas: dict[
+            str, tuple[Theorem, tuple[int, ...]]
+        ] = {}  # symbol -> [ (theorem, order of subterms) ]
 
-        self.fresh_lemmas: Dict[str, Tuple[Theorem, Tuple[int, ...]]] = {}  # symbol -> [ (theorem, order of subterms) ]
+        self.fresh_lemmas: dict[str, tuple[Theorem, tuple[int, ...]]] = {}  # symbol -> [ (theorem, order of subterms) ]
 
-        self.positive_lemmas: Dict[Tuple[bool, str],
-                                   Tuple[Theorem,
-                                         Tuple[int, ...]]] = {}  # (sign, symbol) -> [ (theorem, order of subterms) ]
+        self.positive_lemmas: dict[
+            tuple[bool, str], tuple[Theorem, tuple[int, ...]]
+        ] = {}  # (sign, symbol) -> [ (theorem, order of subterms) ]
 
-    def find_theorem(self, name: str) -> Optional[Theorem]:
+    def find_theorem(self, name: str) -> Theorem | None:
         return self.theorems.get(name)
 
     def get_theorem(self, name: str) -> Theorem:
@@ -833,7 +836,7 @@ class Composer(Hookable):
         assert theorem is not None, f'cannot find theorem {name}'
         return theorem
 
-    def get_theorems_of_typecode(self, typecode: str) -> List[Theorem]:
+    def get_theorems_of_typecode(self, typecode: str) -> list[Theorem]:
         return self.theorems_by_typecode.get(typecode, [])
 
     def remove_theorem(self, name: str) -> None:
@@ -844,8 +847,12 @@ class Composer(Hookable):
 
         # also delete it from the typecode map
         stmt = theorem.statement
-        if (len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0
-                and stmt.terms[0].symbol in self.theorems_by_typecode):
+        if (
+            len(stmt.terms) != 0
+            and isinstance(stmt.terms[0], Application)
+            and len(stmt.terms[0].subterms) == 0
+            and stmt.terms[0].symbol in self.theorems_by_typecode
+        ):
             for i, theorem in enumerate(self.theorems_by_typecode[stmt.terms[0].symbol]):
                 if theorem.statement.label == name:
                     self.theorems_by_typecode[stmt.terms[0].symbol].pop(i)
@@ -858,17 +865,17 @@ class Composer(Hookable):
             self.theorems_by_typecode[typecode] = []
         self.theorems_by_typecode[typecode].append(theorem)
 
-    def find_essential(self, name: str) -> Optional[Theorem]:
+    def find_essential(self, name: str) -> Theorem | None:
         essential = self.context.find_essential(name)
         if essential:
             return Theorem(self, essential)
         else:
             return None
 
-    def get_all_essentials(self) -> List[Theorem]:
+    def get_all_essentials(self) -> list[Theorem]:
         return [Theorem(self, essential) for essential in self.context.get_all_essentials()]
 
-    def get_all_disjoints(self) -> List[DisjointStatement]:
+    def get_all_disjoints(self) -> list[DisjointStatement]:
         return self.context.get_all_disjoints()
 
     def are_terms_disjoint(self, term1: Term, term2: Term) -> bool:
@@ -895,7 +902,7 @@ class Composer(Hookable):
     def cache_proof(self, *args: Any, **kwargs: Any) -> Proof:
         return self.proof_cache.cache(*args, **kwargs)
 
-    def lookup_proof_cache(self, domain: str, key: Union[StructuredStatement, Terms]) -> Optional[Proof]:
+    def lookup_proof_cache(self, domain: str, key: StructuredStatement | Terms) -> Proof | None:
         return self.proof_cache.lookup(domain, key)
 
     """
@@ -921,7 +928,7 @@ class Composer(Hookable):
         finally:
             self.end_segment()
 
-    def find_metavariable(self, var: str) -> Optional[str]:
+    def find_metavariable(self, var: str) -> str | None:
         """
         look up a metavariable, if found, return the typecode,
         otherwise, return None
@@ -931,13 +938,13 @@ class Composer(Hookable):
             return None
         return found[0].typecode
 
-    def find_metavariables_of_typecode(self, typecode: str) -> List[str]:
+    def find_metavariables_of_typecode(self, typecode: str) -> list[str]:
         """
         find metavariables of the given typecode
         """
         return self.context.find_floatings_of_typecode(typecode)
 
-    def get_all_metavariables(self) -> List[str]:
+    def get_all_metavariables(self) -> list[str]:
         return self.context.get_all_floating_metavariables()
 
     def index_statement(self, stmt: StructuredStatement) -> None:
@@ -945,7 +952,7 @@ class Composer(Hookable):
         Index the statement for more efficient search later
         """
         # index by the typecode
-        if (len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0):
+        if len(stmt.terms) != 0 and isinstance(stmt.terms[0], Application) and len(stmt.terms[0].subterms) == 0:
             self.add_theorem_for_typecode(stmt.terms[0].symbol, self.theorems[stmt.label])
 
         Composer.run_hooks('index', self, self.theorems[stmt.label])
@@ -982,10 +989,7 @@ class Composer(Hookable):
             self.backend.dump_statement(self.get_current_segment(), statement)
             context.statements = []
 
-    def record_theorem_at_context(self,
-                                  context: Context,
-                                  statement: Statement,
-                                  index: bool = True) -> Optional[Theorem]:
+    def record_theorem_at_context(self, context: Context, statement: Statement, index: bool = True) -> Theorem | None:
         """
         Create theorem object for a statement if applicable and add it to the theorem dict
         """
@@ -1024,23 +1028,23 @@ class Composer(Hookable):
 
     @overload
     def load(
-        self, ast: Union[Database, Block, ConstantStatement, VariableStatement, DisjointStatement], **kwargs: Any
+        self, ast: Database | Block | ConstantStatement | VariableStatement | DisjointStatement, **kwargs: Any
     ) -> None:
         ...
 
     @overload
-    def load(self, ast: Statement, **kwargs: Any) -> Optional[Theorem]:
+    def load(self, ast: Statement, **kwargs: Any) -> Theorem | None:
         ...
 
     def load(
         self,
-        ast: Union[Database, Statement],
+        ast: Database | Statement,
         *,
         index: bool = True,
-        stop_at: Optional[str] = None,
+        stop_at: str | None = None,
         top_level: bool = False,
         **kwargs: Any,  # a placeholder to make overload typing easier
-    ) -> Optional[Theorem]:
+    ) -> Theorem | None:
         """
         Add a structured statement/block/database to the composer
         Optionally return a theorem corresponding to the given statement
@@ -1057,8 +1061,7 @@ class Composer(Hookable):
 
         if top_level:
             assert stop_at is None, 'cannot set top_level and stop_at at the same time'
-            assert not isinstance(ast, Block), \
-                   'cannot load a block directly at the top level'
+            assert not isinstance(ast, Block), 'cannot load a block directly at the top level'
 
         if isinstance(ast, Database):
             assert self.context.prev is None, 'loading a database at non-top level'

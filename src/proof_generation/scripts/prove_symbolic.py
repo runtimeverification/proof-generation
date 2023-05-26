@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Any, Dict, List
+from typing import Any
 
 import yaml
 
@@ -13,7 +13,7 @@ from ..ml.rewrite.__main__ import run_on_arguments, set_additional_flags
 from ..ml.utils.ansi import ANSI
 
 
-def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:
+def run_command(command: list[str], **kwargs: Any) -> subprocess.Popen:
     command_str = ' '.join([shlex.quote(frag) for frag in command])
     print(f"{ANSI.in_gray('+ ' + command_str)}", file=sys.stderr)
     return subprocess.Popen(command, **kwargs)
@@ -25,7 +25,7 @@ def get_mtime(path: str) -> float:
     return os.stat(path).st_mtime
 
 
-def check_dependency_change(targets: List[str], dependencies: List[str]) -> bool:
+def check_dependency_change(targets: list[str], dependencies: list[str]) -> bool:
     """
     Check if any of the dependencies is younger than
     any of the targets
@@ -35,7 +35,7 @@ def check_dependency_change(targets: List[str], dependencies: List[str]) -> bool
     return max_dep_mtime > min_target_mtime
 
 
-def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
+def gen_task_legacy(kompiled_dir: str, pgm: str) -> dict[str, Any]:
     """
     Generate hints without modified backend
     This will not include substitutions or rule ids
@@ -96,19 +96,22 @@ def gen_task_legacy(kompiled_dir: str, pgm: str) -> Dict[str, Any]:
 
     steps = []
     for from_pattern, to_pattern in zip(snapshots[:-1], snapshots[1:]):
-        steps.append({
-            'initial': from_pattern,
-            'applied-rules': [{
-                'results': [to_pattern],
-            }],
-            'remainders': [],
-        })
+        steps.append(
+            {
+                'initial': from_pattern,
+                'applied-rules': [
+                    {
+                        'results': [to_pattern],
+                    }
+                ],
+                'remainders': [],
+            }
+        )
 
     return {
         'task': 'rewriting',
         # call the initializer: LblinitGeneratedTopCell({ $PGM -> <init config> })
-        'initial':
-        f"""LblinitGeneratedTopCell{{}}(Lbl'UndsPipe'-'-GT-Unds'{{}}(inj{{SortKConfigVar{{}},SortKItem{{}}}}(\\dv{{SortKConfigVar{{}}}}("$PGM")),{init_config}))""",
+        'initial': f"""LblinitGeneratedTopCell{{}}(Lbl'UndsPipe'-'-GT-Unds'{{}}(inj{{SortKConfigVar{{}},SortKItem{{}}}}(\\dv{{SortKConfigVar{{}}}}("$PGM")),{init_config}))""",
         'finals': [snapshots[-1]],
         'steps': steps,
     }

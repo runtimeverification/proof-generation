@@ -1,13 +1,12 @@
 import argparse
 import os
 import re
-from typing import List, Optional, Tuple
 
 from ..ml.metamath.composer import Composer, Proof
 from ..ml.metamath.parser import load_database
 
 
-def locate_comment_segment(comment_segments: List[Tuple[int, int]], pos: int) -> Optional[Tuple[int, int]]:
+def locate_comment_segment(comment_segments: list[tuple[int, int]], pos: int) -> tuple[int, int] | None:
     """
     Try to find the comment segment the given position is in
     """
@@ -18,7 +17,7 @@ def locate_comment_segment(comment_segments: List[Tuple[int, int]], pos: int) ->
 
 
 def transform_provable_statement(
-    composer: Composer, comment_segments: List[Tuple[int, int]], label: str, stmt_src: str, abs_pos: int
+    composer: Composer, comment_segments: list[tuple[int, int]], label: str, stmt_src: str, abs_pos: int
 ) -> str:
     proof_start_pos = stmt_src.index('$=') + 2
 
@@ -61,7 +60,7 @@ def transform_provable_statement(
     return stmt_src[:proof_start_pos] + new_proof + stmt_src[proof_end_pos:]
 
 
-def find_all_comment_segments(src: str) -> List[Tuple[int, int]]:
+def find_all_comment_segments(src: str) -> list[tuple[int, int]]:
     """
     Find all comment segments in a database starting from a position
     return a list of pairs [ (comment start pos, comment end pos) ]
@@ -103,7 +102,7 @@ def find_all_comment_segments(src: str) -> List[Tuple[int, int]]:
     return comment_segments
 
 
-def update_comment_segments(comment_segments: List[Tuple[int, int]], pos: int, offset: int) -> List[Tuple[int, int]]:
+def update_comment_segments(comment_segments: list[tuple[int, int]], pos: int, offset: int) -> list[tuple[int, int]]:
     """
     Update comment segments with an offset
     """
@@ -134,8 +133,7 @@ def main() -> None:
             assert os.path.isfile(input_path), f'Input not found {input_path}'
             all_inputs.append(input_path)
 
-    assert not os.path.exists(args.output), \
-           f'Output directory {args.output} already exists'
+    assert not os.path.exists(args.output), f'Output directory {args.output} already exists'
 
     os.mkdir(args.output)
 
@@ -183,8 +181,7 @@ def main() -> None:
                 # update comment positions
                 # TODO: bad performance
                 comment_segments = update_comment_segments(
-                    comment_segments, match_end,
-                    len(new_stmt_src) - len(stmt_src)
+                    comment_segments, match_end, len(new_stmt_src) - len(stmt_src)
                 )
 
         output_path = os.path.join(args.output, os.path.basename(input_path))

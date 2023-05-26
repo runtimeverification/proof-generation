@@ -16,10 +16,11 @@ from .env import ProofGenerator, ProvableClaim
 from .propositional import PropositionalProofGenerator
 
 if TYPE_CHECKING:
-    from typing import Dict, Mapping, Optional, Union
+    from collections.abc import Mapping
 
     from ..kore.utils import PatternPath
     from ..metamath.composer import Proof
+
 
 class FOLProofGenerator(ProofGenerator):
     """
@@ -53,7 +54,9 @@ class FOLProofGenerator(ProofGenerator):
 
         return self.composer.construct_provable_claim(
             claim=goal,
-            proof=self.composer.get_theorem('kore-forall-intro-alt').apply(premises_rearranged, ),
+            proof=self.composer.get_theorem('kore-forall-intro-alt').apply(
+                premises_rearranged,
+            ),
         )
 
     def apply_forall_elim(self, provable: ProvableClaim) -> ProvableClaim:
@@ -147,7 +150,7 @@ class FOLProofGenerator(ProofGenerator):
 
         goal = KoreUtils.construct_implies(
             KoreUtils.construct_implies(left, KoreUtils.construct_forall(variable, right)),
-            KoreUtils.construct_forall(variable, KoreUtils.construct_implies(left, right))
+            KoreUtils.construct_forall(variable, KoreUtils.construct_implies(left, right)),
         )
 
         return self.composer.apply_kore_lemma(
@@ -186,13 +189,11 @@ class FOLProofGenerator(ProofGenerator):
         """
 
         equation_sort = KoreUtils.infer_sort(equation.claim.pattern)
-        assert isinstance(equation_sort, kore.SortVariable), \
-               'expecting a more general form with a free sort variable'
+        assert isinstance(equation_sort, kore.SortVariable), 'expecting a more general form with a free sort variable'
 
         lhs, rhs = KoreUtils.destruct_equals(equation.claim.pattern)
         subpattern = KoreUtils.get_subpattern_by_path(provable.claim, path)
-        assert lhs == subpattern, \
-               f'cannot apply equation {equation} on a {subpattern}'
+        assert lhs == subpattern, f'cannot apply equation {equation} on a {subpattern}'
 
         goal = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, rhs)
 
@@ -205,7 +206,7 @@ class FOLProofGenerator(ProofGenerator):
         free_vars = {var.name for var in PatternVariableVisitor().visit(provable.claim)}
         free_vars = free_vars.union({var.name for var in KoreUtils.get_free_sort_variables(provable.claim)})
 
-        fresh_var_name, = self.composer.gen_fresh_metavariables('#ElementVariable', 1, free_vars)
+        (fresh_var_name,) = self.composer.gen_fresh_metavariables('#ElementVariable', 1, free_vars)
         fresh_var = kore.Variable(fresh_var_name, KoreUtils.infer_sort(lhs))
 
         template = KoreUtils.copy_and_replace_path_by_pattern_in_axiom(provable.claim, path, fresh_var)
@@ -238,22 +239,19 @@ class FOLProofGenerator(ProofGenerator):
             free_vars.update(KoreUtils.get_free_variables(v))
 
         fresh_var_substitution = {
-            free_var: kore.Variable(f'Fresh{free_var.name}', free_var.sort)
-            for free_var in free_vars
+            free_var: kore.Variable(f'Fresh{free_var.name}', free_var.sort) for free_var in free_vars
         }
 
         # replace all free variables in the substitutes by fresh variables
         substitution = {
-            k: KoreUtils.copy_and_substitute_pattern(v, fresh_var_substitution)
-            for k, v in substitution.items()
+            k: KoreUtils.copy_and_substitute_pattern(v, fresh_var_substitution) for k, v in substitution.items()
         }
 
         claims = []
 
         while len(substitution):
             var, body = KoreUtils.destruct_forall(pattern)
-            assert var in substitution, \
-                   f'variable {var} not found in the substitution'
+            assert var in substitution, f'variable {var} not found in the substitution'
 
             original_substitute = substitute = substitution[var]
             del substitution[var]
@@ -277,7 +275,7 @@ class FOLProofGenerator(ProofGenerator):
         return final_claim
 
     def apply_functional_substitution(
-        self, provable: ProvableClaim, substitution: Dict[kore.Variable, kore.Pattern]
+        self, provable: ProvableClaim, substitution: dict[kore.Variable, kore.Pattern]
     ) -> ProvableClaim:
         """
         Substitute a free pattern variable in the given claim with
@@ -299,7 +297,7 @@ class FOLProofGenerator(ProofGenerator):
         return provable
 
     def apply_sort_substitution(
-        self, provable: ProvableClaim, substitution: Dict[kore.SortVariable, kore.Sort]
+        self, provable: ProvableClaim, substitution: dict[kore.SortVariable, kore.Sort]
     ) -> ProvableClaim:
         """
         Substitute a free sort variable in the given claim with
@@ -307,8 +305,9 @@ class FOLProofGenerator(ProofGenerator):
         """
 
         for sort_var, sort in sorted(substitution.items(), key=lambda t: t[0].name):
-            assert len(KoreUtils.get_free_sort_variables(sort)) == 0, \
-                   'substituting sorts with free sort variables is not supported'
+            assert (
+                len(KoreUtils.get_free_sort_variables(sort)) == 0
+            ), 'substituting sorts with free sort variables is not supported'
 
             sort_is_functional = self.composer.get_theorem('kore-sort-functional').apply(
                 SortingProver.auto,
@@ -341,7 +340,7 @@ class FOLProofGenerator(ProofGenerator):
         assert isinstance(sort1, kore.SortInstance) and isinstance(sort2, kore.SortInstance)
 
         chain = self.composer.subsort_relation.get_subsort_chain(sort1, sort2)
-        assert (chain is not None), f"{sort1} is not a subsort of {sort2}, unable to prove that it's functional"
+        assert chain is not None, f"{sort1} is not a subsort of {sort2}, unable to prove that it's functional"
         assert len(chain) > 2, f'{sort1} is an immediate subsort of {sort2}'
 
         argument = application.arguments[0]
@@ -367,7 +366,7 @@ class FOLProofGenerator(ProofGenerator):
         # inj_axiom_instance is of the form
         # \forall{...}(X:<sort1>, ... = ...)
         # we need to substitute current_argument for X in the equation
-        free_var, = KoreUtils.get_free_variables(inj_axiom_instance.claim)
+        (free_var,) = KoreUtils.get_free_variables(inj_axiom_instance.claim)
         inj_axiom_instance = self.apply_functional_substitution(inj_axiom_instance, {free_var: argument})
 
         return self.replace_equal_subpattern(
@@ -409,13 +408,13 @@ class FOLProofGenerator(ProofGenerator):
 
             var, body = KoreUtils.destruct_exists(functional_axiom.claim.pattern)
             lhs, rhs = KoreUtils.destruct_equals(body)
-            assert var == lhs, \
-                   f'ill-formed functional axiom {functional_axiom.claim}'
+            assert var == lhs, f'ill-formed functional axiom {functional_axiom.claim}'
 
-            assert isinstance(rhs, kore.Application) and \
-                   rhs.symbol == pattern.symbol and \
-                   len(rhs.arguments) == len(pattern.arguments), \
-                   f'ill-formed functional axiom {functional_axiom.claim}'
+            assert (
+                isinstance(rhs, kore.Application)
+                and rhs.symbol == pattern.symbol
+                and len(rhs.arguments) == len(pattern.arguments)
+            ), f'ill-formed functional axiom {functional_axiom.claim}'
 
             # instantiate the axiom with arguments
             for axiom_var, argument in zip(rhs.arguments, pattern.arguments, strict=True):
@@ -456,8 +455,12 @@ class FOLProofGenerator(ProofGenerator):
             sort, literal = KoreUtils.destruct_dv(pattern)
             assert isinstance(sort, kore.SortInstance)
 
-            assert (sort, literal) in self.composer.domain_value_functional_axioms, \
-                   f'cannot find functional axiom for domain value pattern {pattern}'
+            assert (
+                sort,
+                literal,
+            ) in self.composer.domain_value_functional_axioms, (
+                f'cannot find functional axiom for domain value pattern {pattern}'
+            )
 
             return self.composer.domain_value_functional_axioms[sort, literal]
 
@@ -472,8 +475,12 @@ class FOLProofGenerator(ProofGenerator):
         # are generated
 
         assert (
-            isinstance(sort1, kore.SortInstance) and len(sort1.arguments) == 0 and isinstance(sort2, kore.SortInstance)
-            and len(sort2.arguments) == 0 and isinstance(sort3, kore.SortInstance) and len(sort3.arguments) == 0
+            isinstance(sort1, kore.SortInstance)
+            and len(sort1.arguments) == 0
+            and isinstance(sort2, kore.SortInstance)
+            and len(sort2.arguments) == 0
+            and isinstance(sort3, kore.SortInstance)
+            and len(sort3.arguments) == 0
         ), 'parametric sort not supported'
 
         assert self.composer.sort_injection_axiom is not None
@@ -499,8 +506,7 @@ class FOLProofGenerator(ProofGenerator):
         Instantiate a free sort variable in the claim with \unit-sort
         """
         sort_var = KoreUtils.infer_sort(claim.claim.pattern)
-        assert isinstance(sort_var, kore.SortVariable), \
-               f'expecting a free sort variable in {claim.claim}'
+        assert isinstance(sort_var, kore.SortVariable), f'expecting a free sort variable in {claim.claim}'
 
         encoded_sort_var = self.composer.encode_pattern(sort_var)
         assert isinstance(encoded_sort_var, mm.Metavariable)
@@ -515,8 +521,7 @@ class FOLProofGenerator(ProofGenerator):
 
         encoded_var = self.composer.encode_pattern(var)
         encoded_new_var = self.composer.encode_pattern(new_var)
-        assert isinstance(encoded_var, mm.Metavariable) and \
-               isinstance(encoded_new_var, mm.Metavariable)
+        assert isinstance(encoded_var, mm.Metavariable) and isinstance(encoded_new_var, mm.Metavariable)
 
         premise, _ = MetamathUtils.destruct_imp(self.composer.encode_pattern(claim.claim))
         premise = premise.substitute({encoded_var.name: encoded_new_var})
@@ -552,8 +557,7 @@ class FOLProofGenerator(ProofGenerator):
 
         var, body = KoreUtils.destruct_forall(pattern)
 
-        assert var not in KoreUtils.get_free_variables(substitute), \
-               f'variable {var} is free in substitute {substitute}'
+        assert var not in KoreUtils.get_free_variables(substitute), f'variable {var} is free in substitute {substitute}'
 
         substituted_body = KoreUtils.copy_and_substitute_pattern(body, {var: substitute})
 
@@ -590,7 +594,7 @@ class FOLProofGenerator(ProofGenerator):
         free_vars = {var.name for var in PatternVariableVisitor().visit(goal)}
         free_vars = free_vars.union({var.name for var in SortVariableVisitor().visit(goal)})
         free_vars.add(functional_var_name)
-        fresh_var_name, = self.composer.gen_fresh_metavariables('#ElementVariable', 1, free_vars)
+        (fresh_var_name,) = self.composer.gen_fresh_metavariables('#ElementVariable', 1, free_vars)
 
         # z in the theorem
         fresh_pattern_var = kore.Variable(fresh_var_name, var.sort)
@@ -614,8 +618,8 @@ class FOLProofGenerator(ProofGenerator):
     def apply_functional_substitution_raw(
         self,
         original_claim: ProvableClaim,
-        var: Union[kore.Variable, kore.SortVariable],
-        substitute: Union[kore.Pattern, kore.Sort],
+        var: kore.Variable | kore.SortVariable,
+        substitute: kore.Pattern | kore.Sort,
         functional_proof: Proof,
     ) -> ProvableClaim:
         r"""
@@ -649,7 +653,7 @@ class FOLProofGenerator(ProofGenerator):
 
         # destruct conclusions to get information
         original_body = MetamathUtils.destruct_provable(original_claim.proof.conclusion)
-        original_premise: Optional[mm.Term] = None
+        original_premise: mm.Term | None = None
 
         if MetamathUtils.is_imp(original_body):
             original_premise, original_body = MetamathUtils.destruct_imp(original_body)
@@ -697,7 +701,9 @@ class FOLProofGenerator(ProofGenerator):
         # th1 in the theorem
         affected_premise = MetamathUtils.construct_multi_and(affected_premises)
 
-        fresh_var_name, = self.composer.gen_fresh_metavariables('#ElementVariable', 1, {var.name, functional_var_name})
+        (fresh_var_name,) = self.composer.gen_fresh_metavariables(
+            '#ElementVariable', 1, {var.name, functional_var_name}
+        )
 
         # z in the theorem
         if isinstance(var, kore.Variable):

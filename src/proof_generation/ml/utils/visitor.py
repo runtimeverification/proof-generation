@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, List, Set, TypeVar, Union
+from typing import TYPE_CHECKING, Generic, TypeVar, Union
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Any
+
 
 TreeT = TypeVar('TreeT', contravariant=True)
 ResultT = TypeVar('ResultT')
-ChildrenResultT = Union[ResultT, List[ResultT]]
+ChildrenResultT = Union[ResultT, list[ResultT]]
 
 
 class Visitor(Generic[TreeT, ResultT]):
@@ -15,7 +20,7 @@ class Visitor(Generic[TreeT, ResultT]):
     def previsit_default(self, x: TreeT) -> None:
         return
 
-    def visit_children_of_default(self, x: TreeT) -> List[ChildrenResultT[ResultT]]:
+    def visit_children_of_default(self, x: TreeT) -> list[ChildrenResultT[ResultT]]:
         return []
 
     def postvisit_default(self, x: TreeT, *args: ChildrenResultT[ResultT]) -> ResultT:
@@ -53,14 +58,14 @@ class Visitor(Generic[TreeT, ResultT]):
 T = TypeVar('T')
 
 
-class UnionVisitor(Visitor[TreeT, Set[T]]):
+class UnionVisitor(Visitor[TreeT, set[T]]):
     """
     Union visitor is used for collecting
     information that is unioned at each node
     """
 
-    def postvisit_default(self, x: TreeT, *args: ChildrenResultT[Set[T]]) -> Set[T]:
-        union: Set[T] = set()
+    def postvisit_default(self, x: TreeT, *args: ChildrenResultT[set[T]]) -> set[T]:
+        union: set[T] = set()
 
         for arg in args:
             if isinstance(arg, set):

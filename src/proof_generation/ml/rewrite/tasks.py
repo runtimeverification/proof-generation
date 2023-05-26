@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any
 
 import schema
 
@@ -10,13 +10,17 @@ from ..kore.parser import parse_pattern
 from ..kore.utils import KoreUtils
 from .templates import KoreTemplates
 
-T = TypeVar('T', bound='WithSchema')
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from typing import TypeVar
+
+    T = TypeVar('T', bound='WithSchema')
+
 
 Schema = Any
 
 
 class WithSchema:
-
     @staticmethod
     def get_raw_schema() -> Schema:
         raise NotImplementedError()
@@ -30,13 +34,13 @@ class WithSchema:
         return schema.And(cls.get_raw_schema(), schema.Use(cls.parse_from_object))
 
     @classmethod
-    def load_from_object(cls: Type[T], obj: Any) -> T:
+    def load_from_object(cls: type[T], obj: Any) -> T:
         return schema.Schema(cls.get_schema()).validate(obj)
 
 
 @dataclass
 class Substitution(WithSchema):
-    substitution: Tuple[Tuple[kore.Variable, kore.Pattern], ...] = ()
+    substitution: tuple[tuple[kore.Variable, kore.Pattern], ...] = ()
 
     # substitution: Dict[kore.Variable, kore.Pattern] = field(default_factory=lambda: {})
 
@@ -60,7 +64,7 @@ class Substitution(WithSchema):
             k.resolve(module)
             v.resolve(module)
 
-    def as_dict(self) -> Dict[kore.Variable, kore.Pattern]:
+    def as_dict(self) -> dict[kore.Variable, kore.Pattern]:
         subst = {}
         for k, v in self.substitution:
             if k not in subst:
@@ -94,17 +98,15 @@ class Substitution(WithSchema):
 
     @staticmethod
     def from_predicate(predicate: kore.Pattern) -> Substitution:
-        assert isinstance(predicate, kore.MLPattern), \
-               f'{predicate} is not a substitution constraint'
+        assert isinstance(predicate, kore.MLPattern), f'{predicate} is not a substitution constraint'
 
         if predicate.construct == kore.MLPattern.AND:
             left, right = predicate.arguments
             return Substitution.from_predicate(left).merge(Substitution.from_predicate(right))
         elif KoreUtils.is_equals(predicate):
             left, right = KoreUtils.destruct_equals(predicate)
-            assert isinstance(left, kore.Variable), \
-                   f'{predicate} is not a substitution constraint'
-            return Substitution(((left, right), ))
+            assert isinstance(left, kore.Variable), f'{predicate} is not a substitution constraint'
+            return Substitution(((left, right),))
         elif KoreUtils.is_top(predicate):
             return Substitution()
         else:
@@ -113,14 +115,14 @@ class Substitution(WithSchema):
     def merge(self, other: Substitution) -> Substitution:
         return Substitution(tuple(set(self.substitution + other.substitution)))
 
-    def orient(self, preferable_var: Set[kore.Variable]) -> Substitution:
+    def orient(self, preferable_var: set[kore.Variable]) -> Substitution:
         """
         Orient mappings in the substitution such that if we have
         v1 |-> v2 in substitution
         if v1 is not in <preferable_var> but v2 is in <preferable_var>
         then we switch it to v2 |-> v1
         """
-        subst: List[Tuple[kore.Variable, kore.Pattern]] = []
+        subst: list[tuple[kore.Variable, kore.Pattern]] = []
 
         for k, v in self.substitution:
             if isinstance(v, kore.Variable) and k not in preferable_var and v in preferable_var:
@@ -130,7 +132,7 @@ class Substitution(WithSchema):
 
         return Substitution(tuple(subst))
 
-    def split(self, variables: Set[kore.Variable]) -> Tuple[Substitution, Substitution]:
+    def split(self, variables: set[kore.Variable]) -> tuple[Substitution, Substitution]:
         """
         Split the subsitution to two parts:
         - sigma1 where the variables are all in <variables>
@@ -160,7 +162,7 @@ class Substitution(WithSchema):
     @staticmethod
     def parse_from_object(obj: Any) -> Substitution:
         assert isinstance(obj, list)
-        substitution: List[Tuple[kore.Variable, kore.Pattern]] = []
+        substitution: list[tuple[kore.Variable, kore.Pattern]] = []
 
         for item in obj:
             assert isinstance(item, dict)
@@ -180,7 +182,7 @@ class ConstrainedPattern(WithSchema):
     pattern: kore.Pattern
     constraint: kore.Pattern
 
-    def get_free_variables(self) -> Set[kore.Variable]:
+    def get_free_variables(self) -> set[kore.Variable]:
         return KoreUtils.get_free_variables(self.pattern)
 
     def assume_unconstrained(self) -> kore.Pattern:
@@ -226,7 +228,6 @@ class ConstrainedPattern(WithSchema):
                 schema.Optional('constraint', default=default_constraint): schema.And(str, schema.Use(parse_pattern)),
                 schema.Optional('substitution', default=Substitution()): Substitution.get_schema(),
             },
-
             # or we allow a term without constraint
             schema.And(str, schema.Use(parse_and_strip_inj)),
         )
@@ -256,9 +257,9 @@ class ConstrainedPattern(WithSchema):
 
 @dataclass
 class AppliedRule(WithSchema):
-    results: Tuple[ConstrainedPattern, ...]
-    rule_id: Optional[str] = None
-    substitution: Optional[Substitution] = None
+    results: tuple[ConstrainedPattern, ...]
+    rule_id: str | None = None
+    substitution: Substitution | None = None
 
     def get_substitution(self) -> Mapping[kore.Variable, kore.Pattern]:
         return self.substitution.as_dict() if self.substitution is not None else {}
@@ -285,13 +286,13 @@ class AppliedRule(WithSchema):
 
         if 'rule-id' in obj:
             assert isinstance(obj['rule-id'], str)
-            rule_id: Optional[str] = obj['rule-id']
+            rule_id: str | None = obj['rule-id']
         else:
             rule_id = None
 
         if 'substitution' in obj:
             assert isinstance(obj['substitution'], Substitution)
-            substitution: Optional[Substitution] = obj['substitution']
+            substitution: Substitution | None = obj['substitution']
         else:
             substitution = None
 
@@ -304,8 +305,8 @@ class AppliedRule(WithSchema):
 @dataclass
 class RewritingStep(WithSchema):
     initial: ConstrainedPattern
-    applied_rules: Tuple[AppliedRule, ...]
-    remainders: Tuple[ConstrainedPattern, ...]
+    applied_rules: tuple[AppliedRule, ...]
+    remainders: tuple[ConstrainedPattern, ...]
 
     def is_final(self) -> bool:
         return len(self.applied_rules) == 0
@@ -313,7 +314,7 @@ class RewritingStep(WithSchema):
     def get_initial_pattern(self) -> ConstrainedPattern:
         return self.initial
 
-    def get_rewritten_patterns(self) -> Tuple[ConstrainedPattern, ...]:
+    def get_rewritten_patterns(self) -> tuple[ConstrainedPattern, ...]:
         return sum((rule.results for rule in self.applied_rules), start=())
 
     def resolve(self, module: kore.Module) -> None:
@@ -351,7 +352,7 @@ class ReachabilityTask(WithSchema):
     lhs: ConstrainedPattern
     rhs: ConstrainedPattern
     claim_id: str
-    steps: Tuple[RewritingStep, ...]
+    steps: tuple[RewritingStep, ...]
 
     def resolve(self, module: kore.Module) -> None:
         self.lhs.resolve(module)
@@ -382,7 +383,7 @@ class ReachabilityTask(WithSchema):
 
         lhs, rhs = KoreUtils.destruct_implies(obj['claim'])
         assert isinstance(rhs, kore.Application)
-        rhs, = rhs.arguments
+        (rhs,) = rhs.arguments
 
         return ReachabilityTask(
             ConstrainedPattern.from_pattern(lhs),
@@ -395,10 +396,10 @@ class ReachabilityTask(WithSchema):
 @dataclass
 class RewritingTask(WithSchema):
     initial: ConstrainedPattern
-    finals: Tuple[ConstrainedPattern, ...]
-    steps: Tuple[RewritingStep, ...]
+    finals: tuple[ConstrainedPattern, ...]
+    steps: tuple[RewritingStep, ...]
 
-    def get_all_steps(self) -> Tuple[RewritingStep, ...]:
+    def get_all_steps(self) -> tuple[RewritingStep, ...]:
         """
         Get all non-final steps
         """
@@ -407,7 +408,7 @@ class RewritingTask(WithSchema):
     def get_initial_pattern(self) -> ConstrainedPattern:
         return self.initial
 
-    def get_final_patterns(self) -> Tuple[ConstrainedPattern, ...]:
+    def get_final_patterns(self) -> tuple[ConstrainedPattern, ...]:
         return self.finals
 
     def resolve(self, module: kore.Module) -> None:

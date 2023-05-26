@@ -8,21 +8,20 @@ from .positive import PositiveProver
 from .unification import Unification
 
 if TYPE_CHECKING:
-    from typing import Callable, Optional
+    from collections.abc import Callable
 
     from ..ast import Term
     from ..composer import Composer
 
 
 class TypecodeProver:
-
     @staticmethod
     def check_typecode(
         composer: Composer,
         typecode: str,
         term: Term,
         # allow extra typecode check
-        extension: Optional[Callable[[str, Term], bool]] = None,
+        extension: Callable[[str, Term], bool] | None = None,
     ) -> bool:
         """
         Check if the term can be proven to have the given typecode,
@@ -41,16 +40,20 @@ class TypecodeProver:
 
         # try to find a non-floating statement without hypotheses and unify
         for theorem in composer.get_theorems_of_typecode(typecode):
-            if (len(theorem.context.essentials) <= 1 and not isinstance(theorem.statement, FloatingStatement)
-                    and len(theorem.statement.terms) == 2):
+            if (
+                len(theorem.context.essentials) <= 1
+                and not isinstance(theorem.statement, FloatingStatement)
+                and len(theorem.statement.terms) == 2
+            ):
                 # check that expected_statement is an instance of theorem.statement
                 solution = Unification.match_terms_as_instance(theorem.statement.terms[1], term)
                 if solution is None:
                     continue
 
                 for floating in theorem.context.floatings:
-                    if not TypecodeProver.check_typecode(composer, floating.typecode, solution[floating.metavariable],
-                                                         extension=extension):
+                    if not TypecodeProver.check_typecode(
+                        composer, floating.typecode, solution[floating.metavariable], extension=extension
+                    ):
                         break
                 else:
                     return True
@@ -61,7 +64,7 @@ class TypecodeProver:
         return False
 
     @staticmethod
-    def prove_typecode(composer: Composer, typecode: str, term: Term) -> Optional[Proof]:
+    def prove_typecode(composer: Composer, typecode: str, term: Term) -> Proof | None:
         """
         Try to prove a statement of the form
         <typecode> <term>
@@ -69,8 +72,9 @@ class TypecodeProver:
         """
 
         # TODO: these checks are a bit too specialized
-        if (typecode == '#Variable' or typecode == '#ElementVariable'
-                or typecode == '#SetVariable') and not isinstance(term, Metavariable):
+        if (typecode == '#Variable' or typecode == '#ElementVariable' or typecode == '#SetVariable') and not isinstance(
+            term, Metavariable
+        ):
             return None
 
         if typecode == '#Symbol' and (not isinstance(term, Application) or len(term.subterms) != 0):
@@ -99,8 +103,11 @@ class TypecodeProver:
 
         # try to find a non-floating statement without hypotheses and unify
         for theorem in composer.get_theorems_of_typecode(typecode):
-            if (len(theorem.context.essentials) <= 1 and not isinstance(theorem.statement, FloatingStatement)
-                    and len(theorem.statement.terms) == 2):
+            if (
+                len(theorem.context.essentials) <= 1
+                and not isinstance(theorem.statement, FloatingStatement)
+                and len(theorem.statement.terms) == 2
+            ):
                 # check that expected_statement is an instance of theorem.statement
                 solution = Unification.match_terms_as_instance(theorem.statement.terms[1], term)
                 if solution is None:
@@ -116,9 +123,10 @@ class TypecodeProver:
                             essential_proof = essential.apply()
                             break
                     else:
-                        if len(hypothesis.terms) == 3 and \
-                           (hypothesis.terms[0] == Application('#Positive') or
-                            hypothesis.terms[0] == Application('#Negative')):
+                        if len(hypothesis.terms) == 3 and (
+                            hypothesis.terms[0] == Application('#Positive')
+                            or hypothesis.terms[0] == Application('#Negative')
+                        ):
                             essential_proof = PositiveProver.prove_statement(composer, hypothesis)
 
                 # try to recursively prove that each of the subterms in the solution

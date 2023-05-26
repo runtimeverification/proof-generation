@@ -9,7 +9,7 @@ from .notation import NotationProver
 from .typecode import TypecodeProver
 
 if TYPE_CHECKING:
-    from typing import Optional, Tuple
+    pass
 
     from ..ast import Term
     from ..composer import Proof, Theorem
@@ -39,11 +39,12 @@ class FreshProver:
     def hook_remove(composer: Composer, name: str) -> None:
         composer.fresh_lemmas = {
             symbol: (theorem, order)
-            for symbol, (theorem, order) in composer.fresh_lemmas.items() if theorem.statement.label != name
+            for symbol, (theorem, order) in composer.fresh_lemmas.items()
+            if theorem.statement.label != name
         }
 
     @staticmethod
-    def destruct_fresh_lemma(theorem: Theorem) -> Optional[Tuple[str, Tuple[int, ...]]]:
+    def destruct_fresh_lemma(theorem: Theorem) -> tuple[str, tuple[int, ...]] | None:
         if len(theorem.statement.terms) != 3:
             return None
 
@@ -52,8 +53,7 @@ class FreshProver:
         if head != Application('#Fresh'):
             return None
 
-        if not isinstance(var, Metavariable) or \
-           not isinstance(term, Application):
+        if not isinstance(var, Metavariable) or not isinstance(term, Application):
             return None
 
         indices = []
@@ -66,8 +66,7 @@ class FreshProver:
             if head != Application('#Fresh'):
                 return None
 
-            if not isinstance(var2, Metavariable) or \
-               not isinstance(term2, Metavariable):
+            if not isinstance(var2, Metavariable) or not isinstance(term2, Metavariable):
                 return None
 
             if term2 not in term.subterms or var != var2:
@@ -93,8 +92,7 @@ class FreshProver:
                 if essential.statement.terms == target.terms:
                     return essential.apply()
 
-        assert isinstance(term, Application), \
-               f'unable to prove #Fresh {var} {term}'
+        assert isinstance(term, Application), f'unable to prove #Fresh {var} {term}'
 
         if term.symbol == '\\bot':
             return composer.get_theorem('fresh-in-bot').match_and_apply(target)
@@ -121,7 +119,9 @@ class FreshProver:
                     FreshProver.prove_fresh(composer, var, body),
                 )
 
-            raise AssertionError(f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint')
+            raise AssertionError(
+                f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint'
+            )
         elif term.symbol == '\\mu':
             quant_var, body = MetamathUtils.destruct_mu(term)
 
@@ -133,7 +133,9 @@ class FreshProver:
                     FreshProver.prove_fresh(composer, var, body),
                 )
 
-            raise AssertionError(f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint')
+            raise AssertionError(
+                f'unable to prove #Fresh in {term}: variables {var} and {quant_var} are neither the same or disjoint'
+            )
 
         # try to find a lemma
         if term.symbol in composer.fresh_lemmas:
@@ -160,8 +162,7 @@ class FreshProver:
         assert MetamathUtils.is_fresh(statement.terms)
 
         _, var, term = statement.terms
-        assert isinstance(var, Metavariable), \
-               f'ill-formed #Fresh statement {statement}'
+        assert isinstance(var, Metavariable), f'ill-formed #Fresh statement {statement}'
 
         return FreshProver.prove_fresh(composer, var, term)
 

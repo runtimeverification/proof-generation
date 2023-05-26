@@ -4,7 +4,7 @@ import shlex
 import subprocess
 import sys
 import time
-from typing import Any, List, Tuple
+from typing import Any
 
 from ..ml.utils.ansi import ANSI
 
@@ -13,7 +13,7 @@ def debug(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:
+def run_command(command: list[str], **kwargs: Any) -> subprocess.Popen:
     command_str = ' '.join([shlex.quote(frag) for frag in command])
     debug(f"{ANSI.in_gray('+ ' + command_str)}")
     return subprocess.Popen(command, **kwargs)
@@ -28,7 +28,7 @@ def read_until(stream: Any, keyword: bytes) -> bytes:
             return buf
 
 
-def verify_theorems(entry_database: str, label_patterns: List[str]) -> Tuple[float, List[float]]:
+def verify_theorems(entry_database: str, label_patterns: list[str]) -> tuple[float, list[float]]:
     proc = run_command(
         ['metamath', 'set scroll continuous', f'read "{entry_database}"'],
         stdout=subprocess.PIPE,
@@ -55,12 +55,12 @@ def verify_theorems(entry_database: str, label_patterns: List[str]) -> Tuple[flo
     proc.stdin.close()
 
     exit_code = proc.wait()
-    assert (exit_code == 0), f'failed to verify database {entry_database}: exit code {exit_code}'
+    assert exit_code == 0, f'failed to verify database {entry_database}: exit code {exit_code}'
 
     return loading_time, verify_time
 
 
-def get_file_size(path: str, wrap: int) -> Tuple[int, int, int]:
+def get_file_size(path: str, wrap: int) -> tuple[int, int, int]:
     lines = 0
     wrapped_lines = 0
     size_in_bytes = 0
@@ -82,10 +82,11 @@ def get_file_size(path: str, wrap: int) -> Tuple[int, int, int]:
 
 def measure(proof_object: str, prelude_theory: str, line_wrap: int = 80) -> None:
     # measure base loading time
-    loading_time1, (goal_time, rewrite_time,
-                    total_time) = verify_theorems(os.path.join(proof_object, 'goal.mm'), ['goal', 'rewrite-*', '*'])
+    loading_time1, (goal_time, rewrite_time, total_time) = verify_theorems(
+        os.path.join(proof_object, 'goal.mm'), ['goal', 'rewrite-*', '*']
+    )
 
-    loading_time2, (prelude_time, ) = verify_theorems(os.path.join(prelude_theory, 'kore-lemmas.mm'), ['*'])
+    loading_time2, (prelude_time,) = verify_theorems(os.path.join(prelude_theory, 'kore-lemmas.mm'), ['*'])
 
     # count number of lines
     prelude_lines = 0

@@ -1,5 +1,3 @@
-from typing import Dict, List, Optional, Set, Tuple
-
 from ..kore import ast as kore
 from ..kore.utils import KoreUtils
 from .templates import KoreTemplates
@@ -66,7 +64,7 @@ class KorePreprocessor:
         # modules in which MISSING_FUNCTIONAL_AXIOMS
         # symbols are defined in
         # symbol name -> (module, definition)
-        defined_modules: Dict[str, Tuple[kore.Module, kore.SymbolDefinition]] = {}
+        defined_modules: dict[str, tuple[kore.Module, kore.SymbolDefinition]] = {}
 
         for symbol_name in KorePreprocessor.MISSING_FUNCTIONAL_AXIOMS:
             for module in definition.module_map.values():
@@ -89,10 +87,11 @@ class KorePreprocessor:
 
         # add functional axioms
         for module, symbol_definition in defined_modules.values():
-            assert len(symbol_definition.sort_variables) == 0, \
-                   f'sort-parametric symbol {symbol_definition.symbol} not supported'
+            assert (
+                len(symbol_definition.sort_variables) == 0
+            ), f'sort-parametric symbol {symbol_definition.symbol} not supported'
 
-            input_vars: List[kore.Pattern] = [
+            input_vars: list[kore.Pattern] = [
                 kore.Variable(f'V{i + 1}', sort) for i, sort in enumerate(symbol_definition.input_sorts)
             ]
             output_var = kore.Variable('V0', symbol_definition.output_sort)
@@ -103,18 +102,24 @@ class KorePreprocessor:
             axiom = kore.Axiom(
                 [sort_var],
                 kore.MLPattern(
-                    kore.MLPattern.EXISTS, [sort_var], [
+                    kore.MLPattern.EXISTS,
+                    [sort_var],
+                    [
                         output_var,
                         kore.MLPattern(
-                            kore.MLPattern.EQUALS, [symbol_definition.output_sort, sort_var],
-                            [output_var, kore.Application(
-                                symbol_instance,
-                                input_vars,
-                            )]
-                        )
-                    ]
+                            kore.MLPattern.EQUALS,
+                            [symbol_definition.output_sort, sort_var],
+                            [
+                                output_var,
+                                kore.Application(
+                                    symbol_instance,
+                                    input_vars,
+                                ),
+                            ],
+                        ),
+                    ],
                 ),
-                (kore.Application(kore.SymbolInstance('functional', []), []), ),
+                (kore.Application(kore.SymbolInstance('functional', []), []),),
             )
 
             module.add_sentence(axiom)
@@ -122,9 +127,9 @@ class KorePreprocessor:
 
     def add_missing_subsort_axioms(self, definition: kore.Definition) -> None:
         # which module is the sort defined
-        sort_definition_modules: Dict[str, Tuple[kore.Module, kore.SortDefinition]] = {}
-        missing_subsort_axioms: Set[Tuple[str, str]] = set()
-        inj_definition: Optional[kore.SymbolDefinition] = None
+        sort_definition_modules: dict[str, tuple[kore.Module, kore.SortDefinition]] = {}
+        missing_subsort_axioms: set[tuple[str, str]] = set()
+        inj_definition: kore.SymbolDefinition | None = None
 
         for module in definition.module_map.values():
             if 'inj' in module.symbol_map:
@@ -168,8 +173,7 @@ class KorePreprocessor:
             module, sort_definition1 = sort_definition_modules[sort_id1]
             _, sort_definition2 = sort_definition_modules[sort_id2]
 
-            assert len(sort_definition1.sort_variables) == 0 and \
-                   len(sort_definition2.sort_variables) == 0
+            assert len(sort_definition1.sort_variables) == 0 and len(sort_definition2.sort_variables) == 0
 
             sort_var = kore.SortVariable('R')
 
@@ -184,18 +188,24 @@ class KorePreprocessor:
             axiom = kore.Axiom(
                 [sort_var],
                 kore.MLPattern(
-                    kore.MLPattern.EXISTS, [sort_var], [
+                    kore.MLPattern.EXISTS,
+                    [sort_var],
+                    [
                         output_var,
                         kore.MLPattern(
-                            kore.MLPattern.EQUALS, [output_sort, sort_var],
-                            [output_var, kore.Application(
-                                inj_symbol,
-                                [input_var],
-                            )]
-                        )
-                    ]
+                            kore.MLPattern.EQUALS,
+                            [output_sort, sort_var],
+                            [
+                                output_var,
+                                kore.Application(
+                                    inj_symbol,
+                                    [input_var],
+                                ),
+                            ],
+                        ),
+                    ],
                 ),
-                (kore.Application(kore.SymbolInstance('subsort', [input_sort, output_sort]), []), ),
+                (kore.Application(kore.SymbolInstance('subsort', [input_sort, output_sort]), []),),
             )
 
             module.add_sentence(axiom)

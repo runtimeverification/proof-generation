@@ -13,13 +13,11 @@ if TYPE_CHECKING:
 
 
 class BaseAST:
-
     def __repr__(self) -> str:
         return str(self)
 
 
 class Options(BaseAST):
-
     def __init__(self, *args: str, **kwargs: str):
         super().__init__()
         self.args = args
@@ -41,7 +39,6 @@ class Options(BaseAST):
 
 
 class Tactical(BaseAST):
-
     def apply(self, state: ProofState) -> ProofState:
         raise NotImplementedError()
 

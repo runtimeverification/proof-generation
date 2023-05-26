@@ -8,13 +8,13 @@ from .notation import NotationProver
 from .typecode import TypecodeProver
 
 if TYPE_CHECKING:
-    from typing import List, Optional, Tuple
+    pass
 
     from ..ast import StructuredStatement, Term
     from ..composer import Proof, Theorem
 
-class SubstitutionProver:
 
+class SubstitutionProver:
     @staticmethod
     def get_target(
         after_pattern: Term,
@@ -52,11 +52,12 @@ class SubstitutionProver:
     def hook_remove(composer: Composer, name: str) -> None:
         composer.substitution_lemmas = {
             symbol: (theorem, order)
-            for symbol, (theorem, order) in composer.substitution_lemmas.items() if theorem.statement.label != name
+            for symbol, (theorem, order) in composer.substitution_lemmas.items()
+            if theorem.statement.label != name
         }
 
     @staticmethod
-    def destruct_substitution_lemma(theorem: Theorem) -> Optional[Tuple[str, Tuple[int, ...]]]:
+    def destruct_substitution_lemma(theorem: Theorem) -> tuple[str, tuple[int, ...]] | None:
         """
         A theorem is a substitution lemma if it's of the form
         ${
@@ -73,10 +74,12 @@ class SubstitutionProver:
         if head != Application('#Substitution'):
             return None
 
-        if not isinstance(after_pattern, Application) or \
-           not isinstance(before_pattern, Application) or \
-           not isinstance(subst_pattern, Metavariable) or \
-           not isinstance(subst_var, Metavariable):
+        if (
+            not isinstance(after_pattern, Application)
+            or not isinstance(before_pattern, Application)
+            or not isinstance(subst_pattern, Metavariable)
+            or not isinstance(subst_var, Metavariable)
+        ):
             return None
 
         if after_pattern.symbol != before_pattern.symbol:
@@ -92,14 +95,15 @@ class SubstitutionProver:
             if head != Application('#Substitution'):
                 return None
 
-            if not isinstance(after_pattern2, Metavariable) or \
-               not isinstance(before_pattern2, Metavariable):
+            if not isinstance(after_pattern2, Metavariable) or not isinstance(before_pattern2, Metavariable):
                 return None
 
-            if after_pattern2 not in after_pattern.subterms or \
-               before_pattern2 not in before_pattern.subterms or \
-               subst_pattern2 != subst_pattern or \
-               subst_var2 != subst_var:
+            if (
+                after_pattern2 not in after_pattern.subterms
+                or before_pattern2 not in before_pattern.subterms
+                or subst_pattern2 != subst_pattern
+                or subst_var2 != subst_var
+            ):
                 return None
 
             index = after_pattern.subterms.index(after_pattern2)
@@ -116,13 +120,14 @@ class SubstitutionProver:
         before_pattern: Application,
         subst_pattern: Term,
         subst_var: Metavariable,
-        hypotheses: List[Theorem] = [],
-    ) -> Optional[Proof]:
+        hypotheses: list[Theorem] = [],
+    ) -> Proof | None:
         if after_pattern.symbol != before_pattern.symbol:
             result = NotationProver.rewrite_to_same_head_symbol(
                 composer, after_pattern, before_pattern, with_proof=False
             )
-            if result is None: return None
+            if result is None:
+                return None
             _, new_after_pattern, _, new_before_pattern = result
 
             proof = SubstitutionProver.prove_substitution(
@@ -154,9 +159,9 @@ class SubstitutionProver:
             subproofs = []
 
             for index in indices:
-                assert index < len(after_pattern.subterms) and \
-                       index < len(before_pattern.subterms), \
-                       f'ill-formed substitution lemma {theorem.statement}'
+                assert index < len(after_pattern.subterms) and index < len(
+                    before_pattern.subterms
+                ), f'ill-formed substitution lemma {theorem.statement}'
 
                 sub_after_pattern = after_pattern.subterms[index]
                 sub_before_pattern = before_pattern.subterms[index]
@@ -242,7 +247,7 @@ class SubstitutionProver:
         before_pattern: Term,
         subst_pattern: Term,
         subst_var: Metavariable,
-        hypotheses: List[Theorem] = [],
+        hypotheses: list[Theorem] = [],
     ) -> Proof:
         target = SubstitutionProver.get_target(after_pattern, before_pattern, subst_pattern, subst_var)
         cached_proof = composer.lookup_proof_cache('substitution', target)
@@ -303,8 +308,7 @@ class SubstitutionProver:
                 ),
             )
 
-        if isinstance(before_pattern, Application) and \
-           isinstance(after_pattern, Application):
+        if isinstance(before_pattern, Application) and isinstance(after_pattern, Application):
             proof = SubstitutionProver.prove_application_substitution(
                 composer,
                 after_pattern,
@@ -340,19 +344,21 @@ class SubstitutionProver:
                 if hypothesis.statement.terms == target.terms:
                     return hypothesis.apply()
 
-        raise AssertionError(f'unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}')
+        raise AssertionError(
+            f'unable to prove #Substitution {after_pattern} {before_pattern} {subst_pattern} {subst_var}'
+        )
 
     @staticmethod
     def prove_substitution_statement(
-        composer: Composer, statement: StructuredStatement, hypotheses: List[Theorem] = []
+        composer: Composer, statement: StructuredStatement, hypotheses: list[Theorem] = []
     ) -> Proof:
         """
         A wrapper for an auto proof method
         """
 
-        assert len(
-            statement.terms
-        ) == 5 and statement.terms[0] == Application('#Substitution'), f'not a substitution goal {statement}'
+        assert len(statement.terms) == 5 and statement.terms[0] == Application(
+            '#Substitution'
+        ), f'not a substitution goal {statement}'
         _, after, before, pattern, var = statement.terms
         assert isinstance(var, Metavariable)
         return SubstitutionProver.prove_substitution(

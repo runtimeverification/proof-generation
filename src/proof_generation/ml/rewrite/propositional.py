@@ -7,7 +7,7 @@ from ..kore.utils import KoreUtils
 from .env import ProofGenerator
 
 if TYPE_CHECKING:
-    from typing import Tuple
+    pass
 
     from .env import ProvableClaim
 
@@ -46,12 +46,12 @@ class PropositionalProofGenerator(ProofGenerator):
         return self.composer.apply_kore_lemma('kore-iff-reflexivity', goal=claim)
 
     @staticmethod
-    def destruct_implies_claim(claim: ProvableClaim) -> Tuple[kore.Pattern, kore.Pattern]:
+    def destruct_implies_claim(claim: ProvableClaim) -> tuple[kore.Pattern, kore.Pattern]:
         left, right = KoreUtils.destruct_implies(claim.claim.pattern)
         return left, right
 
     @staticmethod
-    def destruct_iff_claim(claim: ProvableClaim) -> Tuple[kore.Pattern, kore.Pattern]:
+    def destruct_iff_claim(claim: ProvableClaim) -> tuple[kore.Pattern, kore.Pattern]:
         left, right = KoreUtils.destruct_iff(claim.claim.pattern)
         return left, right
 
@@ -232,7 +232,7 @@ class PropositionalProofGenerator(ProofGenerator):
         to the leftmost while maintaining the order of other subpatterns
 
         construct in { AND, OR }
-        
+
         Return a proof of pattern <-> shuffled pattern
         """
 

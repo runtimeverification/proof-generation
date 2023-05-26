@@ -7,34 +7,33 @@ from lark import Lark, Transformer
 from .ast import AndTactical, AtomicTactical, Options, OrTactical, PlusTactical, StarTactical, Tactical
 
 if TYPE_CHECKING:
-    from typing import Any, List, Optional, Tuple, Union
+    from typing import Any
 
     from lark import Token
 
 
 class ASTTransformer(Transformer[Tactical]):
-
-    def token(self, args: List[Token]) -> str:
+    def token(self, args: list[Token]) -> str:
         assert isinstance(args[0].value, str)
         return args[0].value
 
-    def string(self, args: List[Token]) -> str:
+    def string(self, args: list[Token]) -> str:
         assert isinstance(args[0].value, str)
         literal = args[0].value
         assert literal.startswith('"') and literal.endswith('"')
         return literal[1:-1]
 
-    def value(self, args: List[str]) -> str:
+    def value(self, args: list[str]) -> str:
         return args[0]
 
-    def positional_option(self, args: List[str]) -> str:
+    def positional_option(self, args: list[str]) -> str:
         return args[0]
 
-    def keyword_option(self, args: List[str]) -> Tuple[str, str]:
+    def keyword_option(self, args: list[str]) -> tuple[str, str]:
         key, value = args
         return key, value
 
-    def options(self, args: List[Union[str, Tuple[str, str]]]) -> Options:
+    def options(self, args: list[str | tuple[str, str]]) -> Options:
         positional_args = []
         keyword_args = {}
 
@@ -48,7 +47,7 @@ class ASTTransformer(Transformer[Tactical]):
 
         return Options(*positional_args, **keyword_args)
 
-    def tactical_or_empty(self, args: List[Tactical]) -> Optional[Tactical]:
+    def tactical_or_empty(self, args: list[Tactical]) -> Tactical | None:
         if len(args):
             return args[0]
         return None
@@ -56,27 +55,29 @@ class ASTTransformer(Transformer[Tactical]):
     def atomic_tactical(self, args: Any) -> AtomicTactical:
         return AtomicTactical(*args)
 
-    def tactical(self, args: List[Tactical]) -> Tactical:
+    def tactical(self, args: list[Tactical]) -> Tactical:
         return args[0]
 
-    def paren_tactical(self, args: List[Tactical]) -> Tactical:
+    def paren_tactical(self, args: list[Tactical]) -> Tactical:
         return args[0]
 
-    def closure_tactical(self, args: List[Tactical]) -> Tactical:
+    def closure_tactical(self, args: list[Tactical]) -> Tactical:
         return args[0]
 
-    def plus_tactical(self, args: List[Tactical]) -> Tactical:
+    def plus_tactical(self, args: list[Tactical]) -> Tactical:
         return PlusTactical(args[0])
 
-    def star_tactical(self, args: List[Tactical]) -> Tactical:
+    def star_tactical(self, args: list[Tactical]) -> Tactical:
         return StarTactical(args[0])
 
-    def and_tactical(self, args: List[Tactical]) -> Tactical:
-        if len(args) == 1: return args[0]
+    def and_tactical(self, args: list[Tactical]) -> Tactical:
+        if len(args) == 1:
+            return args[0]
         return AndTactical(*args)
 
-    def or_tactical(self, args: List[Tactical]) -> Tactical:
-        if len(args) == 1: return args[0]
+    def or_tactical(self, args: list[Tactical]) -> Tactical:
+        if len(args) == 1:
+            return args[0]
         return OrTactical(*args)
 
 
@@ -124,6 +125,6 @@ tactical_parser = Lark(
 )
 
 
-def parse_tactical(src: str) -> Optional[Tactical]:
+def parse_tactical(src: str) -> Tactical | None:
     tree = tactical_parser.parse(src)
     return ASTTransformer().transform(tree)

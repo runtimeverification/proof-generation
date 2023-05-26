@@ -12,7 +12,8 @@ from ..metamath.parser import load_database
 from ..utils.ansi import ANSI
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, List, Optional, Tuple
+    from collections.abc import Callable
+    from typing import Any
 
     from ..itp.ast import Tactical
     from ..metamath.composer import Theorem
@@ -25,16 +26,15 @@ TAB = '  '
 
 
 class BuiltinCommand:
-    builtin_commands: List[BuiltinCommand] = []  # list of BuiltinCommand
+    builtin_commands: list[BuiltinCommand] = []  # list of BuiltinCommand
 
-    def __init__(self, handler: HandlerT, *names: str, help_message: Optional[str] = None):
+    def __init__(self, handler: HandlerT, *names: str, help_message: str | None = None):
         self.handler = handler
         self.names = set(names)
         self.help_message = help_message
 
     @staticmethod
     def add(*args: Any, **kwargs: Any) -> Callable[[HandlerT], HandlerT]:
-
         def decorator(handler: HandlerT) -> HandlerT:
             BuiltinCommand.builtin_commands.append(BuiltinCommand(handler, *args, **kwargs))
             return handler
@@ -42,7 +42,7 @@ class BuiltinCommand:
         return decorator
 
     @staticmethod
-    def get_all_command_names() -> List[str]:
+    def get_all_command_names() -> list[str]:
         return sum([sorted(cmd.names) for cmd in BuiltinCommand.builtin_commands], [])
 
     @staticmethod
@@ -52,17 +52,20 @@ class BuiltinCommand:
         for command in BuiltinCommand.builtin_commands:
             lines.append('{}{} - {}'.format(TAB, '/'.join(command.names), command.help_message))
 
-        print("""\
+        print(
+            """\
 usage:
 {}<tactic> [options] - apply a tactic
-{}""".format(TAB, '\n'.join(lines)))
+{}""".format(
+                TAB, '\n'.join(lines)
+            )
+        )
 
 
 class InteractiveState:
-
     def __init__(self, theory_path: str, goal_name: str, debug: bool = False):
-        self.undo_states: List[Tuple[ProofState, Tactical]] = []
-        self.redo_states: List[Tuple[ProofState, Tactical]] = []
+        self.undo_states: list[tuple[ProofState, Tactical]] = []
+        self.redo_states: list[tuple[ProofState, Tactical]] = []
         self.debug = debug
 
         self.init_from_theory_and_goal(theory_path, goal_name)
@@ -84,13 +87,19 @@ class InteractiveState:
         readline.set_completer_delims(' ')
         readline.set_completer(self.command_completer)
 
-    def command_completer(self, text: str, state: int) -> Optional[str]:
-        command_names = (sorted(ProofState.all_tactics.keys()) + BuiltinCommand.get_all_command_names())
+    def command_completer(self, text: str, state: int) -> str | None:
+        command_names = sorted(ProofState.all_tactics.keys()) + BuiltinCommand.get_all_command_names()
 
-        theorem_names = list(self.proof_state.composer.theorems.keys()) + \
-            [ theorem.statement.label for theorem in self.proof_state.get_all_essentials_for_top_goal() if theorem.statement.label is not None ] + \
-            [ claim.theorem.statement.label for claim in self.proof_state.get_all_global_claims() ] + \
-            [ claim.theorem.statement.label for claim in self.proof_state.get_all_local_claims() ]
+        theorem_names = (
+            list(self.proof_state.composer.theorems.keys())
+            + [
+                theorem.statement.label
+                for theorem in self.proof_state.get_all_essentials_for_top_goal()
+                if theorem.statement.label is not None
+            ]
+            + [claim.theorem.statement.label for claim in self.proof_state.get_all_global_claims()]
+            + [claim.theorem.statement.label for claim in self.proof_state.get_all_local_claims()]
+        )
         theorem_names.sort()
 
         current_buffer = readline.get_line_buffer().lstrip()
@@ -174,8 +183,10 @@ class InteractiveState:
                 else:
                     for i, essential in enumerate(claim.theorem.context.essentials):
                         line = TAB
-                        if i == 0: line += '${ '
-                        else: line += '   '
+                        if i == 0:
+                            line += '${ '
+                        else:
+                            line += '   '
                         line += str(essential)
                         lines.append(line)
 
@@ -275,7 +286,7 @@ class InteractiveState:
         self.print_state()
 
     @BuiltinCommand.add('proof', help_message='once all goals are resolved, print the final proof')
-    def command_proof(self, output_file: Optional[str] = None) -> None:
+    def command_proof(self, output_file: str | None = None) -> None:
         proof = self.proof_state.gen_proof()
         stmt = proof.as_compressed_statement(self.goal_name, self.proof_state.composer.context)
         proof_text = Encoder.encode_string(stmt)
@@ -287,7 +298,7 @@ class InteractiveState:
             print(proof_text)
 
     @BuiltinCommand.add('proof-uncompressed', help_message='once all goals are resolved, print the uncompressed proof')
-    def command_proof_uncompressed(self, output_file: Optional[str] = None) -> None:
+    def command_proof_uncompressed(self, output_file: str | None = None) -> None:
         proof = self.proof_state.gen_proof()
         stmt = proof.as_statement(self.goal_name)
         proof_text = Encoder.encode_string(stmt)

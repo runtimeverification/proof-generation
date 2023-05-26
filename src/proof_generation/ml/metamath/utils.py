@@ -5,13 +5,12 @@ from typing import TYPE_CHECKING
 from .ast import Application, Metavariable, StructuredStatement
 
 if TYPE_CHECKING:
-    from typing import Optional, Sequence, Tuple, Union
+    from collections.abc import Sequence
 
     from .ast import Term, Terms
 
 
 class MetamathUtils:
-
     @staticmethod
     def construct_top() -> Term:
         return Application('\\top')
@@ -38,7 +37,7 @@ class MetamathUtils:
 
     @staticmethod
     def construct_kore_is_sort(term: Term) -> Term:
-        return Application('\\kore-is-sort', (term, ))
+        return Application('\\kore-is-sort', (term,))
 
     @staticmethod
     def construct_forall_sort(var: Term, body: Term) -> Term:
@@ -84,9 +83,9 @@ class MetamathUtils:
 
     @staticmethod
     def destruct_metamath_application(symbol: str, num_args: int, term: Term) -> Terms:
-        assert isinstance(term, Application) and \
-               MetamathUtils.is_application_of_symbol(symbol, num_args, term), \
-               f'expecting {symbol}, got {term}'
+        assert isinstance(term, Application) and MetamathUtils.is_application_of_symbol(
+            symbol, num_args, term
+        ), f'expecting {symbol}, got {term}'
         return term.subterms
 
     @staticmethod
@@ -134,24 +133,20 @@ class MetamathUtils:
         return MetamathUtils.destruct_metamath_application('\\eq', 2, term)
 
     @staticmethod
-    def destruct_exists(term: Term) -> Tuple[Metavariable, Term]:
+    def destruct_exists(term: Term) -> tuple[Metavariable, Term]:
         var, body = MetamathUtils.destruct_metamath_application('\\exists', 2, term)
-        assert isinstance(var, Metavariable), \
-               f'expecting {var} to be a metavariable'
+        assert isinstance(var, Metavariable), f'expecting {var} to be a metavariable'
         return var, body
 
     @staticmethod
-    def destruct_mu(term: Term) -> Tuple[Metavariable, Term]:
+    def destruct_mu(term: Term) -> tuple[Metavariable, Term]:
         var, body = MetamathUtils.destruct_metamath_application('\\mu', 2, term)
-        assert isinstance(var, Metavariable), \
-               f'expecting {var} to be a metavariable'
+        assert isinstance(var, Metavariable), f'expecting {var} to be a metavariable'
         return var, body
 
     @staticmethod
     def destruct_provable(terms: Terms) -> Term:
-        assert len(terms) == 2 and \
-               terms[0] == Application('|-'), \
-               f'{terms} is not a provable claim'
+        assert len(terms) == 2 and terms[0] == Application('|-'), f'{terms} is not a provable claim'
         return terms[1]
 
     @staticmethod
@@ -168,9 +163,7 @@ class MetamathUtils:
 
     @staticmethod
     def is_application_of_symbol(symbol: str, num_args: int, term: Term) -> bool:
-        return isinstance(term, Application) and \
-               term.symbol == symbol and \
-               len(term.subterms) == num_args
+        return isinstance(term, Application) and term.symbol == symbol and len(term.subterms) == num_args
 
     @staticmethod
     def is_top(term: Term) -> bool:
@@ -233,23 +226,25 @@ class MetamathUtils:
         return MetamathUtils.is_application_of_symbol('\\mu', 2, term)
 
     @staticmethod
-    def destruct_nested(symbol: str, term: Term) -> Tuple[Term, ...]:
+    def destruct_nested(symbol: str, term: Term) -> tuple[Term, ...]:
         if isinstance(term, Application) and term.symbol == symbol:
             left, right = term.subterms
             return MetamathUtils.destruct_nested(symbol, left) + MetamathUtils.destruct_nested(symbol, right)
         else:
-            return term,
+            return (term,)
 
     @staticmethod
-    def destruct_nested_and(term: Term) -> Tuple[Term, ...]:
+    def destruct_nested_and(term: Term) -> tuple[Term, ...]:
         return MetamathUtils.destruct_nested('\\and', term)
 
     @staticmethod
-    def destruct_nested_or(term: Term) -> Tuple[Term, ...]:
+    def destruct_nested_or(term: Term) -> tuple[Term, ...]:
         return MetamathUtils.destruct_nested('\\or', term)
 
     @staticmethod
-    def destruct_premise(statement: Union[StructuredStatement, Terms], ) -> Tuple[Optional[Term], Term]:
+    def destruct_premise(
+        statement: StructuredStatement | Terms,
+    ) -> tuple[Term | None, Term]:
         if isinstance(statement, StructuredStatement):
             statement = statement.terms
 

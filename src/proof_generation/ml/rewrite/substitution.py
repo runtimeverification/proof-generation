@@ -10,7 +10,7 @@ from ..metamath.utils import MetamathUtils
 from .env import ProofGenerator
 
 if TYPE_CHECKING:
-    from typing import Tuple, TypeVar, Union
+    from typing import TypeVar
 
     from ..metamath.composer import Proof
     from .env import KoreComposer
@@ -33,8 +33,8 @@ class SingleSubstitutionProofGenerator(ProofGenerator):
     def __init__(
         self,
         composer: KoreComposer,
-        var: Union[kore.Variable, kore.SortVariable],
-        substitute: Union[kore.Pattern, kore.Sort],
+        var: kore.Variable | kore.SortVariable,
+        substitute: kore.Pattern | kore.Sort,
     ):
         super().__init__(composer)
 
@@ -52,7 +52,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator):
     def prove_substitution(self, original: PAS) -> Proof:
         return self.prove_substitution_with_result(original)[0]
 
-    def prove_substitution_with_result(self, original: PAS) -> Tuple[Proof, PAS]:
+    def prove_substitution_with_result(self, original: PAS) -> tuple[Proof, PAS]:
         if isinstance(self.var, kore.Variable):
             assert isinstance(self.substitute, kore.Pattern)
             substituted = KoreUtils.copy_and_substitute_pattern(original, {self.var: self.substitute})
@@ -92,7 +92,7 @@ class SingleSubstitutionProofGenerator(ProofGenerator):
                 before_substitution,
                 self.substitute_encoded,
                 self.var_encoded,
-            )
+            ),
         )
 
         proof = SubstitutionProver.prove_substitution_statement(self.composer, goal)

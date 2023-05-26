@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from io import StringIO
-from typing import Any, List, Mapping, Optional, Set, TextIO, Tuple, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from ..utils.printer import Printer
 from ..utils.visitor import ResultT, Visitor
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from typing import Any, TextIO
 
 
 class MetamathVisitor(Visitor['BaseAST', ResultT]):
@@ -26,29 +30,28 @@ class MetamathVisitor(Visitor['BaseAST', ResultT]):
     with the only exception being metavariables.
     """
 
-    def visit_children_of_application(self, application: Application) -> List[List[Any]]:
+    def visit_children_of_application(self, application: Application) -> list[list[Any]]:
         return [
             [subterm.visit(self) for subterm in application.subterms],
         ]
 
-    def visit_children_of_structured_statement(self, stmt: StructuredStatement) -> List[List[Any]]:
+    def visit_children_of_structured_statement(self, stmt: StructuredStatement) -> list[list[Any]]:
         return [
             [term.visit(self) for term in stmt.terms],
         ]
 
-    def visit_children_of_block(self, block: Block) -> List[List[Any]]:
+    def visit_children_of_block(self, block: Block) -> list[list[Any]]:
         return [
             [stmt.visit(self) for stmt in block.statements],
         ]
 
-    def visit_children_of_database(self, database: Database) -> List[List[Any]]:
+    def visit_children_of_database(self, database: Database) -> list[list[Any]]:
         return [
             [stmt.visit(self) for stmt in database.statements],
         ]
 
 
 class BaseAST:
-
     def __str__(self) -> str:
         return Encoder.encode_string(self, omit_proof=True)
 
@@ -58,8 +61,7 @@ class BaseAST:
 
 @dataclass
 class Term(BaseAST):
-
-    def get_metavariables(self) -> Set[str]:
+    def get_metavariables(self) -> set[str]:
         raise NotImplementedError()
 
     def substitute(self, substitution: Mapping[str, Term]) -> Term:
@@ -76,7 +78,7 @@ class Term(BaseAST):
 class Metavariable(Term):
     name: str
 
-    def get_metavariables(self) -> Set[str]:
+    def get_metavariables(self) -> set[str]:
         return {self.name}
 
     def substitute(self, substitution: Mapping[str, Term]) -> Term:
@@ -102,10 +104,10 @@ class Metavariable(Term):
 @dataclass
 class Application(Term):
     symbol: str
-    subterms: Tuple[Term, ...] = ()
-    hash_cache: Optional[int] = field(default=None, compare=False)
+    subterms: tuple[Term, ...] = ()
+    hash_cache: int | None = field(default=None, compare=False)
 
-    def get_metavariables(self) -> Set[str]:
+    def get_metavariables(self) -> set[str]:
         metavars = set()
         for subterm in self.subterms:
             metavars.update(subterm.get_metavariables())
@@ -133,8 +135,7 @@ class Application(Term):
 
 
 class Statement(BaseAST):
-
-    def get_metavariables(self) -> Set[str]:
+    def get_metavariables(self) -> set[str]:
         return set()
 
     def substitute(self, substitution: Mapping[str, Term]) -> Statement:
@@ -146,7 +147,7 @@ class Statement(BaseAST):
 
 @dataclass
 class ConstantStatement(Statement):
-    constants: Tuple[str, ...]
+    constants: tuple[str, ...]
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_constant_statement(self)  # type: ignore
@@ -154,7 +155,7 @@ class ConstantStatement(Statement):
 
 @dataclass
 class VariableStatement(Statement):
-    metavariables: Tuple[Metavariable, ...]
+    metavariables: tuple[Metavariable, ...]
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_variable_statement(self)  # type: ignore
@@ -162,13 +163,13 @@ class VariableStatement(Statement):
 
 @dataclass
 class DisjointStatement(Statement):
-    metavariables: Tuple[Metavariable, ...]
+    metavariables: tuple[Metavariable, ...]
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_disjoint_statement(self)  # type: ignore
 
 
-Terms = Tuple[Term, ...]
+Terms = tuple[Term, ...]
 StmtT = TypeVar('StmtT', bound='StructuredStatement')
 
 
@@ -177,7 +178,7 @@ class StructuredStatement(Statement):
     label: str
     terms: Terms
 
-    def get_metavariables(self) -> Set[str]:
+    def get_metavariables(self) -> set[str]:
         metavars = set()
         for term in self.terms:
             metavars.update(term.get_metavariables())
@@ -196,9 +197,9 @@ class FloatingStatement(StructuredStatement):
     metavariable: str = field(default='', init=False)
 
     def __post_init__(self) -> None:
-        assert len(self.terms) == 2 and \
-               isinstance(self.terms[0], Application) and \
-               isinstance(self.terms[1], Metavariable)
+        assert (
+            len(self.terms) == 2 and isinstance(self.terms[0], Application) and isinstance(self.terms[1], Metavariable)
+        )
         self.typecode = self.terms[0].symbol
         self.metavariable = self.terms[1].name
 
@@ -217,7 +218,7 @@ class AxiomaticStatement(ConclusionStatement):
 
 @dataclass
 class ProvableStatement(ConclusionStatement):
-    proof: Optional[str] = None
+    proof: str | None = None
 
 
 @dataclass
@@ -243,7 +244,7 @@ class Block(Statement):
     while itself is also a statement
     """
 
-    statements: Tuple[Statement, ...]
+    statements: tuple[Statement, ...]
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_block(self)  # type: ignore
@@ -257,7 +258,7 @@ class Database(BaseAST):
     e.g. set of variables and mapping from labels to statements
     """
 
-    statements: Tuple[Statement, ...]
+    statements: tuple[Statement, ...]
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_database(self)  # type: ignore
@@ -296,7 +297,7 @@ class Encoder(Printer, Visitor[BaseAST, None]):
 
             for subterm in application.subterms:
                 self.write(' ')
-                assert isinstance(subterm, Term), 'not a term: {}'.format(subterm)
+                assert isinstance(subterm, Term), f'not a term: {subterm}'
                 self.visit(subterm)
 
             self.write(' )')

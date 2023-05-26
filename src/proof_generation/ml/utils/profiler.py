@@ -1,5 +1,10 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 try:
     import tracemalloc
@@ -10,7 +15,6 @@ except ImportError:
 
 
 class MemoryProfiler:
-
     @staticmethod
     def start(num_frames: int = 2) -> None:
         assert tracemalloc is not None, 'cannot import module tracemalloc'

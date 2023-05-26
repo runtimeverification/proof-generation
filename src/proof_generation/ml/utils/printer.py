@@ -1,5 +1,11 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
-from typing import Generator, List, TextIO
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from typing import TextIO
 
 
 class Printer:
@@ -12,14 +18,14 @@ class Printer:
         self.output = output
         self.tab = tab
         self.current_indentation = ''
-        self.line_buffer: List[str] = []
+        self.line_buffer: list[str] = []
 
     def indent(self) -> None:
         self.current_indentation += self.tab
 
     def deindent(self) -> None:
         assert len(self.current_indentation) >= len(self.tab), 'cannot de-indent further'
-        self.current_indentation = self.current_indentation[:-len(self.tab)]
+        self.current_indentation = self.current_indentation[: -len(self.tab)]
 
     @contextmanager
     def indentation(self) -> Generator[None, None, None]:

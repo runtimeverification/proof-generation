@@ -18,7 +18,8 @@ from .encoder import KoreDecoder, KoreEncoder
 from .templates import KoreTemplates
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Type, Union
+    from collections.abc import Mapping
+    from typing import Any
 
     from ..metamath.composer import AutoProof
 
@@ -61,10 +62,10 @@ class SubsortRelation:
     """
 
     def __init__(self) -> None:
-        self.adj_list: Dict[kore.SortInstance, List[kore.SortInstance]] = {}
+        self.adj_list: dict[kore.SortInstance, list[kore.SortInstance]] = {}
         # SortInstance -> [ ( supersort, subsorting lemma ) ... ]
 
-    def get_immediate_subsort_of(self, sort: kore.SortInstance) -> List[kore.SortInstance]:
+    def get_immediate_subsort_of(self, sort: kore.SortInstance) -> list[kore.SortInstance]:
         subsorts = []
         for other, supersorts in self.adj_list.items():
             for supersort in supersorts:
@@ -73,8 +74,7 @@ class SubsortRelation:
                     break
         return subsorts
 
-    def get_subsort_chain(self, sort1: kore.SortInstance,
-                          sort2: kore.SortInstance) -> Optional[List[kore.SortInstance]]:
+    def get_subsort_chain(self, sort1: kore.SortInstance, sort2: kore.SortInstance) -> list[kore.SortInstance] | None:
         """
         Return a chain of immediate subsorting: sort1 < A < B < ... < sort2,
         if sort1 < sort2; otherwise return None
@@ -101,8 +101,8 @@ class SubsortRelation:
         """
         Add sort1 < sort2
         """
-        assert (sort1 != sort2), f'subsort relation should be irreflexive: {sort1} </ {sort2}'
-        assert (self.get_subsort_chain(sort2, sort1) is None), f'cyclic subsorting: {sort1} ? {sort2}'
+        assert sort1 != sort2, f'subsort relation should be irreflexive: {sort1} </ {sort2}'
+        assert self.get_subsort_chain(sort2, sort1) is None, f'cyclic subsorting: {sort1} ? {sort2}'
 
         if sort1 not in self.adj_list:
             self.adj_list[sort1] = []
@@ -134,56 +134,61 @@ class KoreComposer(Composer):
         # some axioms that will be used later #
         #######################################
 
-        self.all_sorts: List[kore.SortDefinition] = []  # sort definitions
+        self.all_sorts: list[kore.SortDefinition] = []  # sort definitions
         # symbol definitions
-        self.constructors: List[kore.SymbolDefinition] = []
+        self.constructors: list[kore.SymbolDefinition] = []
 
         # metamath label prefixes of sorts and symbols
-        self.sort_labels: Dict[kore.SortDefinition, str] = {}
-        self.symbol_labels: Dict[kore.SymbolDefinition, str] = {}
+        self.sort_labels: dict[kore.SortDefinition, str] = {}
+        self.symbol_labels: dict[kore.SymbolDefinition, str] = {}
 
-        self.functional_axioms: Dict[kore.SymbolInstance, ProvableClaim] = {}  # symbol instance -> provable claim
-        self.domain_value_functional_axioms: Dict[Tuple[kore.SortInstance, kore.StringLiteral],
-                                                  ProvableClaim] = {}  # (sort, string literal) -> provable claim
-        self.rewrite_axioms: Dict[str, ProvableClaim] = {}  # unique id -> provable claim
-        self.anywhere_axioms: List[ProvableClaim] = []  # provable claims
-        self.substitution_axioms: Dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
-        self.sort_axioms: Dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
-        self.sorting_lemmas: Dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
-        self.equational_axioms: Dict[kore.SymbolInstance, List[ProvableClaim]] = {}  # symbol instance -> provable claim
+        self.functional_axioms: dict[kore.SymbolInstance, ProvableClaim] = {}  # symbol instance -> provable claim
+        self.domain_value_functional_axioms: dict[
+            tuple[kore.SortInstance, kore.StringLiteral], ProvableClaim
+        ] = {}  # (sort, string literal) -> provable claim
+        self.rewrite_axioms: dict[str, ProvableClaim] = {}  # unique id -> provable claim
+        self.anywhere_axioms: list[ProvableClaim] = []  # provable claims
+        self.substitution_axioms: dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
+        self.sort_axioms: dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
+        self.sorting_lemmas: dict[str, Theorem] = {}  # constant symbol (in metamath) -> theorem
+        self.equational_axioms: dict[kore.SymbolInstance, list[ProvableClaim]] = {}  # symbol instance -> provable claim
         # provable claim
-        self.map_commutativity_axiom: Dict[kore.SortInstance, ProvableClaim] = {}
-        self.map_associativity_axiom: Dict[kore.SortInstance, ProvableClaim] = {}
-        self.map_right_unit_axiom: Dict[kore.SortInstance, ProvableClaim] = {}
-        self.app_ctx_lemmas: Dict[str, List[Theorem]] = {}  # constant_symbol -> list of theorems, one for each argument
+        self.map_commutativity_axiom: dict[kore.SortInstance, ProvableClaim] = {}
+        self.map_associativity_axiom: dict[kore.SortInstance, ProvableClaim] = {}
+        self.map_right_unit_axiom: dict[kore.SortInstance, ProvableClaim] = {}
+        self.app_ctx_lemmas: dict[str, list[Theorem]] = {}  # constant_symbol -> list of theorems, one for each argument
 
         # constructor axioms
-        self.sort_to_constructors: Dict[kore.SortInstance,
-                                        List[kore.SymbolDefinition]] = {}  # sort instance -> [ symbol definitions ]
-        self.hooked_sorts: List[kore.SortDefinition] = []
-        self.no_confusion_same_constructor: Dict[kore.SymbolDefinition, Theorem] = {}  # constant symbol -> theorem
-        self.no_confusion_diff_constructor: Dict[Tuple[kore.SymbolDefinition, kore.SymbolDefinition],
-                                                 Theorem] = {}  # (symbol, symbol) -> theorem
-        self.no_confusion_with_dv: Dict[kore.SymbolDefinition, Theorem] = {}  # symbol -> theorem
-        self.no_confusion_hooked_sort: Dict[Tuple[kore.SortInstance, kore.SymbolDefinition],
-                                            Theorem] = {}  # (kore symbol string, kore sort) -> theorem
+        self.sort_to_constructors: dict[
+            kore.SortInstance, list[kore.SymbolDefinition]
+        ] = {}  # sort instance -> [ symbol definitions ]
+        self.hooked_sorts: list[kore.SortDefinition] = []
+        self.no_confusion_same_constructor: dict[kore.SymbolDefinition, Theorem] = {}  # constant symbol -> theorem
+        self.no_confusion_diff_constructor: dict[
+            tuple[kore.SymbolDefinition, kore.SymbolDefinition], Theorem
+        ] = {}  # (symbol, symbol) -> theorem
+        self.no_confusion_with_dv: dict[kore.SymbolDefinition, Theorem] = {}  # symbol -> theorem
+        self.no_confusion_hooked_sort: dict[
+            tuple[kore.SortInstance, kore.SymbolDefinition], Theorem
+        ] = {}  # (kore symbol string, kore sort) -> theorem
         # (sort symbol, sort symbol) -> theorem, different hooked sorts are disjoint
-        self.hooked_sort_disjoint_axioms: Dict[Tuple[str, str], Theorem] = {}
-        self.no_junk_axioms: Dict[kore.SortInstance, Theorem] = {}  # sort instance -> theorem
-        self.sort_components: Dict[kore.SortInstance, List[Union[kore.Variable, kore.Application]]] = {
-        }  # sort instance -> [ patterns (without existential quantifier) ]
+        self.hooked_sort_disjoint_axioms: dict[tuple[str, str], Theorem] = {}
+        self.no_junk_axioms: dict[kore.SortInstance, Theorem] = {}  # sort instance -> theorem
+        self.sort_components: dict[
+            kore.SortInstance, list[kore.Variable | kore.Application]
+        ] = {}  # sort instance -> [ patterns (without existential quantifier) ]
 
-        self.sort_injection_symbol: Optional[kore.SymbolDefinition] = None
-        self.sort_injection_axiom: Optional[ProvableClaim] = None
+        self.sort_injection_symbol: kore.SymbolDefinition | None = None
+        self.sort_injection_axiom: ProvableClaim | None = None
         self.subsort_relation = SubsortRelation()
 
-        self.string_literals: Set[kore.StringLiteral] = set()
-        self.domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]] = set()
+        self.string_literals: set[kore.StringLiteral] = set()
+        self.domain_values: set[tuple[kore.SortInstance, kore.StringLiteral]] = set()
 
         # we rename variables to reduce the total number of variables
         # but this will affect the hints, so we need to provide this
         # renaming information
-        self.axiom_variable_renaming: Dict[str, Mapping[kore.Variable, kore.Variable]] = {}
+        self.axiom_variable_renaming: dict[str, Mapping[kore.Variable, kore.Variable]] = {}
 
         self.fresh_label_counter = 0
 
@@ -194,7 +199,7 @@ class KoreComposer(Composer):
 
     def load_module(self, module: kore.Module) -> None:
         self.module = module
-        self.loaded_modules: Dict[str, kore.Module] = {}
+        self.loaded_modules: dict[str, kore.Module] = {}
 
         self.load_module_sentences(module)
         self.load_axioms_for_injection()
@@ -215,7 +220,7 @@ class KoreComposer(Composer):
             return
 
         inj_module = self.loaded_modules['INJ']
-        assert ('inj' in inj_module.symbol_map), 'cannot find sort injection function symbol'
+        assert 'inj' in inj_module.symbol_map, 'cannot find sort injection function symbol'
         self.sort_injection_symbol = inj_module.symbol_map['inj']
 
         assert len(inj_module.axioms) == 1, 'unexpected INJ module content'
@@ -234,17 +239,18 @@ class KoreComposer(Composer):
         with self.in_segment('variable'):
             # filter out existing metavariables and
             # check duplication (different typecode for the same variable)
-            new_metavars: Dict[str, str] = {}
+            new_metavars: dict[str, str] = {}
             for var, typecode in metavar_map.items():
                 found_typecode = self.find_metavariable(var)
 
                 if found_typecode is None:
                     new_metavars[var] = typecode
                 else:
-                    assert found_typecode == typecode, \
-                        'inconsistent metavariable typecode: both {} and {} for variable {}'.format(
-                            found_typecode, typecode, var
-                        )
+                    assert (
+                        found_typecode == typecode
+                    ), 'inconsistent metavariable typecode: both {} and {} for variable {}'.format(
+                        found_typecode, typecode, var
+                    )
 
             if not new_metavars:
                 return
@@ -274,7 +280,7 @@ class KoreComposer(Composer):
                     disjoint_stmt = mm.DisjointStatement(tuple(map(mm.Metavariable, element_vars)))
                     self.load(disjoint_stmt, top_level=True)
 
-    def encode_pattern(self, pattern: Union[kore.Axiom, kore.Pattern, kore.Sort]) -> mm.Term:
+    def encode_pattern(self, pattern: kore.Axiom | kore.Pattern | kore.Sort) -> mm.Term:
         encoder = KoreEncoder()
         term = encoder.visit(pattern)
         self.load_metavariables(encoder.metavariables)
@@ -286,7 +292,7 @@ class KoreComposer(Composer):
         return premise
 
     def encode_metamath_statement(
-        self, axiom: kore.Axiom, cons: Type[mm.StructuredStatement] = mm.StructuredStatement
+        self, axiom: kore.Axiom, cons: type[mm.StructuredStatement] = mm.StructuredStatement
     ) -> mm.StructuredStatement:
         return cons(
             '',
@@ -294,7 +300,7 @@ class KoreComposer(Composer):
         )
 
     def construct_claim(
-        self, pattern: kore.Pattern, sort_variables: Optional[List[kore.SortVariable]] = None
+        self, pattern: kore.Pattern, sort_variables: list[kore.SortVariable] | None = None
     ) -> kore.Claim:
         claim = kore.Claim(sort_variables or [], pattern)
         claim.resolve(self.module)
@@ -302,10 +308,10 @@ class KoreComposer(Composer):
 
     def construct_provable_claim(
         self,
-        claim: Union[kore.Pattern, kore.Claim],
+        claim: kore.Pattern | kore.Claim,
         proof: Proof,
-        sort_variables: Optional[List[kore.SortVariable]] = None,
-        cache_key: Optional[str] = None,
+        sort_variables: list[kore.SortVariable] | None = None,
+        cache_key: str | None = None,
     ) -> ProvableClaim:
         if isinstance(claim, kore.Pattern):
             claim = self.construct_claim(claim, sort_variables)
@@ -328,7 +334,7 @@ class KoreComposer(Composer):
         new_proof = self.load_proof_as_statement(label, provable.proof).as_proof()
         return ProvableClaim(provable.claim, new_proof)
 
-    def load_fresh_claim_placeholder(self, label_prefix: str, claim: Union[kore.Claim, kore.Pattern]) -> ProvableClaim:
+    def load_fresh_claim_placeholder(self, label_prefix: str, claim: kore.Claim | kore.Pattern) -> ProvableClaim:
         """
         Load a claim without proof in the current context, using a fresh label
         """
@@ -350,7 +356,7 @@ class KoreComposer(Composer):
         comment: bool = True,
         provable: bool = False,
         rename: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ProvableClaim:
         """
         Encode and load a Kore axiom into the generator
@@ -384,8 +390,8 @@ class KoreComposer(Composer):
 
         pattern_vars = [mm.Metavariable(v) for v in self.gen_metavariables('#Pattern', arity)]
 
-        sort_pattern_vars = pattern_vars[:len(symbol_definition.sort_variables)]
-        argument_pattern_vars = pattern_vars[len(symbol_definition.sort_variables):]
+        sort_pattern_vars = pattern_vars[: len(symbol_definition.sort_variables)]
+        argument_pattern_vars = pattern_vars[len(symbol_definition.sort_variables) :]
 
         # for simplicity, we replace all sort variables (which are #ElementVariable's)
         # by pattern variables since \\kore-is-sort implies they are singletons
@@ -409,7 +415,7 @@ class KoreComposer(Composer):
 
         # add hypotheses for sort arguments
         for v in sort_pattern_vars:
-            sorting_axiom_hypotheses.append(mm.Application('\\kore-is-sort', (v, )))
+            sorting_axiom_hypotheses.append(mm.Application('\\kore-is-sort', (v,)))
 
         # add hypotheses for pattern arguments
         for v, sort in zip(argument_pattern_vars, symbol_definition.input_sorts, strict=True):
@@ -454,8 +460,8 @@ class KoreComposer(Composer):
         pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
         sort_pattern_vars = pattern_vars[:num_sort_vars]
-        arg_pattern_vars_left = pattern_vars[num_sort_vars:num_sort_vars + num_arguments]
-        arg_pattern_vars_right = pattern_vars[num_sort_vars + num_arguments:]
+        arg_pattern_vars_left = pattern_vars[num_sort_vars : num_sort_vars + num_arguments]
+        arg_pattern_vars_right = pattern_vars[num_sort_vars + num_arguments :]
 
         left_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_left)
         right_pattern = mm.Application(encoded_symbol, sort_pattern_vars + arg_pattern_vars_right)
@@ -497,7 +503,7 @@ class KoreComposer(Composer):
         left_pattern = mm.Application('\\kore-dv', (dv_sort_var, dv_body_var))
         right_pattern = mm.Application(encoded_symbol, pattern_vars[2:])
         conj_pattern = mm.Application('\\and', (left_pattern, right_pattern))
-        not_conj_pattern = mm.Application('\\not', (conj_pattern, ))
+        not_conj_pattern = mm.Application('\\not', (conj_pattern,))
         statement = mm.AxiomaticStatement(
             f'{self.get_symbol_label(symbol_definition)}-no-confusion-with-dv',
             (
@@ -528,8 +534,8 @@ class KoreComposer(Composer):
         )
         pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
-        left_pattern = mm.Application(constructor_symbol1, pattern_vars[:num_sort_vars1 + num_arguments1])
-        right_pattern = mm.Application(constructor_symbol2, pattern_vars[num_sort_vars1 + num_arguments1:])
+        left_pattern = mm.Application(constructor_symbol1, pattern_vars[: num_sort_vars1 + num_arguments1])
+        right_pattern = mm.Application(constructor_symbol2, pattern_vars[num_sort_vars1 + num_arguments1 :])
 
         statement = mm.AxiomaticStatement(
             f'{self.get_symbol_label(constructor1)}-no-confusion-with-{self.sanitize_label_name(constructor_symbol2)}',
@@ -537,7 +543,7 @@ class KoreComposer(Composer):
                 mm.Application('|-'),
                 mm.Application(
                     '\\not',
-                    (mm.Application('\\and', (left_pattern, right_pattern)), ),
+                    (mm.Application('\\and', (left_pattern, right_pattern)),),
                 ),
             ),
         )
@@ -547,7 +553,7 @@ class KoreComposer(Composer):
 
         return theorem
 
-    def get_no_confusion_same_constructor(self, symbol_definition: kore.SymbolDefinition) -> Optional[Theorem]:
+    def get_no_confusion_same_constructor(self, symbol_definition: kore.SymbolDefinition) -> Theorem | None:
         if symbol_definition not in self.constructors:
             return None
 
@@ -556,7 +562,7 @@ class KoreComposer(Composer):
 
         return self.load_no_confusion_same_constructor(symbol_definition)
 
-    def get_no_confusion_with_dv(self, symbol_definition: kore.SymbolDefinition) -> Optional[Theorem]:
+    def get_no_confusion_with_dv(self, symbol_definition: kore.SymbolDefinition) -> Theorem | None:
         if symbol_definition not in self.constructors:
             return None
 
@@ -567,7 +573,7 @@ class KoreComposer(Composer):
 
     def get_no_confusion_diff_constructor(
         self, constructor1: kore.SymbolDefinition, constructor2: kore.SymbolDefinition
-    ) -> Optional[Theorem]:
+    ) -> Theorem | None:
         if constructor2 not in self.constructors:
             return None
 
@@ -634,7 +640,7 @@ class KoreComposer(Composer):
                 f'{label}-sort',
                 (
                     mm.Application('|-'),
-                    mm.Application(KoreEncoder.IS_SORT, (mm.Application(encoded_sort), )),
+                    mm.Application(KoreEncoder.IS_SORT, (mm.Application(encoded_sort),)),
                 ),
             )
         )
@@ -642,30 +648,36 @@ class KoreComposer(Composer):
         self.all_sorts.append(sort_definition)
 
         # add axioms saying that hooked sorts are disjoint
-        if (sort_definition.hooked or sort_definition.get_attribute_by_symbol('token') is not None) \
-           and len(sort_definition.sort_variables) == 0:
+        if (sort_definition.hooked or sort_definition.get_attribute_by_symbol('token') is not None) and len(
+            sort_definition.sort_variables
+        ) == 0:
             # TODO: could there be hooked sorts with sort variables?
             for other_hooked_sort in self.hooked_sorts:
                 encoded_other_sort = KoreEncoder.encode_sort(other_hooked_sort.sort_id)
-                self.hooked_sort_disjoint_axioms[encoded_sort, encoded_other_sort] = \
-                    self.load(
-                        mm.AxiomaticStatement(
-                            f'{label}-hooked-sort-disjoint-with-{self.sanitize_label_name(other_hooked_sort.sort_id)}',
-                            (
-                                mm.Application('|-'),
-                                mm.Application('\\not', (
-                                    mm.Application('\\and', (
-                                        mm.Application('\\inh', (mm.Application(encoded_sort),)),
-                                        mm.Application('\\inh', (mm.Application(encoded_other_sort),)),
-                                    )),
-                                )),
+                self.hooked_sort_disjoint_axioms[encoded_sort, encoded_other_sort] = self.load(
+                    mm.AxiomaticStatement(
+                        f'{label}-hooked-sort-disjoint-with-{self.sanitize_label_name(other_hooked_sort.sort_id)}',
+                        (
+                            mm.Application('|-'),
+                            mm.Application(
+                                '\\not',
+                                (
+                                    mm.Application(
+                                        '\\and',
+                                        (
+                                            mm.Application('\\inh', (mm.Application(encoded_sort),)),
+                                            mm.Application('\\inh', (mm.Application(encoded_other_sort),)),
+                                        ),
+                                    ),
+                                ),
                             ),
                         ),
-                    )
+                    ),
+                )
 
             self.hooked_sorts.append(sort_definition)
 
-    def load_domain_values(self, domain_values: Set[Tuple[kore.SortInstance, kore.StringLiteral]]) -> None:
+    def load_domain_values(self, domain_values: set[tuple[kore.SortInstance, kore.StringLiteral]]) -> None:
         """
         Load a domain value and generate the corresponding functional axiom
         """
@@ -722,8 +734,9 @@ class KoreComposer(Composer):
 
                     functional_axiom.resolve(self.module)
 
-                    self.domain_value_functional_axioms[sort, literal] = \
-                        self.load_axiom(functional_axiom, functional_rule_name, top_level=True)
+                    self.domain_value_functional_axioms[sort, literal] = self.load_axiom(
+                        functional_axiom, functional_rule_name, top_level=True
+                    )
 
     def load_constant_substitution_lemma(self, symbol: str, arity: int, label: str) -> None:
         """
@@ -731,7 +744,7 @@ class KoreComposer(Composer):
         """
 
         with self.in_segment('substitution'):
-            (subst_var, ) = self.gen_metavariables('#Variable', 1)
+            (subst_var,) = self.gen_metavariables('#Variable', 1)
             pattern_var, *subpattern_vars = self.gen_metavariables('#Pattern', arity * 2 + 1)
 
             with self.new_context(top_level=True):
@@ -767,12 +780,11 @@ class KoreComposer(Composer):
                     essential_theorems,
                 )
 
-                self.substitution_axioms[symbol] = \
-                    self.load_proof_as_statement(substitution_rule_name, subst_proof)
+                self.substitution_axioms[symbol] = self.load_proof_as_statement(substitution_rule_name, subst_proof)
 
     def load_application_context_lemma(self, symbol: str, arity: int, label: str) -> None:
         with self.in_segment('substitution'):
-            (hole_var, ) = self.gen_metavariables('#Variable', 1)
+            (hole_var,) = self.gen_metavariables('#Variable', 1)
             pattern_var_names = self.gen_metavariables('#Pattern', arity)
             pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
@@ -786,9 +798,7 @@ class KoreComposer(Composer):
                     for j in range(arity):
                         if i != j:
                             self.load(
-                                mm.DisjointStatement(
-                                    (mm.Metavariable(hole_var), mm.Metavariable(pattern_vars[j].name))
-                                )
+                                mm.DisjointStatement((mm.Metavariable(hole_var), mm.Metavariable(pattern_vars[j].name)))
                             )
 
                     assumption = mm.EssentialStatement(
@@ -903,7 +913,7 @@ class KoreComposer(Composer):
         else:
             return f"fv{typecode.replace('#', '').lower()}"
 
-    def gen_metavariables(self, typecode: str, n: int) -> List[str]:
+    def gen_metavariables(self, typecode: str, n: int) -> list[str]:
         """
         Generate n metavariables
         and add the new ones to the composer
@@ -912,11 +922,11 @@ class KoreComposer(Composer):
         self.load_metavariables({var: typecode for var in metavars})
         return metavars
 
-    def gen_fresh_metavariables(self, typecode: str, n: int, other_than: Set[str]) -> List[str]:
+    def gen_fresh_metavariables(self, typecode: str, n: int, other_than: set[str]) -> list[str]:
         """
         Generate n fresh variables other than the variables in `other_than`
         """
-        metavars: Set[str] = set()
+        metavars: set[str] = set()
         current_extra = 0
         while len(metavars.difference(other_than)) < n:
             metavars = set(self.gen_metavariables(typecode, current_extra + n))
@@ -951,8 +961,8 @@ class KoreComposer(Composer):
         pattern_var_names = self.gen_metavariables('#Pattern', num_sort_vars + num_arguments)
         pattern_vars = tuple(mm.Metavariable(v) for v in pattern_var_names)
 
-        left_pattern = mm.Application(encoded_symbol, pattern_vars[:num_sort_vars + num_arguments])
-        right_pattern = mm.Application('\\inh', (self.encode_pattern(sort_instance), ))
+        left_pattern = mm.Application(encoded_symbol, pattern_vars[: num_sort_vars + num_arguments])
+        right_pattern = mm.Application('\\inh', (self.encode_pattern(sort_instance),))
 
         assert isinstance(sort_instance.definition, kore.SortDefinition)
 
@@ -965,7 +975,7 @@ class KoreComposer(Composer):
                 mm.Application('|-'),
                 mm.Application(
                     '\\not',
-                    (mm.Application('\\and', (left_pattern, right_pattern)), ),
+                    (mm.Application('\\and', (left_pattern, right_pattern)),),
                 ),
             ),
         )
@@ -975,8 +985,9 @@ class KoreComposer(Composer):
 
         return theorem
 
-    def get_no_confusion_hooked_sort(self, sort_instance: kore.SortInstance,
-                                     symbol_definition: kore.SymbolDefinition) -> Optional[Theorem]:
+    def get_no_confusion_hooked_sort(
+        self, sort_instance: kore.SortInstance, symbol_definition: kore.SymbolDefinition
+    ) -> Theorem | None:
         assert isinstance(sort_instance.definition, kore.SortDefinition)
 
         if not sort_instance.definition.hooked or symbol_definition not in self.constructors:
@@ -1013,19 +1024,22 @@ class KoreComposer(Composer):
 
             if len(subsorts) + len(constructors) != 0:
                 # collect all components of the sort and make a no junk axiom
-                components: List[Union[kore.Variable, kore.Application]] = []
+                components: list[kore.Variable | kore.Application] = []
 
                 for subsort in subsorts:
-                    (var, ) = self.gen_metavariables('#ElementVariable', 1)
+                    (var,) = self.gen_metavariables('#ElementVariable', 1)
                     components.append(kore.Variable(var, subsort))
 
                 for constructor in constructors:
-                    assert (len(constructor.sort_variables) == 0), 'sort-parametric constructor is not supported'
+                    assert len(constructor.sort_variables) == 0, 'sort-parametric constructor is not supported'
                     variables = self.gen_metavariables('#ElementVariable', len(constructor.input_sorts))
 
                     application = kore.Application(
                         kore.SymbolInstance(constructor, []),
-                        [kore.Variable(var, sort) for var, sort in zip(variables, constructor.input_sorts, strict=True)],
+                        [
+                            kore.Variable(var, sort)
+                            for var, sort in zip(variables, constructor.input_sorts, strict=True)
+                        ],
                     )
 
                     components.append(application)
@@ -1045,7 +1059,7 @@ class KoreComposer(Composer):
                             ),
                         )
 
-                lhs = mm.Application('\\inh', (self.encode_pattern(sort_instance), ))
+                lhs = mm.Application('\\inh', (self.encode_pattern(sort_instance),))
                 axiom = mm.AxiomaticStatement(
                     f'no-junk-axiom-{i}',
                     (mm.Application('|-'), mm.Application('\\eq', (lhs, rhs))),
@@ -1118,8 +1132,13 @@ class KoreComposer(Composer):
                 self.map_right_unit_axiom[map_sort] = self.load_axiom(axiom, f'{module.name}-axiom-{index}')
                 continue
 
-            if (functional_symbol is not None or is_rewrite or is_anywhere or equation_head_symbol is not None
-                    or subsort_tuple is not None):
+            if (
+                functional_symbol is not None
+                or is_rewrite
+                or is_anywhere
+                or equation_head_symbol is not None
+                or subsort_tuple is not None
+            ):
                 claim = self.load_axiom(
                     axiom,
                     f'{module.name}-axiom-{index}',
@@ -1146,14 +1165,14 @@ class KoreComposer(Composer):
                     sort1, sort2 = subsort_tuple
                     self.subsort_relation.add_subsort(sort1, sort2)
 
-    def infer_premise_metavar(self, theorem: Theorem) -> Optional[mm.Metavariable]:
+    def infer_premise_metavar(self, theorem: Theorem) -> mm.Metavariable | None:
         """
         Given a kore lemma, infer the metavariable for premise
         """
 
         conclusion_premise, _ = MetamathUtils.destruct_premise(theorem.statement)
 
-        premise: Optional[mm.Term] = conclusion_premise
+        premise: mm.Term | None = conclusion_premise
 
         for essential in theorem.context.essentials:
             if not MetamathUtils.is_provable(essential.terms):
@@ -1164,19 +1183,19 @@ class KoreComposer(Composer):
                 continue
 
             if premise is not None and essential_premise is not None:
-                assert premise == essential_premise, \
-                       f'distinct premises appearing in the theorem: {premise} and {essential_premise}'
+                assert (
+                    premise == essential_premise
+                ), f'distinct premises appearing in the theorem: {premise} and {essential_premise}'
             premise = premise or essential_premise
 
         if premise is not None:
-            assert isinstance(premise, mm.Metavariable), \
-                   f'premise should be a metavariable, {premise} appears instead'
+            assert isinstance(premise, mm.Metavariable), f'premise should be a metavariable, {premise} appears instead'
 
         return premise
 
     def infer_weakest_common_premise(
         self,
-        provable_claims: Tuple[Union[Proof, ProvableClaim], ...],
+        provable_claims: tuple[Proof | ProvableClaim, ...],
     ) -> mm.Term:
         """
         Infer the weakest common premise used in all the proofs given
@@ -1197,10 +1216,10 @@ class KoreComposer(Composer):
         self,
         theorem: Theorem,
         common_premise: mm.Term,
-        essential_provable_claims: Tuple[Union[Proof, ProvableClaim], ...],
-    ) -> List[Union[Proof, AutoProof]]:
+        essential_provable_claims: tuple[Proof | ProvableClaim, ...],
+    ) -> list[Proof | AutoProof]:
         essential_claim_index = 0
-        essential_proofs: List[Union[Proof, AutoProof]] = []
+        essential_proofs: list[Proof | AutoProof] = []
 
         for essential in theorem.context.essentials:
             if MetamathUtils.is_substitution(essential.terms):
@@ -1215,14 +1234,14 @@ class KoreComposer(Composer):
                 if MetamathUtils.is_in_sort(conclusion):
                     essential_proofs.append(SortingProver.auto)
 
-                elif MetamathUtils.is_is_predicate(conclusion) or \
-                     MetamathUtils.is_kore_is_predicate(conclusion):
+                elif MetamathUtils.is_is_predicate(conclusion) or MetamathUtils.is_kore_is_predicate(conclusion):
                     essential_proofs.append(PredicateProver.auto)
 
                 else:  # MetamathUtils.is_kore_valid(conclusion):
                     # take from the given essential proofs
-                    assert essential_claim_index < len(essential_provable_claims), \
-                           'not enough essential proofs are given'
+                    assert essential_claim_index < len(
+                        essential_provable_claims
+                    ), 'not enough essential proofs are given'
                     essential_provable_claim = essential_provable_claims[essential_claim_index]
                     essential_claim_index += 1
 
@@ -1239,25 +1258,24 @@ class KoreComposer(Composer):
             else:
                 raise AssertionError(f'cannot infer which proof to assign for hypothesis {essential}')
 
-        assert essential_claim_index == len(essential_provable_claims), \
-               'too many essential proofs given'
+        assert essential_claim_index == len(essential_provable_claims), 'too many essential proofs given'
 
         return essential_proofs
 
     def apply_kore_lemma(
         self,
         theorem_name: str,
-        *essential_provable_claims: Union[Proof, ProvableClaim],
-        goal: Optional[kore.Claim] = None,
-        cache_key: Optional[str] = None,
-        **substitution: Union[mm.Term, kore.Pattern, kore.Sort],
+        *essential_provable_claims: Proof | ProvableClaim,
+        goal: kore.Claim | None = None,
+        cache_key: str | None = None,
+        **substitution: mm.Term | kore.Pattern | kore.Sort,
     ) -> ProvableClaim:
         r"""
         This is an abstraction over the lower level Theorem.apply or Theorem.match_and_apply
 
         A "kore lemma" refers to a specific form of theorems in the database
         in which:
-        
+
         1. The conclusion is of the form
             |- ( \kore-valid ... )
             or
@@ -1273,10 +1291,13 @@ class KoreComposer(Composer):
         common_premise = self.infer_weakest_common_premise(essential_provable_claims)
 
         # preprocess metavar substitution
-        metavar_substitution: Dict[str, mm.Term] = {}
+        metavar_substitution: dict[str, mm.Term] = {}
         for key, value in substitution.items():
-            if isinstance(value, kore.Pattern) or isinstance(value, kore.SortVariable) or isinstance(value,
-                                                                                                     kore.SortInstance):
+            if (
+                isinstance(value, kore.Pattern)
+                or isinstance(value, kore.SortVariable)
+                or isinstance(value, kore.SortInstance)
+            ):
                 metavar_substitution[key] = self.encode_pattern(value)
             else:
                 metavar_substitution[key] = value
@@ -1291,9 +1312,11 @@ class KoreComposer(Composer):
             _, goal_body = MetamathUtils.destruct_premise(MetamathUtils.construct_provable(encoded_goal))
             conclusion_premise, _ = MetamathUtils.destruct_premise(theorem.statement)
             if conclusion_premise is not None:
-                goal_pattern: Optional[mm.StructuredStatement] = mm.StructuredStatement(
+                goal_pattern: mm.StructuredStatement | None = mm.StructuredStatement(
                     '',
-                    MetamathUtils.construct_provable(MetamathUtils.construct_imp(common_premise, goal_body), ),
+                    MetamathUtils.construct_provable(
+                        MetamathUtils.construct_imp(common_premise, goal_body),
+                    ),
                 )
             else:
                 goal_pattern = mm.StructuredStatement(
@@ -1331,7 +1354,9 @@ class KoreComposer(Composer):
             if conclusion_premise is not None:
                 target = mm.StructuredStatement(
                     '',
-                    MetamathUtils.construct_provable(MetamathUtils.construct_imp(common_premise, goal_body), ),
+                    MetamathUtils.construct_provable(
+                        MetamathUtils.construct_imp(common_premise, goal_body),
+                    ),
                 )
             else:
                 target = mm.StructuredStatement('', MetamathUtils.construct_provable(goal_body))

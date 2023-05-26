@@ -30,10 +30,12 @@ def decode_index(index: str) -> int:
 
 
 def is_pattern_subtree(label: str) -> bool:
-    return label.endswith('-is-pattern') or \
-           label.endswith('-is-element-var') or \
-           label.endswith('-is-var') or \
-           label.endswith('-is-symbol')
+    return (
+        label.endswith('-is-pattern')
+        or label.endswith('-is-element-var')
+        or label.endswith('-is-var')
+        or label.endswith('-is-symbol')
+    )
 
 
 def get_metamath_steps(theorem: Theorem, compressed_proof: str) -> int:
@@ -58,7 +60,7 @@ def get_metamath_steps(theorem: Theorem, compressed_proof: str) -> int:
         else:
             raise AssertionError(f'unexpected ending {proof[i:]}')
 
-        index = decode_index(proof[i:j + 1])
+        index = decode_index(proof[i : j + 1])
         assert index <= len(index_table), f'index {index} does not exists'
         script.append(index_table[index - 1])
 

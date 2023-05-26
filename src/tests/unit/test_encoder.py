@@ -7,7 +7,6 @@ from proof_generation.ml.rewrite.encoder import KoreEncoder
 
 
 class TestKoreEncoder(unittest.TestCase):
-
     def setUp(self) -> None:
         self.encoder = KoreEncoder()
 
@@ -103,11 +102,13 @@ class TestKoreEncoder(unittest.TestCase):
         self.assertPatternEncodingEqual(r'\dv{Int{}}("12345")', r'( \kore-dv \kore-sort-Int "12345" )')
 
     def test_kore_axiom_encoding(self) -> None:
-        module = parse_module(r"""
+        module = parse_module(
+            r"""
         module TEST
             sort Int{} []
         endmodule []
-        """)
+        """
+        )
 
         self.assertAxiomEncodingEqual(
             module,
@@ -210,11 +211,7 @@ class TestKoreEncoder(unittest.TestCase):
 
         self.assertEqual(
             self.encoder.constant_symbols,
-            {
-                r'\kore-sort-Bool': 0,
-                r'"true"': 0,
-                r'\kore-symbol-config': 2
-            },
+            {r'\kore-sort-Bool': 0, r'"true"': 0, r'\kore-symbol-config': 2},
         )
         self.assertEqual(self.encoder.domain_values, {(sort_bool, kore.StringLiteral('true'))})
         self.assertEqual(self.encoder.metavariables, {'kore-element-var-V1': '#ElementVariable'})

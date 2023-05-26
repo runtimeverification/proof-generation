@@ -5,7 +5,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, Any, Dict, List, Tuple, Union
+from typing import IO, Any
 
 from ..ml.utils.ansi import ANSI
 
@@ -38,13 +38,13 @@ def debug(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def run_command(command: List[str], **kwargs: Any) -> subprocess.Popen:
+def run_command(command: list[str], **kwargs: Any) -> subprocess.Popen:
     command_str = ' '.join([shlex.quote(frag) for frag in command])
     debug(f"{ANSI.in_gray('+ ' + command_str)}")
     return subprocess.Popen(command, **kwargs)
 
 
-def read_stats(stream: IO[bytes], stats: Dict[str, Union[int, float]]) -> None:
+def read_stats(stream: IO[bytes], stats: dict[str, int | float]) -> None:
     while True:
         line = stream.readline().decode()
         if line == '':
@@ -73,7 +73,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # [ (k defn, main module name, input program, output proof) ]
-    tests: List[Tuple[str, str, str, str]] = []
+    tests: list[tuple[str, str, str, str]] = []
 
     # find tests
     for test_path in args.test_dir:
@@ -112,12 +112,14 @@ def main() -> None:
             name = basename.split('.')[0]
             output = os.path.join(test_path, f'proof-{name}')
 
-            tests.append((
-                k_defn,
-                main_module,
-                input_file,
-                output,
-            ))
+            tests.append(
+                (
+                    k_defn,
+                    main_module,
+                    input_file,
+                    output,
+                )
+            )
 
             print(f'found test {k_defn} {main_module} {input_file}, will output to {output}')
 
@@ -130,7 +132,7 @@ def main() -> None:
 
         for module_path, module_name, pgm_path, output_path in tests:
             debug(f'## collecting stats of {module_path} on program {pgm_path}')
-            stats: Dict[str, Any] = {}
+            stats: dict[str, Any] = {}
 
             proc = run_command(
                 [

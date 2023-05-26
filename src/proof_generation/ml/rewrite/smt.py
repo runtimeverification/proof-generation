@@ -10,20 +10,20 @@ from ..kore.utils import KoreUtils
 from .env import ProofGenerator
 
 if TYPE_CHECKING:
-    from typing import Callable, Dict, Optional, Union
+    from collections.abc import Callable
 
     from .env import KoreComposer, ProvableClaim
 
 
 @dataclass
 class SMTOption:
-    prelude_file: Optional[str] = None
+    prelude_file: str | None = None
     tactic: str = 'default'
-    timeout: Optional[int] = None  # in ms
+    timeout: int | None = None  # in ms
 
 
 class SMTProofGenerator(ProofGenerator):
-    HOOKED_FUNCTION_TO_SMT_FUNCTION: Dict[str, Callable[..., z3.AstRef]] = {
+    HOOKED_FUNCTION_TO_SMT_FUNCTION: dict[str, Callable[..., z3.AstRef]] = {
         "Lbl'UndsPlus'Int'Unds'": lambda a, b: a + b,
         "Lbl'Unds'-Int'Unds'": lambda a, b: a - b,
         "Lbl'UndsStar'Int'Unds'": lambda a, b: a * b,
@@ -41,7 +41,7 @@ class SMTProofGenerator(ProofGenerator):
         "Lbl'UndsEqlsSlshEqls'K'Unds'": lambda a, b: z3.Not(a == b),
     }
 
-    SMT_HOOK_TO_SMT_FUNCTION: Dict[str, Callable[..., z3.AstRef]] = {
+    SMT_HOOK_TO_SMT_FUNCTION: dict[str, Callable[..., z3.AstRef]] = {
         '(^ #1 #2)': lambda x, y: x**y,
         '(gcd #1 #2)': lambda x, y: z3.Function('gcd', z3.IntSort(), z3.IntSort(), z3.IntSort())(x, y),
         '(ite (< #1 0) (- 0 #1) #1)': lambda x: z3.If(x < 0, -x, x),
@@ -53,14 +53,12 @@ class SMTProofGenerator(ProofGenerator):
 
     # TODO: actually write a parser
     TACTIC_MAP = {
-        'default':
-        z3.Tactic('default'),
-        '(and-then qfnra-nlsat default)':
-        z3.AndThen(z3.Tactic('qfnra-nlsat'), z3.Tactic('default')),
-        '(! default :random_seed 0)':
-        z3.WithParams(z3.Tactic('default'), SEED_0),
-        '(! (and-then qfnra-nlsat default) :random_seed 0)':
-        z3.WithParams(z3.AndThen(z3.Tactic('qfnra-nlsat'), z3.Tactic('default')), SEED_0),
+        'default': z3.Tactic('default'),
+        '(and-then qfnra-nlsat default)': z3.AndThen(z3.Tactic('qfnra-nlsat'), z3.Tactic('default')),
+        '(! default :random_seed 0)': z3.WithParams(z3.Tactic('default'), SEED_0),
+        '(! (and-then qfnra-nlsat default) :random_seed 0)': z3.WithParams(
+            z3.AndThen(z3.Tactic('qfnra-nlsat'), z3.Tactic('default')), SEED_0
+        ),
     }
 
     def __init__(
@@ -70,8 +68,7 @@ class SMTProofGenerator(ProofGenerator):
     ):
         super().__init__(composer)
 
-        assert option.tactic in SMTProofGenerator.TACTIC_MAP, \
-               f'unsupported tactic {option.tactic}'
+        assert option.tactic in SMTProofGenerator.TACTIC_MAP, f'unsupported tactic {option.tactic}'
         tactic = SMTProofGenerator.TACTIC_MAP[option.tactic]
 
         self.solver = tactic.solver()
@@ -84,7 +81,7 @@ class SMTProofGenerator(ProofGenerator):
             for formula in z3.parse_smt2_file(option.prelude_file):
                 self.prelude_formulas.append(formula)
 
-    def check_validity(self, predicate: Union[kore.Pattern, kore.Claim]) -> Optional[ProvableClaim]:
+    def check_validity(self, predicate: kore.Pattern | kore.Claim) -> ProvableClaim | None:
         """
         Check that the given predicate, when encoded in FOL, is valid
         Return a claim of |- predicate with proof omitted
@@ -111,7 +108,7 @@ class SMTProofGenerator(ProofGenerator):
         else:
             return None
 
-    def encode_predicate(self, predicate: kore.Pattern, abstraction_map: Dict[kore.Pattern, z3.BoolRef]) -> z3.BoolRef:
+    def encode_predicate(self, predicate: kore.Pattern, abstraction_map: dict[kore.Pattern, z3.BoolRef]) -> z3.BoolRef:
         """
         Encode a kore predicate as a boolean term
         """
@@ -140,7 +137,7 @@ class SMTProofGenerator(ProofGenerator):
                 )
 
             elif KoreUtils.is_not(predicate):
-                subterm, = KoreUtils.destruct_not(predicate)
+                (subterm,) = KoreUtils.destruct_not(predicate)
                 return z3.Not(self.encode_predicate(subterm, abstraction_map))
 
             elif KoreUtils.is_top(predicate):
@@ -159,7 +156,7 @@ class SMTProofGenerator(ProofGenerator):
 
         # raise AssertionError(f'unable to encode predicate {predicate}')
 
-    def encode_term(self, term: kore.Pattern, abstraction_map: Dict[kore.Pattern, z3.BoolRef]) -> z3.AstRef:
+    def encode_term(self, term: kore.Pattern, abstraction_map: dict[kore.Pattern, z3.BoolRef]) -> z3.AstRef:
         """
         Encode a (functional) pattern as a FOL term
 
@@ -198,8 +195,9 @@ class SMTProofGenerator(ProofGenerator):
                 assert isinstance(smt_hook_arg, kore.StringLiteral)
                 template = smt_hook_arg.content
 
-                assert template in SMTProofGenerator.SMT_HOOK_TO_SMT_FUNCTION, \
-                       f'unsupported SMT hook {template} for {term}'
+                assert (
+                    template in SMTProofGenerator.SMT_HOOK_TO_SMT_FUNCTION
+                ), f'unsupported SMT hook {template} for {term}'
 
                 return SMTProofGenerator.SMT_HOOK_TO_SMT_FUNCTION[template](
                     *(self.encode_term(arg, abstraction_map) for arg in term.arguments)

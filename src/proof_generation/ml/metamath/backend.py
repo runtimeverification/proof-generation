@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from .ast import Encoder, IncludeStatement
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, Optional, TextIO, Tuple
+    from typing import Any, Optional, TextIO
 
     from .ast import Statement
 
@@ -84,15 +84,15 @@ class MultipleFileBackend(Backend):
     class Node:
         full_path: str  # e.g. database.mm
         file_handle: TextIO
-        dependencies: Tuple[str, ...]
+        dependencies: tuple[str, ...]
 
-    def __init__(self, path: str, graph: Tuple[Tuple[SegmentLabel, Optional[str], Tuple[str, ...]], ...]):
+    def __init__(self, path: str, graph: tuple[tuple[SegmentLabel, str | None, tuple[str, ...]], ...]):
         """
         format of graph: ( (segment label, file_name, (... dependencies on other labels)), ... )
         """
 
         self.path = path
-        self.graph: Dict[SegmentLabel, Optional[MultipleFileBackend.Node]] = {}
+        self.graph: dict[SegmentLabel, MultipleFileBackend.Node | None] = {}
 
         if not os.path.exists(self.path):
             os.mkdir(self.path)

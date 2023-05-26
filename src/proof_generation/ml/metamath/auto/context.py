@@ -7,7 +7,7 @@ from ..composer import MethodAutoProof
 from .notation import NotationProver
 
 if TYPE_CHECKING:
-    from typing import List
+    pass
 
     from ..ast import StructuredStatement, Term
     from ..composer import Composer, Proof, Theorem
@@ -24,7 +24,7 @@ class ApplicationContextProver:
         return ProvableStatement('', (Application('#ApplicationContext'), var, pattern))
 
     @staticmethod
-    def flatten_application(pattern: Term) -> List[Term]:
+    def flatten_application(pattern: Term) -> list[Term]:
         if not isinstance(pattern, Application) or pattern.symbol != '\\app':
             return [pattern]
 
@@ -38,7 +38,7 @@ class ApplicationContextProver:
         composer: Composer,
         var: Metavariable,
         pattern: Term,
-        hypotheses: List[Theorem] = [],
+        hypotheses: list[Theorem] = [],
     ) -> Proof:
         target = ApplicationContextProver.get_target(var, pattern)
 
@@ -56,11 +56,13 @@ class ApplicationContextProver:
             left_arguments = ApplicationContextProver.flatten_application(pattern.subterms[0])
             right_arguments = ApplicationContextProver.flatten_application(pattern.subterms[1])
 
-            known_context: List[Term] = [var]
+            known_context: list[Term] = [var]
             for hypothesis in hypotheses:
-                if (len(hypothesis.statement.terms) == 3
-                        and hypothesis.statement.terms[0] == Application('#ApplicationContext')
-                        and hypothesis.statement.terms[1] == var):
+                if (
+                    len(hypothesis.statement.terms) == 3
+                    and hypothesis.statement.terms[0] == Application('#ApplicationContext')
+                    and hypothesis.statement.terms[1] == var
+                ):
                     known_context.append(hypothesis.statement.terms[2])
 
             # try left side
@@ -84,8 +86,8 @@ class ApplicationContextProver:
                     )
 
         raise AssertionError(
-            f'failed to prove {pattern} is a context over variable ' +
-            f"{var} under assumptions {', '.join(str(t.statement) for t in hypotheses)}"
+            f'failed to prove {pattern} is a context over variable '
+            + f"{var} under assumptions {', '.join(str(t.statement) for t in hypotheses)}"
         )
 
     @staticmethod
@@ -93,7 +95,7 @@ class ApplicationContextProver:
         composer: Composer,
         var: Metavariable,
         pattern: Term,
-        hypotheses: List[Theorem] = [],
+        hypotheses: list[Theorem] = [],
     ) -> Proof:
         expanded_pattern, notation_proof = NotationProver.expand_sugar_with_proof(composer, pattern)
         subproof = ApplicationContextProver.prove_application_context_desugared(
@@ -108,10 +110,11 @@ class ApplicationContextProver:
     def prove_application_context_statement(
         composer: Composer,
         statement: StructuredStatement,
-        hypotheses: List[Theorem] = [],
+        hypotheses: list[Theorem] = [],
     ) -> Proof:
         assert (
-            len(statement.terms) == 3 and statement.terms[0] == Application('#ApplicationContext')
+            len(statement.terms) == 3
+            and statement.terms[0] == Application('#ApplicationContext')
             and isinstance(statement.terms[1], Metavariable)
         ), f'{statement} is not a #ApplicationContext claim'
 

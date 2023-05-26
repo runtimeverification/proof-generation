@@ -7,7 +7,7 @@ from ..composer import Composer, MethodAutoProof
 from .unification import Unification
 
 if TYPE_CHECKING:
-    from typing import Optional, Tuple
+    pass
 
     from ..ast import StructuredStatement, Term
     from ..composer import Proof, Theorem
@@ -43,9 +43,10 @@ class NotationProver:
         if sugar_axiom_info is not None:
             from_symbol, to_symbol = sugar_axiom_info
 
-            assert from_symbol not in composer.notation_axiom_graph, \
-                   f'symbol {from_symbol} can be rewritten to both ' \
-                   f'{to_symbol} (through {theorem.statement.label}) and {composer.notation_axiom_graph[from_symbol][1]}'
+            assert from_symbol not in composer.notation_axiom_graph, (
+                f'symbol {from_symbol} can be rewritten to both '
+                f'{to_symbol} (through {theorem.statement.label}) and {composer.notation_axiom_graph[from_symbol][1]}'
+            )
 
             composer.notation_axiom_graph[from_symbol] = theorem, to_symbol
             return
@@ -65,16 +66,18 @@ class NotationProver:
         """
         composer.notation_axiom_graph = {
             symbol1: (theorem, symbol2)
-            for symbol1, (theorem, symbol2) in composer.notation_axiom_graph.items() if theorem.statement.label != name
+            for symbol1, (theorem, symbol2) in composer.notation_axiom_graph.items()
+            if theorem.statement.label != name
         }
 
         composer.notation_congruence = {
             symbol: (theorem, order)
-            for symbol, (theorem, order) in composer.notation_congruence.items() if theorem.statement.label != name
+            for symbol, (theorem, order) in composer.notation_congruence.items()
+            if theorem.statement.label != name
         }
 
     @staticmethod
-    def get_path_to_root(composer: Composer, symbol: str) -> Tuple[Tuple[Theorem, str], ...]:
+    def get_path_to_root(composer: Composer, symbol: str) -> tuple[tuple[Theorem, str], ...]:
         path = []
 
         while symbol in composer.notation_axiom_graph:
@@ -87,10 +90,12 @@ class NotationProver:
     @staticmethod
     def get_path_to_lowest_common_ancestor(
         composer: Composer, symbol1: str, symbol2: str
-    ) -> Optional[Tuple[
-            Tuple[Tuple[Theorem, str], ...],  # tuple of (theorem name, symbol)
-            Tuple[Tuple[Theorem, str], ...],
-    ]]:
+    ) -> None | (
+        tuple[
+            tuple[tuple[Theorem, str], ...],  # tuple of (theorem name, symbol)
+            tuple[tuple[Theorem, str], ...],
+        ]
+    ):
         """
         Return a list of theorems to apply on each side
         """
@@ -103,11 +108,11 @@ class NotationProver:
 
         for i, (_, symbol) in enumerate(path2):
             if symbol == symbol1:
-                return (), path2[:i + 1]
+                return (), path2[: i + 1]
 
         for i, (_, symbol) in enumerate(path1):
             if symbol == symbol2:
-                return path1[:i + 1], ()
+                return path1[: i + 1], ()
 
         if len(path1) == 0 or len(path2) == 0:
             return None
@@ -120,10 +125,10 @@ class NotationProver:
                 i -= 1
                 break
 
-        return path1[:len(path1) - i], path2[:len(path2) - i]
+        return path1[: len(path1) - i], path2[: len(path2) - i]
 
     @staticmethod
-    def destruct_sugar_axiom(theorem: Theorem) -> Optional[Tuple[str, str]]:
+    def destruct_sugar_axiom(theorem: Theorem) -> tuple[str, str] | None:
         """
         If the theorem is a "sugar axiom", return (symbol A, symbol B)
         such that the sugar axiom is defining A as B
@@ -157,7 +162,7 @@ class NotationProver:
         return lhs.symbol, rhs.symbol
 
     @staticmethod
-    def destruct_congruence_lemma(theorem: Theorem) -> Optional[Tuple[str, Tuple[int, ...]]]:
+    def destruct_congruence_lemma(theorem: Theorem) -> tuple[str, tuple[int, ...]] | None:
         """
         A congruence lemma for a symbol S is of the form
         ${
@@ -179,10 +184,12 @@ class NotationProver:
         if head != Application('#Notation'):
             return None
 
-        if not (isinstance(lhs, Application) and \
-                isinstance(rhs, Application) and \
-                lhs.symbol == rhs.symbol and \
-                len(lhs.subterms) == len(rhs.subterms)):
+        if not (
+            isinstance(lhs, Application)
+            and isinstance(rhs, Application)
+            and lhs.symbol == rhs.symbol
+            and len(lhs.subterms) == len(rhs.subterms)
+        ):
             return None
 
         # (metavar pair) -> order in the application
@@ -231,12 +238,10 @@ class NotationProver:
         Rewrite a term using a sugar axiom, from left to right
         """
 
-        assert len(axiom.statement.terms) == 3, \
-               f'invalid sugar axiom {axiom.statement}'
+        assert len(axiom.statement.terms) == 3, f'invalid sugar axiom {axiom.statement}'
 
         substitution = Unification.match_terms_as_instance(axiom.statement.terms[1], term)
-        assert substitution is not None, \
-               f'invalid sugar axiom {axiom.statement}'
+        assert substitution is not None, f'invalid sugar axiom {axiom.statement}'
 
         new_term = axiom.statement.terms[2].substitute(substitution)
         assert isinstance(new_term, Application)
@@ -244,20 +249,21 @@ class NotationProver:
         return new_term
 
     @staticmethod
-    def apply_sugar_axioms(axioms: Tuple[Theorem, ...], term: Application) -> Application:
+    def apply_sugar_axioms(axioms: tuple[Theorem, ...], term: Application) -> Application:
         for axiom in axioms:
             term = NotationProver.apply_sugar_axiom(axiom, term)
         return term
 
     @staticmethod
-    def apply_sugar_axiom_with_proof(axiom: Theorem, term: Application) -> Tuple[Proof, Application]:
+    def apply_sugar_axiom_with_proof(axiom: Theorem, term: Application) -> tuple[Proof, Application]:
         result = NotationProver.apply_sugar_axiom(axiom, term)
         return axiom.match_and_apply(NotationProver.format_target(term, result)), result
 
     @staticmethod
-    def apply_sugar_axioms_with_proof(composer: Composer, axioms: Tuple[Theorem, ...],
-                                      term: Application) -> Tuple[Optional[Proof], Application]:
-        current_proof: Optional[Proof] = None
+    def apply_sugar_axioms_with_proof(
+        composer: Composer, axioms: tuple[Theorem, ...], term: Application
+    ) -> tuple[Proof | None, Application]:
+        current_proof: Proof | None = None
 
         for axiom in axioms:
             step_proof, term = NotationProver.apply_sugar_axiom_with_proof(axiom, term)
@@ -273,7 +279,7 @@ class NotationProver:
         return current_proof, term
 
     @staticmethod
-    def find_sugar_axiom(composer: Composer, symbol: str) -> Optional[Theorem]:
+    def find_sugar_axiom(composer: Composer, symbol: str) -> Theorem | None:
         if symbol in composer.notation_axiom_graph:
             return composer.notation_axiom_graph[symbol][0]
         return None
@@ -284,7 +290,7 @@ class NotationProver:
         left: Application,
         right: Application,
         with_proof: bool = True,
-    ) -> Optional[Tuple[Optional[Proof], Application, Optional[Proof], Application]]:
+    ) -> tuple[Proof | None, Application, Proof | None, Application] | None:
         """
         Return (left notation proof, new left, right notation proof, new right)
         """
@@ -294,8 +300,8 @@ class NotationProver:
 
         left_path, right_path = paths
 
-        left_proof: Optional[Proof] = None
-        right_proof: Optional[Proof] = None
+        left_proof: Proof | None = None
+        right_proof: Proof | None = None
 
         if with_proof:
             left_proof, new_left = NotationProver.apply_sugar_axioms_with_proof(
@@ -308,8 +314,7 @@ class NotationProver:
             new_left = NotationProver.apply_sugar_axioms(tuple(theorem for theorem, _ in left_path), left)
             new_right = NotationProver.apply_sugar_axioms(tuple(theorem for theorem, _ in right_path), right)
 
-        assert isinstance(new_left, Application) and \
-               isinstance(new_right, Application)
+        assert isinstance(new_left, Application) and isinstance(new_right, Application)
 
         return left_proof, new_left, right_proof, new_right
 
@@ -318,8 +323,9 @@ class NotationProver:
         """
         Expand the top level construct once without proof
         """
-        assert term.symbol in composer.notation_axiom_graph, \
-               f'unable to expand the top level construct of {term} further'
+        assert (
+            term.symbol in composer.notation_axiom_graph
+        ), f'unable to expand the top level construct of {term} further'
         theorem, _ = composer.notation_axiom_graph[term.symbol]
         return NotationProver.apply_sugar_axiom(theorem, term)
 
@@ -369,8 +375,12 @@ class NotationProver:
             raise AssertionError(f'unable to show {left} === {right}')
 
         # TODO: add this case
-        if (isinstance(left, Metavariable) and not isinstance(right, Metavariable)
-                or not isinstance(left, Metavariable) and isinstance(right, Metavariable)):
+        if (
+            isinstance(left, Metavariable)
+            and not isinstance(right, Metavariable)
+            or not isinstance(left, Metavariable)
+            and isinstance(right, Metavariable)
+        ):
             raise AssertionError(f'proving {left} === {right} is not currently supported')
 
         assert isinstance(left, Application) and isinstance(right, Application)
@@ -413,8 +423,7 @@ class NotationProver:
 
         # try to rewrite both terms to a common head symbol
         result = NotationProver.rewrite_to_same_head_symbol(composer, left, right)
-        assert result is not None, \
-               f'cannot rewrite {left} and {right} to have the same head symbol'
+        assert result is not None, f'cannot rewrite {left} and {right} to have the same head symbol'
         left_proof, left, right_proof, right = result
 
         proof = NotationProver.prove_notation(composer, left, right)
@@ -426,14 +435,14 @@ class NotationProver:
             )
 
         if right_proof is not None:
-            proof = composer.get_theorem(NotationProver.TRANS
-                                         ).apply(proof,
-                                                 composer.get_theorem(NotationProver.SYM).apply(right_proof))
+            proof = composer.get_theorem(NotationProver.TRANS).apply(
+                proof, composer.get_theorem(NotationProver.SYM).apply(right_proof)
+            )
 
         return composer.cache_proof('notation-cache', proof)
 
     @staticmethod
-    def expand_sugar(composer: Composer, term: Term, target_symbol: Optional[str] = None) -> Term:
+    def expand_sugar(composer: Composer, term: Term, target_symbol: str | None = None) -> Term:
         """
         Look for heads that have sugar axiom and
         expand all of them in the given term
@@ -442,9 +451,7 @@ class NotationProver:
         return expanded
 
     @staticmethod
-    def expand_sugar_with_proof(composer: Composer,
-                                term: Term,
-                                target_symbol: Optional[str] = None) -> Tuple[Term, Proof]:
+    def expand_sugar_with_proof(composer: Composer, term: Term, target_symbol: str | None = None) -> tuple[Term, Proof]:
         if isinstance(term, Metavariable):
             return term, composer.get_theorem(NotationProver.REFL).apply(ph0=term)
 
@@ -458,7 +465,7 @@ class NotationProver:
                 sugar_axiom, _ = composer.notation_axiom_graph[term.symbol]
 
                 substitution = Unification.match_terms_as_instance(sugar_axiom.statement.terms[1], term)
-                assert (substitution is not None), f'ill-formed sugar axiom {sugar_axiom.statement}'
+                assert substitution is not None, f'ill-formed sugar axiom {sugar_axiom.statement}'
 
                 reduction_proof = sugar_axiom.apply(**substitution)
                 expanded = reduction_proof.conclusion[2]
@@ -518,8 +525,9 @@ class NotationProver:
         assert isinstance(target.terms[0], Application)
 
         meta_relation = target.terms[0].symbol
-        assert meta_relation in NotationProver.METALEVEL_CONGRUENCE_AXIOMS, \
-               f'metalevel relation not supported: {target}'
+        assert (
+            meta_relation in NotationProver.METALEVEL_CONGRUENCE_AXIOMS
+        ), f'metalevel relation not supported: {target}'
 
         theorem_label, positions = NotationProver.METALEVEL_CONGRUENCE_AXIOMS[meta_relation]
         notation_proofs = []
@@ -540,8 +548,7 @@ class NotationProver:
             *notation_proofs,
         )
 
-        assert proof.is_proof_of(target), \
-               f'unable to show {target} from {proof} using only notations'
+        assert proof.is_proof_of(target), f'unable to show {target} from {proof} using only notations'
 
         return proof
 
@@ -550,5 +557,6 @@ class NotationProver:
     will attempt to resolve any proof obligation
     by applying notations on <proof>
     """
-    auto = lambda proof: \
-        MethodAutoProof(lambda composer, stmt: NotationProver.prove_notation_statement(composer, stmt, proof))
+    auto = lambda proof: MethodAutoProof(
+        lambda composer, stmt: NotationProver.prove_notation_statement(composer, stmt, proof)
+    )

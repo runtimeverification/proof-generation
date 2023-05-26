@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Dict, Generator
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @dataclass
 class Stopwatch:
-    records: Dict[str, float] = field(default_factory=lambda: {})  # label -> elapsed in seconds
+    records: dict[str, float] = field(default_factory=lambda: {})  # label -> elapsed in seconds
 
     @contextmanager
     def start(self, label: str) -> Generator[None, None, None]:
@@ -29,7 +34,7 @@ class Stopwatch:
         finally:
             end = time.time()
             if label not in self.records:
-                self.records[label] = .0
+                self.records[label] = 0.0
             self.records[label] += end - start
 
     def get_elapsed(self, label: str) -> float:
