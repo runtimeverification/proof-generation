@@ -1,5 +1,6 @@
 $[ theory/kore.mm $]
 $[ theory/matching-logic-predicate.mm $]
+$[ theory/kore-notation.mm $]
 
 kore-top-sorting $p |- ( \in-sort ( \kore-top ph0 ) ph0 ) $=
     $(
