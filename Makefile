@@ -5,6 +5,9 @@ default: check test-unit
 
 all: check cov
 
+# Disable all implicit recipes, e.g. those for building C programs.
+.SUFFIXES:
+
 .PHONY: clean
 clean:
 	rm -rf dist .coverage cov-* .mypy_cache .pytest_cache
@@ -21,7 +24,7 @@ poetry-install:
 
 # Dependencies
 
-METAMATH_EXE := $(PWD)/deps/metamath-exe/src/metamath
+METAMATH_EXE := deps/metamath-exe/src/metamath
 
 .PHONY: deps
 deps: deps-metamath
@@ -29,7 +32,7 @@ deps: deps-metamath
 .PHONY: deps-metamath
 deps-metamath: $(METAMATH_EXE)
 
-deps/metamath-exe/src/metamath: $(wildcard deps/metamath-exe/src/*.c)
+$(METAMATH_EXE): $(wildcard deps/metamath-exe/src/*.c)
 	gcc $^ -o $@
 
 
