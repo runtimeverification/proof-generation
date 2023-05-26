@@ -44,5 +44,5 @@ metamath-verify-all() {
 }
 
 build-metamath
-metamath-verify-all theory/matching-logic*.mm theory/prelude.mm
+metamath-verify-all theory/*.mm
 
