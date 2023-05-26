@@ -1,7 +1,6 @@
 POETRY     := poetry
 POETRY_RUN := $(POETRY) run
 
-
 default: check test-unit
 
 all: check cov
@@ -19,22 +18,41 @@ build:
 poetry-install:
 	$(POETRY) install
 
+
 # Dependencies
+
+METAMATH_EXE := $(PWD)/deps/metamath-exe/src/metamath
 
 .PHONY: deps
 deps: deps-metamath
 
 .PHONY: deps-metamath
-deps-metamath: deps/metamath-exe/src/metamath
+deps-metamath: $(METAMATH_EXE)
 
 deps/metamath-exe/src/metamath: $(wildcard deps/metamath-exe/src/*.c)
 	gcc $^ -o $@
 
+
 # Tests
 
-TEST_ARGS :=
-
 test: test-all
+
+
+# Metamath tests
+
+test-all : test-metamath
+
+test-metamath : $(addsuffix .verify, $(wildcard theory/*.mm))
+
+export PATH := $(dir $(METAMATH_EXE)):$(PATH)
+
+theory/%.mm.verify : theory/%.mm $(METAMATH_EXE)
+	bin/metamath-verify $<
+
+
+# Python Tests
+
+TEST_ARGS :=
 
 test-all: poetry-install
 	$(POETRY_RUN) pytest src/tests --maxfail=1 --verbose --durations=0 --numprocesses=4 --dist=worksteal $(TEST_ARGS)

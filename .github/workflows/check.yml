@@ -15,7 +15,7 @@ jobs:
     - name: 'Check out code'
       uses: actions/checkout@v3
     - name: 'Verify Metamath proofs'
-      run: ./scripts/test
+      run: make test-metamath
 
   code-quality-checks:
     name: 'Code Quality Checks'
