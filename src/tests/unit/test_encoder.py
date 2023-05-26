@@ -25,14 +25,14 @@ class TestKoreEncoder(unittest.TestCase):
             kore.SortInstance(self.sort_config_definition, []),
         )
 
-    def assertEncodingEqual(self, kore_ast: kore.BaseAST[Any], encoding: str) -> None:
+    def assertEncodingEqual(self, kore_ast: kore.BaseAST[Any], encoding: str) -> None:  # noqa: N802
         self.assertEqual(str(self.encoder.visit(kore_ast)), encoding)
 
-    def assertPatternEncodingEqual(self, kore_text: str, encoding: str) -> None:
+    def assertPatternEncodingEqual(self, kore_text: str, encoding: str) -> None:  # noqa: N802
         pattern = parse_pattern(kore_text)
         self.assertEncodingEqual(pattern, encoding)
 
-    def assertAxiomEncodingEqual(self, module: kore.Module, kore_text: str, encoding: str) -> None:
+    def assertAxiomEncodingEqual(self, module: kore.Module, kore_text: str, encoding: str) -> None:  # noqa: N802
         axiom = parse_axiom(kore_text)
         axiom.resolve(module)
         axiom.set_parent(module)
