@@ -120,7 +120,7 @@ class SubstitutionProver:
         before_pattern: Application,
         subst_pattern: Term,
         subst_var: Metavariable,
-        hypotheses: Tuple[Theorem, ...] = (),
+        hypotheses: tuple[Theorem, ...] = (),
     ) -> Proof | None:
         if after_pattern.symbol != before_pattern.symbol:
             result = NotationProver.rewrite_to_same_head_symbol(
@@ -247,7 +247,7 @@ class SubstitutionProver:
         before_pattern: Term,
         subst_pattern: Term,
         subst_var: Metavariable,
-        hypotheses: Tuple[Theorem, ...] = (),
+        hypotheses: tuple[Theorem, ...] = (),
     ) -> Proof:
         target = SubstitutionProver.get_target(after_pattern, before_pattern, subst_pattern, subst_var)
         cached_proof = composer.lookup_proof_cache('substitution', target)
@@ -350,7 +350,7 @@ class SubstitutionProver:
 
     @staticmethod
     def prove_substitution_statement(
-        composer: Composer, statement: StructuredStatement, hypotheses: Tuple[Theorem, ...] = ()
+        composer: Composer, statement: StructuredStatement, hypotheses: tuple[Theorem, ...] = ()
     ) -> Proof:
         """
         A wrapper for an auto proof method

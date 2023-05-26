@@ -149,7 +149,7 @@ class ProofState:
         else:
             return self.composer.find_essential(name)
 
-    def get_all_essentials_for_top_goal(self) -> Tuple[Theorem, ...]:
+    def get_all_essentials_for_top_goal(self) -> tuple[Theorem, ...]:
         top_goal = self.get_top_goal()
         if top_goal.claim_label is not None:
             claim = self.claims[top_goal.claim_label]
@@ -366,7 +366,7 @@ class ProofState:
         tactic.apply(copied, *args, **kwargs)
         return copied
 
-    def gen_proof_for_goal(self, goal: Goal, trace: Tuple[int, ...] = ()) -> Proof:
+    def gen_proof_for_goal(self, goal: Goal, trace: tuple[int, ...] = ()) -> Proof:
         """
         Generate a proof for the given goal by tracing
         through the DAG and obtaining subproofs

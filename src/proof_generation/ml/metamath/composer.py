@@ -663,7 +663,7 @@ class Context:
     """
 
     floatings: list[FloatingStatement] = field(default_factory=lambda: [])
-    essentials: Tuple[EssentialStatement, ...] = ()
+    essentials: tuple[EssentialStatement, ...] = ()
     disjoints: list[DisjointStatement] = field(default_factory=lambda: [])
     statements: list[Statement] = field(default_factory=lambda: [])  # all statements in the context
     prev: Context | None = None
@@ -756,7 +756,7 @@ class Context:
         else:
             return None
 
-    def get_all_essentials(self) -> Tuple[EssentialStatement, ...]:
+    def get_all_essentials(self) -> tuple[EssentialStatement, ...]:
         if self.prev is not None:
             return self.prev.get_all_essentials() + self.essentials
         else:
@@ -872,7 +872,7 @@ class Composer(Hookable):
         else:
             return None
 
-    def get_all_essentials(self) -> Tuple[Theorem, ...]:
+    def get_all_essentials(self) -> tuple[Theorem, ...]:
         return tuple(Theorem(self, essential) for essential in self.context.get_all_essentials())
 
     def get_all_disjoints(self) -> list[DisjointStatement]:

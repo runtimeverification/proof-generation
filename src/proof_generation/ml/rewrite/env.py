@@ -750,7 +750,7 @@ class KoreComposer(Composer):
             with self.new_context(top_level=True):
                 substitution_rule_name = label + '-substitution'
                 essentials = []
-                essential_theorems: Tuple[Theorem, ...] = ()
+                essential_theorems: tuple[Theorem, ...] = ()
 
                 for i in range(arity):
                     after = subpattern_vars[i]
