@@ -481,9 +481,9 @@ class Theorem:
                 essential_instance = self.context.essentials[i].substitute(substitution)
                 try:
                     final_essential_proofs.append(proof.prove(self.composer, essential_instance))
-                except Exception:
+                except Exception as err:
                     print_exc()
-                    raise AssertionError(f'unable to automatically generate proof for {essential_instance}')
+                    raise AssertionError(f'unable to automatically generate proof for {essential_instance}') from err
 
         return floating_proofs + final_essential_proofs, substitution
 

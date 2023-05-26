@@ -4,7 +4,7 @@ from typing import Any, Generator
 try:
     import tracemalloc
     from tracemalloc import Snapshot
-except:
+except ImportError:
     tracemalloc = None  # type: ignore
     Snapshot = Any  # type: ignore
 

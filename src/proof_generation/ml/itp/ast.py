@@ -89,8 +89,8 @@ class OrTactical(Tactical):
                 state = tactical.apply(state)
                 return state
 
-            except NoStateChangeException:
-                raise NoStateChangeException()
+            except NoStateChangeException as err:
+                raise NoStateChangeException() from err
 
             except Exception as exc:
                 exceptions.append(exc)
