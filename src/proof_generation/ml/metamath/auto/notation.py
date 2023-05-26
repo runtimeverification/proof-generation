@@ -120,7 +120,7 @@ class NotationProver:
         if path1[-1] != path2[-1]:
             return None
 
-        for i, ((_, subsymbol1), (_, subsymbol2)) in enumerate(zip(path1[::-1], path2[::-1])):
+        for i, ((_, subsymbol1), (_, subsymbol2)) in enumerate(zip(path1[::-1], path2[::-1], strict=True)):
             if subsymbol1 != subsymbol2:
                 i -= 1
                 break

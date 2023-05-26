@@ -287,7 +287,9 @@ class DisjointnessProofGenerator(ProofGenerator):
         encoded_right_app.subterms = tuple(encoded_right_app_subterms)
 
         encoded_left_app_subterms = list(encoded_left_app.subterms)
-        for j, (left_arg, right_arg) in enumerate(zip(encoded_left_app.subterms, encoded_right_app.subterms)):
+        for j, (left_arg, right_arg) in enumerate(
+            zip(encoded_left_app.subterms, encoded_right_app.subterms, strict=True)
+        ):
             encoded_left_app_subterms[j] = mm.Application('\\and', (left_arg, right_arg))
         conj_app = mm.Application(encoded_left_app.symbol, tuple(encoded_left_app_subterms))
 

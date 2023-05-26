@@ -95,7 +95,7 @@ def gen_task_legacy(kompiled_dir: str, pgm: str) -> dict[str, Any]:
         current_depth += 1
 
     steps = []
-    for from_pattern, to_pattern in zip(snapshots[:-1], snapshots[1:]):
+    for from_pattern, to_pattern in zip(snapshots[:-1], snapshots[1:], strict=True):
         steps.append(
             {
                 'initial': from_pattern,

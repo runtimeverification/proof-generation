@@ -279,7 +279,7 @@ class KoreDecoder:
             sort_arguments = [self.decode_sort(subterm) for subterm in sort_subterms]
             pattern_arguments = [
                 self.decode_pattern(subterm, sort)
-                for subterm, sort in zip(pattern_subterms, symbol_definition.input_sorts)
+                for subterm, sort in zip(pattern_subterms, symbol_definition.input_sorts, strict=True)
             ]
 
             return kore.Application(
