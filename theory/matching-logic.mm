@@ -57,7 +57,7 @@ bot-is-pattern $a #Pattern \bot $.
 imp-is-pattern $a #Pattern ( \imp ph0 ph1 ) $.
 app-is-pattern $a #Pattern ( \app ph0 ph1 ) $.
 exists-is-pattern $a #Pattern ( \exists x ph0 ) $.
-${ 
+${
     mu-is-pattern.0 $e #Positive X ph0 $.
     mu-is-pattern   $a #Pattern ( \mu X ph0 ) $.
 $}
@@ -345,9 +345,14 @@ $)
 $( Proof System Part 1 (7 rules) $)
 $( FOL Reasoning $)
 
+proof-rule-meredith $a |- ( ( ( ( ( ph0 \imp ph1 ) \imp ( \not ph2 \imp \not ph3 ) ) \imp ph2 ) \imp
+    ph4 ) \imp ( ( ph4 \imp ph0 ) \imp ( ph3 \imp ph0 ) ) ) $.
+
+$( To be replaced by lemmas $)
 proof-rule-prop-1 $a |- ( \imp ph0 ( \imp ph1 ph0 ) ) $.
 proof-rule-prop-2 $a |- ( \imp ( \imp ph0 ( \imp ph1 ph2 ) ) ( \imp ( \imp ph0 ph1 ) ( \imp ph0 ph2 ) ) ) $.
 proof-rule-prop-3 $a |- ( \imp ( \imp ( \imp ph0 \bot ) \bot ) ph0 ) $.
+
 ${
     proof-rule-mp.0 $e |- ( \imp ph0 ph1 ) $.
     proof-rule-mp.1 $e |- ph0 $.
@@ -423,5 +428,5 @@ ${
     proof-rule-singleton.1 $e #ApplicationContext yY ph1 $.
     proof-rule-singleton.2 $e #Substitution ph3 ph0 ( \and x ph2 ) xX $.
     proof-rule-singleton.3 $e #Substitution ph4 ph1 ( \and x ( \not ph2 ) ) yY $.
-    proof-rule-singleton $a |- ( \not ( \and ph3 ph4 ) ) $.    
+    proof-rule-singleton $a |- ( \not ( \and ph3 ph4 ) ) $.
 $}
