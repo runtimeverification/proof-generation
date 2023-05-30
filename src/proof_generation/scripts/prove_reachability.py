@@ -7,12 +7,12 @@ import sys
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Any, TextIO
 
-from ..ml.kore import ast as kore
-from ..ml.kore.parser import parse_definition
-from ..ml.kore.utils import KoreUtils
-from ..ml.kore.visitors import PatternSubstitutionVisitor
-from ..ml.rewrite.__main__ import run_on_arguments, set_additional_flags
-from ..ml.utils.ansi import ANSI
+from ..kore import ast as kore
+from ..kore.parser import parse_definition
+from ..kore.utils import KoreUtils
+from ..kore.visitors import PatternSubstitutionVisitor
+from ..rewrite.__main__ import run_on_arguments, set_additional_flags
+from ..utils.ansi import ANSI
 
 
 def run_command(command: list[str], **kwargs: Any) -> subprocess.Popen:

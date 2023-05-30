@@ -6,12 +6,12 @@ import os
 import re
 from typing import TYPE_CHECKING
 
-from ..ml.metamath.backend import NullBackend
-from ..ml.metamath.composer import Composer
-from ..ml.metamath.parser import load_database
+from ..metamath.backend import NullBackend
+from ..metamath.composer import Composer
+from ..metamath.parser import load_database
 
 if TYPE_CHECKING:
-    from ..ml.metamath.composer import Theorem
+    from ..metamath.composer import Theorem
 
 
 def decode_index(index: str) -> int:

@@ -7,7 +7,7 @@ import subprocess
 import sys
 from typing import IO, Any
 
-from ..ml.utils.ansi import ANSI
+from ..utils.ansi import ANSI
 
 STATS_LABELS = [
     'gen-module',

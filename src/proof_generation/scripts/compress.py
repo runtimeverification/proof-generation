@@ -2,9 +2,9 @@ import argparse
 import os
 import re
 
-from ..ml.metamath.backend import NullBackend
-from ..ml.metamath.composer import Composer, Proof
-from ..ml.metamath.parser import load_database
+from ..metamath.backend import NullBackend
+from ..metamath.composer import Composer, Proof
+from ..metamath.parser import load_database
 
 
 def locate_comment_segment(comment_segments: list[tuple[int, int]], pos: int) -> tuple[int, int] | None:

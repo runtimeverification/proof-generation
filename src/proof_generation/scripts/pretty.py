@@ -4,13 +4,13 @@ import argparse
 import sys
 from typing import TYPE_CHECKING
 
-from ..ml.kore.parser import parse_definition, parse_pattern
-from ..ml.kore.utils import KoreUtils
+from ..kore.parser import parse_definition, parse_pattern
+from ..kore.utils import KoreUtils
 
 if TYPE_CHECKING:
     from typing import Any
 
-    from ..ml.kore.ast import BaseAST
+    from ..kore.ast import BaseAST
 
 
 def main() -> None:

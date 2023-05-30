@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from proof_generation.ml.rewrite.__main__ import main as rewrite_main
+from proof_generation.rewrite.__main__ import main as rewrite_main
 
 REPO_ROOT = (Path(__file__).parents[3]).resolve(strict=True)
 TEST_DATA_DIR = (Path(__file__).parent / 'test-data').resolve(strict=True)

@@ -9,8 +9,8 @@ from typing import Any
 
 import yaml
 
-from ..ml.rewrite.__main__ import run_on_arguments, set_additional_flags
-from ..ml.utils.ansi import ANSI
+from ..rewrite.__main__ import run_on_arguments, set_additional_flags
+from ..utils.ansi import ANSI
 
 
 def run_command(command: list[str], **kwargs: Any) -> subprocess.Popen:

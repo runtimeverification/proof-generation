@@ -1,9 +1,9 @@
 import unittest
 from typing import Any
 
-from proof_generation.ml.kore import ast as kore
-from proof_generation.ml.kore.parser import parse_axiom, parse_module, parse_pattern
-from proof_generation.ml.rewrite.encoder import KoreEncoder
+from proof_generation.kore import ast as kore
+from proof_generation.kore.parser import parse_axiom, parse_module, parse_pattern
+from proof_generation.rewrite.encoder import KoreEncoder
 
 
 class TestKoreEncoder(unittest.TestCase):
