@@ -1,3 +1,8 @@
+[tool.poetry.scripts]
+gen-rewrite-proof = "proof_generation.rewrite.__main__:main"
+
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
