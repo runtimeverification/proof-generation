@@ -17,7 +17,9 @@ jobs:
       with:
           submodules: recursive
     - name: 'Verify Metamath proofs'
-      run: make test-metamath
+      run: make test-metamath-prelude
+    - name: 'Verify IMP definition using Metamath'
+      run: make test-metamath-imp
 
   code-quality-checks:
     name: 'Code Quality Checks'
