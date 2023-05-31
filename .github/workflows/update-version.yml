@@ -1,0 +1,46 @@
+name: 'Update Version'
+on:
+  push:
+    branches:
+      - '_update-deps/runtimeverification/pyk'
+      - 'pyk-ci'
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  update-versions:
+    name: 'Update dependency versions'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: 'Configure GitHub user'
+        run: |
+          git config user.name devops
+          git config user.email devops@runtimeverification.com
+      - name: 'Install Poetry'
+        uses: Gr1N/setup-poetry@v8
+      - name: 'Update pyk release tag'
+        run: |
+          PYK_VERSION="$(cat deps/pyk_release)"
+          sed -i 's!pyk = { git = "https://github.com/runtimeverification/pyk.git", tag = "[v0-9\.]*" }!pyk = { git = "https://github.com/runtimeverification/pyk.git", tag = "'${PYK_VERSION}'" }!' pyproject.toml
+          poetry update
+          git add --update && git commit -m "poetry: sync poetry files pyk version ${PYK_VERSION}" || true
+      - name: 'Update K release file'
+        run: |
+          K_VERSION=$(poetry run python3 -c 'import pyk; print(pyk.K_VERSION)')
+          echo ${K_VERSION} > deps/k_release
+          git add deps/k_release && git commit -m "deps/k_release: sync release file version ${K_VERSION}" || true
+      - name: 'Update K submodule'
+        run: |
+          K_VERSION=$(cat deps/k_release)
+          git -C deps/k fetch --tags
+          git -C deps/k checkout "v${K_VERSION}"
+          git add deps/k && git commit -m "deps/k: sync K submodule version v${K_VERSION}" || true
+      - name: 'Push updates'
+        run: git push
