@@ -43,3 +43,40 @@ jobs:
         uses: Gr1N/setup-poetry@v8
       - name: 'Run unit tests'
         run: make cov-unit
+
+  integration-tests:
+    needs: code-quality-checks
+    name: 'Integration Tests'
+    runs-on: [self-hosted, linux, normal]
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v3
+      - name: 'Build Docker image'
+        run: |
+          COMMIT=$(git rev-parse --short=7 HEAD)
+          K_VERSION=$(cat deps/k_release)
+
+          docker build .                        \
+            --file .github/workflows/Dockerfile \
+            --build-arg K_VERSION=${K_VERSION}  \
+            --tag runtimeverificationinc/proof-generation-ci:${COMMIT}
+
+          docker run                   \
+            --name proof-generation-ci \
+            --rm                       \
+            --interactive              \
+            --tty                      \
+            --detach                   \
+            --workdir /home/user       \
+            runtimeverificationinc/proof-generation-ci:${COMMIT}
+
+          docker cp . proof-generation-ci:/home/user
+          docker exec proof-generation-ci chown -R user:user /home/user
+      - name: 'Set Python version'
+        run: docker exec --user user proof-generation-ci poetry env use 3.10
+      - name: 'Run integration tests'
+        run: docker exec --user user proof-generation-ci make cov-integration COV_ARGS=-n8
+      - name: 'Tear down Docker container'
+        if: always()
+        run: |
+          docker stop --time=0 proof-generation-ci
