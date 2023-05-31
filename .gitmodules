@@ -1,10 +1,9 @@
-[submodule "deps/k"]
-	path = deps/k
-	url = git@github.com:rod-lin/k.git
-	branch = matching-logic-proof-checker
 [submodule "deps/rust-metamath"]
 	path = deps/rust-metamath
 	url = git@github.com:kframework/rust-metamath.git
 [submodule "deps/metamath-exe"]
 	path = deps/metamath-exe
 	url = https://github.com/metamath/metamath-exe.git
+[submodule "deps/k"]
+	path = deps/k
+	url = https://github.com/runtimeverification/k.git
