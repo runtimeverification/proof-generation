@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - '_update-deps/runtimeverification/pyk'
-      - 'pyk-ci'
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
