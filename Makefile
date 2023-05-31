@@ -36,7 +36,8 @@ deps: deps-metamath
 deps-metamath: $(METAMATH_EXE)
 
 $(METAMATH_EXE): deps/metamath-exe/README.TXT
-	cd deps/metamath-exe/ && autoreconf -i && ./configure --prefix=$(PWD)/.build && make install
+	mkdir -p $(dir $@)
+	gcc deps/metamath-exe/src/*.c -o $@
 
 
 # Tests
