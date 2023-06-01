@@ -38,8 +38,6 @@ deps-metamath: $(METAMATH_EXE)
 $(METAMATH_EXE): deps/metamath-exe/README.TXT
 	mkdir -p $(dir $@)
 	gcc deps/metamath-exe/src/*.c -o $@
-	pwd
-	ls .build/bin
 
 # Tests
 
@@ -51,7 +49,6 @@ test: test-all
 test-all : test-metamath-prelude
 
 %.mm.verify : %.mm $(METAMATH_EXE)
-	echo ${PATH}
 	bin/metamath-verify $<
 
 METAMATH_PRELUDE_FILES := $(wildcard theory/*.mm)
