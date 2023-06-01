@@ -38,6 +38,9 @@ pytest-xdist = "*"
 pyupgrade = "*"
 types-pyyaml = "^6.0.12.10"
 
+[tool.poetry.scripts]
+gen-rewrite-proof = "proof_generation.rewrite.__main__:main"
+
 [tool.isort]
 profile = "black"
 line_length = 120
