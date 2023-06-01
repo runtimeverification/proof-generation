@@ -38,6 +38,7 @@ deps-metamath: $(METAMATH_EXE)
 $(METAMATH_EXE): deps/metamath-exe/README.TXT
 	mkdir -p $(dir $@)
 	gcc deps/metamath-exe/src/*.c -o $@
+	pwd
 	ls .build/bin
 
 # Tests
