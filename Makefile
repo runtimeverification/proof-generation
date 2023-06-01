@@ -1,8 +1,8 @@
 POETRY     := poetry
 POETRY_RUN := $(POETRY) run
 
-export PATH := $(abspath /.build/bin):$(PATH)
-export PATH := $(abspath /deps/k/k-distribution/bin):$(PATH)
+PATH := $(abspath /.build/bin):$(abspath /deps/k/k-distribution/bin):$(PATH)
+export PATH
 
 # Disable all implicit recipes, e.g. those for building C programs.
 .SUFFIXES:
