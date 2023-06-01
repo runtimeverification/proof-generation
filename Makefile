@@ -1,7 +1,8 @@
 POETRY     := poetry
 POETRY_RUN := $(POETRY) run
 
-export PATH := $(PWD)/.build/bin:$(PATH)
+PATH := $(abspath .build/bin):$(abspath deps/k/k-distribution/bin):$(PATH)
+export PATH
 
 # Disable all implicit recipes, e.g. those for building C programs.
 .SUFFIXES:
@@ -35,8 +36,8 @@ deps: deps-metamath
 deps-metamath: $(METAMATH_EXE)
 
 $(METAMATH_EXE): deps/metamath-exe/README.TXT
-	cd deps/metamath-exe/ && autoreconf -i && ./configure --prefix=$(PWD)/.build && make install
-
+	mkdir -p $(dir $@)
+	gcc deps/metamath-exe/src/*.c -o $@
 
 # Tests
 
@@ -45,12 +46,13 @@ test: test-all
 
 # Metamath tests
 
-test-all : test-metamath
+test-all : test-metamath-prelude
 
-test-metamath : $(addsuffix .verify, $(wildcard theory/*.mm))
-
-theory/%.mm.verify : theory/%.mm $(METAMATH_EXE)
+%.mm.verify : %.mm $(METAMATH_EXE)
 	bin/metamath-verify $<
+
+METAMATH_PRELUDE_FILES := $(wildcard theory/*.mm)
+test-metamath-prelude : $(addsuffix .verify, ${METAMATH_PRELUDE_FILES})
 
 
 # Python Tests
@@ -121,3 +123,17 @@ SRC_FILES := $(shell find src -type f -name '*.py')
 
 pyupgrade: poetry-install
 	$(POETRY_RUN) pyupgrade --py310-plus $(SRC_FILES)
+
+
+# Proof generation tests
+
+test-all : test-metamath-imp
+.PHONY : test-metamath-imp
+
+.build/examples/imp/imp-haskell/definition/definition.kore: MAIN_MODULE=IMP
+.build/%-haskell/definition/definition.kore: %.k
+	kompile $< --backend haskell --main-module ${MAIN_MODULE} --output-definition $(dir $@)
+.build/examples/imp/imp-haskell/definition.mm: .build/examples/imp/imp-haskell/definition/definition.kore theory/prelude.mm
+	$(POETRY_RUN) gen-rewrite-proof --standalone --prelude theory/prelude.mm $< IMP -o $@
+test-metamath-imp : .build/examples/imp/imp-haskell/definition.mm.verify
+

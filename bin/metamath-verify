@@ -18,6 +18,6 @@ COMMANDS
 # Get status, which is false (nonzero) if an error or warning was found.
 ! grep -E '[?]Error|[?]Warning' < "$log_file" > /dev/null || {
     echo "FAILED. See: $log_file";
-    return 1;
+    exit 1;
 }
 
