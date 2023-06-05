@@ -1,0 +1,3 @@
+{
+    "input": "$c ( ) -> wff $.\n$v p q r s $.\nwp $f wff p $.\nwq $f wff q $.\nwr $f wff r $.\nws $f wff s $.\nw2 $a wff ( p -> q ) $.\nwnew $p wff ( s -> ( r -> p ) ) $= ws wr wp w2 w2 $."
+}
