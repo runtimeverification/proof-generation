@@ -37129,7 +37129,7 @@ void command(int argc, char *argv[]);
  * failure.
  * For details see https://en.cppreference.com/w/cpp/language/main_function.
  */
-__circuit__ int main(int argc, char *argv[]) {
+__attribute__ ((circuit)) int main(int argc, char *argv[]) {
 
 /* argc is the number of arguments; argv points to an array containing them */
 
