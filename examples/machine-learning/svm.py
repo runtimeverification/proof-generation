@@ -1,10 +1,12 @@
 def svm(X, W, b):
     assert(len(X) == len(W))
 
+    i = 0
     s = 0
 
-    for i in range(0, len(X)):
-        s += w[i] * x[i]
+    while i < len(X):
+        s = s + W[i] * X[i]
+        i = i + 1
 
     if s - b > 0:
       return 1
