@@ -1,4 +1,10 @@
-def svm(X, W, b):
+def relu(s):
+  if 0 < s:
+    return s
+
+  return 0
+
+def layer_perceptron(X, W, b, f):
     assert(len(X) == len(W))
 
     i = 0
@@ -8,7 +14,4 @@ def svm(X, W, b):
         s = s + (W[i] * X[i])
         i = i + 1
 
-    if b < s:
-      return 1
-
-    return -1
+    return f(s - b)
