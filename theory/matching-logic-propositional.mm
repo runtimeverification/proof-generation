@@ -1374,6 +1374,12 @@ $( Step 3 of Meredith's proof of Lukasiewicz axioms from his sole axiom.
     (The step numbers refer to Meredith's original paper.)  (Contributed by
     NM, 14-Dec-2002.)  (Proof modification is discouraged.)
     (New usage is discouraged.) $)
-merlem1 $p |- ( ( ( ph2 \imp ( \not ph0 \imp ph1 ) ) \imp ph4 ) \imp ( ph0 \imp ph4 ) ) $=
-( not-is-pattern imp-is-pattern proof-rule-meredith proof-rule-mp ) DAEZFIBFZEZIFFZJFCJFZFZMDFADFFJDECEFZEKEFZFOFDF
-LFNIBOKDGJPDCLGHDIJAMGH $.
+merlem1 $p |- ( ( ( ph2 \imp ( \not ph0 \imp ph1 ) ) \imp ph4 ) \imp ( ph0 \imp ph4 ) ) $= ? $.
+
+mer-test $p |- ( \imp ( \imp ( \imp ( \imp ( \imp ( \not ph0 ) ph1 ) ( \imp ( \not ( \imp ( \not ph4 ) ( \not ph2 ) ) ) ( \not ( \not ( \not ( \imp ( \not ph0 ) ph1 ) ) ) ) ) ) ( \imp ( \not ph4 ) ( \not ph2 ) ) ) ph4 ) ( \imp ( \imp ph4 ( \not ph0 ) ) ( \not ( \not ( \imp ( \not ph0 ) ph1 ) ) ) ( \not ph0 ) ) ) $= ? $.
+
+prop-test $p |- ( \imp ( \not ( ( \not ph0 ) \imp ph1 ) ) ph0 ) $= ? $.
+
+contradiction-test $p |- ( \imp ( \imp (  \not  ph0 ) \bot ) ph0 ) $= ? $.
+
+kt-bot-elim $p |- ( \imp ( \mu X X ) ph1 ) $= ( set-var-is-var var-is-pattern substitution-var-same imp-reflexivity proof-rule-kt ) ABCDABABCEAFG $.
