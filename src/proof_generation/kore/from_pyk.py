@@ -4,6 +4,13 @@ from dataclasses import dataclass
 from typing import overload
 
 import pyk.kore.syntax as pyk_kore
+from pyk.kllvm import load
+
+load  # Only needed to quench the autoformatter.
+
+
+from pyk.kllvm import ast as kllvm_kore
+from pyk.kllvm.convert import llvm_to_kore
 
 import proof_generation.kore.ast as pg_kore
 
@@ -46,6 +53,11 @@ def from_pyk(p: pyk_kore.Pattern | pyk_kore.Sort) -> pg_kore.Pattern | pg_kore.S
         args = [from_pyk(arg) for arg in p.args]
         return pg_kore.Application(pg_kore.SymbolInstance(p.symbol, sorts), args)
     raise NotImplementedError(f'For type {type(p)}, kore = {p}')
+
+
+def from_binkore(input: bytes) -> pg_kore.Pattern:
+    llvm_pattern = kllvm_kore.Pattern.deserialize(input)
+    return from_pyk(llvm_to_kore(llvm_pattern))
 
 
 @dataclass
