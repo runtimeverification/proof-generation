@@ -5,7 +5,7 @@ import pytest
 from pyk.kore.parser import KoreParser as PykKoreParser
 
 import proof_generation.kore.ast as pg_kore
-from proof_generation.kore.from_pyk import from_binkore, from_pyk, LLVMRewriteTrace
+from proof_generation.kore.from_pyk import LLVMRewriteTrace, from_binkore, from_pyk
 from proof_generation.kore.parser import parse_pattern as pg_parse_pattern
 
 PykSortVar = pyk_kore.SortVar
@@ -41,7 +41,8 @@ def test_from_binkore() -> None:
 def test_parse_proof_hint() -> None:
     bin_hint = Path('examples/proof-hints.bin').read_bytes()
     hint = LLVMRewriteTrace.parse(bin_hint)
-    assert False, str(hint.initial_config)
+    assert False, str(hint)
+
 
 DATA_SAME_PARSE_INPUT = (
     ('const', 'c{}()'),
@@ -73,5 +74,3 @@ DATA_SAME_PARSE_INPUT = (
 def test_same_parse(id: str, input: str) -> None:
     assert str(from_pyk(pyk_parse_pattern(input))) == str(pg_parse_pattern(input))
     assert pg_parse_pattern(input) == from_pyk(pyk_parse_pattern(input))
-
-
