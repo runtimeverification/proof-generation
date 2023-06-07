@@ -715,7 +715,6 @@
 #include "mmveri.h"
 #include "mmpfas.h"
 #include "mmunif.h"
-#include "mmword.h"
 #include "mmwtex.h"
 #include "mmfatl.h"
 #include "mmtest.h"
@@ -1978,28 +1977,6 @@ void command(int argc, char *argv[]) {
         fclose(list1_fp);
         continue;
       } /* end TYPE */
-
-      if (cmdMatches("UPDATE")) {
-        list1_fp = fSafeOpen(g_fullArg[1], "r", 0/*noVersioningFlag*/);
-        list2_fp = fSafeOpen(g_fullArg[2], "r", 0/*noVersioningFlag*/);
-        if (!list1_fp) continue; /* Couldn't open it (error msg was provided) */
-        if (!list2_fp) continue; /* Couldn't open it (error msg was provided) */
-        if (!getRevision(g_fullArg[4])) {
-          print2(
-"?The revision tag must be of the form /*nn*/ or /*#nn*/.  Please try again.\n");
-          continue;
-        }
-        free_vstring(list3_ftmpname);
-        list3_ftmpname = fGetTmpName("zz~tools");
-        list3_fp = fSafeOpen(list3_ftmpname, "w", 0/*noVersioningFlag*/);
-        if (!list3_fp) continue; /* Couldn't open it (error msg was provided) */
-
-        revise(list1_fp, list2_fp, list3_fp, g_fullArg[4],
-            (long)val(g_fullArg[5]));
-
-        fSafeRename(list3_ftmpname, g_fullArg[3]);
-        continue;
-      }
 
       if (cmdMatches("COPY") || cmdMatches("C")) {
         free_vstring(list2_ftmpname);
