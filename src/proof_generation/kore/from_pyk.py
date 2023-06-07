@@ -57,6 +57,7 @@ def from_pyk(p: pyk_kore.Pattern | pyk_kore.Sort) -> pg_kore.Pattern | pg_kore.S
 
 def from_binkore(input: bytes) -> pg_kore.Pattern:
     llvm_pattern = kllvm_kore.Pattern.deserialize(input)
+    assert llvm_pattern, ('Could not deserialize binary kore.', input)
     return from_pyk(llvm_to_kore(llvm_pattern))
 
 
@@ -72,13 +73,51 @@ class LLVMRewriteTrace:
     initial_config: pyk_kore.Pattern
     trace: tuple[LLVMRewriteStep, ...]
 
+    @staticmethod
+    def parse(input: bytes) -> LLVMRewriteTrace:
+        parser = LLVMRewriteTraceParser(input)
+        ret = parser.read_rewrite_trace()
+        # assert parser.eof()
+        return ret
 
-def parse_proof_hint(input: bytes) -> LLVMRewriteTrace:
+class LLVMRewriteTraceParser:
     """
     binary_kore_term := 0xffffffffffffffff serialized_term 0xcccccccccccccccc
     variable := null_terminated_name serialized_term 0xcccccccccccccccc
-    rewrite_trace := variable* binary_kore_term
+    ordinal := uint64
+    arity := uint64
+    rewrite_trace := ordinal arity variable* binary_kore_term
     initial_config := binary_kore_term
     proof_trace := initial_config rewrite_trace*
     """
-    raise NotImplementedError()
+
+
+    def __init__(self, input: bytes):
+        self.input = input
+
+    def read_rewrite_trace(self) -> LLVMRewriteTrace:
+        init_config = self.read_binary_kore_term()
+        # while input:
+        #     traces += self.read_rewrite_step()
+        return LLVMRewriteTrace(init_config, ())
+
+    def read_binary_kore_term(self) -> pg_kore.Pattern:
+        self.read_constant(bytes([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, ]))
+        sentinal = bytes([0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc, ])
+        raw_term = self.read_until(sentinal)
+        self.read_constant(sentinal)
+        return from_binkore(raw_term)
+
+    def read_constant(self, constant: bytes) -> None:
+        assert self.input[:len(constant)] == constant
+        self.input = self.input[len(constant):]
+
+    def read_until(self, constant: bytes) -> bytes:
+        index = self.input.find(constant)
+        ret = self.input[:index]
+        self.input = self.input[index:]
+        return ret
+
+    # def read_proof_step(self) -> pg_kore.LLVMRewriteStep:
+    #     return None
+
