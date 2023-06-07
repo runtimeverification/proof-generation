@@ -44,4 +44,4 @@ def from_pyk(p: pyk_kore.Pattern | pyk_kore.Sort) -> pg_kore.Pattern | pg_kore.S
         sorts = [from_pyk(sort) for sort in p.sorts]
         args = [from_pyk(arg) for arg in p.args]
         return pg_kore.Application(pg_kore.SymbolInstance(p.symbol, sorts), args)
-    raise NotImplementedError('For type {}, kore = {}'.format(type(p), p))
+    raise NotImplementedError(f'For type {type(p)}, kore = {p}')
