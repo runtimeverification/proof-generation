@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import overload
 
 import pyk.kore.syntax as pyk_kore
@@ -45,3 +46,27 @@ def from_pyk(p: pyk_kore.Pattern | pyk_kore.Sort) -> pg_kore.Pattern | pg_kore.S
         args = [from_pyk(arg) for arg in p.args]
         return pg_kore.Application(pg_kore.SymbolInstance(p.symbol, sorts), args)
     raise NotImplementedError(f'For type {type(p)}, kore = {p}')
+
+
+@dataclass
+class LLVMRewriteStep:
+    post_config: pyk_kore.Pattern
+    rule_ordinal: int
+    substitution: dict[pyk_kore.EVar, pyk_kore.Pattern]
+
+
+@dataclass
+class LLVMRewriteTrace:
+    initial_config: pyk_kore.Pattern
+    trace: tuple[LLVMRewriteStep, ...]
+
+
+def parse_proof_hint(input: bytes) -> LLVMRewriteTrace:
+    """
+    binary_kore_term := 0xffffffffffffffff serialized_term 0xcccccccccccccccc
+    variable := null_terminated_name serialized_term 0xcccccccccccccccc
+    rewrite_trace := variable* binary_kore_term
+    initial_config := binary_kore_term
+    proof_trace := initial_config rewrite_trace*
+    """
+    raise NotImplementedError()
