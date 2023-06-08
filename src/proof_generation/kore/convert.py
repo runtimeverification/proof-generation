@@ -3,11 +3,6 @@ from __future__ import annotations
 from typing import overload
 
 import pyk.kore.syntax as pyk_kore
-from pyk.kllvm import load
-
-load  # Only needed to quench the autoformatter.
-
-
 from pyk.kllvm import ast as kllvm_kore
 from pyk.kllvm.convert import llvm_to_kore
 

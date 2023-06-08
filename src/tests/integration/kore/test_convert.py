@@ -1,3 +1,7 @@
+from pyk.kllvm import load
+
+load  # Only needed to quench the autoformatter.
+
 from pathlib import Path
 
 import pyk.kore.syntax as pyk_kore
