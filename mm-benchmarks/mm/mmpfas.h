@@ -30,41 +30,9 @@ struct pip_struct {
 };
 extern struct pip_struct g_ProofInProgress;
 
-/*! Interactively select statement assignments that match
-  \param maxEssential the maximum number of essential hypotheses that a
-    statement may have in order to be included in the matched list. */
-void interactiveMatch(long step, long maxEssential);
 
-/*! Assign a statement to an unknown proof step */
-void assignStatement(long statemNum, long step);
 
-/*! Find proof of formula by using the replaceStatement() algorithm i.e.
-   see if any statement matches current step AND each of its hypotheses
-   matches a proof in progress hypothesis or some step already in the proof.
-   If a proof is found, it is returned, otherwise an empty (length 0) proof is
-   returned.
-  \note The caller must deallocate the returned nmbrString. */
-nmbrString *proveByReplacement(long prfStmt,
-    long prfStep, /*!< 0 means step 1 */
-    flag noDistinct, /*!< 1 means don't try statements with $d's */
-    flag dummyVarFlag, /*!< 0 means no dummy vars are in prfStmt */
-    flag searchMethod, /*!< 1 means to try proveFloating on $e's also */
-    long improveDepth,
-    flag overrideFlag, /*!< 1 means to override usage locks */
-    flag mathboxFlag /*!< 1 means allow mathboxes */
-    );
 
-nmbrString *replaceStatement(long replStatemNum,
-    long prfStep,
-    long provStmtNum,
-    flag subProofFlag, /*!< If 1, then scan only subproof at prfStep to look for
-   matches, instead of whole proof, for faster speed (used by MINIMIZE_WITH) */
-    flag noDistinct, /*!< 1 means don't try statements with $d's */
-    flag searchMethod, /*!< 1 means to try proveFloating on $e's also */
-    long improveDepth,
-    flag overrideFlag, /*!< 1 means to override usage locks */
-    flag mathboxFlag /*!< 1 means allow mathboxes */
-    );
 
 /*! This function identifies all steps in the proof in progress that (1) are
    independent of step refStep, (2) have no dummy variables, (3) are
