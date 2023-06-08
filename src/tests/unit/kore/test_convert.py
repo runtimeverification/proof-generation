@@ -1,11 +1,9 @@
-from pathlib import Path
-
 import pyk.kore.syntax as pyk_kore
 import pytest
 from pyk.kore.parser import KoreParser as PykKoreParser
 
 import proof_generation.kore.ast as pg_kore
-from proof_generation.kore.convert import from_binkore, from_pyk
+from proof_generation.kore.convert import from_pyk
 from proof_generation.kore.parser import parse_pattern as pg_parse_pattern
 
 PykSortVar = pyk_kore.SortVar
