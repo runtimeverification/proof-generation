@@ -12,27 +12,6 @@
 #include "mmvstr.h"
 #include "mmdata.h"
 
-/*! Type (i.e. print) a statement */
-void typeStatement(long statemNum,
-  flag briefFlag,
-  flag commentOnlyFlag,
-  flag texFlag,
-  flag htmlFlag);
-/*! Type (i.e. print) a proof */
-void typeProof(long statemNum,
-  flag pipFlag, /*!< Type proofInProgress instead of source file proof */
-  long startStep, long endStep,
-  long endIndent,
-  flag essentialFlag,
-  flag renumberFlag,
-  flag unknownFlag,
-  flag notUnifiedFlag,
-  flag reverseFlag,
-  flag noIndentFlag,
-  long startColumn,
-  flag skipRepeatedSteps,
-  flag texFlag,
-  flag htmlFlag);
 /*! Show details of step */
 void showDetailStep(long statemNum, long detailStep);
 /*! Summary of statements in proof */
