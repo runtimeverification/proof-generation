@@ -5,7 +5,7 @@ import pytest
 from pyk.kore.parser import KoreParser as PykKoreParser
 
 import proof_generation.kore.ast as pg_kore
-from proof_generation.kore.from_pyk import LLVMRewriteTrace, from_binkore, from_pyk
+from proof_generation.kore.convert import from_binkore, from_pyk
 from proof_generation.kore.parser import parse_pattern as pg_parse_pattern
 
 PykSortVar = pyk_kore.SortVar
@@ -21,27 +21,6 @@ def test_sorts() -> None:
     assert from_pyk(PykSortApp('Foo', (PykSortVar('T'), PykSortApp('Bar')))) == PGSortInstance(
         'Foo', [PGSortVariable('T'), PGSortInstance('Bar', [])]
     )
-
-
-def pyk_parse_pattern(input: str) -> PykPattern:
-    parser = PykKoreParser(input)
-    ret = parser.pattern()
-    assert parser.eof
-    return ret
-
-
-def test_from_binkore() -> None:
-    binkore = Path('./deps/k/llvm-backend/src/main/native/llvm-backend/test/input/test_61.in').read_bytes()
-    kore = from_binkore(binkore)
-    assert str(kore).startswith(
-        "inj{SortTUBunch{}, SortKItem{}}(Lbltubunch{}(kseq{}(inj{SortGeneratedTopCell{}, SortKItem{}}(Lbl'-LT-'generatedTop'-GT-'{}(Lbl'-LT-'phase'-GT-'{}(Lbltranslate'Unds'C-PHASE'Unds'Phase{}()), Lbl'Stop'StateCell{}()"
-    )
-
-
-def test_parse_proof_hint() -> None:
-    bin_hint = Path('examples/proof-hints.bin').read_bytes()
-    hint = LLVMRewriteTrace.parse(bin_hint)
-    assert False, str(hint)
 
 
 DATA_SAME_PARSE_INPUT = (
@@ -68,6 +47,13 @@ DATA_SAME_PARSE_INPUT = (
     ('var-sort-param-bin', r'Y:Map{S1,S2}'),
     ('app-kitchen-sink', 'f{Int{}, List{Bool{}}}(Y:Map{S1,S2}, g{}(Y:List{S}))'),
 )
+
+
+def pyk_parse_pattern(input: str) -> PykPattern:
+    parser = PykKoreParser(input)
+    ret = parser.pattern()
+    assert parser.eof
+    return ret
 
 
 @pytest.mark.parametrize('id,input', DATA_SAME_PARSE_INPUT, ids=[id for id, _ in DATA_SAME_PARSE_INPUT])
