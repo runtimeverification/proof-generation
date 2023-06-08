@@ -1,6 +1,6 @@
 from pyk.kllvm import load
 
-load # Make sure it is used.
+load  # Make sure it is used.
 
 from pathlib import Path
 
