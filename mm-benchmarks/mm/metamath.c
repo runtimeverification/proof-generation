@@ -708,7 +708,6 @@
 #include "mmdata.h"
 #include "mmcmdl.h"
 #include "mmcmds.h"
-#include "mmhlpa.h"
 #include "mmhlpb.h"
 #include "mminou.h"
 #include "mmpars.h"
@@ -1162,14 +1161,8 @@ void command(int argc, char *argv[]) {
         let(&str1, cat(str1, g_fullArg[i], " ", NULL));
       }
       let(&str1, left(str1, (long)(strlen(str1)) - 1));
-      if (g_toolsMode) {
-        help0(str1);
-        help1(str1);
-      } else {
-        help1(str1);
-        help2(str1);
-        help3(str1);
-      }
+      help2(str1);
+      help3(str1);
       continue;
     }
 
