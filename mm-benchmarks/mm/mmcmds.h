@@ -12,18 +12,6 @@
 #include "mmvstr.h"
 #include "mmdata.h"
 
-/*! Show details of step */
-void showDetailStep(long statemNum, long detailStep);
-/*! Summary of statements in proof */
-void proofStmtSumm(long statemNum, flag essentialFlag, flag texFlag);
-/*! Traces back the statements used by a proof, recursively. */
-char traceProof(long statemNum,
-  flag essentialFlag,
-  flag axiomFlag,
-  vstring matchList,
-  vstring traceToList,
-  flag testOnlyFlag,
-  flag abortOnQuit);
 void traceProofWork(long statemNum,
   flag essentialFlag,
   vstring traceToList,
