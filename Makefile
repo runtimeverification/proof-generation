@@ -30,7 +30,7 @@ poetry-install:
 METAMATH_EXE := .build/bin/metamath
 
 .PHONY: deps
-deps: deps-metamath
+deps: deps-metamath deps-k
 
 .PHONY: deps-metamath
 deps-metamath: $(METAMATH_EXE)
@@ -38,6 +38,10 @@ deps-metamath: $(METAMATH_EXE)
 $(METAMATH_EXE): deps/metamath-exe/README.TXT
 	mkdir -p $(dir $@)
 	gcc deps/metamath-exe/src/*.c -o $@
+
+.PHONY: deps-k
+deps-k:
+	cd deps/k && mvn package -DskipTests
 
 # Tests
 
