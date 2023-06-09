@@ -12,7 +12,6 @@
 #include "mmdata.h"
 #include "mminou.h"
 #include "mmpars.h"
-#include "mmunif.h"
 #include "mmpfas.h"
 #include "mmwtex.h"
 

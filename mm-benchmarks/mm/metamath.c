@@ -712,7 +712,6 @@
 #include "mmpars.h"
 #include "mmveri.h"
 #include "mmpfas.h"
-#include "mmunif.h"
 #include "mmwtex.h"
 #include "mmfatl.h"
 #include "mmtest.h"
@@ -786,7 +785,7 @@ void command(int argc, char *argv[]) {
                                      arguments processed so far */
 
   long /*c,*/ i, j, k, m, l, n, p, q, r, s /*,tokenNum*/;
-  long stmt, step;
+  long stmt;
   int subType = 0;
 #define SYNTAX 4
   vstring_def(str1);
@@ -794,7 +793,6 @@ void command(int argc, char *argv[]) {
   vstring_def(str3);
   vstring_def(str4);
   vstring_def(str5);
-  nmbrString *nmbrTmpPtr; /* Pointer only; not allocated directly */
   nmbrString_def(nmbrTmp);
   nmbrString_def(nmbrSaveProof);
   /*pntrString *pntrTmpPtr;*/ /* Pointer only; not allocated directly */
@@ -809,26 +807,10 @@ void command(int argc, char *argv[]) {
      set by SAVE NEW_PROOF. */
   flag proofSavedFlag = 0;
 
-  /* Variables for SHOW PROOF */
-  flag pipFlag; /* Proof-in-progress flag */
-  long outStatement; /* Statement for SHOW PROOF or SHOW NEW_PROOF */
-  flag explicitTargets; /* For SAVE PROOF /EXPLICIT */
-  long startStep; long endStep;
   /* long startIndent; */
   long endIndent; /* Also for SHOW TRACE_BACK */
   flag essentialFlag; /* Also for SHOW TRACE_BACK */
-  flag renumberFlag; /* Flag to use essential step numbering */
-  flag unknownFlag;
-  flag notUnifiedFlag;
-  flag reverseFlag;
-  long detailStep;
-  flag noIndentFlag; /* Flag to use non-indented display */
-  long splitColumn; /* Column at which formula starts in non-indented display */
-  flag skipRepeatedSteps; /* NO_REPEATED_STEPS qualifier */
   flag texFlag; /* Flag for TeX */
-  flag saveFlag; /* Flag to save in source */
-  flag fastFlag; /* Flag for SAVE PROOF.../FAST */
-  long indentation; /* Number of spaces to indent proof */
   vstring_def(labelMatch); /* SHOW PROOF <label> argument */
 
   flag axiomFlag; /* For SHOW TRACE_BACK */
@@ -842,60 +824,13 @@ void command(int argc, char *argv[]) {
   flag joinFlag; /* For SEARCH */
   long searchWindow; /* For SEARCH */
   FILE *type_fp; /* For TYPE, SEARCH */
-  long maxEssential; /* For MATCH */
   nmbrString_def(essentialFlags);
-                                            /* For ASSIGN/IMPROVE FIRST/LAST */
-  long improveDepth; /* For IMPROVE */
-  flag searchAlg; /* For IMPROVE */
-  flag searchUnkSubproofs;  /* For IMPROVE */
-  flag dummyVarIsoFlag; /* For IMPROVE */
-  long improveAllIter; /* For IMPROVE ALL */
-  flag proofStepUnk; /* For IMPROVE ALL */
 
   flag texHeaderFlag; /* For OPEN TEX, CLOSE TEX */
   flag commentOnlyFlag; /* For SHOW STATEMENT */
   flag briefFlag; /* For SHOW STATEMENT */
   flag linearFlag; /* For SHOW LABELS */
   vstring_def(bgcolor); /* For SHOW STATEMENT definition list */
-
-  flag verboseMode, mayGrowFlag /*, noDistinctFlag*/; /* For MINIMIZE_WITH */
-  long prntStatus; /* For MINIMIZE_WITH */
-  flag hasWildCard; /* For MINIMIZE_WITH */
-  long exceptPos; /* For MINIMIZE_WITH */
-  flag mathboxFlag; /* For MINIMIZE_WITH */
-  long thisMathboxStartStmt; /* For MINIMIZE_WITH */
-  flag forwFlag; /* For MINIMIZE_WITH */
-  long forbidMatchPos;  /* For MINIMIZE_WITH */
-  vstring_def(forbidMatchList);  /* For MINIMIZE_WITH */
-  long noNewAxiomsMatchPos;  /* For NO_NEW_AXIOMS_FROM */
-  vstring_def(noNewAxiomsMatchList);  /* For NO_NEW_AXIOMS_FROM */
-  long allowNewAxiomsMatchPos;  /* For NO_NEW_AXIOMS_FROM */
-  vstring_def(allowNewAxiomsMatchList);  /* For NO_NEW_AXIOMS_FROM */
-  vstring_def(traceProofFlags); /* For NO_NEW_AXIOMS_FROM */
-  vstring_def(traceTrialFlags); /* For NO_NEW_AXIOMS_FROM */
-  flag overrideFlag; /* For discouraged statement /OVERRIDE */
-
-  struct pip_struct saveProofForReverting = {
-       NULL_NMBRSTRING, NULL_PNTRSTRING, NULL_PNTRSTRING, NULL_PNTRSTRING };
-                                   /* For MINIMIZE_WITH */
-  long origCompressedLength; /* For MINIMIZE_WITH */
-  long oldCompressedLength = 0; /* For MINIMIZE_WITH */
-  long newCompressedLength = 0; /* For MINIMIZE_WITH */
-  long forwardCompressedLength = 0; /* For MINIMIZE_WITH */
-  long forwardLength = 0; /* For MINIMIZE_WITH */
-  vstring saveZappedProofSectionPtr; /* Pointer only */ /* For MINIMIZE_WITH */
-  long saveZappedProofSectionLen; /* For MINIMIZE_WITH */
-  flag saveZappedProofSectionChanged; /* For MINIMIZE_WITH */
-
-  struct pip_struct saveOrigProof = {
-       NULL_NMBRSTRING, NULL_PNTRSTRING, NULL_PNTRSTRING, NULL_PNTRSTRING };
-                                   /* For MINIMIZE_WITH */
-  struct pip_struct save1stPassProof = {
-       NULL_NMBRSTRING, NULL_PNTRSTRING, NULL_PNTRSTRING, NULL_PNTRSTRING };
-                                   /* For MINIMIZE_WITH */
-  long forwRevPass; /* 1 = forward pass */
-
-  long sourceStatement; /* For EXPAND */
 
   flag showLemmas; /* For WRITE THEOREM_LIST */
   flag noVersioning; /* For WRITE THEOREM_LIST & others */
@@ -3119,15 +3054,15 @@ void command(int argc, char *argv[]) {
       }
       print2(
     "(SET UNIFICATION_TIMEOUT...) The unification timeout parameter is %ld.\n",
-          g_userMaxUnifTrials);
-      if (g_minSubstLen) {
+          0);
+      if (0) {
         print2(
      "(SET EMPTY_SUBSTITUTION...) EMPTY_SUBSTITUTION is not allowed (OFF).\n");
       } else {
         print2(
           "(SET EMPTY_SUBSTITUTION...) EMPTY_SUBSTITUTION is allowed (ON).\n");
       }
-      if (g_hentyFilter) {
+      if (0) {
         print2(
               "(SET JEREMY_HENTY_FILTER...) The Henty filter is turned ON.\n");
       } else {
@@ -3596,23 +3531,19 @@ void command(int argc, char *argv[]) {
       if (cmdMatches("SET JEREMY_HENTY_FILTER ON")) {
         print2("The unification equivalence filter has been turned on.\n");
         print2("This command is intended for debugging purposes only.\n");
-        g_hentyFilter = 1;
       } else {
         print2("This command is intended for debugging purposes only.\n");
         print2("The unification equivalence filter has been turned off.\n");
-        g_hentyFilter = 0;
       }
       continue;
     }
 
     if (cmdMatches("SET EMPTY_SUBSTITUTION")) {
       if (cmdMatches("SET EMPTY_SUBSTITUTION ON")) {
-        g_minSubstLen = 0;
         print2("Substitutions with empty symbol sequences is now allowed.\n");
         continue;
       }
       if (cmdMatches("SET EMPTY_SUBSTITUTION OFF")) {
-        g_minSubstLen = 1;
         printLongLine(cat("The ability to substitute empty expressions",
             " for variables  has been turned off.  Note that this may",
             " make the Proof Assistant too restrictive in some cases.",
@@ -3702,9 +3633,7 @@ void command(int argc, char *argv[]) {
 
     if (cmdMatches("SET UNIFICATION_TIMEOUT")) {
       s = (long)val(g_fullArg[2]); /* Timeout value */
-      print2("Unification timeout has been changed from %ld to %ld\n",
-          g_userMaxUnifTrials,s);
-      g_userMaxUnifTrials = s;
+      print2("Unification timeout has been changed from %ld to %ld\n", 0,s);
       continue;
     }
 

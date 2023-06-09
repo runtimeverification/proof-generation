@@ -13,7 +13,6 @@
 #include "mmpars.h"
 /* #include "mmcmds.h" */  /* For getContribs() if used */
 #include "mmpfas.h" /* Needed for g_pipDummyVars, subproofLen() */
-#include "mmunif.h" /* Needed for g_minSubstLen */
 #include "mmcmdl.h" /* Needed for g_rootDirectory */
 
 long potentialStatements; /* Potential statements in source file (upper
@@ -1720,16 +1719,6 @@ void parseStatements(void) {
        Before the user had to allow this manually with
        SET EMPTY_SUBSTITUTION ON; now it is done automatically. */
     type = g_Statement[stmt].type;
-    if (type == a_) {
-      if (g_minSubstLen) {
-        if (g_Statement[stmt].mathStringLen == 1) {
-          g_minSubstLen = 0;
-          printLongLine(cat("SET EMPTY_SUBSTITUTION was",
-             " turned ON (allowed) for this database.", NULL),
-             "    ", " ");
-        }
-      }
-    }
 
     /* Ensure the current Metamath spec is met:  "There may
        not be be two active $f statements containing the same variable.  Each
