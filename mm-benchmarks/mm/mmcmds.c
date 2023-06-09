@@ -17,8 +17,6 @@
 #include "mmveri.h"
 #include "mmwtex.h" /* For g_htmlVarColor,... */
 #include "mmpfas.h"
-#include "mmunif.h" /* For g_bracketMatchInit, g_minSubstLen,
-                       ...and g_firstConst */
 
 /* Local prototypes */
 vstring bigAdd(vstring bignum1, vstring bignum2);
@@ -1594,7 +1592,6 @@ void writeExtractedSource(
   vstring_def(mathTokenDeclared);
   vstring_def(undeclaredC);
   vstring_def(undeclaredV);
-  long extractedStmts;
   vstring_def(hdrSuffix);
   FILE *fp;
   vstring_def(buf);
@@ -1976,7 +1973,6 @@ void writeExtractedSource(
       "   \"WRITE SOURCE '%s' /EXTRACT %s\" $)",
       fullOutput_fn, extractLabelList);
 
-  extractedStmts = 0; /* How many statements were extracted */
   for (stmt = 1; stmt <= g_statements + 1; stmt++) {
     /* If the header is part of the labelSection of an extracted stmt,
        we don't want to add a newline in order for extractions to be
@@ -2033,7 +2029,6 @@ void writeExtractedSource(
       if (stmt == g_statements + 1) bug(272); /* Text below last statement
            isn't (currently) used - do we need it? */
       if (stmt != g_statements + 1) {
-        extractedStmts++; /* For final message */
         fprintf(fp, "$%c", g_Statement[stmt].type);
         if (g_Statement[stmt].type != lb_ && g_Statement[stmt].type != rb_) {
           /* $v $c $d $e $f $a $p */
@@ -2339,18 +2334,6 @@ void eraseSource(void)    /* ERASE command */
 
   /* Allocate big arrays */
   initBigArrays();
-
-  /* 2-Oct-2017 nm Future possibility: add 'reset' parameter to unify() to clear
-     the 5 variables below */
-  g_bracketMatchInit = 0; /* Clear to force mmunif.c to scan $a's again */
-  g_minSubstLen = 1; /* Initialize to the default SET EMPTY_SUBSTITUTION OFF */
-  /* Clear g_firstConst to trigger clearing of g_lastConst and
-     g_oneConst in mmunif.c */
-  free_nmbrString(g_firstConst);
-  /* Clear these directly so they will be truly deallocated for valgrind */
-  free_nmbrString(g_lastConst);
-  free_nmbrString(g_oneConst);
-
   getMarkupFlag(0, RESET); /* Erase the cached markup flag storage */
 
   /* Erase the contributor markup cache */
