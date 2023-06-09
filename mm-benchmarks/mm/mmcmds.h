@@ -42,8 +42,6 @@ double countSteps(long statemNum, flag essentialFlag);
 vstring traceUsage(long statemNum,
   flag recursiveFlag,
   long cutoffStmt /* if nonzero, stop scan there */);
-vstring htmlDummyVars(long showStmt);
-vstring htmlAllowedSubst(long showStmt);
 
 void readInput(void);
 /*! WRITE SOURCE command */
