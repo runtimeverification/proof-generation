@@ -21,7 +21,6 @@ mmdata.c
 #include "mminou.h"
 #include "mmpars.h"
 #include "mmcmdl.h" /* Needed for g_logFileName */
-#include "mmpfas.h" /* Needed for g_proveStatement */
 #include "mmwtex.h" /* Needed for SMALL_DECORATION etc. */
 #include "mmfatl.h"
 
@@ -909,7 +908,7 @@ flag matches(const char *testString, const char *pattern, char wildCard,
       s1 = lookupLabel(testString);
       /* We might as well use g_proveStatement outside of MM-PA, so =
          can be argument to PROVE command */
-      return (g_proveStatement == s1);
+      return (s1);
     }
 
     /* "%" matches changed proofs */

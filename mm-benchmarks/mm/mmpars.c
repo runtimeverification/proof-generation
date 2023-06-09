@@ -12,7 +12,6 @@
 #include "mminou.h"
 #include "mmpars.h"
 /* #include "mmcmds.h" */  /* For getContribs() if used */
-#include "mmpfas.h" /* Needed for g_pipDummyVars, subproofLen() */
 #include "mmcmdl.h" /* Needed for g_rootDirectory */
 
 long potentialStatements; /* Potential statements in source file (upper
@@ -1894,7 +1893,7 @@ char parseProof(long statemNum)
   nmbrString_def(targetNmbr); /* Size of target tokens */
   /* Variables for rearranging /EXPLICIT proof */
   nmbrString_def(wrkProofString); /* Holds g_WrkProof.proofString */
-  long hypStepNum, hypSubProofLen, conclSubProofLen;
+  long hypStepNum, hypSubProofLen = 0, conclSubProofLen = 0;
   long matchingHyp;
   nmbrString_def(oldStepNums); /* Just numbers 0 to numSteps-1 */
   pntrString_def(reqHypSubProof); /* Subproofs of hypotheses */
@@ -2457,7 +2456,6 @@ char parseProof(long statemNum)
                g_WrkProof.proofString structure component */
       nmbrTmpPtr = g_Statement[j].reqHypList;
       numReqHyp = g_Statement[j].numReqHyp;
-      conclSubProofLen = subproofLen(wrkProofString, step);
       pntrLet(&reqHypSubProof, pntrNSpace(numReqHyp));
                                          /* Initialize to NULL_NMBRSTRINGs */
       pntrLet(&reqHypOldStepNums, pntrNSpace(numReqHyp));
@@ -2466,7 +2464,6 @@ char parseProof(long statemNum)
       for (i = 0; i < numReqHyp; i++) {
         m = g_WrkProof.RPNStackPtr - numReqHyp + i; /* Stack position of hyp */
         hypStepNum = g_WrkProof.RPNStack[m]; /* Step number of hypothesis i */
-        hypSubProofLen = subproofLen(wrkProofString, hypStepNum);
         k += hypSubProofLen;
         nmbrLet((nmbrString **)(&(reqHypSubProof[i])),
             /* For nmbrSeg, 1 = first step */
@@ -2620,7 +2617,6 @@ char parseProof(long statemNum)
         if (k <= -1000) { /* References local label i.e. subproof */
           k = -1000 - k; /* Restore step number subproof ends at */
           if (k > step) { /* Refers to label declared after this step */
-            m = subproofLen(g_WrkProof.proofString, k);
             /*m = nmbrGetSubProofLen(g_WrkProof.proofString, k);*/
 
             /* At this point:
@@ -4734,9 +4730,6 @@ nmbrString *parseMathTokens(vstring userText, long statemNum)
                 wrkStrPtr[i - 1] = 0; /* End of string */
                 tokenNum = (long)(val(wrkStrPtr)) + g_mathTokens;
                 /* See if dummy var has been declared; if not, declare it */
-                if (tokenNum > g_pipDummyVars + g_mathTokens) {
-                  declareDummyVars(tokenNum - g_pipDummyVars - g_mathTokens);
-                }
               }
             } /* End if fbPtr == '$' */
          } /* End if symbolLen == 0 */
