@@ -58,42 +58,11 @@ flag readTexDefs(
   flag errorsOnly,  /*!< 1 = suppress non-error messages */
   flag gifCheck   /*!< 1 = check for missing GIFs */);
 
-extern flag g_texDefsRead;
-/*! for "erase" */
-struct texDef_struct {
-  vstring tokenName; /*!< ASCII token */
-  vstring texEquiv; /*!< Converted to TeX */
-};
-extern struct texDef_struct *g_TexDefs; /*!< for "erase" */
 
-long texDefWhiteSpaceLen(char *ptr);
-long texDefTokenLen(char *ptr);
-/*! Token comparison for qsort */
-int texSortCmp(const void *key1, const void *key2);
-/*! Token comparison for bsearch */
-int texSrchCmp(const void *key, const void *data);
-/*! Convert ascii to a string of \tt tex
-  (The caller must surround it by {\tt }) */
 vstring asciiToTt(vstring s);
 temp_vstring asciiToTt_temp(vstring s);
-vstring tokenToTex(vstring mtoken, long statemNum);
-/*! Converts a comment section in math mode to TeX.  Each math token
-   MUST be separated by white space.   TeX "$" does not surround the output. */
-vstring asciiMathToTex(vstring mathComment, long statemNum);
-/*! Gets the next section of a comment that is in the current mode (text,
-   label, or math).  If 1st char. is not "$", text mode is assumed.
-   mode = 0 means end of comment reached.  srcptr is left at 1st char.
-   of start of next comment section. */
-vstring getCommentModeSection(vstring *srcptr, char *mode);
-void printTexHeader(flag texHeaderFlag);
 
-/*! Prints an embedded comment in TeX.  The commentPtr must point to the first
-   character after the "$(" in the comment.  The printout ends when the first
-   "$)" or null character is encountered.   commentPtr must not be a temporary
-   allocation.  htmlCenterFlag, if 1, means to center the HTML and add a
-   "Description:" prefix
-  \returns 1 if error/warning */
-// void printTexComment(vstring commentPtr, char htmlCenterFlag);
+
 flag printTexComment(vstring commentPtr,    /*!< Sends result to g_texFilePtr */
     flag htmlCenterFlag, /*!< 1 = htmlCenterFlag */
     long actionBits, /*!< see indicators below */
@@ -117,16 +86,6 @@ flag printTexComment(vstring commentPtr,    /*!< Sends result to g_texFilePtr */
 
 void printTexLongMath(nmbrString *proofStep, vstring startPrefix,
     vstring contPrefix, long hypStmt, long indentationLevel);
-void printTexTrailer(flag texHeaderFlag);
-
-/*! Function implementing WRITE THEOREM_LIST / THEOREMS_PER_PAGE nn */
-void writeTheoremList(long theoremsPerPage, flag showLemmas,
-    flag noVersioning);
-
-#define HUGE_DECORATION "####"
-#define BIG_DECORATION "#*#*"
-#define SMALL_DECORATION "=-=-"
-#define TINY_DECORATION "-.-."
 
 flag getSectionHeadings(long stmt, vstring *hugeHdrTitle,
     vstring *bigHdrTitle,
@@ -144,33 +103,6 @@ flag getSectionHeadings(long stmt, vstring *hugeHdrTitle,
 extern flag g_texFileOpenFlag;
 extern FILE *g_texFilePtr;
 
-/*! Pink statement number HTML code for HTML pages
-  \warning caller must deallocate returned string */
-vstring pinkHTML(long statemNum);
-
-/*! Pink statement number range HTML code for HTML pages, separated by a "-"
-  \warning caller must deallocate returned string */
-vstring pinkRangeHTML(long statemNum1, long statemNum2);
-// Either "" or "&nbsp;" depending on taste, it is the separator between
-// a statement href and its pink number.
-#define PINK_NBSP "&nbsp;"
-
-/*! This function converts a "spectrum" color (1 to maxColor) to an
-   RBG value in hex notation for HTML.  The caller must deallocate the
-   returned vstring.  color = 1 (red) to maxColor (violet). */
-vstring spectrumToRGB(long color, long maxColor);
-
-/*! Returns the HTML code for GIFs (!g_altHtmlFlag) or Unicode (g_altHtmlFlag),
-   or LaTeX when !g_htmlFlag, for the math string (hypothesis or conclusion) that
-   is passed in.
-  \warning The caller must deallocate the returned vstring. */
-vstring getTexLongMath(nmbrString *mathString, long statemNum);
-
-/*! Returns the TeX, or HTML code for GIFs (!g_altHtmlFlag) or Unicode
-   (g_altHtmlFlag), for a statement's hypotheses and assertion in the form
-   hyp & ... & hyp => assertion
-  \warning The caller must deallocate the returned vstring. */
-vstring getTexOrHtmlHypAndAssertion(long statemNum);
 
 /*!
   \brief For WRITE BIBLIOGRAPHY command and error checking by VERIFY MARKUP
@@ -197,20 +129,7 @@ extern nmbrString *g_mathboxStart; /*!< Start stmt vs. mathbox # */
 extern nmbrString *g_mathboxEnd; /*!< End stmt vs. mathbox # */
 extern pntrString *g_mathboxUser; /*!< User name vs. mathbox # */
 
-/*! Returns 1 if statements are in different mathboxes */
-flag inDiffMathboxes(long stmt1, long stmt2);
-/*! Returns the user of the mathbox that a statement is in, or ""
-   if the statement is not in a mathbox.
-  \attention Caller should NOT deallocate returned string (it points directly to
-   g_mathboxUser[] entry); use directly in print2() messages */
-vstring getMathboxUser(long stmt);
-/*! Returns the mathbox number (starting at 1) that stmt is in, or 0 if not
-   in a mathbox */
 long getMathboxNum(long stmt);
 /*! Populates mathbox information */
 void assignMathboxInfo(void);
-/*! Creates lists of mathbox starts and user names */
-long getMathboxLoc(nmbrString **mathboxStart, nmbrString **mathboxEnd,
-    pntrString **mathboxUser);
-
 #endif // METAMATH_MMWTEX_H_

@@ -21,7 +21,6 @@ mmdata.c
 #include "mminou.h"
 #include "mmpars.h"
 #include "mmcmdl.h" /* Needed for g_logFileName */
-#include "mmwtex.h" /* Needed for SMALL_DECORATION etc. */
 #include "mmfatl.h"
 
 /*E*/long db=0,db0=0,db2=0,db3=0,db4=0,db5=0,db6=0,db7=0,db8=0,db9=0;
@@ -3078,14 +3077,6 @@ vstring getDescriptionAndLabel(long stmt) {
     p1--;
   }
   let(&descriptionAndLabel, right(descriptionAndLabel, p1 + 1));
-  /* Ignore descriptionAndLabels that are section headers */
-  /* TODO: make this more precise here and in mmwtex.c - use 79-char decorations? */
-  if (instr(1, descriptionAndLabel, cat("\n", TINY_DECORATION, NULL)) != 0
-      || instr(1, descriptionAndLabel, cat("\n", SMALL_DECORATION, NULL)) != 0
-      || instr(1, descriptionAndLabel, cat("\n", BIG_DECORATION, NULL)) != 0
-      || instr(1, descriptionAndLabel, cat("\n", HUGE_DECORATION, NULL)) != 0) {
-    dontUseComment = 1;
-  }
   /* Remove comments with file inclusion markup */
   if (instr(1, descriptionAndLabel, "$[") != 0) {
     dontUseComment = 1;

@@ -711,7 +711,6 @@
 #include "mminou.h"
 #include "mmpars.h"
 #include "mmveri.h"
-#include "mmwtex.h"
 #include "mmfatl.h"
 #include "mmtest.h"
 
@@ -1146,13 +1145,6 @@ void command(int argc, char *argv[]) {
           g_sourceChanged = 0;
         }
 
-        if (g_texFileOpenFlag) {
-          print2("The %s file \"%s\" was closed.\n",
-              g_htmlFlag ? "HTML" : "LaTeX", g_texFileName);
-          printTexTrailer(texHeaderFlag);
-          fclose(g_texFilePtr);
-          g_texFileOpenFlag = 0;
-        }
         if (g_logFileOpenFlag) {
           print2("The log file \"%s\" was closed %s %s.\n",g_logFileName,
               date(),time_());
@@ -1164,7 +1156,6 @@ void command(int argc, char *argv[]) {
         freeCommandLine();
         freeInOu();
         eraseSource();
-        eraseTexDefs();
         freeData(); /* Call AFTER eraseSource()(->initBigArrays->malloc) */
         free_vstring(g_commandPrompt);
         free_vstring(g_commandLine);
