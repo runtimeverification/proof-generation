@@ -134,10 +134,10 @@ pyupgrade: poetry-install
 test-all : test-metamath-imp
 .PHONY : test-metamath-imp
 
-.build/examples/imp/imp-haskell/definition/definition.kore: MAIN_MODULE=IMP
-.build/%-haskell/definition/definition.kore: %.k
-	kompile $< --backend haskell --main-module ${MAIN_MODULE} --output-definition $(dir $@)
-.build/examples/imp/imp-haskell/definition.mm: .build/examples/imp/imp-haskell/definition/definition.kore theory/prelude.mm
+.build/examples/imp/imp-llvm/definition/definition.kore: MAIN_MODULE=IMP
+.build/%-llvm/definition/definition.kore: %.k
+	kompile $< --backend llvm --main-module ${MAIN_MODULE} --output-definition $(dir $@)
+.build/examples/imp/imp-llvm/definition.mm: .build/examples/imp/imp-llvm/definition/definition.kore theory/prelude.mm
 	$(POETRY_RUN) gen-rewrite-proof --standalone --prelude theory/prelude.mm $< IMP -o $@
-test-metamath-imp : .build/examples/imp/imp-haskell/definition.mm.verify
+test-metamath-imp : .build/examples/imp/imp-llvm/definition.mm.verify
 
