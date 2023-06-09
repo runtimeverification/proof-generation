@@ -711,7 +711,6 @@
 #include "mminou.h"
 #include "mmpars.h"
 #include "mmveri.h"
-#include "mmpfas.h"
 #include "mmwtex.h"
 #include "mmfatl.h"
 #include "mmtest.h"
@@ -1112,9 +1111,6 @@ void command(int argc, char *argv[]) {
                  /* However, if the proof was saved earlier, UNDO stack
                     empty no longer indicates proof didn't change */
                  || proofSavedFlag)) {
-          print2(
-              "Warning:  You have not saved changes to the proof of \"%s\".\n",
-              g_Statement[g_proveStatement].labelName);
           if (switchPos("FORCE") == 0) {
             str1 = cmdInput1("Do you want to EXIT anyway (Y, N) <N>? ");
             if (str1[0] != 'y' && str1[0] != 'Y') {

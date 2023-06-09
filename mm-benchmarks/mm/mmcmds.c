@@ -16,7 +16,6 @@
 #include "mmpars.h"
 #include "mmveri.h"
 #include "mmwtex.h" /* For g_htmlVarColor,... */
-#include "mmpfas.h"
 
 /* Local prototypes */
 vstring bigAdd(vstring bignum1, vstring bignum2);
@@ -2298,12 +2297,6 @@ void eraseSource(void)    /* ERASE command */
     }
   } /* Next i (statement) */
 
-  /* g_MathToken[g_mathTokens].tokenName is assigned in
-     parseMathDecl() by let().  eraseSource() should free every g_MathToken and
-     there are (g_mathTokens + g_dummyVars) tokens. */
-  for (i = 0; i <= g_mathTokens + g_dummyVars; i++) {
-    free_vstring(g_MathToken[i].tokenName);
-  }
 
   memFreePoolPurge(0);
   g_errorCount = 0;
@@ -2311,7 +2304,6 @@ void eraseSource(void)    /* ERASE command */
   free(g_Statement);
   free(g_IncludeCall);  /* Will be initialized in initBigArrays */
   free(g_MathToken);
-  g_dummyVars = 0; /* For Proof Assistant */
   free(g_sourcePtr);
   free(g_labelKey);
   free(g_mathKey);
