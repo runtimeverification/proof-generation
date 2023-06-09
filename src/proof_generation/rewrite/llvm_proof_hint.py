@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import struct
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -96,11 +97,10 @@ class LLVMRewriteTraceParser:
 
     def read_uint64(self) -> int:
         index = 8
-        # TODO: This is pretty hacky, going via strings, but works for now.
         raw = self.input[:index]
-        ret = int(raw[::-1].hex(), 16)
         self.input = self.input[index:]
-        return ret
+        little_endian_long_long = '<Q'
+        return struct.unpack(little_endian_long_long, raw)[0]
 
     def read_until(self, constant: bytes) -> bytes:
         index = self.input.find(constant)
