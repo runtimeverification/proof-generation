@@ -1,9 +1,6 @@
-from pyk.kllvm import load
-
-load  # Make sure it is used.
-
 from pathlib import Path
 
+import pyk.kllvm.load  # noqa: F401
 import pyk.kore.syntax as pyk_kore
 import pytest
 from pyk.kore.parser import KoreParser as PykKoreParser
