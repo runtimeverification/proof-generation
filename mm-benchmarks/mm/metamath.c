@@ -711,7 +711,6 @@
 #include "mminou.h"
 #include "mmpars.h"
 #include "mmveri.h"
-#include "mmfatl.h"
 #include "mmtest.h"
 
 void command(int argc, char *argv[]);

@@ -21,7 +21,6 @@ mmdata.c
 #include "mminou.h"
 #include "mmpars.h"
 #include "mmcmdl.h" /* Needed for g_logFileName */
-#include "mmfatl.h"
 
 /*E*/long db=0,db0=0,db2=0,db3=0,db4=0,db5=0,db6=0,db7=0,db8=0,db9=0;
 flag g_listMode = 0; /* 0 = metamath, 1 = list utility */
@@ -719,7 +718,7 @@ void outOfMemory(const char *msg) {
         "To solve this problem, remove some unnecessary statements or file\n"
         "inclusions to reduce the size of your input source.\n"
         "Monitor memory periodically with SHOW MEMORY.\n";
-  fatalErrorExitAt(__FILE__, __LINE__, format, msg);
+  printf(format, msg);
 }
 
 /* Bug check */
@@ -2978,11 +2977,11 @@ long **alloc2DMatrix(size_t xsize, size_t ysize)
   long i;
   matrix = malloc(xsize * sizeof(long *));
   if (matrix == NULL)
-    fatalErrorExitAt(__FILE__, __LINE__, "?FATAL ERROR 1376 Out of memory\n");
+    printf("?FATAL ERROR 1376 Out of memory\n");
   for (i = 0; i < (long)xsize; i++) {
     matrix[i] = malloc(ysize * sizeof(long));
     if (matrix[i] == NULL)
-      fatalErrorExitAt(__FILE__, __LINE__, "?FATAL ERROR 1377 Out of memory\n");
+      printf("?FATAL ERROR 1377 Out of memory\n");
   }
   return matrix;
 } /* alloc2DMatrix */
