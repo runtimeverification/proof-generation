@@ -17,11 +17,6 @@
 #include "mmveri.h"
 #include "mmwtex.h" /* For g_htmlVarColor,... */
 
-/* For HTML output */
-vstring_def(g_printStringForReferencedBy);
-
-nmbrString_def(stmtFoundList);
-long indentShift = 0;
 
 /* This implements the READ command (although the / VERIFY qualifier is
    processed separately in metamath.c). */
