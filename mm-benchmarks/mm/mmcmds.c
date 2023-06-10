@@ -15,7 +15,6 @@
 #include "mminou.h"
 #include "mmpars.h"
 #include "mmveri.h"
-#include "mmwtex.h" /* For g_htmlVarColor,... */
 
 
 /* This implements the READ command (although the / VERIFY qualifier is
@@ -136,21 +135,6 @@ void eraseSource(void)    /* ERASE command */
   free(g_labelKey);
   free(g_mathKey);
   free(g_allLabelKeyBase);
-
-  /* Deallocate the texdef/htmldef storage */
-  eraseTexDefs();
-
-  g_extHtmlStmt = 0; /* May be used by a non-zero test; init to be safe */
-
-  /* Initialize and deallocate mathbox information */
-  g_mathboxStmt = 0; /* Used by a non-zero test in mmwtex.c to see if assigned */
-  free_nmbrString(g_mathboxStart);
-  free_nmbrString(g_mathboxEnd);
-  for (i = 1; i <= g_mathboxes; i++) {
-    free_vstring(*(vstring *)(&g_mathboxUser[i - 1]));
-  }
-  free_pntrString(g_mathboxUser);
-  g_mathboxes = 0;
 
   /* Allocate big arrays */
   initBigArrays();
