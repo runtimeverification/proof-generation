@@ -924,8 +924,6 @@ void command(int argc, char *argv[]) {
     free_vstring(labelMatch);
     /* (End of space deallocation) */
 
-    g_midiFlag = 0; /* Initialize here in case SHOW PROOF exits early */
-
     if (g_memoryStatus) {
       /*??? Change to user-friendly message */
       print2("Memory:  string %ld xxxString %ld\n",db,db3);

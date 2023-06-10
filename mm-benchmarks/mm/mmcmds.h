@@ -17,8 +17,4 @@ void readInput(void);
 void eraseSource(void);
 void verifyProofs(vstring labelMatch, flag verifyFlag);
 
-/*! For MIDI files */
-extern flag g_midiFlag; /*!< Set to 1 if typeProof() is to output MIDI file */
-extern vstring g_midiParam; /*!< Parameter string for MIDI file */
-
 #endif // METAMATH_MMCMDS_H_

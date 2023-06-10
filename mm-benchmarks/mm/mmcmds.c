@@ -20,14 +20,8 @@
 /* For HTML output */
 vstring_def(g_printStringForReferencedBy);
 
-/* For MIDI */
-flag g_midiFlag = 0;
-vstring_def(g_midiParam);
-
-
 nmbrString_def(stmtFoundList);
 long indentShift = 0;
-
 
 /* This implements the READ command (although the / VERIFY qualifier is
    processed separately in metamath.c). */
