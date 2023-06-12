@@ -4,10 +4,13 @@ import struct
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from proof_generation.kore.convert import from_binkore
+from ..kore.convert import from_binkore
+from ..kore.utils import KoreUtils
+from .tasks import AppliedRule, ConstrainedPattern, RewritingStep, RewritingTask, Substitution  # noqa: TC002
+from .templates import KoreTemplates
 
 if TYPE_CHECKING:
-    from proof_generation.kore.ast import Pattern
+    from proof_generation.kore.ast import Definition, Pattern, Variable
 
 
 @dataclass
@@ -15,6 +18,24 @@ class LLVMRewriteStep:
     rule_ordinal: int
     substitution: tuple[tuple[str, Pattern], ...]
     post_config: Pattern
+
+    def to_rewriting_step(self, definition: Definition, pre: ConstrainedPattern) -> RewritingStep:
+        rule = definition.get_rule_by_ordinal(self.rule_ordinal)
+        assert KoreTemplates.is_rewrite_axiom(rule)
+
+        variables = KoreUtils.get_free_variables(rule.pattern)
+        variable_map = {var.name: var for var in variables}
+        resolved_subst: tuple[tuple[Variable, Pattern], ...] = ()
+
+        for var_name, val in self.substitution:
+            resolved_subst = resolved_subst + ((variable_map[var_name], val),)
+
+        applied_rule = AppliedRule(
+            results=(ConstrainedPattern.from_pattern(self.post_config),),
+            rule_id=KoreTemplates.get_axiom_unique_id(rule),
+            substitution=Substitution(resolved_subst),
+        )
+        return RewritingStep(initial=pre, applied_rules=(applied_rule,), remainders=())
 
 
 @dataclass
@@ -28,6 +49,17 @@ class LLVMRewriteTrace:
         ret = parser.read_rewrite_trace()
         assert parser.eof()
         return ret
+
+    def to_task(self, definition: Definition) -> RewritingTask:
+        initial = ConstrainedPattern.from_pattern(self.initial_config)
+        finals = (ConstrainedPattern.from_pattern(self.trace[-1].post_config),)
+
+        pre = initial
+        steps: tuple[RewritingStep, ...] = ()
+        for step in self.trace:
+            steps = steps + (step.to_rewriting_step(definition, pre),)
+            pre = ConstrainedPattern.from_pattern(step.post_config)
+        return RewritingTask(initial, finals, steps)
 
 
 class LLVMRewriteTraceParser:
@@ -87,7 +119,7 @@ class LLVMRewriteTraceParser:
         return LLVMRewriteStep(ordinal, substitution, term)
 
     def read_varaiable_name(self) -> str:
-        ret = str(self.read_until(b'\x00'))
+        ret = self.read_until(b'\x00').decode('ascii')
         self.read_constant(b'\x00')
         return ret
 
