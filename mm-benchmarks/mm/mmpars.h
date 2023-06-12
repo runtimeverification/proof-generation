@@ -19,7 +19,6 @@ void parseMathDecl(void);
 void parseStatements(void);
 char parseProof(long statemNum);
 char parseCompressedProof(long statemNum);
-nmbrString *getProof(long statemNum, flag printFlag);
 
 void rawSourceError(char *startFile, char *ptr, long tokenLen, vstring errMsg);
 void sourceError(char *ptr, long tokenLen, long stmtNum, vstring errMsg);
@@ -137,18 +136,6 @@ struct wrkProof_struct {
 };
 extern struct wrkProof_struct g_WrkProof;
 
-/*! Converts an ASCII string to a nmbrString of math symbols.  statemNum
-   provides the context for the parse (to get correct active symbols) */
-nmbrString *parseMathTokens(vstring userText, long statemNum);
-
-vstring outputStatement(long stmt, /* flag cleanFlag, */ flag reformatFlag);
-/*! Caller must deallocate return string */
-vstring rewrapComment(const char *comment);
-
-/*! Lookup $a or $p label and return statement number.
-   Return -1 if not found. */
-long lookupLabel(const char *label);
-
 // For file splitting
 
 /*! Get the next real $[...$] or virtual $( Begin $[... inclusion */
@@ -163,38 +150,6 @@ void getNextInclusion(char *fileBuf, long startOffset, /*!< inputs */
                         'N' = no include found */
     vstring *fileName /*!< name of included file */
     );
-
-/*! This function transfers the content of the statement[] array
-   to a linear buffer in preparation for creating the output file. */
-vstring writeSourceToBuffer(void);
-
-/*! This function creates split files containing $[ $] inclusions, from
-   an unsplit source with $( Begin $[... etc. inclusions
-  \note that *fileBuf is assigned to the empty string upon return, to
-   conserve memory */
-void writeSplitSource(vstring *fileBuf, const char *fileName,
-    flag noVersioningFlag, flag noDeleteFlag);
-
-/*! When "write source" does not have the "/split" qualifier, by default
-   (i.e. without "/no_delete") the included modules are "deleted" (renamed
-   to ~1) since their content will be in the main output file. */
-void deleteSplits(vstring *fileBuf, flag noVersioningFlag);
-
-/*! \brief Get file name and line number given a pointer into the read buffer
- * \note The user must deallocate the returned string (file name)
- * \note The globals includeCall structure and includeCalls are used
- */
-vstring getFileAndLineNum(const char *buffPtr /* start of read buffer */,
-    const char *currentPtr /* place at which to get file name and line no */,
-    long *lineNum /* return argument */);
-
-/*! statement[stmtNum].fileName and .lineNum are initialized to "" and 0.
-   To save CPU time, they aren't normally assigned until needed, but once
-   assigned they can be reused without looking them up again.  This function
-   will assign them if they haven't been assigned yet.  It just returns if
-   they have already been assigned.
-  \note The globals statement[] and sourcePtr are used */
-void assignStmtFileAndLineNum(long stmtNum);
 
 /*! Initial read of source file */
 vstring readSourceAndIncludes(const char *inputFn, long *size);

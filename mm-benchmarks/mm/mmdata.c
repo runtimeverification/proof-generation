@@ -864,13 +864,10 @@ flag matches(const char *testString, const char *pattern, char wildCard,
       if (i == 1) {
         s1 = 1; /* empty string before "~" */
       } else {
-        s1 = lookupLabel(left(pattern, i - 1));
       }
-      s2 = lookupLabel(testString);
       if (i == (long)strlen(pattern)) {
         s3 = g_statements; /* empty string after "~" */
       } else {
-        s3 = lookupLabel(right(pattern, i + 1));
       }
       free_vstring(tmpStr); /* Clean up temporary allocations of left and right */
       return ((s1 >= 1 && s2 >= 1 && s3 >= 1 && s1 <= s2 && s2 <= s3)
@@ -891,7 +888,6 @@ flag matches(const char *testString, const char *pattern, char wildCard,
 
     /* "@12345" matches web statement number */
     if (pattern[0] == '@') {
-      s1 = lookupLabel(testString);
       if (s1 < 1) return 0;
       s2 = (long)val(right(pattern, 2));
       if (g_Statement[s1].pinkNumber == s2) {
@@ -903,7 +899,6 @@ flag matches(const char *testString, const char *pattern, char wildCard,
 
     /* "=" matches statement being proved */
     if (!strcmp(pattern,"=")) {
-      s1 = lookupLabel(testString);
       /* We might as well use g_proveStatement outside of MM-PA, so =
          can be argument to PROVE command */
       return (s1);
@@ -911,8 +906,7 @@ flag matches(const char *testString, const char *pattern, char wildCard,
 
     /* "%" matches changed proofs */
     if (!strcmp(pattern,"%")) {
-      s1 = lookupLabel(testString);  /* Returns -1 if not found or (not
-                                        $a and not $p) */
+    /* Returns -1 if not found or (not $a and not $p) */
       if (s1 > 0) { /* It's a $a or $p statement */
         /* (If it's not $p, we don't want to peek at proofSectionPtr[-1]
            to prevent bad pointer. */
