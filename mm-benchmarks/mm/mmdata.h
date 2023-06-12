@@ -301,12 +301,9 @@ extern long g_includeCalls;
 extern char *g_sourcePtr; /*!< Pointer to buffer in memory with input source */
 extern long g_sourceLen; /*!< Number of chars. in all inputs files combined (after includes)*/
 
-// For use by getMarkupFlag()
-#define PROOF_DISCOURAGED_MARKUP "(Proof modification is discouraged.)"
-#define USAGE_DISCOURAGED_MARKUP "(New usage is discouraged.)"
 // Mode argument for getMarkupFlag()
-#define PROOF_DISCOURAGED 1
-#define USAGE_DISCOURAGED 2
+//#define PROOF_DISCOURAGED 1
+//#define USAGE_DISCOURAGED 2
 #define RESET 0
 // Mode argument for getContrib()
 #define GC_RESET 0

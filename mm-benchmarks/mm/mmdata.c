@@ -2576,57 +2576,6 @@ flag getMarkupFlag(long statemNum, flag mode) {
     return 0;
   }
 
-  if (init == 0) {
-    init = 1;
-    /* The global variables g_proofDiscouragedMarkup and g_usageDiscouragedMarkup
-       are initialized to "" like all vstrings to allow them to be reassigned
-       by a possible future SET command.  So the first time this is called
-       we need to assign them to the default markup strings. */
-    if (g_proofDiscouragedMarkup[0] == 0) {
-      let(&g_proofDiscouragedMarkup, PROOF_DISCOURAGED_MARKUP);
-    }
-    if (g_usageDiscouragedMarkup[0] == 0) {
-      let(&g_usageDiscouragedMarkup, USAGE_DISCOURAGED_MARKUP);
-    }
-    /* Initialize flag strings */
-    let(&commentSearchedFlags, string(g_statements + 1, 'N'));
-    let(&proofFlags, space(g_statements + 1));
-    let(&usageFlags, space(g_statements + 1));
-  }
-
-  if (statemNum < 1 || statemNum > g_statements) bug(1392);
-
-  if (commentSearchedFlags[statemNum] == 'N') {
-    if (g_Statement[statemNum].type == f_ || g_Statement[statemNum].type == e_) {
-      /* Any comment before a $f, $e statement is assumed irrelevant */
-      proofFlags[statemNum] = 'N';
-      usageFlags[statemNum] = 'N';
-    } else {
-      if (g_Statement[statemNum].type != a_ && g_Statement[statemNum].type != p_) {
-        bug(1393);
-      }
-      str1 = "";  /* str1 must be deallocated here */
-      /* Strip linefeeds and reduce spaces */
-      let(&str1, edit(str1, 4 + 8 + 16 + 128));
-      if (instr(1, str1, g_proofDiscouragedMarkup)) {
-        proofFlags[statemNum] = 'Y';
-      } else {
-        proofFlags[statemNum] = 'N';
-      }
-      if (instr(1, str1, g_usageDiscouragedMarkup)) {
-        usageFlags[statemNum] = 'Y';
-      } else {
-        usageFlags[statemNum] = 'N';
-      }
-      free_vstring(str1); /* Deallocate */
-    }
-    commentSearchedFlags[statemNum] = 'Y';
-  }
-
-  if (mode == PROOF_DISCOURAGED) return (proofFlags[statemNum] == 'Y') ? 1 : 0;
-  if (mode == USAGE_DISCOURAGED) return (usageFlags[statemNum] == 'Y') ? 1 : 0;
-  bug(1394);
-  return 0;
 } /* getMarkupFlag */
 
 /* Extract contributor or date from statement description per the
