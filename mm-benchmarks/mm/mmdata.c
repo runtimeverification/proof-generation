@@ -2809,69 +2809,6 @@ vstring getContrib(long stmtNum, char mode) {
 
 } /* getContrib */
 
-/* Get date, month, year fields from a dd-mmm-yyyy date string,
-   where dd may be 1 or 2 digits, mmm is 1st 3 letters of month,
-   and yyyy is 2 or 4 digits.  A 1 is returned if an error was detected. */
-flag parseDate(vstring dateStr, long *dd, long *mmm, long *yyyy) {
-  long j;
-  flag err = 0;
-  j = instr(1, dateStr, "-");
-  *dd = (long)val(left(dateStr, j - 1)); /* Day */
-#define MONTHS "JanFebMarAprMayJunJulAugSepOctNovDec"
-  *mmm = ((instr(1, MONTHS, mid(dateStr, j + 1, 3)) - 1) / 3) + 1; /* 1 = Jan */
-  j = instr(j + 1, dateStr, "-");
-  *yyyy = (long)val(right(dateStr, j + 1));
-  if (*yyyy < 100) { /* 2-digit year (obsolete) */
-#define START_YEAR 93 /* Earliest 19xx year in set.mm database */
-    if (*yyyy < START_YEAR) {
-      *yyyy = *yyyy + 2000;
-    } else {
-      *yyyy = *yyyy + 1900;
-    }
-  }
-  if (*dd < 1 || *dd > 31 || *mmm < 1 || *mmm > 12) err = 1;
-  return err;
-} /* parseDate */
-
-/* Build date from numeric fields.  mmm should be a number from 1 to 12.
-   There is no error-checking. */
-void buildDate(long dd, long mmm, long yyyy, vstring *dateStr) {
-  let(&(*dateStr), cat(str((double)dd), "-", mid(MONTHS, mmm * 3 - 2, 3), "-",
-      str((double)yyyy), NULL));
-  return;
-} /* buildDate */
-
-/* Compare two dates in the form dd-mmm-yyyy.  -1 = date1 < date2,
-   0 = date1 = date2,  1 = date1 > date2.  There is no error checking. */
-flag compareDates(vstring date1, vstring date2) {
-  long d1, m1, y1, d2, m2, y2, dd1, dd2;
-
-  /* If a date is the empty string, treat it as being _before_ any other
-     date */
-  if (date1[0] == 0 || date2[0] == 0) {
-    if (date1[0] == 0 && date2[0] == 0) {
-      return 0;
-    } else if (date1[0] == 0) {
-      return -1;
-    } else {
-      return 1;
-    }
-  }
-
-  parseDate(date1, &d1, &m1, &y1);
-  parseDate(date2, &d2, &m2, &y2);
-  /* dd1, dd2 increase monotonically but aren't true days since 1-Jan-0000 */
-  dd1 = d1 + m1 * 32 + y1 * 500;
-  dd2 = d2 + m2 * 32 + y2 * 500;
-  if (dd1 < dd2) {
-    return -1;
-  } else if (dd1 == dd2) {
-    return 0;
-  } else {
-    return 1;
-  }
-} /* compareDates */
-
 /* Compare strings via pointers for qsort */
 /* g_qsortKey is a global string key at which the sort starts; if empty,
    start at the beginning of each line. */

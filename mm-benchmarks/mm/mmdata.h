@@ -902,18 +902,6 @@ flag getMarkupFlag(long statemNum, char mode);
    string. */
 vstring getContrib(long stmtNum, char mode);
 
-/*! Get date, month, year fields from a dd-mmm-yyyy date string,
-   where dd may be 1 or 2 digits, mmm is 1st 3 letters of month,
-   and yyyy is 2 or 4 digits.  A 1 is returned if an error was detected. */
-flag parseDate(vstring dateStr, long *dd, long *mmm, long *yyyy);
-
-/*! Build date from numeric fields.  mmm should be a number from 1 to 12. */
-void buildDate(long dd, long mmm, long yyyy, vstring *dateStr);
-
-/*! Compare two dates in the form dd-mmm-yyyy.  -1 = date1 < date2,
-   0 = date1 = date2,  1 = date1 > date2.  There is no error checking. */
-flag compareDates(vstring date1, vstring date2);
-
 extern vstring g_qsortKey;
 /*!
  * \brief Comparison function for qsort
