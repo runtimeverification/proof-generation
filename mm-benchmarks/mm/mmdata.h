@@ -786,9 +786,6 @@ temp_pntrString *pntrMakeTempAlloc(pntrString *s);
  */
 void pntrLet(pntrString **target, const pntrString *source);
 
-/*! String concatenation - last argument MUST be NULL */
-temp_pntrString *pntrCat(const pntrString *string1,...);
-
 // Emulation of pntrString functions similar to BASIC string functions
 temp_pntrString *pntrLeft(const pntrString *sin, long n);
 
@@ -828,7 +825,6 @@ long pntrLen(const pntrString *s);
  * \pre the array pointed to by s is the sole user of a \ref pgBlock "block".
  */
 long pntrAllocLen(const pntrString *s);
-void pntrZapLen(pntrString *s, long length);
 
 /*!
  * \fn temp_pntrString *pntrAddElement(const pntrString *g)

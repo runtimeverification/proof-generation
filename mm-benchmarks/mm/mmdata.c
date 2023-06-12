@@ -2157,47 +2157,6 @@ void pntrLet(pntrString **target, const pntrString *source) {
   pntrTempAlloc(0); /* Free up temporary strings used in expression computation*/
 }
 
-/* String concatenation */
-temp_pntrString *pntrCat(const pntrString *string1,...) {
-  va_list ap;   /* Declare list incrementer */
-  const pntrString *arg[M_MAX_CAT_ARGS];        /* Array to store arguments */
-  long argLength[M_MAX_CAT_ARGS];       /* Array to store argument lengths */
-  int numArgs=1;        /* Define "last argument" */
-  int i;
-  long j;
-  arg[0] = string1;       /* First argument */
-
-  va_start(ap,string1); /* Begin the session */
-  while ((arg[numArgs++]=va_arg(ap,pntrString *)))
-        /* User-provided argument list must terminate with NULL */
-    if (numArgs>=M_MAX_CAT_ARGS-1) {
-      printf("*** FATAL ERROR ***  Too many cat() arguments\n");
-#if __STDC__
-      fflush(stdout);
-#endif
-      bug(1371);
-    }
-  va_end(ap);           /* End varargs session */
-
-  numArgs--;    /* The last argument (0) is not a string */
-
-  /* Find out the total string length needed */
-  j = 0;
-  for (i = 0; i < numArgs; i++) {
-    argLength[i]=pntrLen(arg[i]);
-    j=j+argLength[i];
-  }
-  /* Allocate the memory for it */
-  temp_pntrString *ptr = pntrTempAlloc(j+1);
-  /* Move the strings into the newly allocated area */
-  j = 0;
-  for (i = 0; i < numArgs; i++) {
-    pntrCpy(ptr + j, arg[i]);
-    j=j+argLength[i];
-  }
-  return ptr;
-}
-
 /* Find out the length of a pntrString */
 long pntrLen(const pntrString *s) {
   /* Assume it's been allocated with poolMalloc. */
@@ -2209,24 +2168,6 @@ long pntrLen(const pntrString *s) {
 long pntrAllocLen(const pntrString *s) {
   return ((((long *)s)[-2] - (long)(sizeof(pntrString)))
     / (long)(sizeof(pntrString)));
-}
-
-/* Set the actual size field in a pntrString allocated with poolFixedMalloc() */
-/* Use this if "zapping" a pntrString element with -1 to reduce its length. */
-/* Note that the pntrString will not be moved to the "used pool", even if
-   zapping its length results in free space; thus the free space will never
-   get recovered unless done by the caller or poolFree is called.  (This is
-   done on purpose so the caller can know what free space is left.) */
-/* ???Note that pntrZapLen's not moving string to used pool wastes potential
-   space when called by the routines in this module.  Effect should be minor. */
-void pntrZapLen(pntrString *s, long length) {
-  if (((long *)s)[-3] != -1) {
-    /* It's already in the used pool, so adjust free space tally */
-    poolTotalFree = poolTotalFree + ((long *)s)[-1]
-        - (length + 1) * (long)(sizeof(pntrString));
-  }
-  ((long *)s)[-1] = (length + 1) * (long)(sizeof(pntrString));
-/*E*/if(db9)getPoolStats(&i1,&j1_,&k1); if(db9)printf("l: pool %ld stat %ld\n",poolTotalFree,i1+j1_);
 }
 
 /* Copy a string to another (pre-allocated) string */
