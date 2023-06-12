@@ -874,15 +874,6 @@ temp_pntrString *pntrAddGElement(const pntrString *g);
 
 // Utility functions
 
-/*! 0/1 knapsack algorithm */
-long knapsack01(long items, long *size, long *worth, long maxSize,
-       char *itemIncluded /* output: 1 = item included, 0 = not included */);
-
-/*! 2D matrix allocation */
-long **alloc2DMatrix(size_t xsize, size_t ysize);
-/*! 2D matrix deallocation */
-void free2DMatrix(long **matrix, size_t xsize /*, size_t ysize*/);
-
 /*! Returns 1 if comment has an "is discouraged" markup tag */
 flag getMarkupFlag(long statemNum, char mode);
 
