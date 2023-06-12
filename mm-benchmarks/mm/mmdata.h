@@ -790,8 +790,6 @@ void pntrLet(pntrString **target, const pntrString *source);
 temp_pntrString *pntrCat(const pntrString *string1,...);
 
 // Emulation of pntrString functions similar to BASIC string functions
-temp_pntrString *pntrSeg(const pntrString *sin, long p1, long p2);
-temp_pntrString *pntrMid(const pntrString *sin, long p, long length);
 temp_pntrString *pntrLeft(const pntrString *sin, long n);
 
 /*! Allocate and return an "empty" string n "characters" long
@@ -832,9 +830,6 @@ long pntrLen(const pntrString *s);
 long pntrAllocLen(const pntrString *s);
 void pntrZapLen(pntrString *s, long length);
 
-/*! 1 if strings are equal, 0 otherwise */
-flag pntrEq(const pntrString *sout, const pntrString *sin);
-
 /*!
  * \fn temp_pntrString *pntrAddElement(const pntrString *g)
  * Add a single null string element to a pntrString - faster than pntrCat
@@ -852,9 +847,6 @@ flag pntrEq(const pntrString *sout, const pntrString *sin);
  *   the elements of \p g are duplicated.
  */
 temp_pntrString *pntrAddElement(const pntrString *g);
-
-/*! Add a single null pntrString element to a pntrString - faster than pntrCat */
-temp_pntrString *pntrAddGElement(const pntrString *g);
 
 // Utility functions
 

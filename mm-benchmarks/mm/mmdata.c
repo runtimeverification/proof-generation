@@ -2287,42 +2287,6 @@ void pntrNCpy(pntrString *s, const pntrString *t, long n) {
   s[i] = t[i]; /* End of string */
 }
 
-/* Compare two strings */
-/* Unlike strcmp, this returns a 1 if the strings are equal
-   and 0 otherwise. */
-/* Only the pointers are compared.  If pointers are different,
-   0 will be returned, even if the things pointed to have same contents. */
-flag pntrEq(const pntrString *s, const pntrString *t) {
-  long i;
-  for (i = 0; s[i] == t[i]; i++)
-    if (s[i] == NULL) /* End of string */
-      return 1;
-  return 0;
-}
-
-/* Extract sin from character position start to stop into sout */
-temp_pntrString *pntrSeg(const pntrString *sin, long start, long stop) {
-  long length;
-  if (start < 1) start = 1;
-  if (stop < 1) stop = 0;
-  length = stop - start + 1;
-  if (length < 0) length = 0;
-  temp_pntrString *sout = pntrTempAlloc(length + 1);
-  pntrNCpy(sout, sin + start - 1, length);
-  sout[length] = *NULL_PNTRSTRING;
-  return sout;
-}
-
-/* Extract sin from character position start for length len */
-temp_pntrString *pntrMid(const pntrString *sin, long start, long length) {
-  if (start < 1) start = 1;
-  if (length < 0) length = 0;
-  temp_pntrString *sout = pntrTempAlloc(length + 1);
-  pntrNCpy(sout, sin + start-1, length);
-  sout[length] = *NULL_PNTRSTRING;
-  return sout;
-}
-
 /* Extract leftmost n characters */
 temp_pntrString *pntrLeft(const pntrString *sin, long n) {
   if (n < 0) n = 0;
@@ -2359,16 +2323,6 @@ temp_pntrString *pntrAddElement(const pntrString *g)
   return v;
 }
 
-/* Add a single null pntrString element to a pntrString -faster than pntrCat */
-temp_pntrString *pntrAddGElement(const pntrString *g)
-{
-  long length = pntrLen(g);
-  temp_pntrString *v = pntrTempAlloc(length + 2);
-  pntrCpy(v, g);
-  v[length] = NULL_PNTRSTRING;
-  v[length + 1] = *NULL_PNTRSTRING;
-  return v;
-}
 
 /*******************************************************************/
 /*********** Miscellaneous utility functions ***********************/
