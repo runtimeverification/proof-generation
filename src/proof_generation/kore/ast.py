@@ -112,6 +112,14 @@ class Definition(BaseAST[None], AttributeMixin):
     def __str__(self) -> str:
         return 'definition {{\n{}\n}}'.format('\n'.join(map(str, self.module_map.values())))
 
+    def get_rule_by_ordinal(self, ordinal: int) -> Axiom:
+        ord = ordinal
+        for _, module in self.module_map.items():
+            if ord < len(module.axioms):
+                return module.axioms[ord]
+            ord -= len(module.axioms)
+        raise RuntimeError('No axiom with ordinal {}'.format(ordinal))
+
 
 class Module(BaseAST[Definition], AttributeMixin):
     def __init__(self, name: str, sentences: list[Sentence], attributes: tuple[Application, ...] = ()):
