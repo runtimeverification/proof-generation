@@ -697,19 +697,6 @@ temp_nmbrString *nmbrGetEssential(const nmbrString *proof);
    statemNum is the statement being proved. */
 temp_nmbrString *nmbrGetTargetHyp(const nmbrString *proof, long statemNum);
 
-/*!
- * Converts a proof string to a compressed-proof-format ASCII string.
- * Normally, the proof string would be compacted with squishProof first,
- * although it's not a requirement.
- *
- * The statement number is needed because required hypotheses are
- * implicit in the compressed proof.
- */
-temp_vstring compressProof(const nmbrString *proof, long statemNum,
-    flag oldCompressionAlgorithm);
-
-/*! Gets length of the ASCII form of a compressed proof */
-long compressedProofSize(const nmbrString *proof, long statemNum);
 
 /*******************************************************************/
 /*********** Pointer string functions ******************************/
