@@ -886,13 +886,6 @@ long **alloc2DMatrix(size_t xsize, size_t ysize);
 /*! 2D matrix deallocation */
 void free2DMatrix(long **matrix, size_t xsize /*, size_t ysize*/);
 
-/*! Returns any comment (description) that occurs just before a statement */
-vstring getDescription(long statemNum);
-
-/*! Returns the label section of a statement with all comments except the
-   last removed. */
-vstring getDescriptionAndLabel(long statemNum);
-
 /*! Returns 1 if comment has an "is discouraged" markup tag */
 flag getMarkupFlag(long statemNum, char mode);
 

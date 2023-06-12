@@ -2550,77 +2550,6 @@ void free2DMatrix(long **matrix, size_t xsize /*, size_t ysize*/)
   return;
 } /* free2DMatrix */
 
-/* Returns the last embedded comment (if any) in the label section of
-   a statement.  This is used to provide the user with information in the SHOW
-   STATEMENT command.  The caller must deallocate the result. */
-vstring getDescription(long statemNum) {
-  vstring_def(description);
-  long p1, p2;
-
-  let(&description, space(g_Statement[statemNum].labelSectionLen));
-  memcpy(description, g_Statement[statemNum].labelSectionPtr,
-      (size_t)(g_Statement[statemNum].labelSectionLen));
-  p1 = rinstr(description, "$(");
-  p2 = rinstr(description, "$)");
-  if (p1 == 0 || p2 == 0 || p2 < p1) {
-    let(&description, "");
-    return description;
-  }
-  let(&description, edit(seg(description, p1 + 2, p2 - 1),
-      8 + 128 /* discard leading and trailing blanks */));
-  return description;
-} /* getDescription */
-
-/* Returns the label section of a statement with all comments except the
-   last removed.  Unlike getDescription, this function returns the comment
-   surrounded by $( and $) as well as the leading indentation space
-   and everything after this comment (such as the actual label).
-   Since this is used for arbitrary (other than $a, $p) statements by the
-   EXPAND command, we also suppress section headers if they are the last
-   comment.  The caller must deallocate the result. */
-vstring getDescriptionAndLabel(long stmt) {
-  vstring_def(descriptionAndLabel);
-  long p1, p2;
-  flag dontUseComment = 0;
-
-  let(&descriptionAndLabel, space(g_Statement[stmt].labelSectionLen));
-  memcpy(descriptionAndLabel, g_Statement[stmt].labelSectionPtr,
-      (size_t)(g_Statement[stmt].labelSectionLen));
-  p1 = rinstr(descriptionAndLabel, "$(");
-  p2 = rinstr(descriptionAndLabel, "$)");
-  if (p1 == 0 || p2 == 0 || p2 < p1) {
-    /* The statement has no comment; just return the label and
-       surrounding spacing if any */
-    return descriptionAndLabel;
-  }
-  /* Search backwards for non-space or beginning of string */
-  p1--;
-  while (p1 != 0) {
-    if (descriptionAndLabel[p1 - 1] != ' '
-          && descriptionAndLabel[p1 - 1] != '\n') break;
-    p1--;
-  }
-  let(&descriptionAndLabel, right(descriptionAndLabel, p1 + 1));
-  /* Remove comments with file inclusion markup */
-  if (instr(1, descriptionAndLabel, "$[") != 0) {
-    dontUseComment = 1;
-  }
-
-  /* Remove comments with $j markup */
-  if (instr(1, descriptionAndLabel, "$j") != 0) {
-    dontUseComment = 1;
-  }
-
-  if (dontUseComment == 1) {
-    /* Get everything that follows the comment */
-    p2 = rinstr(descriptionAndLabel, "$)");
-    if (p2 == 0) bug(1401); /* Should have exited earlier if no "$)" */
-    let(&descriptionAndLabel, right(descriptionAndLabel, p2 + 2));
-  }
-
-  return descriptionAndLabel;
-} /* getDescriptionAndLabel */
-
 /* Returns 0 or 1 to indicate absence or presence of an indicator in
    the comment of the statement. */
 /* mode = 1 = PROOF_DISCOURAGED means get any proof modification discouraged
@@ -2676,7 +2605,7 @@ flag getMarkupFlag(long statemNum, flag mode) {
       if (g_Statement[statemNum].type != a_ && g_Statement[statemNum].type != p_) {
         bug(1393);
       }
-      str1 = getDescription(statemNum);  /* str1 must be deallocated here */
+      str1 = "";  /* str1 must be deallocated here */
       /* Strip linefeeds and reduce spaces */
       let(&str1, edit(str1, 4 + 8 + 16 + 128));
       if (instr(1, str1, g_proofDiscouragedMarkup)) {
