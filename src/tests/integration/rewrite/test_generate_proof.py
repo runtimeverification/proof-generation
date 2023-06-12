@@ -2,10 +2,11 @@ from pathlib import Path
 
 import pytest
 
+from proof_generation.metamath.utils import MetamathUtils
 from proof_generation.rewrite.__main__ import main as rewrite_main
 
-REPO_ROOT = (Path(__file__).parents[3]).resolve(strict=True)
-TEST_DATA_DIR = (Path(__file__).parent / 'test-data').resolve(strict=True)
+REPO_ROOT = (Path(__file__).parents[4]).resolve(strict=True)
+TEST_DATA_DIR = (Path(__file__).parents[1] / 'test-data').resolve(strict=True)
 
 PRELUDE_FILE = (REPO_ROOT / 'theory' / 'prelude.mm').resolve(strict=True)
 DEFINITIONS_DIR = (TEST_DATA_DIR / 'definitions').resolve(strict=True)
@@ -57,4 +58,4 @@ def test_rewrite_proof_generator(pgm_file: Path, defn_file: Path, tmp_path: Path
     )
 
     # Then
-    assert True
+    MetamathUtils.verify(tmp_path / 'goal.mm')

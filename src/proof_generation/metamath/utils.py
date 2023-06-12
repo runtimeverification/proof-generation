@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import subprocess
 from typing import TYPE_CHECKING
 
 from .ast import Application, Metavariable, StructuredStatement
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from pathlib import Path
 
     from .ast import Term, Terms
 
@@ -255,3 +257,19 @@ class MetamathUtils:
             return premise, conclusion
         else:
             return None, body
+
+    @staticmethod
+    def verify(mmfile: Path) -> None:
+        input = """
+set echo on
+set scroll continuous
+read '{}'
+verify proof *
+quit
+        """.format(
+            str(mmfile)
+        )
+        print(mmfile)
+        output = subprocess.check_output(['metamath'], stderr=subprocess.STDOUT, input=input, text=True)
+        assert not 'Error' in output, output
+        assert not 'Warning' in output, output
