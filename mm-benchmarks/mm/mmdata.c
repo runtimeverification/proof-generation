@@ -2332,33 +2332,6 @@ temp_pntrString *pntrLeft(const pntrString *sin, long n) {
   return sout;
 }
 
-/* Extract after character n */
-temp_pntrString *pntrRight(const pntrString *sin, long n) {
-  /*??? We could just return &sin[n-1], but this is safer for debugging. */
-  long i;
-  if (n < 1) n = 1;
-  i = pntrLen(sin);
-  if (n > i) return (NULL_PNTRSTRING);
-  temp_pntrString *sout = pntrTempAlloc(i - n + 2);
-  pntrCpy(sout, &sin[n-1]);
-  return sout;
-}
-
-/* Allocate and return an "empty" string n "characters" long */
-/* Each entry in the allocated array points to an empty vString. */
-temp_pntrString *pntrSpace(long n) {
-  long j = 0;
-  if (n<0) bug(1360);
-  temp_pntrString *sout = pntrTempAlloc(n+1);
-  while (j<n) {
-    /* Initialize all fields */
-    sout[j] = "";
-    j++;
-  }
-  sout[j] = *NULL_PNTRSTRING; /* Flags end of string */
-  return sout;
-}
-
 /* Allocate and return an "empty" string n "characters" long
    initialized to nmbrStrings instead of vStrings */
 temp_pntrString *pntrNSpace(long n) {
@@ -2372,58 +2345,6 @@ temp_pntrString *pntrNSpace(long n) {
   }
   sout[j] = *NULL_PNTRSTRING; /* Flags end of string */
   return sout;
-}
-
-/* Allocate and return an "empty" string n "characters" long
-   initialized to pntrStrings instead of vStrings */
-temp_pntrString *pntrPSpace(long n) {
-  long j = 0;
-  if (n<0) bug(1372);
-  temp_pntrString *sout = pntrTempAlloc(n+1);
-  while (j<n) {
-    /* Initialize all fields */
-    sout[j] = NULL_PNTRSTRING;
-    j++;
-  }
-  sout[j] = *NULL_PNTRSTRING; /* Flags end of string */
-  return sout;
-}
-
-/* Search for string2 in string1 starting at start_position */
-long pntrInstr(long start_position, const pntrString *string1,
-  const pntrString *string2)
-{
-   long ls1,ls2,i,j;
-   if (start_position<1) start_position=1;
-   ls1=pntrLen(string1);
-   ls2=pntrLen(string2);
-   for (i=start_position - 1; i <= ls1 - ls2; i++) {
-     for (j = 0; j<ls2; j++) {
-       if (string1[i+j] != string2[j])
-         break;
-     }
-     if (j == ls2) return (i+1);
-   }
-   return 0;
-}
-
-/* Search for string2 in string 1 in reverse starting at start_position */
-/* (Reverse pntrInstr) */
-long pntrRevInstr(long start_position, const pntrString *string1,
-    const pntrString *string2)
-{
-   long ls1,ls2;
-   ls1=pntrLen(string1);
-   ls2=pntrLen(string2);
-   if (start_position>ls1-ls2+1) start_position=ls1-ls2+2;
-   if (start_position<1) return 0;
-   while (!pntrEq(string2,pntrMid(string1,start_position,ls2))) {
-     start_position--;
-     pntrTempAlloc(0);
-        /* Clear temporaries to prevent overflow caused by "mid" */
-     if (start_position < 1) return 0;
-   }
-   return start_position;
 }
 
 /* Add a single null string element to a pntrString - faster than pntrCat */

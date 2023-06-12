@@ -793,18 +793,10 @@ temp_pntrString *pntrCat(const pntrString *string1,...);
 temp_pntrString *pntrSeg(const pntrString *sin, long p1, long p2);
 temp_pntrString *pntrMid(const pntrString *sin, long p, long length);
 temp_pntrString *pntrLeft(const pntrString *sin, long n);
-temp_pntrString *pntrRight(const pntrString *sin, long n);
-
-/*! Allocate and return an "empty" string n "characters" long */
-temp_pntrString *pntrSpace(long n);
 
 /*! Allocate and return an "empty" string n "characters" long
    initialized to nmbrStrings instead of vStrings */
 temp_pntrString *pntrNSpace(long n);
-
-/*! Allocate and return an "empty" string n "characters" long
-   initialized to pntrStrings instead of vStrings */
-temp_pntrString *pntrPSpace(long n);
 
 /*!
  * \fn long pntrLen(const pntrString *s)
@@ -839,14 +831,6 @@ long pntrLen(const pntrString *s);
  */
 long pntrAllocLen(const pntrString *s);
 void pntrZapLen(pntrString *s, long length);
-
-/*! Search for string2 in string 1 starting at start_position */
-long pntrInstr(long start, const pntrString *sin, const pntrString *s);
-
-/*! Search for string2 in string 1 in reverse starting at start_position
-    (Reverse pntrInstr) */
-long pntrRevInstr(long start_position, const pntrString *string1,
-    const pntrString *string2);
 
 /*! 1 if strings are equal, 0 otherwise */
 flag pntrEq(const pntrString *sout, const pntrString *sin);
