@@ -886,10 +886,6 @@ long **alloc2DMatrix(size_t xsize, size_t ysize);
 /*! 2D matrix deallocation */
 void free2DMatrix(long **matrix, size_t xsize /*, size_t ysize*/);
 
-/*! Returns the amount of indentation of a statement label.  Used to
-   determine how much to indent a saved proof. */
-long getSourceIndentation(long statemNum);
-
 /*! Returns any comment (description) that occurs just before a statement */
 vstring getDescription(long statemNum);
 
@@ -905,10 +901,6 @@ flag getMarkupFlag(long statemNum, char mode);
    See GC_RESET etc. modes above.  Caller must deallocate returned
    string. */
 vstring getContrib(long stmtNum, char mode);
-
-/*! Extract up to 2 dates after a statement's proof.  If no date is present,
-   date1 will be blank.  If no 2nd date is present, date2 will be blank. */
-void getProofDate(long stmtNum, vstring *date1, vstring *date2);
 
 /*! Get date, month, year fields from a dd-mmm-yyyy date string,
    where dd may be 1 or 2 digits, mmm is 1st 3 letters of month,

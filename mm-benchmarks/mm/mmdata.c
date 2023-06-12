@@ -2550,30 +2550,6 @@ void free2DMatrix(long **matrix, size_t xsize /*, size_t ysize*/)
   return;
 } /* free2DMatrix */
 
-/* Returns the amount of indentation of a statement label.  Used to
-   determine how much to indent a saved proof. */
-long getSourceIndentation(long statemNum) {
-  char *fbPtr; /* Source buffer pointer */
-  char *startLabel;
-  long indentation = 0;
-
-  fbPtr = g_Statement[statemNum].mathSectionPtr;
-  if (fbPtr[0] == 0) return 0;
-  startLabel = g_Statement[statemNum].labelSectionPtr;
-  if (startLabel[0] == 0) return 0;
-  while (1) { /* Go back to first line feed prior to the label */
-    if (fbPtr <= startLabel) break;
-    if (fbPtr[0] == '\n') break;
-    if (fbPtr[0] == ' ') {
-      indentation++; /* Space increments indentation */
-    } else {
-      indentation = 0; /* Non-space (i.e. a label character) resets back to 0 */
-    }
-    fbPtr--;
-  }
-  return indentation;
-} /* getSourceIndentation */
-
 /* Returns the last embedded comment (if any) in the label section of
    a statement.  This is used to provide the user with information in the SHOW
    STATEMENT command.  The caller must deallocate the result. */
@@ -3281,36 +3257,6 @@ vstring getContrib(long stmtNum, char mode) {
 
   return returnStr;
 } /* getContrib */
-
-/* Extract up to 2 dates after a statement's proof.  If no date is present,
-   date1 will be blank.  If no 2nd date is present, date2 will be blank.
-   THIS WILL BECOME OBSOLETE WHEN WE START TO USE DATES IN THE
-   DESCRIPTION. */
-void getProofDate(long stmtNum, vstring *date1, vstring *date2) {
-  vstring_def(textAfterProof);
-  long p1, p2;
-  let(&textAfterProof, space(g_Statement[stmtNum + 1].labelSectionLen));
-  memcpy(textAfterProof, g_Statement[stmtNum + 1].labelSectionPtr,
-      (size_t)(g_Statement[stmtNum + 1].labelSectionLen));
-  let(&textAfterProof, edit(textAfterProof, 2)); /* Discard spaces and tabs */
-  p1 = instr(1, textAfterProof, "$([");
-  p2 = instr(p1, textAfterProof, "]$)");
-  if (p1 && p2) {
-    let(&(*date1), seg(textAfterProof, p1 + 3, p2 - 1));  /* 1st date stamp */
-    p1 = instr(p2, textAfterProof, "$([");
-    p2 = instr(p1, textAfterProof, "]$)");
-    if (p1 && p2) {
-      let(&(*date2), seg(textAfterProof, p1 + 3, p2 - 1)); /* 2nd date stamp */
-    } else {
-      let(&(*date2), ""); /* No 2nd date stamp */
-    }
-  } else {
-    let(&(*date1), ""); /* No 1st or 2nd date stamp */
-    let(&(*date2), "");
-  }
-  free_vstring(textAfterProof); /* Deallocate */
-  return;
-} /* getProofDate */
 
 /* Get date, month, year fields from a dd-mmm-yyyy date string,
    where dd may be 1 or 2 digits, mmm is 1st 3 letters of month,
