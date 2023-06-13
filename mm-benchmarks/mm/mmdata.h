@@ -633,10 +633,6 @@ temp_vstring nmbrCvtMToVString(const nmbrString *s);
 /*! Get step numbers in an rString - needed by cvtRToVString & elsewhere */
 nmbrString *nmbrGetProofStepNumbs(const nmbrString *reason);
 
-/*! Converts any nmbrString to an ASCII string of numbers corresponding
-   to the .tokenNum field -- used for debugging only. */
-temp_vstring nmbrCvtAnyToVString(const nmbrString *s);
-
 /*! Extract variables from a math token string */
 temp_nmbrString *nmbrExtractVars(const nmbrString *m);
 
@@ -645,14 +641,6 @@ long nmbrElementIn(long start, const nmbrString *g, long element);
 
 /*! Add a single number to end of a nmbrString - faster than nmbrCat */
 temp_nmbrString *nmbrAddElement(const nmbrString *g, long element);
-
-/*! Get the set union of two math token strings (presumably
-   variable lists) */
-temp_nmbrString *nmbrUnion(const nmbrString *m1, const nmbrString *m2);
-
-/*! Get the set intersection of two math token strings (presumably
-   variable lists) */
-temp_nmbrString *nmbrIntersection(const nmbrString *m1, const nmbrString *m2);
 
 /*******************************************************************/
 /*********** Pointer string functions ******************************/
@@ -807,13 +795,6 @@ flag getMarkupFlag(long statemNum, char mode);
    See GC_RESET etc. modes above.  Caller must deallocate returned
    string. */
 vstring getContrib(long stmtNum, char mode);
-
-extern vstring g_qsortKey;
-/*!
- * \brief Comparison function for qsort
- * \note Used by qsortStringCmp; pointer only, do not deallocate
- */
-int qsortStringCmp(const void *p1, const void *p2);
 
 /*! Call on exit to free memory */
 void freeData(void);

@@ -68,8 +68,6 @@ temp_pntrString *pntrTempAlloc(long size);
 void pntrCpy(pntrString *sout, const pntrString *sin);
 void pntrNCpy(pntrString *s, const pntrString *t, long n);
 
-vstring g_qsortKey; /* Used by qsortStringCmp; pointer only, do not deallocate */
-
 /*!
  * \page pgSuballocator Suballocator
  *
@@ -1417,24 +1415,6 @@ nmbrString *nmbrGetProofStepNumbs(const nmbrString *reason) {
   return stepNumbs;
 }
 
-/* Converts any nmbrString to an ASCII string of numbers
-   -- used for debugging only. */
-temp_vstring nmbrCvtAnyToVString(const nmbrString *s) {
-  long i;
-  vstring_def(tmpStr);
-
-  long saveTempAllocStack;
-  saveTempAllocStack = g_startTempAllocStack; /* For let() stack cleanup */
-  g_startTempAllocStack = g_tempAllocStackTop;
-
-  for (i = 1; i <= nmbrLen(s); i++) {
-    let(&tmpStr,cat(tmpStr," ", str((double)(s[i-1])),NULL));
-  }
-
-  g_startTempAllocStack = saveTempAllocStack;
-  return makeTempAlloc(tmpStr); /* Flag it for deallocation */
-}
-
 /* Extract variables from a math token string */
 temp_nmbrString *nmbrExtractVars(const nmbrString *m) {
   long i, j, length;
@@ -1481,51 +1461,6 @@ temp_nmbrString *nmbrAddElement(const nmbrString *g, long element) {
   v[length] = element;
   v[length + 1] = *NULL_NMBRSTRING; /* End of string */
 /*E*/if(db9)getPoolStats(&i1,&j1_,&k1); if(db9)printf("bbg2: pool %ld stat %ld\n",poolTotalFree,i1+j1_);
-  return v;
-}
-
-/* Get the set union of two math token strings (presumably
-   variable lists) */
-temp_nmbrString *nmbrUnion(const nmbrString *m1, const nmbrString *m2) {
-  long i,j,len1,len2;
-  len1 = nmbrLen(m1);
-  len2 = nmbrLen(m2);
-  temp_nmbrString *v = nmbrTempAlloc(len1+len2+1); /* Pre-allocate maximum possible space */
-  nmbrCpy(v,m1);
-  nmbrZapLen(v, len1);
-  j = 0;
-  for (i = 0; i < len2; i++) {
-    if (!nmbrElementIn(1, v, m2[i])) {
-      nmbrZapLen(v, len1 + j + 1);
-      v[len1 + j] = m2[i];
-      j++;
-      v[len1 + j] = *NULL_NMBRSTRING;
-    }
-  }
-  v[len1 + j] = *NULL_NMBRSTRING;
-  nmbrZapLen(v, len1 + j);
-/*E*/db2=db2-(len1+len2-nmbrLen(v))*(long)(sizeof(nmbrString));
-  return v;
-}
-
-/* Get the set intersection of two math token strings (presumably
-   variable lists) */
-temp_nmbrString *nmbrIntersection(const nmbrString *m1, const nmbrString *m2)
-{
-  long i,j,len2;
-  len2 = nmbrLen(m2);
-  temp_nmbrString *v = nmbrTempAlloc(len2+1); /* Pre-allocate maximum possible space */
-  j = 0;
-  for (i = 0; i < len2; i++) {
-    if (nmbrElementIn(1,m1,m2[i])) {
-      v[j] = m2[i];
-      j++;
-    }
-  }
-  /* Add end-of-string */
-  v[j] = *NULL_NMBRSTRING;
-  nmbrZapLen(v, j);
-/*E*/db2=db2-(len2-nmbrLen(v))*(long)(sizeof(nmbrString));
   return v;
 }
 
@@ -1958,29 +1893,6 @@ vstring getContrib(long stmtNum, char mode) {
   }
 
 } /* getContrib */
-
-/* Compare strings via pointers for qsort */
-/* g_qsortKey is a global string key at which the sort starts; if empty,
-   start at the beginning of each line. */
-int qsortStringCmp(const void *p1, const void *p2)
-{
-  vstring_def(tmp);
-  long n1, n2;
-  int r;
-  /* Returns -1 if p1 < p2, 0 if equal, 1 if p1 > p2 */
-  if (g_qsortKey[0] == 0) {
-    /* No key, use full line */
-    return strcmp(*(char * const *)p1, *(char * const *)p2);
-  } else {
-    n1 = instr(1, *(char * const *)p1, g_qsortKey);
-    n2 = instr(1, *(char * const *)p2, g_qsortKey);
-    r = strcmp(
-        right(*(char * const *)p1, n1),
-        right(*(char * const *)p2, n2));
-    free_vstring(tmp); /* Deallocate temp string stack */
-    return r;
-  }
-}
 
 void freeData(void) {
   /* 15-Aug-2020 nm TODO: are some of these called twice? (in eraseSource) */
