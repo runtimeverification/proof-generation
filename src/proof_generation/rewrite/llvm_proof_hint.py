@@ -10,7 +10,7 @@ from .tasks import AppliedRule, ConstrainedPattern, RewritingStep, RewritingTask
 from .templates import KoreTemplates
 
 if TYPE_CHECKING:
-    from proof_generation.kore.ast import Definition, Pattern, Variable
+    from proof_generation.kore.ast import Axiom, Definition, Pattern, Variable
 
 
 @dataclass
@@ -19,8 +19,8 @@ class LLVMRewriteStep:
     substitution: tuple[tuple[str, Pattern], ...]
     post_config: Pattern
 
-    def to_rewriting_step(self, definition: Definition, pre: ConstrainedPattern) -> RewritingStep:
-        rule = definition.get_rule_by_ordinal(self.rule_ordinal)
+    def to_rewriting_step(self, ordinal_list: tuple[Axiom, ...], pre: ConstrainedPattern) -> RewritingStep:
+        rule = ordinal_list[self.rule_ordinal]
         assert KoreTemplates.is_rewrite_axiom(rule)
 
         variables = KoreUtils.get_free_variables(rule.pattern)
@@ -50,16 +50,26 @@ class LLVMRewriteTrace:
         assert parser.eof()
         return ret
 
-    def to_task(self, definition: Definition) -> RewritingTask:
+    def to_task(self, ordinal_list: tuple[Axiom, ...]) -> RewritingTask:
         initial = ConstrainedPattern.from_pattern(self.initial_config)
         finals = (ConstrainedPattern.from_pattern(self.trace[-1].post_config),)
 
         pre = initial
         steps: tuple[RewritingStep, ...] = ()
         for step in self.trace:
-            steps = steps + (step.to_rewriting_step(definition, pre),)
+            steps = steps + (step.to_rewriting_step(ordinal_list, pre),)
             pre = ConstrainedPattern.from_pattern(step.post_config)
         return RewritingTask(initial, finals, steps)
+
+
+def make_ordinal_list(definition: Definition) -> tuple[Axiom, ...]:
+    """The LLVM proof hints rely on the exact lexical index of axioms in the Kore definition.
+    So, we keep a copy of this list around, before preprocessing the axioms or otherwise modifying the definition.
+    """
+    ret: tuple[Axiom, ...] = ()
+    for _, module in definition.module_map.items():
+        ret = ret + tuple(module.axioms)
+    return ret
 
 
 class LLVMRewriteTraceParser:

@@ -35,7 +35,9 @@ def defn_for(proof_hint: Path) -> Path:
     return defn_file
 
 
-TEST_DATA = tuple((proof_hint, defn_for(proof_hint)) for proof_hint in TEST_FILES)
+TEST_DATA = tuple((proof_hint, defn_for(proof_hint)) for proof_hint in TEST_FILES) + (
+    (Path('examples/imp/sum.imp.proof-hint'), Path('examples/imp/imp.kore')),
+)
 
 
 @pytest.mark.parametrize('proof_hint,defn_file', TEST_DATA, ids=[proof_hint.name for proof_hint, _ in TEST_DATA])

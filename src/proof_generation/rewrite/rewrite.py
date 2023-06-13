@@ -629,12 +629,12 @@ class RewriteProofGenerator(ProofGenerator):
         rhs_ensures: kore.Pattern | None = None
 
         if separate_lhs and KoreUtils.is_and(lhs):
-            lhs_requires, lhs_body = KoreUtils.destruct_and(lhs)
+            lhs_body, lhs_requires = KoreUtils.destruct_and(lhs)
         else:
             lhs_body = lhs
 
         if separate_rhs and KoreUtils.is_and(rhs):
-            rhs_ensures, rhs_body = KoreUtils.destruct_and(rhs)
+            rhs_body, rhs_ensures = KoreUtils.destruct_and(rhs)
         else:
             rhs_body = rhs
 
@@ -967,7 +967,8 @@ class RewriteProofGenerator(ProofGenerator):
             rewrite_axiom = self.proved_claims[applied_rule.rule_id]
         else:
             rewrite_axiom = self.composer.rewrite_axioms[applied_rule.rule_id]
-        lhs, _, rhs, _ = self.destruct_rewrite_axiom(rewrite_axiom)
+        lhs, requires, rhs, _ = self.destruct_rewrite_axiom(rewrite_axiom)
+        print('rewrite-axiom', lhs, requires)
 
         axiom_free_vars = KoreUtils.get_free_variables(rewrite_axiom.claim.pattern)
 
@@ -995,7 +996,7 @@ class RewriteProofGenerator(ProofGenerator):
         lhs_unification_result = unification_gen.unify_patterns(lhs, initial.pattern)
         assert (
             lhs_unification_result is not None
-        ), f'unable to unify the LHS of {applied_rule.rule_id} with the initial pattern {initial.pattern}'
+        ), f'unable to unify the LHS of {applied_rule.rule_id} with the initial pattern {initial.pattern}, \nLHS={lhs}'
 
         instantiated_axiom = self.fol_gen.apply_functional_substitution(
             rewrite_axiom,
