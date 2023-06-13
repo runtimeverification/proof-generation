@@ -654,42 +654,6 @@ temp_nmbrString *nmbrUnion(const nmbrString *m1, const nmbrString *m2);
    variable lists) */
 temp_nmbrString *nmbrIntersection(const nmbrString *m1, const nmbrString *m2);
 
-/*! Get the set difference m1-m2 of two math token strings (presumably
-   variable lists) */
-temp_nmbrString *nmbrSetMinus(const nmbrString *m1,const nmbrString *m2);
-
-/*! This is a utility function that returns the length of a subproof that
-   ends at step */
-long nmbrGetSubproofLen(const nmbrString *proof, long step);
-
-/*! This function returns a "squished" proof, putting in {} references
-   to previous subproofs. */
-temp_nmbrString *nmbrSquishProof(const nmbrString *proof);
-
-/*! This function un-squishes a "squished" proof, replacing {} references
-   to previous subproofs by the subproofs themselves. */
-temp_nmbrString *nmbrUnsquishProof(const nmbrString *proof);
-
-/*! This function returns the indentation level vs. step number of a proof
-   string.  This information is used for formatting proof displays.  The
-   function calls itself recursively, but the first call should be with
-   startingLevel = 0. */
-temp_nmbrString *nmbrGetIndentation(const nmbrString *proof,
-  long startingLevel);
-
-/*! This function returns essential (1) or floating (0) vs. step number of a
-   proof string.  This information is used for formatting proof displays.  The
-   function calls itself recursively, but the first call should be with
-   startingLevel = 0. */
-temp_nmbrString *nmbrGetEssential(const nmbrString *proof);
-
-/*! This function returns the target hypothesis vs. step number of a proof
-   string.  This information is used for formatting proof displays.  The
-   function calls itself recursively.
-   statemNum is the statement being proved. */
-temp_nmbrString *nmbrGetTargetHyp(const nmbrString *proof, long statemNum);
-
-
 /*******************************************************************/
 /*********** Pointer string functions ******************************/
 /*******************************************************************/
