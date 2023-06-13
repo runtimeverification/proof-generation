@@ -27,19 +27,19 @@ typed-lambda.kore should have TYPED_LAMBDA as its main module
 TEST_FILES = tuple(INTEGRATION_DIR.glob('*.yml'))
 
 
-def defn_for(pgm_file: Path) -> Path:
-    test_name = pgm_file.name
+def defn_for(proof_hint: Path) -> Path:
+    test_name = proof_hint.name
     pgm_name, defn_name, yml = test_name.split('.')
     assert yml == 'yml'
     defn_file = (DEFINITIONS_DIR / f'{defn_name}.kore').resolve(strict=True)
     return defn_file
 
 
-TEST_DATA = tuple((pgm_file, defn_for(pgm_file)) for pgm_file in TEST_FILES)
+TEST_DATA = tuple((proof_hint, defn_for(proof_hint)) for proof_hint in TEST_FILES)
 
 
-@pytest.mark.parametrize('pgm_file,defn_file', TEST_DATA, ids=[pgm_file.name for pgm_file, _ in TEST_DATA])
-def test_rewrite_proof_generator(pgm_file: Path, defn_file: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize('proof_hint,defn_file', TEST_DATA, ids=[proof_hint.name for proof_hint, _ in TEST_DATA])
+def test_rewrite_proof_generator(proof_hint: Path, defn_file: Path, tmp_path: Path) -> None:
     # Given
     module_name = defn_file.stem.upper()
 
@@ -51,7 +51,7 @@ def test_rewrite_proof_generator(pgm_file: Path, defn_file: Path, tmp_path: Path
             '--prelude',
             str(PRELUDE_FILE),
             '--task',
-            str(pgm_file),
+            str(proof_hint),
             '--output',
             str(tmp_path),
         ]
