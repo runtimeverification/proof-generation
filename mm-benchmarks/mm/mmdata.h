@@ -603,10 +603,7 @@ void nmbrLet(nmbrString **target, const nmbrString *source);
 temp_nmbrString *nmbrCat(const nmbrString *string1,...);
 
 /*! Emulation of nmbrString functions similar to BASIC string functions */
-temp_nmbrString *nmbrSeg(const nmbrString *sin, long p1, long p2);
 temp_nmbrString *nmbrMid(const nmbrString *sin, long p, long l);
-temp_nmbrString *nmbrLeft(const nmbrString *sin, long n);
-temp_nmbrString *nmbrRight(const nmbrString *sin, long n);
 
 /*! Allocate and return an "empty" string n "characters" long */
 temp_nmbrString *nmbrSpace(long n);
@@ -615,23 +612,11 @@ long nmbrLen(const nmbrString *s);
 long nmbrAllocLen(const nmbrString *s);
 void nmbrZapLen(nmbrString *s, long length);
 
-/*! Search for string2 in string 1 starting at start_position */
-long nmbrInstr(long start, const nmbrString *sin, const nmbrString *s);
-
-/*! Search for string2 in string 1 in reverse starting at start_position
- * (Reverse nmbrInstr)
- */
-long nmbrRevInstr(long start_position, const nmbrString *string1,
-   const nmbrString *string2);
-
 /*! 1 if strings are equal, 0 otherwise */
 flag nmbrEq(const nmbrString *s, const nmbrString *t);
 
 /*! Converts mString to a vstring with one space between tokens */
 temp_vstring nmbrCvtMToVString(const nmbrString *s);
-
-/*! Get step numbers in an rString - needed by cvtRToVString & elsewhere */
-nmbrString *nmbrGetProofStepNumbs(const nmbrString *reason);
 
 /*! Extract variables from a math token string */
 temp_nmbrString *nmbrExtractVars(const nmbrString *m);

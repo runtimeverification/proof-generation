@@ -1245,19 +1245,6 @@ flag nmbrEq(const nmbrString *s, const nmbrString *t) {
   return 0;
 }
 
-/* Extract sin from character position start to stop into sout */
-temp_nmbrString *nmbrSeg(const nmbrString *sin, long start, long stop) {
-  long length;
-  if (start < 1) start = 1;
-  if (stop < 1) stop = 0;
-  length=stop - start + 1;
-  if (length < 0) length = 0;
-  temp_nmbrString *sout = nmbrTempAlloc(length + 1);
-  nmbrNCpy(sout, sin + start - 1, length);
-  sout[length] = *NULL_NMBRSTRING;
-  return sout;
-}
-
 /* Extract sin from character position start for length len */
 temp_nmbrString *nmbrMid(const nmbrString *sin, long start, long length) {
   if (start < 1) start = 1;
@@ -1265,26 +1252,6 @@ temp_nmbrString *nmbrMid(const nmbrString *sin, long start, long length) {
   temp_nmbrString *sout = nmbrTempAlloc(length + 1);
   nmbrNCpy(sout, sin + start - 1, length);
   sout[length] = *NULL_NMBRSTRING;
-  return sout;
-}
-
-/* Extract leftmost n characters */
-temp_nmbrString *nmbrLeft(const nmbrString *sin, long n) {
-  if (n < 0) n = 0;
-  temp_nmbrString *sout = nmbrTempAlloc(n + 1);
-  nmbrNCpy(sout, sin, n);
-  sout[n] = *NULL_NMBRSTRING;
-  return sout;
-}
-
-/* Extract after character n */
-temp_nmbrString *nmbrRight(const nmbrString *sin, long n) {
-  /*??? We could just return &sin[n-1], but this is safer for debugging. */
-  if (n < 1) n = 1;
-  long i = nmbrLen(sin);
-  if (n > i) return (NULL_NMBRSTRING);
-  temp_nmbrString *sout = nmbrTempAlloc(i - n + 2);
-  nmbrCpy(sout, &sin[n - 1]);
   return sout;
 }
 
@@ -1300,45 +1267,6 @@ temp_nmbrString *nmbrSpace(long n) {
   }
   sout[j] = *NULL_NMBRSTRING; /* End of string */
   return sout;
-}
-
-/* Search for string2 in string1 starting at start_position */
-long nmbrInstr(long start_position, const nmbrString *string1,
-  const nmbrString *string2)
-{
-   long ls1, ls2, i, j;
-   if (start_position < 1) start_position = 1;
-   ls1 = nmbrLen(string1);
-   ls2 = nmbrLen(string2);
-   for (i = start_position - 1; i <= ls1 - ls2; i++) {
-     for (j = 0; j < ls2; j++) {
-       if (string1[i+j] != string2[j])
-         break;
-     }
-     if (j == ls2) return (i+1);
-   }
-   return 0;
-}
-
-/* Search for string2 in string 1 in reverse starting at start_position */
-/* (Reverse nmbrInstr) */
-/* Warning:  This has 'let' inside of it and is not safe for use inside
-   of 'let' statements.  (To make it safe, it must be rewritten to expand
-   the 'mid' and remove the 'let'.) */
-long nmbrRevInstr(long start_position, const nmbrString *string1,
-    const nmbrString *string2)
-{
-   long ls1, ls2;
-   ls1 = nmbrLen(string1);
-   ls2 = nmbrLen(string2);
-   if (start_position > ls1 - ls2 + 1) start_position = ls1 - ls2 + 2;
-   if (start_position<1) return 0;
-   while (!nmbrEq(string2, nmbrMid(string1, start_position, ls2))) {
-     start_position--;
-     nmbrTempAlloc(0); /* Clear temporaries to prevent overflow caused by "mid" */
-     if (start_position < 1) return 0;
-   }
-   return start_position;
 }
 
 /* Converts nmbrString to a vstring with one space between tokens */
@@ -1370,49 +1298,6 @@ temp_vstring nmbrCvtMToVString(const nmbrString *s) {
 
   g_startTempAllocStack = saveTempAllocStack;
   return makeTempAlloc(tmpStr); /* Flag it for deallocation */
-}
-
-/* This function returns a nmbrString of length of reason with
-   step numbers assigned to tokens which are steps, and 0 otherwise.
-   The returned string is allocated; THE CALLER MUST DEALLOCATE IT. */
-nmbrString *nmbrGetProofStepNumbs(const nmbrString *reason) {
-  nmbrString_def(stepNumbs);
-  long rlen, start, end, i, step;
-
-  rlen = nmbrLen(reason);
-  nmbrLet(&stepNumbs, nmbrSpace(rlen)); /* All stepNumbs[] are initialized
-                                        to 0 by nmbrSpace() */
-  if (!rlen) return (stepNumbs);
-  if (reason[1] == -(long)'=') {
-    /* The proof is in "internal" format, with "g_proveStatement = (...)" added */
-    start = 2; /* 2, not 3, so empty proof '?' will be seen */
-    if (rlen == 3) {
-      end = rlen; /* Empty proof case */
-    } else {
-      end = rlen - 1; /* Trim off trailing ')' */
-    }
-  } else {
-    start = 1;
-    end = rlen;
-  }
-  step = 0;
-  for (i = start; i < end; i++) {
-    if (i == 0) {
-      /* i = 0 must be handled separately to prevent a reference to
-         a field outside of the nmbrString */
-      step++;
-      stepNumbs[0] = step;
-      continue;
-    }
-    if (reason[i] < 0 && reason[i] != -(long)'?') continue;
-    if (reason[i - 1] == -(long)'('
-        || reason[i - 1] == -(long)'{'
-        || reason[i - 1] == -(long)'=') {
-      step++;
-      stepNumbs[i] = step;
-    }
-  }
-  return stepNumbs;
 }
 
 /* Extract variables from a math token string */
