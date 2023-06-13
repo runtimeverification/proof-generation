@@ -5,8 +5,10 @@ import code
 import os
 import sys
 from contextlib import nullcontext
+from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pyk.kllvm.load  # noqa: F401
 import schema
 import yaml
 
@@ -17,6 +19,7 @@ from ..metamath.parser import load_database
 from ..utils.profiler import MemoryProfiler
 from ..utils.stopwatch import Stopwatch
 from .env import KoreComposer
+from .llvm_proof_hint import LLVMRewriteTrace, make_ordinal_list
 from .preprocessor import KorePreprocessor
 from .rewrite import RewriteProofGenerator
 from .smt import SMTOption
@@ -26,11 +29,13 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import ContextManager
 
-    from ..kore.ast import Module
+    from ..kore.ast import Axiom, Module
     from ..metamath.backend import Backend
 
 
-def load_tasks(module: Module, task_path: str) -> tuple[tuple[RewritingTask, ...], tuple[ReachabilityTask, ...]]:
+def load_tasks_from_yml(
+    module: Module, task_path: str
+) -> tuple[tuple[RewritingTask, ...], tuple[ReachabilityTask, ...]]:
     """
     Load all tasks in the document.
     We are expecting either a single rewriting task
@@ -56,6 +61,14 @@ def load_tasks(module: Module, task_path: str) -> tuple[tuple[RewritingTask, ...
                 reachability_tasks.append(task)
 
         return tuple(rewriting_tasks), tuple(reachability_tasks)
+
+
+def load_llvm_proof_hint(ordinal_list: tuple[Axiom, ...], module: Module, task_path: str) -> RewritingTask:
+    bin_hint = Path(task_path).read_bytes()
+    hint = LLVMRewriteTrace.parse(bin_hint)
+    task = hint.to_task(ordinal_list)
+    task.resolve(module)
+    return task
 
 
 def parse_smt_option(args: argparse.Namespace) -> SMTOption:
@@ -232,6 +245,7 @@ def run_on_arguments(args: argparse.Namespace) -> None:
         # parse the input kore definition
         with open(args.definition) as f:
             definition = parse_definition(f.read())
+            ordinal_list = make_ordinal_list(definition)
             definition.resolve()
 
         # do some preliminary transformations and add missing axioms
@@ -242,7 +256,11 @@ def run_on_arguments(args: argparse.Namespace) -> None:
             env.load_module(module)
 
         if args.task is not None:
-            rewriting_tasks, reachability_tasks = load_tasks(module, args.task)
+            if args.task.endswith('.yml'):
+                rewriting_tasks, reachability_tasks = load_tasks_from_yml(module, args.task)
+            else:
+                rewriting_tasks = (load_llvm_proof_hint(ordinal_list, module, args.task),)
+                reachability_tasks = ()
 
             smt_option = parse_smt_option(args)
 

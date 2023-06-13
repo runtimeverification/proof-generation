@@ -661,7 +661,9 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
             self.unify_concrete_map_patterns,
         )
         for algo in algorithms:
+            print('=============', algo.__name__)
             result = algo(pattern1, pattern2)
+            print(result, '\n', pattern1, '\n', pattern2, '\n=================\n')
             if result is not None:
                 return result
 
@@ -707,12 +709,16 @@ class UnificationProofGenerator(ProofGenerator, MapUnificationMixin):
         Try to unify two applications, expecting symbols and the number
         of arguments to be exactly the same
         """
+        print('---', 1)
         if not isinstance(pattern1, kore.Application) or not isinstance(pattern2, kore.Application):
+            print('---', 2)
             return None
 
         if pattern1.symbol != pattern2.symbol or len(pattern1.arguments) != len(pattern2.arguments):
+            print('---', 3)
             return None
 
+        print('---', 4)
         # unify subpatterns
         unification: UnificationResult = UnificationResult()
 
