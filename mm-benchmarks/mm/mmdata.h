@@ -630,11 +630,6 @@ flag nmbrEq(const nmbrString *s, const nmbrString *t);
 /*! Converts mString to a vstring with one space between tokens */
 temp_vstring nmbrCvtMToVString(const nmbrString *s);
 
-/*! Converts rString to a vstring with one space between tokens */
-temp_vstring nmbrCvtRToVString(const nmbrString *s,
-    flag explicitTargets,
-    long statemNum);
-
 /*! Get step numbers in an rString - needed by cvtRToVString & elsewhere */
 nmbrString *nmbrGetProofStepNumbs(const nmbrString *reason);
 
@@ -731,12 +726,6 @@ extern long g_pntrTempAllocStackTop; // Top of stack for pntrTempAlloc function
 // (normally 0, except for nested pntrString functions).
 extern long g_pntrStartTempAllocStack;
 
-/*!
- * \brief Make string have temporary allocation to be released by next pntrLet()
- * \warning after pntrMakeTempAlloc() is called, the pntrString may NOT be
- *   assigned again with pntrLet()
- */
-temp_pntrString *pntrMakeTempAlloc(pntrString *s);
 
 /**************************************************/
 
