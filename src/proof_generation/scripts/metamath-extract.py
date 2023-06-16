@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import argparse
-import itertools
+from pathlib import Path
+from typing import Iterable, Iterator, cast
 
-from ..metamath.ast import (  # noqa: TC002
+from ..metamath.ast import (
     Application,
     AxiomaticStatement,
+    Block,
     ConstantStatement,
+    Database,
     DisjointStatement,
+    Encoder,
+    EssentialStatement,
     FloatingStatement,
     Metavariable,
     ProvableStatement,
@@ -16,16 +21,28 @@ from ..metamath.ast import (  # noqa: TC002
     Terms,
     VariableStatement,
 )
-from ..metamath.backend import NullBackend, StandaloneFileBackend
-from ..metamath.composer import Composer, Theorem  # noqa: TC002
 from ..metamath.parser import load_database
 
 
-def get_metamath_symbols(terms: Terms) -> set[str]:
-    ret: set[str] = set()
+def get_constants(terms: Terms) -> set[str]:
+    ret: set[str] = {'(', ')', '#Variable', '#ElementVariable', '#SetVariable', '#Pattern', '#Symbol'}
     for term in terms:
         if isinstance(term, Application):
-            ret = ret.union({term.symbol}, get_metamath_symbols(term.subterms))
+            ret = ret.union({term.symbol}, get_constants(term.subterms))
+    return ret
+
+
+def statements_get_constants(statements: Iterable[Statement]) -> set[str]:
+    ret = set()
+    for statement in statements:
+        if isinstance(statement, StructuredStatement):
+            ret.update(get_constants(statement.terms))
+        elif isinstance(statement, Block):
+            ret.update(statements_get_constants(statement.statements))
+        elif isinstance(statement, DisjointStatement):
+            continue
+        else:
+            raise RuntimeError('Unexpected statement type', type(statement))
     return ret
 
 
@@ -36,86 +53,151 @@ def compressed_proof_get_lemmas(proof: str) -> tuple[str, ...]:
     return tuple(proof[lemmas_begin:lemmas_end].split())
 
 
-def theorem_get_disjoints(theorem: Theorem) -> tuple[DisjointStatement, ...]:
-    ret = []
-    for disjoint in theorem.context.disjoints:
-        new_vars = tuple(
-            Metavariable(var) for var in theorem.statement.get_metavariables() if var in disjoint.get_metavariables()
-        )
-        if new_vars:
-            ret += [DisjointStatement(new_vars)]
-    return tuple(ret)
+def supporting_database_for_provable(
+    cut_antecedents: dict[str, FloatingStatement | AxiomaticStatement | Block],
+    global_disjoints: set[frozenset[str]],
+    provable: ProvableStatement,
+    essentials: tuple[DisjointStatement | EssentialStatement, ...],
+) -> Database:
+    statements: list[Statement] = []
 
+    proof = provable.proof
+    assert proof, f'Proof is missing for {provable.label}'
+    needed_lemmas = compressed_proof_get_lemmas(proof)
 
-def copy_with_context(
-    hypotheses: tuple[Statement, ...], conclusion: StructuredStatement, output_composer: Composer
-) -> None:
-    with output_composer.new_context():
-        for hypothesis in hypotheses:
-            output_composer.load(hypothesis)
-        output_composer.load(conclusion)
+    needed_constants = set()
+    needed_metavariables = set()
+    for needed in (provable, *essentials, *(cut_antecedents[lemma_name] for lemma_name in needed_lemmas)):
+        needed_constants.update(statements_get_constants((needed,)))
+        needed_metavariables.update(needed.get_metavariables())
+    statements.append(ConstantStatement(tuple(needed_constants)))
+    if needed_metavariables:
+        statements.append(VariableStatement(tuple(Metavariable(var) for var in needed_metavariables)))
 
+    for pair in global_disjoints:
+        if pair.issubset(needed_metavariables):
+            statements.append(DisjointStatement(tuple(Metavariable(var) for var in pair)))
 
-def extract_proof(input_composer: Composer, output_composer: Composer, theorem_name: str) -> None:
-    theorem = input_composer.get_theorem(theorem_name)
-    assert isinstance(theorem.statement, ProvableStatement)
-    proof = theorem.statement.proof
-    assert proof, 'Theorem has no proof.'
-
-    lemmas: tuple[Theorem, ...] = tuple(
-        input_composer.get_theorem(lemma) for lemma in compressed_proof_get_lemmas(proof)
-    )
-
-    mm_symbols: set[str] = {'(', ')'}
-    variables: set[str] = set()
-    for t in (*lemmas, theorem):
-        for statement in (
-            *t.context.essentials,
-            *t.context.floatings,
-            t.statement,
+    for lemma_name, lemma_statement in cut_antecedents.items():
+        if lemma_name in needed_lemmas or (
+            isinstance(lemma_statement, FloatingStatement) and lemma_statement.metavariable in needed_metavariables
         ):
-            mm_symbols = mm_symbols.union(get_metamath_symbols(statement.terms))
-            variables = variables.union(statement.get_metavariables())
+            statements.append(lemma_statement)
 
-    for symbol in mm_symbols:
-        output_composer.load(ConstantStatement((symbol,)))
-    for variable in variables:
-        output_composer.load(VariableStatement((Metavariable(variable),)))
+    statements.append(Block((*essentials, provable)))
 
-    processed_floatings: list[FloatingStatement] = []
-    for floating in itertools.chain(*(lemma.context.floatings for lemma in (*lemmas, theorem))):
-        if floating in processed_floatings:
-            continue
-        processed_floatings += [floating]
-        output_composer.load(floating)
+    return Database(tuple(statements))
 
-    for lemma in lemmas:
-        copy_with_context(
-            (*theorem_get_disjoints(lemma), *lemma.context.essentials),
-            AxiomaticStatement(lemma.statement.label, lemma.statement.terms),
-            output_composer,
+
+def is_axiom(statement: Statement) -> bool:
+    if isinstance(statement, AxiomaticStatement):
+        return True
+    if isinstance(statement, Block):
+        substatements = list(statement.statements)
+        while substatements:
+            substatement, *substatements = substatements
+            if isinstance(substatement, Block):
+                substatements += substatement.statements
+            elif not isinstance(substatement, (DisjointStatement, EssentialStatement, AxiomaticStatement)):
+                return False
+        return True
+    return False
+
+
+def axiom_get_label(statement: Statement) -> str:
+    # TODO: We have all this complexity because the `substitution-fold/unfold` axiom is stated in
+    # a non-standard way. I don't want to change that until after the PoC.
+    if isinstance(statement, AxiomaticStatement):
+        return statement.label
+    elif isinstance(statement, Block):
+        label = None
+        substatements = list(statement.statements)
+        while substatements:
+            substatement, *substatements = substatements
+            if isinstance(substatement, Block):
+                substatements += substatement.statements
+            elif isinstance(substatement, (DisjointStatement, EssentialStatement)):
+                continue
+            else:
+                assert isinstance(substatement, AxiomaticStatement)
+                label = substatement.label
+        assert label
+        return label
+    else:
+        raise AssertionError('Statement is not axiom?')
+
+
+def deconstruct_provable(
+    statement: ProvableStatement | Block,
+) -> tuple[tuple[DisjointStatement | EssentialStatement, ...], ProvableStatement]:
+    if isinstance(statement, ProvableStatement):
+        return ((), statement)
+    elif isinstance(statement, Block):
+        assert not is_axiom(statement)
+        for substatement in statement.statements[:-1]:
+            assert isinstance(substatement, (DisjointStatement, EssentialStatement)), substatement
+        assert isinstance(statement.statements[-1], ProvableStatement)
+        return (
+            cast('tuple[DisjointStatement | EssentialStatement, ...]', tuple(statement.statements[:-1])),
+            statement.statements[-1],
         )
-    copy_with_context(
-        (*theorem_get_disjoints(theorem), *theorem.context.essentials),
-        theorem.statement,
-        output_composer,
-    )
+
+
+def construct_axiom(
+    antecedents: tuple[DisjointStatement | EssentialStatement, ...], consequent: ProvableStatement
+) -> AxiomaticStatement | Block:
+    if not antecedents:
+        return AxiomaticStatement(consequent.label, consequent.terms)
+    return Block((*antecedents, AxiomaticStatement(consequent.label, consequent.terms)))
+
+
+def slice_database(input_database: Database) -> Iterator[tuple[str, Database]]:
+    """Of the top-level statements, only floating statements are mandatory hypothesis.
+    They are thus order sensitive.
+    """
+    cut_antecedents: dict[str, FloatingStatement | AxiomaticStatement | Block] = {}
+    global_disjoints: set[frozenset[str]] = set()
+
+    for statement in input_database.statements:
+        """Constants and variables can be ignored since we can deduce the set of constants from the parsed statement."""
+        if isinstance(statement, (ConstantStatement, VariableStatement)):
+            continue
+        elif isinstance(statement, DisjointStatement):
+            for var1 in statement.metavariables:
+                for var2 in statement.metavariables:
+                    if var1 != var2:
+                        global_disjoints.add(frozenset({var1.name, var2.name}))
+        elif isinstance(statement, FloatingStatement):
+            cut_antecedents[statement.label] = statement
+        elif is_axiom(statement):
+            cut_antecedents[axiom_get_label(statement)] = cast('AxiomaticStatement | Block', statement)
+        elif isinstance(statement, (ProvableStatement, Block)):
+            antecedents, consequent = deconstruct_provable(statement)
+            yield (
+                consequent.label,
+                supporting_database_for_provable(cut_antecedents, global_disjoints, consequent, antecedents),
+            )
+            cut_antecedents[consequent.label] = construct_axiom(antecedents, consequent)
+        else:
+            assert 'Unanticipated statement type', type(statement)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help='Input Metamath file')
-    parser.add_argument('output', help='Output Metamath file')
-    parser.add_argument('theorem', help='Name of the theorem to extract')
+    parser.add_argument('output', help='Output Metamath directory')
     args = parser.parse_args()
 
-    input_backend = NullBackend()
-    input_composer = Composer(backend=input_backend)
-    input_composer.load(load_database(args.input, include_proof=True))
+    print('Parsing database.')
+    input_database = load_database(args.input, include_proof=True)
+    print('Database parsed.')
 
-    with StandaloneFileBackend(args.output) as output_backend:
-        output_composer = Composer(backend=output_backend)
-        extract_proof(input_composer, output_composer, args.theorem)
+    output_dir = Path(args.output)
+    output_dir.mkdir()
+    for label, slice in slice_database(input_database):
+        with open(output_dir / (label + '.mm'), 'w') as output_file:
+            Encoder.encode(output_file, slice)
+        print(f'Extracted {label}.', end='\x1b[2K\r')
 
 
 if __name__ == '__main__':
