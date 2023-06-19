@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -49,11 +50,11 @@ def statements_get_constants(statements: Iterable[Statement]) -> set[str]:
     return ret
 
 
-def compressed_proof_get_lemmas(proof: str) -> tuple[str, ...]:
+def deconstruct_compressed_proof(proof: str) -> tuple[tuple[str, ...], str]:
     lemmas_begin = proof.find('(') + 1
     lemmas_end = proof.find(')', lemmas_begin)
     assert 0 <= lemmas_begin < lemmas_end, 'Can only parse compressed proofs.'
-    return tuple(proof[lemmas_begin:lemmas_end].split())
+    return (tuple(proof[lemmas_begin:lemmas_end].split()), proof[lemmas_end + 1 :])
 
 
 def supporting_database_for_provable(
@@ -66,7 +67,7 @@ def supporting_database_for_provable(
 
     proof = provable.proof
     assert proof, f'Proof is missing for {provable.label}'
-    needed_lemmas = compressed_proof_get_lemmas(proof)
+    needed_lemmas, _ = deconstruct_compressed_proof(proof)
 
     needed_constants = set()
     needed_metavariables = set()
@@ -122,7 +123,7 @@ def axiom_get_label(statement: Statement) -> str:
             else:
                 assert isinstance(substatement, AxiomaticStatement)
                 label = substatement.label
-        assert label
+        assert label, statement
         return label
     else:
         raise AssertionError('Statement is not axiom?')
@@ -183,18 +184,67 @@ def slice_database(input_database: Database) -> Iterator[tuple[str, Database]]:
             assert 'Unanticipated statement type', type(statement)
 
 
+lemma_index: dict[str, str] = {'goal': 'goal'}
+
+
+def abbreviate_lemmas(statement: Statement) -> Statement:
+    def int_to_bytes(n: int) -> bytes:
+        bits_needed = max(n.bit_length(), 1)
+        bytes_needed = -(bits_needed // -8)  # Division, rounding up.
+        bytes_needed = -(bytes_needed // -3) * 3  # Need multiple of 3 to avoid padding with `=`.
+        return n.to_bytes(bytes_needed)
+
+    def abbreviate_lemma(name: str) -> str:
+        global lemma_index
+        if not name in lemma_index:
+            index_as_bytes = int_to_bytes(len(lemma_index))
+            index_as_base64 = base64.b64encode(index_as_bytes, altchars=b'.-')
+            lemma_index[name] = index_as_base64.decode('ascii')
+        assert lemma_index[name], lemma_index
+        return lemma_index[name]
+
+    if not isinstance(statement, StructuredStatement):
+        return statement
+    else:
+        new_label = abbreviate_lemma(statement.label)
+
+        if isinstance(statement, FloatingStatement):
+            return FloatingStatement(new_label, statement.terms)
+        elif isinstance(statement, EssentialStatement):
+            return EssentialStatement(new_label, statement.terms)
+        elif isinstance(statement, AxiomaticStatement):
+            return AxiomaticStatement(new_label, statement.terms)
+        elif isinstance(statement, ProvableStatement):
+            proof = statement.proof
+            if proof:
+                lemmas: Iterable[str]
+                lemmas, lemma_applications = deconstruct_compressed_proof(proof)
+                lemmas = map(abbreviate_lemma, lemmas)
+                proof = '( {} ) {}'.format(' '.join(lemmas), lemma_applications)
+            return ProvableStatement(new_label, statement.terms, proof=proof)
+        else:
+            raise RuntimeError('Unexpected statement type, {}'.format(type(statement)))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help='Input Metamath file')
     parser.add_argument('output', help='Output Metamath directory')
+    parser.add_argument('--abbreviate-lemma-names', action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
-    print('Parsing database.')
+    print('Parsing database...', end='')
     input_database = load_database(args.input, include_proof=True)
-    print('Database parsed.')
+    print(' Done.')
 
     output_dir = Path(args.output)
     output_dir.mkdir()
+
+    if args.abbreviate_lemma_names:
+        print('Abbreviating Lemma names...', end='')
+        input_database = input_database.bottom_up(abbreviate_lemmas)
+        print(' Done.')
+
     for label, slice in slice_database(input_database):
         with open(output_dir / (label + '.mm'), 'w') as output_file:
             Encoder.encode(output_file, slice)
