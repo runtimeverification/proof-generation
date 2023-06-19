@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Iterable, Iterator, cast
+from typing import TYPE_CHECKING, cast
 
 from ..metamath.ast import (
     Application,
@@ -16,12 +16,15 @@ from ..metamath.ast import (
     FloatingStatement,
     Metavariable,
     ProvableStatement,
-    Statement,
     StructuredStatement,
-    Terms,
     VariableStatement,
 )
 from ..metamath.parser import load_database
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+
+    from ..metamath.ast import Statement, Terms
 
 
 def get_constants(terms: Terms) -> set[str]:
@@ -70,20 +73,18 @@ def supporting_database_for_provable(
     for needed in (provable, *essentials, *(cut_antecedents[lemma_name] for lemma_name in needed_lemmas)):
         needed_constants.update(statements_get_constants((needed,)))
         needed_metavariables.update(needed.get_metavariables())
+
     statements.append(ConstantStatement(tuple(needed_constants)))
     if needed_metavariables:
         statements.append(VariableStatement(tuple(Metavariable(var) for var in needed_metavariables)))
-
     for pair in global_disjoints:
         if pair.issubset(needed_metavariables):
             statements.append(DisjointStatement(tuple(Metavariable(var) for var in pair)))
-
     for lemma_name, lemma_statement in cut_antecedents.items():
         if lemma_name in needed_lemmas or (
             isinstance(lemma_statement, FloatingStatement) and lemma_statement.metavariable in needed_metavariables
         ):
             statements.append(lemma_statement)
-
     statements.append(Block((*essentials, provable)))
 
     return Database(tuple(statements))
