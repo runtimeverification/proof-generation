@@ -218,7 +218,7 @@ def abbreviate_constructors(term: Term) -> Term:
     elif isinstance(term, Application):
         return Application(abbreviate(term.symbol), term.subterms)
     else:
-        raise RuntimeError('Unexpected term type, {}'.format(type(term)))
+        raise RuntimeError(f'Unexpected term type, {type(term)}')
 
 
 def terms_abbreviate_constructors(terms: Terms) -> Terms:
@@ -246,7 +246,7 @@ def abbreviate_lemmas(statement: Statement) -> Statement:
                 proof = '( {} ) {}'.format(' '.join(lemmas), lemma_applications)
             return ProvableStatement(new_label, terms_abbreviate_constructors(statement.terms), proof=proof)
         else:
-            raise RuntimeError('Unexpected statement type, {}'.format(type(statement)))
+            raise RuntimeError(f'Unexpected statement type, {type(statement)}')
 
 
 def main() -> None:
