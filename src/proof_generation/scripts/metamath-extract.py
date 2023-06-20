@@ -25,7 +25,7 @@ from ..metamath.parser import load_database
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from ..metamath.ast import Statement, Terms
+    from ..metamath.ast import Statement, Term, Terms
 
 
 def get_constants(terms: Terms) -> set[str]:
@@ -184,44 +184,67 @@ def slice_database(input_database: Database) -> Iterator[tuple[str, Database]]:
             assert 'Unanticipated statement type', type(statement)
 
 
-lemma_index: dict[str, str] = {'goal': 'goal'}
+def int_to_abbreviation(n: int) -> str:
+    bits_needed = max(n.bit_length(), 1)
+    bytes_needed = -(bits_needed // -8)  # Division, rounding up.
+    n_as_bytes = n.to_bytes(bytes_needed)
+    n_as_base64 = base64.b64encode(n_as_bytes, altchars=b'.-')
+    ascii = n_as_base64.decode('ascii')
+    while ascii[-1] == '=':
+        ascii = ascii[:-1]
+    return ascii
+
+
+abbreviation_index: dict[str, str] = {
+    'goal': 'goal',
+    '#Variable': '#Variable',
+    '#ElementVariable': '#ElementVariable',
+    '#SetVariable': '#SetVariable',
+    '#Pattern': '#Pattern',
+    '#Symbol': '#Symbol',
+}
+
+
+def abbreviate(name: str) -> str:
+    if not name in abbreviation_index:
+        abbreviation_index[name] = int_to_abbreviation(len(abbreviation_index))
+    assert abbreviation_index[name], abbreviation_index
+    return abbreviation_index[name]
+
+
+def abbreviate_constructors(term: Term) -> Term:
+    if isinstance(term, Metavariable):
+        return term
+    elif isinstance(term, Application):
+        return Application(abbreviate(term.symbol), term.subterms)
+    else:
+        raise RuntimeError('Unexpected term type, {}'.format(type(term)))
+
+
+def terms_abbreviate_constructors(terms: Terms) -> Terms:
+    return tuple(term.bottom_up(abbreviate_constructors) for term in terms)
 
 
 def abbreviate_lemmas(statement: Statement) -> Statement:
-    def int_to_bytes(n: int) -> bytes:
-        bits_needed = max(n.bit_length(), 1)
-        bytes_needed = -(bits_needed // -8)  # Division, rounding up.
-        bytes_needed = -(bytes_needed // -3) * 3  # Need multiple of 3 to avoid padding with `=`.
-        return n.to_bytes(bytes_needed)
-
-    def abbreviate_lemma(name: str) -> str:
-        global lemma_index
-        if not name in lemma_index:
-            index_as_bytes = int_to_bytes(len(lemma_index))
-            index_as_base64 = base64.b64encode(index_as_bytes, altchars=b'.-')
-            lemma_index[name] = index_as_base64.decode('ascii')
-        assert lemma_index[name], lemma_index
-        return lemma_index[name]
-
     if not isinstance(statement, StructuredStatement):
         return statement
     else:
-        new_label = abbreviate_lemma(statement.label)
+        new_label = abbreviate(statement.label)
 
         if isinstance(statement, FloatingStatement):
             return FloatingStatement(new_label, statement.terms)
         elif isinstance(statement, EssentialStatement):
-            return EssentialStatement(new_label, statement.terms)
+            return EssentialStatement(new_label, terms_abbreviate_constructors(statement.terms))
         elif isinstance(statement, AxiomaticStatement):
-            return AxiomaticStatement(new_label, statement.terms)
+            return AxiomaticStatement(new_label, terms_abbreviate_constructors(statement.terms))
         elif isinstance(statement, ProvableStatement):
             proof = statement.proof
             if proof:
                 lemmas: Iterable[str]
                 lemmas, lemma_applications = deconstruct_compressed_proof(proof)
-                lemmas = map(abbreviate_lemma, lemmas)
+                lemmas = (abbreviate(lemma) for lemma in lemmas)
                 proof = '( {} ) {}'.format(' '.join(lemmas), lemma_applications)
-            return ProvableStatement(new_label, statement.terms, proof=proof)
+            return ProvableStatement(new_label, terms_abbreviate_constructors(statement.terms), proof=proof)
         else:
             raise RuntimeError('Unexpected statement type, {}'.format(type(statement)))
 
