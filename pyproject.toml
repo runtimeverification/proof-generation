@@ -40,6 +40,7 @@ types-pyyaml = "^6.0.12.10"
 
 [tool.poetry.scripts]
 gen-rewrite-proof = "proof_generation.rewrite.__main__:main"
+metamath-extract = "proof_generation.scripts.metamath-extract:main"
 
 [tool.isort]
 profile = "black"
