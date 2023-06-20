@@ -187,7 +187,7 @@ def slice_database(input_database: Database) -> Iterator[tuple[str, Database]]:
 def int_to_abbreviation(n: int) -> str:
     bits_needed = max(n.bit_length(), 1)
     bytes_needed = -(bits_needed // -8)  # Division, rounding up.
-    n_as_bytes = n.to_bytes(bytes_needed)
+    n_as_bytes = n.to_bytes(bytes_needed, byteorder='little')
     n_as_base64 = base64.b64encode(n_as_bytes, altchars=b'.-')
     ascii = n_as_base64.decode('ascii')
     while ascii[-1] == '=':
