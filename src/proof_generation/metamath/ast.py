@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from typing import Any, TextIO
 
     StatementType = TypeVar('StatementType', bound='Statement')
+    TermType = TypeVar('TermType', bound='Term')
 
 
 class MetamathVisitor(Visitor['BaseAST', ResultT]):
@@ -72,6 +73,15 @@ class Term(BaseAST):
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         raise NotImplementedError()
 
+    def map_inner(self: TermType, f: Callable[[Term], Term]) -> TermType:
+        raise NotImplementedError()
+
+    def top_down(self: Term, f: Callable[[Term], Term]) -> Term:
+        return f(self).map_inner(lambda stmt: stmt.top_down(f))
+
+    def bottom_up(self: Term, f: Callable[[Term], Term]) -> Term:
+        return f(self.map_inner(lambda stmt: stmt.bottom_up(f)))
+
     def get_size(self) -> int:
         raise NotImplementedError()
 
@@ -91,6 +101,9 @@ class Metavariable(Term):
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_metavariable(self)  # type: ignore
+
+    def map_inner(self, f: Callable[[Term], Term]) -> Metavariable:
+        return self
 
     def get_size(self) -> int:
         return 1
@@ -120,6 +133,9 @@ class Application(Term):
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_application(self)  # type: ignore
+
+    def map_inner(self, f: Callable[[Term], Term]) -> Application:
+        return Application(self.symbol, tuple(map(f, self.subterms)))
 
     def get_size(self) -> int:
         return 1 + sum(term.get_size() for term in self.subterms)
