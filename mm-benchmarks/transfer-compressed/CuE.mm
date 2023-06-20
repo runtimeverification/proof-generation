@@ -1,0 +1,12 @@
+$c ) #ElementVariable #Symbol Zw Ct8 #Pattern #Variable #SetVariable ( $.
+$v ph1 ph0 ptn0 xX0 xX $.
+Bg $f #Pattern ph0 $.
+Bw $f #Pattern ph1 $.
+IA $f #Variable xX $.
+${ $d xX ph0 $.
+   Afg $a Zw ph0 ph0 ph1 xX $. $}
+CHQ $f #Variable xX0 $.
+CHU $f #Pattern ptn0 $.
+Ct4 $a #Pattern Ct8 $.
+${ CuE $p Zw Ct8 Ct8 ptn0 xX0 $=
+  ( Ct4 Afg ) CBAD $. $}

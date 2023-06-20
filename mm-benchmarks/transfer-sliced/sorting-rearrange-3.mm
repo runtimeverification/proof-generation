@@ -1,0 +1,36 @@
+$c \exists \top #SetVariable \kore-sort-SortAExp #ElementVariable #Symbol \eq #Variable #Pattern \and \imp \kore-is-sort |- \kore-sort-SortId ) \in-sort ( $.
+$v kore-sort-var-R ph0 ph2 x kore-sort-var-S3 th0 kore-element-var-T ph1 $.
+$d kore-sort-var-R kore-sort-var-S3 $.
+$d kore-element-var-T x $.
+$d kore-sort-var-R kore-element-var-T $.
+$d kore-sort-var-R x $.
+$d kore-sort-var-S3 x $.
+$d kore-sort-var-S3 kore-element-var-T $.
+ph0-is-pattern $f #Pattern ph0 $.
+ph1-is-pattern $f #Pattern ph1 $.
+ph2-is-pattern $f #Pattern ph2 $.
+th0-is-pattern $f #Pattern th0 $.
+x-is-element-var $f #ElementVariable x $.
+exists-is-pattern $a #Pattern ( \exists x ph0 ) $.
+and-is-pattern $a #Pattern ( \and ph0 ph1 ) $.
+top-is-pattern $a #Pattern \top $.
+eq-is-pattern $a #Pattern ( \eq ph0 ph1 ) $.
+${ rule-imp-transitivity.0 $e |- ( \imp ph0 ph1 ) $.
+   rule-imp-transitivity.1 $e |- ( \imp ph1 ph2 ) $.
+   rule-imp-transitivity $a |- ( \imp ph0 ph2 ) $. $}
+top-intro $a |- \top $.
+${ rule-weakening.0 $e |- ph1 $.
+   rule-weakening $a |- ( \imp ph0 ph1 ) $. $}
+kore-is-sort-is-pattern $a #Pattern ( \kore-is-sort ph0 ) $.
+${ $d x ph0 $.
+   kore-sort-functional.0 $e |- ( \imp th0 ( \kore-is-sort ph0 ) ) $.
+   kore-sort-functional $a |- ( \imp th0 ( \exists x ( \eq x ph0 ) ) ) $. $}
+kore-sort-var-R-elementvariable $f #ElementVariable kore-sort-var-R $.
+IMP-sort-13-is-pattern $a #Pattern \kore-sort-SortAExp $.
+kore-sort-var-S3-elementvariable $f #ElementVariable kore-sort-var-S3 $.
+kore-element-var-T-elementvariable $f #ElementVariable kore-element-var-T $.
+sorting-cache-14 $a |- ( \imp \top ( \kore-is-sort \kore-sort-SortAExp ) ) $.
+typecode-cache-Pattern-0 $a #Pattern kore-sort-var-R $.
+typecode-cache-Pattern-4 $a #Pattern x $.
+typecode-cache-Pattern-19 $a #Pattern ( \and ( \kore-is-sort kore-sort-var-S3 ) ( \and ( \in-sort kore-element-var-T \kore-sort-SortId ) \top ) ) $.
+${ sorting-rearrange-3 $p |- ( \imp ( \and ( \kore-is-sort kore-sort-var-R ) ( \and ( \kore-is-sort kore-sort-var-S3 ) ( \and ( \in-sort kore-element-var-T \kore-sort-SortId ) \top ) ) ) ( \exists x ( \eq x \kore-sort-SortAExp ) ) ) $= ( top-is-pattern typecode-cache-Pattern-0 kore-is-sort-is-pattern typecode-cache-Pattern-19 and-is-pattern IMP-sort-13-is-pattern typecode-cache-Pattern-4 eq-is-pattern exists-is-pattern top-intro rule-weakening sorting-cache-14 kore-sort-functional rule-imp-transitivity ) BFGCDHIEAKJLAMBFGCDHIENOJEAPQR $. $}
