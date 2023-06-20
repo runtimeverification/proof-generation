@@ -168,6 +168,9 @@ class DisjointStatement(Statement):
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_disjoint_statement(self)  # type: ignore
 
+    def get_metavariables(self) -> set[str]:
+        return {v.name for v in self.metavariables}
+
 
 Terms = tuple[Term, ...]
 StmtT = TypeVar('StmtT', bound='StructuredStatement')
@@ -248,6 +251,12 @@ class Block(Statement):
 
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_block(self)  # type: ignore
+
+    def get_metavariables(self) -> set[str]:
+        metavars = set()
+        for statement in self.statements:
+            metavars.update(statement.get_metavariables())
+        return metavars
 
 
 @dataclass
