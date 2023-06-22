@@ -153,7 +153,9 @@ def construct_axiom(
     return Block((*antecedents, AxiomaticStatement(consequent.label, consequent.terms)))
 
 
-def slice_database(input_database: Database, exclude: Iterable[str]) -> Iterator[tuple[str, Database]]:
+def slice_database(
+    input_database: Database, include: set[str] | None, exclude: set[str]
+) -> Iterator[tuple[str, Database]]:
     """Of the top-level statements, only floating statements are mandatory hypothesis.
     They are thus order sensitive.
     """
@@ -175,7 +177,7 @@ def slice_database(input_database: Database, exclude: Iterable[str]) -> Iterator
             cut_antecedents[axiom_get_label(statement)] = cast('AxiomaticStatement | Block', statement)
         elif isinstance(statement, (ProvableStatement, Block)):
             antecedents, consequent = deconstruct_provable(statement)
-            if not consequent.label in exclude:
+            if (include and consequent.label in include) and (consequent.label not in exclude):
                 yield (
                     consequent.label,
                     supporting_database_for_provable(cut_antecedents, global_disjoints, consequent, antecedents),
@@ -249,16 +251,42 @@ def abbreviate_lemmas(statement: Statement) -> Statement:
             raise RuntimeError(f'Unexpected statement type, {type(statement)}')
 
 
-def collect_theorem_names(database: Database) -> list[str]:
-    ret = []
+def collect_theorem_names(database: Database) -> set[str]:
+    ret = set()
 
     def collect(stmt: Statement) -> Statement:
         nonlocal ret
         if isinstance(stmt, ProvableStatement):
-            ret.append(stmt.label)
+            ret.add(stmt.label)
         return stmt
 
     database.bottom_up(collect)
+    return ret
+
+
+def dependency_graph(database: Database) -> dict[str, tuple[str, ...]]:
+    ret = {}
+
+    def collect(stmt: Statement) -> Statement:
+        nonlocal ret
+        if isinstance(stmt, ProvableStatement):
+            lemmas, _ = deconstruct_compressed_proof(stmt)
+            ret[stmt.label] = lemmas
+        return stmt
+
+    database.bottom_up(collect)
+
+    return ret
+
+
+def transitive_closure(dependency_graph: dict[str, tuple[str, ...]], include: list[str]) -> set[str]:
+    unprocessed_lemmas: list[str] = include
+    ret: set[str] = set()
+    while unprocessed_lemmas:
+        lemma, *unprocessed_lemmas = unprocessed_lemmas
+        if lemma in dependency_graph and lemma not in ret:
+            unprocessed_lemmas += dependency_graph[lemma]
+        ret.add(lemma)
     return ret
 
 
@@ -277,20 +305,25 @@ def main() -> None:
     output_dir = Path(args.output)
     output_dir.mkdir()
 
-    exclude: Iterable[str] = []
+    exclude: set[str] = set()
     if args.exclude:
         print('Parsing exclude database...', end='', flush=True)
         excluded_database = load_database(args.exclude, include_proof=False)
         print(' Done.')
         exclude = collect_theorem_names(excluded_database)
 
+    deps = dependency_graph(input_database)
+    include: set[str] | None = transitive_closure(deps, ['goal'])
+
     if args.abbreviate_lemma_names:
         print('Abbreviating Lemma names...', end='', flush=True)
         input_database = input_database.bottom_up(abbreviate_lemmas)
+        exclude = {abbreviation_index[lemma] for lemma in exclude if lemma in abbreviation_index}
+        if include:
+            include = {abbreviation_index[lemma] for lemma in include if lemma in abbreviation_index}
         print(' Done.')
-        exclude = [abbreviation_index[lemma] for lemma in exclude if lemma in abbreviation_index]
 
-    for label, slice in slice_database(input_database, exclude=exclude):
+    for label, slice in slice_database(input_database, include=include, exclude=exclude):
         with open(output_dir / (label + '.mm'), 'w') as output_file:
             Encoder.encode(output_file, slice)
         print(f'Extracted {label}.', end='\x1b[2K\r', flush=True)
