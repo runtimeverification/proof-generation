@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Modified from https://github.com/metamath/set.mm/blob/develop/scripts/verify
+
+set -euo pipefail
+
+# We should find a cleaner way of doing this long term.
+mmfile=$1; shift
+log_file=.build/${mmfile}.log
+mkdir -p $(dirname "$log_file")
+metamath > "$log_file" << COMMANDS
+set echo on
+set scroll continuous
+read '${mmfile}'
+save proof * /compressed
+write source
+
+
+quit
+COMMANDS
+
+# Get status, which is false (nonzero) if an error or warning was found.
+! grep -E '[?]Error|[?]Warning' < "$log_file" > /dev/null || {
+    echo "FAILED. See: $log_file";
+    exit 1;
+}
+
