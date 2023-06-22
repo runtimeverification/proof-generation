@@ -215,7 +215,7 @@ def abbreviate(name: str) -> str:
 
 def abbreviate_constructors(term: Term) -> Term:
     if isinstance(term, Metavariable):
-        return term
+        return Metavariable(abbreviate(term.name))
     elif isinstance(term, Application):
         return Application(abbreviate(term.symbol), term.subterms)
     else:
@@ -233,7 +233,7 @@ def abbreviate_lemmas(statement: Statement) -> Statement:
         new_label = abbreviate(statement.label)
 
         if isinstance(statement, FloatingStatement):
-            return FloatingStatement(new_label, statement.terms)
+            return FloatingStatement(new_label, terms_abbreviate_constructors(statement.terms))
         elif isinstance(statement, EssentialStatement):
             return EssentialStatement(new_label, terms_abbreviate_constructors(statement.terms))
         elif isinstance(statement, AxiomaticStatement):
