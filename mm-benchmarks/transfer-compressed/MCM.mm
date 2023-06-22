@@ -1,18 +1,50 @@
-$c ) #ElementVariable #Symbol Zw #Pattern CcA #Variable #SetVariable ( $.
-$v ph1 kore-sort-var-x0 ph0 x kore-sort-var-S2 xX $.
-$d kore-sort-var-x0 kore-sort-var-S2 $.
-$d kore-sort-var-x0 x $.
-$d x kore-sort-var-S2 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
+$c 0wM XBI ewk xB4 IAQ #Symbol #Variable #SetVariable iA #ElementVariable 8wk #Pattern ) ( $.
+$v yhs Fw Ow CQ qwg DQ Bw XRw Cw 2gg EQ sgg tAg Dw ngg FQ xX Ew Kw ph0 oAg nR4 tgg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+EA $f #Pattern EQ $.
+Eg $f #Pattern Ew $.
+FA $f #Pattern FQ $.
+Fg $f #Pattern Fw $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+jg $a iA Bw Ow Bw Ow $.
 ${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-Cb8 $a #Pattern CcA $.
-HKE $f #ElementVariable kore-sort-var-x0 $.
-Hik $f #ElementVariable kore-sort-var-S2 $.
-HwM $a #Pattern kore-sort-var-x0 $.
-${ MCM $p Zw CcA CcA kore-sort-var-x0 kore-sort-var-S2 $=
-  ( Cb8 HwM Jw Afg ) CADBEF $. $}
+   IQI $a iA Bw Bw CQ Ow $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+${ XgQ $e iA Bw Dw Fw Ow $.
+   XwQ $e iA CQ EQ Fw Ow $.
+   YAQ $e iA Cw Ew Fw Ow $.
+   YQQ $e iA DQ FQ Fw Ow $.
+   YgQ $a iA ( 0wM Bw CQ Cw DQ ) ( 0wM Dw EQ Ew FQ ) Fw Ow $. $}
+nQg $f #Variable ngg $.
+nwg $f #Pattern oAg $.
+qgg $f #Pattern qwg $.
+sQg $f #Pattern sgg $.
+swg $f #Pattern tAg $.
+tQg $f #Pattern tgg $.
+2Qg $f #ElementVariable 2gg $.
+egk $a #Pattern ewk $.
+8gk $a #Pattern 8wk $.
+WxI $a #Pattern ( XBI oAg qwg ) $.
+${ YBI $e iA qwg tAg oAg ngg $.
+   YRI $e iA sgg tgg oAg ngg $.
+   YhI $a iA ( XBI qwg sgg ) ( XBI tAg tgg ) oAg ngg $. $}
+yRs $f #ElementVariable yhs $.
+XBw $f #ElementVariable XRw $.
+nB4 $f #ElementVariable nR4 $.
+wx4 $a #Pattern xB4 $.
+Wh8 $a #Pattern 2gg $.
+6h8 $a #Pattern nR4 $.
+7SA $a #Pattern yhs $.
+QCE $a #Pattern XRw $.
+viE $a iA 2gg 2gg nR4 XRw $.
+vyE $a iA yhs yhs nR4 XRw $.
+RCI $a iA 8wk 8wk nR4 XRw $.
+${ MCM $p iA ( 0wM 8wk 2gg yhs ( XBI ( IAQ ewk xB4 ) nR4 ) ) ( 0wM 8wk 2gg yhs ( XBI ( IAQ ewk xB4 ) XRw ) ) nR4 XRw $=
+  ( 8gk Wh8 7SA egk wx4 HwQ 6h8 WxI QCE SA RCI viE vyE IQI jg YhI YgQ ) EAFZBGZ
+  HIJZDKZLEUBUCUDCMZLUECNZCDOACDPBCDQUGUEUDUEUDUFUDUEUGRUEUGSTUA $. $}

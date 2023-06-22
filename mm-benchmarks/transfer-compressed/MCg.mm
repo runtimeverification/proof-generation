@@ -1,32 +1,11 @@
-$c Lg CcA #Variable ) ASI #ElementVariable #Symbol A-s #Pattern wg .A rg #SetVariable ( $.
-$v kore-sort-var-S3 kore-sort-var-R ph1 ph2 kore-element-var-T ph0 $.
-$d kore-sort-var-R kore-element-var-T $.
-$d kore-element-var-T kore-sort-var-S3 $.
-$d kore-sort-var-R kore-sort-var-S3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-${ AW0 $e rg ( Lg ph0 ph1 ) $.
-   AW4 $e rg ( Lg ph1 ph2 ) $.
-   AW8 $a rg ( Lg ph0 ph2 ) $. $}
-AZI $a rg ( Lg ( wg ph0 ph1 ) ph1 ) $.
-${ AZc $e rg ( Lg ph0 ph1 ) $.
-   AZg $e rg ( Lg ph0 ph2 ) $.
-   AZk $a rg ( Lg ph0 ( wg ph1 ph2 ) ) $. $}
-A-o $a #Pattern ( A-s ph0 ) $.
-CKo $f #ElementVariable kore-sort-var-R $.
-Cb8 $a #Pattern CcA $.
-Hig $f #ElementVariable kore-sort-var-S3 $.
-His $f #ElementVariable kore-element-var-T $.
-Huk $a #Pattern kore-sort-var-R $.
-Hus $a #Pattern kore-sort-var-S3 $.
-HvA $a #Pattern kore-element-var-T $.
-MA4 $a #Pattern ( wg ( A-s kore-sort-var-S3 ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) $.
-MA8 $a rg ( Lg ( wg ( A-s kore-sort-var-S3 ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) ( A-s kore-sort-var-S3 ) ) $.
-MCc $a rg ( Lg ( wg ( A-s kore-sort-var-R ) ( wg ( A-s kore-sort-var-S3 ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) $.
-${ MCg $p rg ( Lg ( wg ( A-s kore-sort-var-R ) ( wg ( A-s kore-sort-var-S3 ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) ) ( wg ( A-s kore-sort-var-S3 ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) ) $=
-  ( Huk A-o MA4 wQ Hus HvA Cb8 ASE 9w AZI MA8 AW8 MCc AZk ) ADEZBCFZGZBHEZCIJKL
-  GTSUARSMBCNOABCPQ $. $}
+$c #SetVariable kBM ) #ElementVariable #Symbol #Variable #Pattern ( $.
+$v oAg 5Qg nR4 qwg $.
+nwg $f #Pattern oAg $.
+qgg $f #Pattern qwg $.
+5Ag $f #ElementVariable 5Qg $.
+jxM $a #Pattern ( kBM oAg qwg ) $.
+nB4 $f #ElementVariable nR4 $.
+6h8 $a #Pattern nR4 $.
+YCU $a #Pattern 5Qg $.
+${ MCg $p #Pattern ( kBM nR4 5Qg ) $=
+  ( 6h8 YCU jxM ) BCADE $. $}

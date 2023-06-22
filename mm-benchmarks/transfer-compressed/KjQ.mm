@@ -1,22 +1,29 @@
-$c ) #ElementVariable #Symbol Zw #Pattern #Variable #SetVariable ( $.
-$v ph1 ph0 x xX kore-element-var-VE1 kore-element-var-x0 kore-element-var-VE4 $.
-$d kore-element-var-x0 kore-element-var-VE4 $.
-$d kore-element-var-VE1 x $.
-$d kore-element-var-VE1 kore-element-var-VE4 $.
-$d kore-element-var-VE1 kore-element-var-x0 $.
-$d x kore-element-var-x0 $.
-$d x kore-element-var-VE4 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-CK0 $f #ElementVariable kore-element-var-VE1 $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-Hi0 $f #ElementVariable kore-element-var-x0 $.
-H3g $a #Pattern kore-element-var-x0 $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-${ KjQ $p Zw kore-element-var-VE4 kore-element-var-VE4 kore-element-var-x0 kore-element-var-VE1 $=
-  ( JO4 H3g Jw Afg ) BDCEAFG $. $}
+$c Tw #Symbol 7h4 zw JAQ pgg #Pattern ( rwg LAQ ewk IAQ #Variable SwE #SetVariable 4w #ElementVariable IQE mwg xQg ) $.
+$v CQ qwg Bw oAg Cw 2gg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+mgg $a #Pattern mwg $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+rgg $a #Pattern ( rwg oAg qwg ) $.
+wQg $a zw ( Tw ( 4w ( SwE oAg pgg ) ( SwE qwg mwg ) ) ( SwE ( rwg oAg qwg ) mwg ) ) $.
+xAg $a #Pattern xQg $.
+2Qg $f #ElementVariable 2gg $.
+egk $a #Pattern ewk $.
+7R4 $a #Pattern 7h4 $.
+Wh8 $a #Pattern 2gg $.
+KTQ $a zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( 4w ( SwE ( LAQ ewk pgg ( IAQ ewk 7h4 ) ) pgg ) ( SwE xQg mwg ) ) ) $.
+${ KjQ $p zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( SwE ( rwg ( LAQ ewk pgg ( IAQ ewk 7h4 ) ) xQg ) mwg ) ) $=
+  ( Wh8 IwQ IAE 4g egk pQg 7R4 HwQ KwQ SgE xAg mgg rgg KTQ wQg mAE ) ABCDEFGFHI
+  JZGKLMKERLNMKAORLPQ $. $}

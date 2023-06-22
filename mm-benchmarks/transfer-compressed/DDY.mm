@@ -1,22 +1,28 @@
-$c ( DCw #Variable ) kg #ElementVariable #Symbol #Pattern MA #SetVariable DC4 jA $.
-$v sg0 xX ph1 ph0 ptn0 xX0 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-IA $f #Variable xX $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-${ $d xX ph0 $.
-   jw $e jA xX ph1 $.
-   kA $a jA xX ( MA ph0 ph1 ) $. $}
-${ qg $e jA xX ph0 $.
-   qw $e kg ph1 ph0 $.
-   rA $a jA xX ph1 $. $}
-CHQ $f #Variable xX0 $.
-CHU $f #Pattern ptn0 $.
-DCs $a #Symbol DCw $.
-DC0 $a #Pattern ( DC4 ptn0 ) $.
-DDQ $a kg ( DC4 ptn0 ) ( MA DCw ptn0 ) $.
-${ DDU $e jA xX0 ptn0 $.
-   DDY $p jA xX0 ( DC4 ptn0 ) $=
-     ( DCs Kg Lw DC0 kA DDQ rA ) DEZBFBGAKBACHBIJ $. $}
+$c 4B4 LAQ IAQ Tw #Symbol #Variable SwE pgg #SetVariable zw 4w YQk JAQ #ElementVariable IQE rgk #Pattern ) ( $.
+$v CQ qwg -Bw Bw oAg Cw sgg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+sQg $f #Pattern sgg $.
+.gg $a zw ( Tw ( 4w ( 4w ( JAQ oAg ) ( JAQ qwg ) ) ( SwE sgg oAg ) ) ( SwE ( LAQ oAg qwg sgg ) qwg ) ) $.
+YAk $a #Pattern YQk $.
+rQk $a #Pattern rgk $.
+.xw $f #ElementVariable -Bw $.
+3x4 $a #Pattern 4B4 $.
+yyg $a #Pattern -Bw $.
+CzY $a zw ( Tw ( 4w ( SwE -Bw YQk ) IQE ) ( 4w ( 4w ( JAQ rgk ) ( JAQ pgg ) ) ( SwE ( IAQ rgk 4B4 ) rgk ) ) ) $.
+${ DDY $p zw ( Tw ( 4w ( SwE -Bw YQk ) IQE ) ( SwE ( LAQ rgk pgg ( IAQ rgk 4B4 ) ) pgg ) ) $=
+  ( yyg YAk SgE IAE 4g rQk IwQ pQg 3x4 HwQ KwQ CzY .gg mAE ) ABCDEFGHIHFGJKZGDF
+  GIPLIDAMGIPNO $. $}

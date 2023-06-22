@@ -1,32 +1,27 @@
-$c BAM ) HnY A-s #Pattern wg .A rg A-c Lg #Variable Hkw Eh0 ASI #ElementVariable Cbk #Symbol CUE CSA CXQ #SetVariable ( $.
-$v kore-sort-var-R ph1 ph2 ph0 ptn0 ptn1 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-AXM $a rg .A $.
-${ AZc $e rg ( Lg ph0 ph1 ) $.
-   AZg $e rg ( Lg ph0 ph2 ) $.
-   AZk $a rg ( Lg ph0 ( wg ph1 ph2 ) ) $. $}
-${ Aw4 $e rg ph1 $.
-   Aw8 $a rg ( Lg ph0 ph1 ) $. $}
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-A-o $a #Pattern ( A-s ph0 ) $.
-BAI $a #Pattern ( BAM ph0 ph1 ph2 ) $.
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CKo $f #ElementVariable kore-sort-var-R $.
-CR8 $a #Pattern CSA $.
-CUA $a #Pattern CUE $.
-CXM $a #Pattern CXQ $.
-Cbg $a #Pattern Cbk $.
-Ehw $a #Pattern ( Eh0 ptn0 ptn1 ) $.
-Hks $a #Pattern Hkw $.
-HnU $a #Pattern HnY $.
-Huk $a #Pattern kore-sort-var-R $.
-Ii0 $a rg ( Lg ( wg ( A-s kore-sort-var-R ) .A ) ( ASI ( Eh0 ( A-c CUE Hkw ) ( BAM CXQ CSA ( A-c CXQ HnY ) ) ) Cbk ) ) $.
-${ Ii4 $p rg ( Lg ( wg ( A-s kore-sort-var-R ) .A ) ( wg ( ASI ( Eh0 ( A-c CUE Hkw ) ( BAM CXQ CSA ( A-c CXQ HnY ) ) ) Cbk ) .A ) ) $=
-  ( Huk A-o 9w wQ CUA Hks A-Y CXM CR8 HnU BAI Ehw Cbg ASE Ii0 AXM Aw8 AZk ) ABC
-  DEZFGHIJIKHLMNODAPTDQRS $. $}
+$c LAQ #Symbol #Variable #SetVariable iA ) #ElementVariable rgk #Pattern 3gk ( $.
+$v Ow CQ zBs DQ Ew Bw Kw Cw nR4 EQ Dw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+EA $f #Pattern EQ $.
+Eg $f #Pattern Ew $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+jg $a iA Bw Ow Bw Ow $.
+${ lAQ $e iA Bw DQ Ew Ow $.
+   lQQ $e iA CQ Dw Ew Ow $.
+   lgQ $e iA Cw EQ Ew Ow $.
+   lwQ $a iA ( LAQ Bw CQ Cw ) ( LAQ DQ Dw EQ ) Ew Ow $. $}
+rQk $a #Pattern rgk $.
+3Qk $a #Pattern 3gk $.
+yxs $f #ElementVariable zBs $.
+nB4 $f #ElementVariable nR4 $.
+6h8 $a #Pattern nR4 $.
+JiE $a #Pattern zBs $.
+LSI $a iA rgk rgk nR4 zBs $.
+IS4 $a iA 3gk 3gk nR4 zBs $.
+${ Ii4 $p iA ( LAQ rgk 3gk nR4 ) ( LAQ rgk 3gk zBs ) nR4 zBs $=
+  ( rQk 3Qk 6h8 JiE SA LSI IS4 jg lwQ ) CDBEZCDAFLAGZABHABILMJK $. $}

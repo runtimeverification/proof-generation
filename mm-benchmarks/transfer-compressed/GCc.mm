@@ -1,21 +1,34 @@
-$c #Variable GCQ ) kg #ElementVariable #Symbol #Pattern GCI MA #SetVariable ( $.
-$v sg0 ph1 ph2 ph0 ptn0 ptn1 ptn4 ptn3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-kQ $a kg ph0 ph0 $.
-${ lQ $e kg ph0 ph1 $.
-   lg $e kg ph1 ph2 $.
-   lw $a kg ph0 ph2 $. $}
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIY $f #Pattern ptn3 $.
-CIc $f #Pattern ptn4 $.
-GCE $a #Symbol GCI $.
-GCM $a #Pattern ( GCQ ptn0 ptn1 ) $.
-GCU $a kg ( GCQ ptn0 ptn1 ) ( MA ( MA GCI ptn0 ) ptn1 ) $.
-${ GCc $p kg ( GCQ ptn3 ptn4 ) ( MA ( MA GCI ptn3 ) ptn4 ) $=
-  ( GCM GCE Kg Lw GCU kQ lw ) ABCDEAFBFZJABGJHI $. $}
+$c Tw #Symbol zw YQk JAQ pgg rgk #Pattern ( LAQ ewk IAQ #Variable SwE #SetVariable vR4 4w #ElementVariable IQE 8hw ) cBQ $.
+$v CQ qwg Bw oAg Cw 2gg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+2Qg $f #ElementVariable 2gg $.
+YAk $a #Pattern YQk $.
+egk $a #Pattern ewk $.
+rQk $a #Pattern rgk $.
+bxQ $a #Pattern ( cBQ oAg qwg ) $.
+fBQ $a zw ( Tw ( 4w ( SwE oAg pgg ) ( SwE qwg pgg ) ) ( SwE ( cBQ oAg qwg ) YQk ) ) $.
+8Rw $a #Pattern 8hw $.
+vB4 $a #Pattern vR4 $.
+Wh8 $a #Pattern 2gg $.
+WyY $a zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( SwE ( LAQ rgk pgg ( IAQ rgk 8hw ) ) pgg ) ) $.
+Fyc $a zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( SwE ( LAQ ewk pgg ( IAQ ewk vR4 ) ) pgg ) ) $.
+${ GCc $p zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( SwE ( cBQ ( LAQ ewk pgg ( IAQ ewk vR4 ) ) ( LAQ rgk pgg ( IAQ rgk 8hw ) ) ) YQk ) ) $=
+  ( Wh8 IwQ IAE 4g egk pQg vB4 HwQ KwQ SgE rQk 8Rw bxQ YAk Fyc WyY wgE fBQ mAE
+  ) ABCDEZFGFHIJZGKZLGLMIJZGKZEUBUDNOKUAUCUEAPAQRUBUDST $. $}

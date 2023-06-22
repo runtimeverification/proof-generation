@@ -1,20 +1,18 @@
-$c Zw HlM #Variable ) #ElementVariable #Symbol CUE #Pattern #SetVariable A-c ( $.
-$v ph1 ph0 x kore-sort-var-R kore-element-var-K0 xX $.
-$d kore-sort-var-R kore-element-var-K0 $.
-$d kore-element-var-K0 x $.
-$d kore-sort-var-R x $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-CKo $f #ElementVariable kore-sort-var-R $.
-CUA $a #Pattern CUE $.
-G7s $f #ElementVariable kore-element-var-K0 $.
-HlI $a #Pattern HlM $.
-Huk $a #Pattern kore-sort-var-R $.
-${ ISs $p Zw kore-sort-var-R kore-sort-var-R ( A-c CUE HlM ) kore-element-var-K0 $=
-  ( Huk CUA HlI A-Y Jw Afg ) ACDEFBGH $. $}
+$c 0wM LAQ #Symbol #Variable #SetVariable ) pwk #ElementVariable pgg #Pattern ( $.
+$v yhs CQ DQ Bw Cw 2gg nR4 $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+0gM $a #Pattern ( 0wM Bw CQ Cw DQ ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+pQg $a #Pattern pgg $.
+2Qg $f #ElementVariable 2gg $.
+pgk $a #Pattern pwk $.
+yRs $f #ElementVariable yhs $.
+nB4 $f #ElementVariable nR4 $.
+Wh8 $a #Pattern 2gg $.
+6h8 $a #Pattern nR4 $.
+7SA $a #Pattern yhs $.
+${ ISs $p #Pattern ( 0wM pgg 2gg yhs ( LAQ pwk pgg nR4 ) ) $=
+  ( pQg Wh8 7SA pgk 6h8 KwQ 0gM ) DAEBFGDCHIJ $. $}

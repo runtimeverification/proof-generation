@@ -1,25 +1,34 @@
-$c Gx0 #Variable ) kg #ElementVariable Gxs #Symbol #Pattern MA #SetVariable ( $.
-$v sg0 ptn2 ph1 ph2 ph0 ptn0 ptn1 ph3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-kQ $a kg ph0 ph0 $.
-${ lQ $e kg ph0 ph1 $.
-   lg $e kg ph1 ph2 $.
-   lw $a kg ph0 ph2 $. $}
-${ tA $e kg ph0 ph2 $.
-   tQ $e kg ph1 ph3 $.
-   tg $a kg ( MA ph0 ph1 ) ( MA ph2 ph3 ) $. $}
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIU $f #Pattern ptn2 $.
-Gxo $a #Symbol Gxs $.
-Gxw $a #Pattern ( Gx0 ptn0 ptn1 ptn2 ) $.
-Gx4 $a kg ( Gx0 ptn0 ptn1 ptn2 ) ( MA ( MA ( MA Gxs ptn0 ) ptn1 ) ptn2 ) $.
-${ GyM $p kg ( Gx0 ptn0 ptn1 ptn2 ) ( MA ( MA ( MA Gxs ptn0 ) ptn1 ) ptn2 ) $=
-  ( Gxw Gxo Kg Lw Gx4 kQ tg lw ) ABCDEFZAGZBGZCGZOABCHNCNCMBMBLALALIAIJBIJCIJK
-  $. $}
+$c Uw PgE Tw #Symbol cwE zw JAQ #Pattern ( 0wM ewk xB4 tQM IAQ Wgk #Variable SwE #SetVariable 4w rwM #ElementVariable IQE ) $.
+$v 7Rw CQ Bw XRw Kw ph1 ph0 2gg GQ Cw x $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+GA $f #Pattern GQ $.
+Kg $f #ElementVariable Kw $.
+Ug $a #Pattern ( Uw Kw Bw ) $.
+IAE $a #Pattern IQE $.
+PQE $a #Pattern ( PgE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+nAE $a zw IQE $.
+${ NwM $e zw CQ $.
+   OAM $a zw ( Tw Bw CQ ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+${ $d x ph0 $.
+   $d x ph1 $.
+   vwY $e zw ( Tw GQ ( SwE CQ Bw ) ) $.
+   wAY $e zw ( Tw GQ ( tQM cwE ( rwM Bw cwE Kw ( 0wM Bw cwE Kw CQ ) ) ) ) $.
+   wQY $a zw ( Tw GQ ( Uw Kw ( PgE Kw CQ ) ) ) $. $}
+2Qg $f #ElementVariable 2gg $.
+egk $a #Pattern ewk $.
+XBw $f #ElementVariable XRw $.
+7Bw $f #ElementVariable 7Rw $.
+wx4 $a #Pattern xB4 $.
+-x4 $a zw ( Tw IQE ( SwE ( IAQ ewk xB4 ) ewk ) ) $.
+1B8 $a #Pattern 7Rw $.
+miE $a zw ( Tw IQE ( tQM cwE ( rwM ewk cwE 7Rw ( 0wM ewk cwE 7Rw ( IAQ ewk xB4 ) ) ) ) ) $.
+CCI $a #Pattern ( 4w ( JAQ 2gg ) ( 4w ( SwE XRw Wgk ) IQE ) ) $.
+${ GyM $p zw ( Tw ( 4w ( JAQ 2gg ) ( 4w ( SwE XRw Wgk ) IQE ) ) ( Uw 7Rw ( PgE 7Rw ( IAQ ewk xB4 ) ) ) ) $=
+  ( CCI IAE 1B8 egk wx4 HwQ PQE Ug nAE OAM -x4 miE wQY mAE ) ABDZECFGHIZJCKRELM
+  GSECNCOPQ $. $}

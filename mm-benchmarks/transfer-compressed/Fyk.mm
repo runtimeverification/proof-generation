@@ -1,35 +1,28 @@
-$c Zw FyI FyQ #Variable ) kg #ElementVariable #Symbol #Pattern MA #SetVariable ( $.
-$v ph5 sg0 ph4 ptn2 xX ph1 ph2 ph0 ptn0 ptn1 xX0 ph3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Cg $f #Pattern ph4 $.
-Cw $f #Pattern ph5 $.
-IA $f #Variable xX $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-${ dA $e Zw ph1 ph3 ph0 xX $.
-   dQ $e Zw ph2 ph4 ph0 xX $.
-   dg $a Zw ( MA ph1 ph2 ) ( MA ph3 ph4 ) ph0 xX $. $}
-kQ $a kg ph0 ph0 $.
-${ oQ $e Zw ph0 ph1 ph2 xX $.
-   og $e kg ph3 ph0 $.
-   ow $e kg ph4 ph1 $.
-   pA $e kg ph5 ph2 $.
-   pQ $a Zw ph3 ph4 ph5 xX $. $}
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-CHQ $f #Variable xX0 $.
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIU $f #Pattern ptn2 $.
-FyE $a #Symbol FyI $.
-FyM $a #Pattern ( FyQ ptn0 ) $.
-FyY $a kg ( FyQ ptn1 ) ( MA FyI ptn1 ) $.
-Fyc $a kg ( FyQ ptn2 ) ( MA FyI ptn2 ) $.
-${ Fyg $e Zw ptn1 ptn2 ptn0 xX0 $.
-   Fyk $p Zw ( FyQ ptn1 ) ( FyQ ptn2 ) ptn0 xX0 $=
-     ( FyE Kg Lw FyM Afg dg FyY Fyc kQ pQ ) FGZCHPDHBCIDIBABPCPDAPBAJEKCLDMBNO
-     $. $}
+$c ewk Tw #Symbol #Variable SwE #SetVariable zw 4w YQk #ElementVariable IQE rgk pgg #Pattern ) ( $.
+$v 4wg CQ 3gg -Bw Bw 5Qg Cw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+ugE $a zw ( Tw ( 4w Bw CQ ) Bw ) $.
+uwE $a zw ( Tw ( 4w Bw CQ ) CQ ) $.
+3Qg $f #ElementVariable 3gg $.
+4gg $f #ElementVariable 4wg $.
+5Ag $f #ElementVariable 5Qg $.
+YAk $a #Pattern YQk $.
+egk $a #Pattern ewk $.
+rQk $a #Pattern rgk $.
+.xw $f #ElementVariable -Bw $.
+XiU $a #Pattern 3gg $.
+XyU $a #Pattern 4wg $.
+yyg $a #Pattern -Bw $.
+zCg $a #Pattern ( 4w ( SwE 5Qg pgg ) ( 4w ( SwE -Bw YQk ) IQE ) ) $.
+0yg $a zw ( Tw ( 4w ( SwE 5Qg pgg ) ( 4w ( SwE -Bw YQk ) IQE ) ) ( SwE -Bw YQk ) ) $.
+${ Fyk $p zw ( Tw ( 4w ( 4w ( SwE 4wg ewk ) ( 4w ( SwE 5Qg pgg ) ( 4w ( SwE -Bw YQk ) IQE ) ) ) ( 4w ( SwE 3gg rgk ) IQE ) ) ( SwE -Bw YQk ) ) $=
+  ( XyU egk SgE zCg 4g XiU rQk IAE yyg YAk ugE uwE 0yg mAE ) BEFGZCDHZIZAJKGLIZ
+  IUADMNGZUAUBOUATUCSTPCDQRR $. $}

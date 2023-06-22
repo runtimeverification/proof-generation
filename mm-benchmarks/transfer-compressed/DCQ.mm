@@ -1,19 +1,16 @@
-$c DB8 #Variable ) kg #ElementVariable #Symbol #Pattern DCE MA #SetVariable ( $.
-$v ph1 ph2 ph0 sg0 ptn0 ptn2 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-kQ $a kg ph0 ph0 $.
-${ lQ $e kg ph0 ph1 $.
-   lg $e kg ph1 ph2 $.
-   lw $a kg ph0 ph2 $. $}
-CHU $f #Pattern ptn0 $.
-CIU $f #Pattern ptn2 $.
-DB4 $a #Symbol DB8 $.
-DCA $a #Pattern ( DCE ptn0 ) $.
-DCI $a kg ( DCE ptn0 ) ( MA DB8 ptn0 ) $.
-${ DCQ $p kg ( DCE ptn2 ) ( MA DB8 ptn2 ) $=
-  ( DCA DB4 Kg Lw DCI kQ lw ) ABCDAEZIAFIGH $. $}
+$c #SetVariable YQk 1gM #ElementVariable #Symbol #Variable #Pattern ) ( $.
+$v Cw 2gg CQ 3Ag Bw DQ 4Ag $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+1QM $a #Pattern ( 1gM Bw CQ Cw DQ ) $.
+2Qg $f #ElementVariable 2gg $.
+2wg $f #ElementVariable 3Ag $.
+3wg $f #ElementVariable 4Ag $.
+YAk $a #Pattern YQk $.
+Wh8 $a #Pattern 2gg $.
+BCQ $a #Pattern 4Ag $.
+ByQ $a #Pattern 3Ag $.
+${ DCQ $p #Pattern ( 1gM YQk 2gg 3Ag 4Ag ) $=
+  ( YAk Wh8 ByQ BCQ 1QM ) DAEBFCGH $. $}

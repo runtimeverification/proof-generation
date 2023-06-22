@@ -1,19 +1,37 @@
-$c ( DCw #Variable ) kg #ElementVariable #Symbol #Pattern MA #SetVariable DC4 $.
-$v ph1 ph2 ph0 sg0 ptn0 ptn1 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-kQ $a kg ph0 ph0 $.
-${ lQ $e kg ph0 ph1 $.
-   lg $e kg ph1 ph2 $.
-   lw $a kg ph0 ph2 $. $}
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-DCs $a #Symbol DCw $.
-DC0 $a #Pattern ( DC4 ptn0 ) $.
-DC8 $a kg ( DC4 ptn0 ) ( MA DCw ptn0 ) $.
-${ DDA $p kg ( DC4 ptn1 ) ( MA DCw ptn1 ) $=
-  ( DC0 DCs Kg Lw DC8 kQ lw ) ABCDAEZIAFIGH $. $}
+$c 0wM IAQ #Symbol cwE #Variable #SetVariable iA #ElementVariable .gk Px0 #Pattern ) ( $.
+$v 7Rw Ow CQ Fw DQ Bw Cw EQ Dw Pw FQ xX Ew Kw ph0 6xw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+EA $f #Pattern EQ $.
+Eg $f #Pattern Ew $.
+FA $f #Pattern FQ $.
+Fg $f #Pattern Fw $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+Pg $f #Symbol Pw $.
+SA $a #Variable Kw $.
+Sw $a #Pattern Pw $.
+jg $a iA Bw Ow Bw Ow $.
+cgE $a #Symbol cwE $.
+${ $d xX ph0 $.
+   IQI $a iA Bw Bw CQ Ow $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+${ XgQ $e iA Bw Dw Fw Ow $.
+   XwQ $e iA CQ EQ Fw Ow $.
+   YAQ $e iA Cw Ew Fw Ow $.
+   YQQ $e iA DQ FQ Fw Ow $.
+   YgQ $a iA ( 0wM Bw CQ Cw DQ ) ( 0wM Dw EQ Ew FQ ) Fw Ow $. $}
+.Qk $a #Pattern .gk $.
+6hw $f #ElementVariable 6xw $.
+7Bw $f #ElementVariable 7Rw $.
+Ph0 $a #Pattern Px0 $.
+dB8 $a #Pattern 6xw $.
+1B8 $a #Pattern 7Rw $.
+2x8 $a iA 7Rw 7Rw cwE 6xw $.
+CzA $a iA .gk .gk cwE 6xw $.
+${ DDA $p iA ( 0wM .gk cwE 7Rw ( IAQ .gk Px0 ) ) ( 0wM .gk 6xw 7Rw ( IAQ .gk Px0 ) ) cwE 6xw $=
+  ( .Qk cgE Sw 1B8 Ph0 HwQ dB8 SA CzA jg 2x8 IQI YgQ ) CDEZBFZCGHZCAIQRPAJZAKPS
+  LABMRPSNO $. $}

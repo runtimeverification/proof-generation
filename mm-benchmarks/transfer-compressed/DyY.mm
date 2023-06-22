@@ -1,21 +1,11 @@
-$c DyE #Variable ) kg #ElementVariable #Symbol #Pattern DyM MA #SetVariable ( $.
-$v sg0 ph1 ph2 ph0 ptn0 ptn1 ptn4 ptn3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-kQ $a kg ph0 ph0 $.
-${ lQ $e kg ph0 ph1 $.
-   lg $e kg ph1 ph2 $.
-   lw $a kg ph0 ph2 $. $}
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIY $f #Pattern ptn3 $.
-CIc $f #Pattern ptn4 $.
-DyA $a #Symbol DyE $.
-DyI $a #Pattern ( DyM ptn0 ptn1 ) $.
-DyQ $a kg ( DyM ptn0 ptn1 ) ( MA ( MA DyE ptn0 ) ptn1 ) $.
-${ DyY $p kg ( DyM ptn3 ptn4 ) ( MA ( MA DyE ptn3 ) ptn4 ) $=
-  ( DyI DyA Kg Lw DyQ kQ lw ) ABCDEAFBFZJABGJHI $. $}
+$c #SetVariable ) #ElementVariable #Symbol #Variable 7BI #Pattern ( $.
+$v YBw oAg XRw qwg $.
+nwg $f #Pattern oAg $.
+qgg $f #Pattern qwg $.
+6xI $a #Pattern ( 7BI oAg qwg ) $.
+XBw $f #ElementVariable XRw $.
+Xxw $f #ElementVariable YBw $.
+QCE $a #Pattern XRw $.
+ACM $a #Pattern YBw $.
+${ DyY $p #Pattern ( 7BI XRw YBw ) $=
+  ( QCE ACM 6xI ) ACBDE $. $}

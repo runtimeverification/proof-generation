@@ -1,31 +1,29 @@
-$c FSQ FSY #Variable ) kg #ElementVariable #Symbol #Pattern MA #SetVariable ( jA $.
-$v sg0 ptn2 xX ph1 ph0 ptn0 ptn1 xX0 ptn3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-IA $f #Variable xX $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-${ $d xX ph1 $.
-   jQ $e jA xX ph0 $.
-   jg $a jA xX ( MA ph0 ph1 ) $. $}
-${ $d xX ph0 $.
-   jw $e jA xX ph1 $.
-   kA $a jA xX ( MA ph0 ph1 ) $. $}
-${ qg $e jA xX ph0 $.
-   qw $e kg ph1 ph0 $.
-   rA $a jA xX ph1 $. $}
-CHQ $f #Variable xX0 $.
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIU $f #Pattern ptn2 $.
-CIY $f #Pattern ptn3 $.
-FSM $a #Symbol FSQ $.
-FSU $a #Pattern ( FSY ptn0 ptn1 ptn2 ptn3 ) $.
-FS0 $a kg ( FSY ptn0 ptn1 ptn2 ptn3 ) ( MA ( MA ( MA ( MA FSQ ptn0 ) ptn1 ) ptn2 ) ptn3 ) $.
-${ $d xX0 ptn0 $.
-   $d xX0 ptn1 $.
-   $d xX0 ptn3 $.
-   FTI $e jA xX0 ptn2 $.
-   FTM $p jA xX0 ( FSY ptn0 ptn1 ptn2 ptn3 ) $=
-     ( FSM Kg Lw FSU kA jg FS0 rA ) GHBICIZDIZEIBCDEJAPEAODAFKLBCDEMN $. $}
+$c ewk IAQ Tw #Symbol #Variable SwE PQk #SetVariable zw vR4 4w JAQ #ElementVariable IQE rgk pgg #Pattern ) ( $.
+$v 4wg 5Qg Cw CQ Bw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+Tg $a #Pattern ( Tw Bw CQ ) $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+5Q $a zw ( Tw Bw ( Tw CQ Bw ) ) $.
+${ 6A $e zw ( Tw Bw CQ ) $.
+   6Q $e zw Bw $.
+   6g $a zw CQ $. $}
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+IgQ $a zw ( SwE ( IAQ Bw CQ ) Bw ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+pQg $a #Pattern pgg $.
+qQg $a zw ( JAQ pgg ) $.
+4gg $f #ElementVariable 4wg $.
+5Ag $f #ElementVariable 5Qg $.
+egk $a #Pattern ewk $.
+fgk $a zw ( JAQ ewk ) $.
+vB4 $a #Pattern vR4 $.
+NS8 $a #Pattern ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg rgk ) IQE ) ) $.
+${ FTM $p zw ( Tw ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg rgk ) IQE ) ) ( 4w ( 4w ( JAQ ewk ) ( JAQ pgg ) ) ( SwE ( IAQ ewk vR4 ) ewk ) ) ) $=
+  ( NS8 egk IwQ pQg 4g vB4 HwQ SgE Tg 5Q fgk 6g qQg wgE IgQ ) ABCZDEZFEZGDHIDJZ
+  RSTSRSKSRLMNTRTKTRLONPUARUAKUARLDHQNP $. $}

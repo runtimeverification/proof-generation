@@ -1,47 +1,33 @@
-$c BAM FDE CSc ) A-s #Pattern Hlo wg .A #SetVariable rg A-c Lg CHs #Variable ASI #ElementVariable #Symbol CUE CXQ HoQ ( $.
-$v kore-sort-var-R kore-element-var-K3 kore-element-var-K2 ph1 ph2 ph0 ptn0 ptn1 $.
-$d kore-sort-var-R kore-element-var-K2 $.
-$d kore-element-var-K3 kore-element-var-K2 $.
-$d kore-sort-var-R kore-element-var-K3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-${ AW0 $e rg ( Lg ph0 ph1 ) $.
-   AW4 $e rg ( Lg ph1 ph2 ) $.
-   AW8 $a rg ( Lg ph0 ph2 ) $. $}
-AXM $a rg .A $.
-${ AZc $e rg ( Lg ph0 ph1 ) $.
-   AZg $e rg ( Lg ph0 ph2 ) $.
-   AZk $a rg ( Lg ph0 ( wg ph1 ph2 ) ) $. $}
-${ Aw4 $e rg ph1 $.
-   Aw8 $a rg ( Lg ph0 ph1 ) $. $}
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-A-o $a #Pattern ( A-s ph0 ) $.
-BAI $a #Pattern ( BAM ph0 ph1 ph2 ) $.
-CHU $f #Pattern ptn0 $.
-CHo $a #Pattern CHs $.
-CH8 $f #Pattern ptn1 $.
-CKo $f #ElementVariable kore-sort-var-R $.
-CSY $a #Pattern CSc $.
-CUA $a #Pattern CUE $.
-CXM $a #Pattern CXQ $.
-FDA $a #Pattern ( FDE ptn0 ptn1 ) $.
-FD0 $a rg ( Lg ( wg ( ASI ptn0 CHs ) ( ASI ptn1 CHs ) ) ( ASI ( FDE ptn0 ptn1 ) CSc ) ) $.
-HBw $f #ElementVariable kore-element-var-K2 $.
-HGI $f #ElementVariable kore-element-var-K3 $.
-Hlk $a #Pattern Hlo $.
-HoM $a #Pattern HoQ $.
-Huk $a #Pattern kore-sort-var-R $.
-Io4 $a #Pattern kore-element-var-K2 $.
-Jj4 $a #Pattern kore-element-var-K3 $.
-Jj8 $a #Pattern ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-K2 CSc ) ( wg ( ASI kore-element-var-K3 CSc ) .A ) ) ) $.
-JkA $a rg ( Lg ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-K2 CSc ) ( wg ( ASI kore-element-var-K3 CSc ) .A ) ) ) ( A-s kore-sort-var-R ) ) $.
-Jk0 $a rg ( Lg ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-K2 CSc ) ( wg ( ASI kore-element-var-K3 CSc ) .A ) ) ) ( wg ( ASI kore-element-var-K2 CSc ) ( wg ( ASI kore-element-var-K3 CSc ) .A ) ) ) $.
-KR4 $a rg ( Lg ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-K2 CSc ) ( wg ( ASI kore-element-var-K3 CSc ) .A ) ) ) ( wg ( ASI ( BAM CUE CHs ( A-c CUE HoQ ) ) CHs ) ( ASI ( BAM CXQ CHs ( A-c CXQ Hlo ) ) CHs ) ) ) $.
-${ KR8 $p rg ( Lg ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-K2 CSc ) ( wg ( ASI kore-element-var-K3 CSc ) .A ) ) ) ( wg ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-K2 CSc ) ( wg ( ASI kore-element-var-K3 CSc ) .A ) ) ) ( wg ( ASI ( FDE ( BAM CUE CHs ( A-c CUE HoQ ) ) ( BAM CXQ CHs ( A-c CXQ Hlo ) ) ) CSc ) .A ) ) ) $=
-  ( Jj8 CUA CHo HoM A-Y BAI CXM Hlk FDA CSY ASE 9w wQ Huk A-o Io4 AZk Jj4 JkA
-  Jk0 KR4 FD0 AW8 AXM Aw8 ) ABCDZUIEFEGHIZJFJKHIZLMNZOPUIAQRBSMNCUAMNOPPABCUBAB
-  CUCTUIULOUIUJFNUKFNPULABCUDUJUKUEUFUIOUGUHTT $. $}
+$c ww4 Tw #Symbol zw YQk pgg rgk #Pattern ( LAQ ewk IAQ 9R4 #Variable SwE #SetVariable 4w #ElementVariable IQE 7BI 8hw ) cBQ $.
+$v oAg Cw CQ qwg Bw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+YAk $a #Pattern YQk $.
+egk $a #Pattern ewk $.
+rQk $a #Pattern rgk $.
+wg4 $a #Pattern ww4 $.
+6xI $a #Pattern ( 7BI oAg qwg ) $.
+.BI $a zw ( Tw ( 4w ( SwE oAg YQk ) ( SwE qwg YQk ) ) ( SwE ( 7BI oAg qwg ) YQk ) ) $.
+bxQ $a #Pattern ( cBQ oAg qwg ) $.
+8Rw $a #Pattern 8hw $.
+9B4 $a #Pattern 9R4 $.
+JR8 $a zw ( Tw IQE ( SwE ww4 YQk ) ) $.
+KB8 $a zw ( Tw IQE ( SwE ( cBQ ( LAQ ewk pgg ( IAQ ewk 9R4 ) ) ( LAQ rgk pgg ( IAQ rgk 8hw ) ) ) YQk ) ) $.
+${ KR8 $p zw ( Tw IQE ( SwE ( 7BI ww4 ( cBQ ( LAQ ewk pgg ( IAQ ewk 9R4 ) ) ( LAQ rgk pgg ( IAQ rgk 8hw ) ) ) ) YQk ) ) $=
+  ( IAE wg4 YAk SgE egk pQg 9B4 HwQ KwQ rQk 8Rw bxQ 4g 6xI JR8 KB8 wgE .BI mAE
+  ) ABCDZEFEGHIJFJKHILZCDZMBUANCDATUBOPQBUARS $. $}

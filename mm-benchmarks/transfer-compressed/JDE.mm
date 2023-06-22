@@ -1,18 +1,21 @@
-$c ) #ElementVariable #Symbol Zw #Pattern #Variable #SetVariable ( CPU $.
-$v ph1 kore-sort-var-x0 ph0 x kore-sort-var-R xX $.
-$d kore-sort-var-x0 x $.
-$d kore-sort-var-x0 kore-sort-var-R $.
-$d kore-sort-var-R x $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-CKo $f #ElementVariable kore-sort-var-R $.
-CPQ $a #Pattern CPU $.
-HKE $f #ElementVariable kore-sort-var-x0 $.
-HwM $a #Pattern kore-sort-var-x0 $.
-${ JDE $p Zw CPU CPU kore-sort-var-x0 kore-sort-var-R $=
-  ( CPQ HwM Jw Afg ) CBDAEF $. $}
+$c IAQ Tw #Symbol #Variable SwE #SetVariable hgk zw 4w #ElementVariable IQE rgk #Pattern 8hw ) ( $.
+$v 5Qg CQ Bw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Tg $a #Pattern ( Tw Bw CQ ) $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+5Q $a zw ( Tw Bw ( Tw CQ Bw ) ) $.
+${ 6A $e zw ( Tw Bw CQ ) $.
+   6Q $e zw Bw $.
+   6g $a zw CQ $. $}
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+IgQ $a zw ( SwE ( IAQ Bw CQ ) Bw ) $.
+5Ag $f #ElementVariable 5Qg $.
+hQk $a #Pattern hgk $.
+rQk $a #Pattern rgk $.
+8Rw $a #Pattern 8hw $.
+YCU $a #Pattern 5Qg $.
+${ JDE $p zw ( Tw ( 4w ( SwE 5Qg hgk ) IQE ) ( SwE ( IAQ rgk 8hw ) rgk ) ) $=
+  ( rQk 8Rw HwQ SgE YCU hQk IAE 4g Tg 5Q IgQ 6g ) BCDBEZAFGEHIZNJNOKBCLM $. $}

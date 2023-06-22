@@ -1,18 +1,27 @@
-$c ) #ElementVariable #Symbol Zw #Pattern #Variable #SetVariable ( CPU $.
-$v ph1 ph0 x kore-element-var-VE0 kore-element-var-x0 xX $.
-$d kore-element-var-VE0 x $.
-$d x kore-element-var-x0 $.
-$d kore-element-var-VE0 kore-element-var-x0 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-CKs $f #ElementVariable kore-element-var-VE0 $.
-CPQ $a #Pattern CPU $.
-Hi0 $f #ElementVariable kore-element-var-x0 $.
-H3g $a #Pattern kore-element-var-x0 $.
-${ JCg $p Zw CPU CPU kore-element-var-x0 kore-element-var-VE0 $=
-  ( CPQ H3g Jw Afg ) CBDAEF $. $}
+$c #Symbol Tw #Variable SwE PQk #SetVariable zw 4w #ElementVariable IQE 8wk mwg #Pattern ) ( $.
+$v 4wg CQ 3gg Bw 5Qg Cw 4Ag $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+ugE $a zw ( Tw ( 4w Bw CQ ) Bw ) $.
+uwE $a zw ( Tw ( 4w Bw CQ ) CQ ) $.
+mgg $a #Pattern mwg $.
+3Qg $f #ElementVariable 3gg $.
+3wg $f #ElementVariable 4Ag $.
+4gg $f #ElementVariable 4wg $.
+5Ag $f #ElementVariable 5Qg $.
+8gk $a #Pattern 8wk $.
+BCQ $a #Pattern 4Ag $.
+XiU $a #Pattern 3gg $.
+YCU $a #Pattern 5Qg $.
+Dyg $a #Pattern ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg 8wk ) IQE ) ) $.
+FCg $a zw ( Tw ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg 8wk ) IQE ) ) ( SwE 5Qg 8wk ) ) $.
+${ JCg $p zw ( Tw ( 4w ( 4w ( SwE 3gg 8wk ) ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg 8wk ) IQE ) ) ) ( 4w ( SwE 4Ag mwg ) IQE ) ) ( SwE 5Qg 8wk ) ) $=
+  ( XiU 8gk SgE Dyg 4g BCQ mgg IAE YCU ugE uwE FCg mAE ) AEFGZCDHZIZBJKGLIZITDM
+  FGZTUANTSUBRSOCDPQQ $. $}

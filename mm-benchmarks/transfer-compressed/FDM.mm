@@ -1,20 +1,53 @@
-$c FDE #Variable ) kg #ElementVariable FC8 #Symbol #Pattern MA #SetVariable ( $.
-$v sg0 ptn2 ph1 ph2 ph0 ptn0 ptn1 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-kQ $a kg ph0 ph0 $.
-${ lQ $e kg ph0 ph1 $.
-   lg $e kg ph1 ph2 $.
-   lw $a kg ph0 ph2 $. $}
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIU $f #Pattern ptn2 $.
-FC4 $a #Symbol FC8 $.
-FDA $a #Pattern ( FDE ptn0 ptn1 ) $.
-FDI $a kg ( FDE ptn0 ptn1 ) ( MA ( MA FC8 ptn0 ) ptn1 ) $.
-${ FDM $p kg ( FDE ptn1 ptn2 ) ( MA ( MA FC8 ptn1 ) ptn2 ) $=
-  ( FDA FC4 Kg Lw FDI kQ lw ) ABCDEAFBFZJABGJHI $. $}
+$c rwg LAQ 7BA IAQ 0h4 Hg8 #Symbol #Variable -g4 pgg #SetVariable 8Q4 iA ) #ElementVariable rgk #Pattern 8hw 0Q4 ( $.
+$v Ow CQ qwg Bw Cw sgg tAg 4wg ngg xX 3gg Kw ph0 oAg 5Qg nR4 tgg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+jg $a iA Bw Ow Bw Ow $.
+${ $d xX ph0 $.
+   IQI $a iA Bw Bw CQ Ow $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nQg $f #Variable ngg $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+rgg $a #Pattern ( rwg oAg qwg ) $.
+sQg $f #Pattern sgg $.
+swg $f #Pattern tAg $.
+tQg $f #Pattern tgg $.
+${ uQg $e iA qwg tAg oAg ngg $.
+   ugg $e iA sgg tgg oAg ngg $.
+   uwg $a iA ( rwg qwg sgg ) ( rwg tAg tgg ) oAg ngg $. $}
+3Qg $f #ElementVariable 3gg $.
+4gg $f #ElementVariable 4wg $.
+5Ag $f #ElementVariable 5Qg $.
+rQk $a #Pattern rgk $.
+${ 1Q4 $e iA qwg tAg oAg ngg $.
+   1g4 $e iA sgg tgg oAg ngg $.
+   1w4 $a iA ( 0Q4 qwg sgg ) ( 0Q4 tAg tgg ) oAg ngg $. $}
+8A4 $a #Pattern ( 8Q4 oAg ) $.
+${ Ag8 $e iA qwg tAg oAg ngg $.
+   Aw8 $e iA sgg tgg oAg ngg $.
+   BA8 $a iA ( -g4 qwg sgg ) ( -g4 tAg tgg ) oAg ngg $. $}
+HQ8 $a #Pattern ( Hg8 oAg ) $.
+${ Ig8 $e iA qwg sgg oAg ngg $.
+   Iw8 $a iA ( Hg8 qwg ) ( Hg8 sgg ) oAg ngg $. $}
+6xA $a #Pattern ( 7BA oAg qwg ) $.
+8Rw $a #Pattern 8hw $.
+nB4 $f #ElementVariable nR4 $.
+0R4 $a #Pattern 0h4 $.
+6h8 $a #Pattern nR4 $.
+XiU $a #Pattern 3gg $.
+XyU $a #Pattern 4wg $.
+YCU $a #Pattern 5Qg $.
+liU $a iA 4wg 4wg nR4 3gg $.
+ATM $a #Pattern ( 0Q4 ( Hg8 ( rwg ( LAQ rgk pgg ( 7BA 5Qg ( IAQ rgk 0h4 ) ) ) 3gg ) ) 4wg ) $.
+EzM $a #Pattern ( 0Q4 ( Hg8 ( rwg ( LAQ rgk pgg ( 7BA 5Qg ( IAQ rgk 0h4 ) ) ) nR4 ) ) 4wg ) $.
+${ FDM $p iA ( -g4 ( 0Q4 ( Hg8 ( rwg ( LAQ rgk pgg ( 7BA 5Qg ( IAQ rgk 0h4 ) ) ) nR4 ) ) 4wg ) ( 8Q4 ( IAQ rgk 8hw ) ) ) ( -g4 ( 0Q4 ( Hg8 ( rwg ( LAQ rgk pgg ( 7BA 5Qg ( IAQ rgk 0h4 ) ) ) 3gg ) ) 4wg ) ( 8Q4 ( IAQ rgk 8hw ) ) ) nR4 3gg $=
+  ( SA 6h8 EzM rQk 8Rw HwQ 8A4 ATM pQg YCU 0R4 6xA KwQ rgg HQ8 IQI XyU XiU uwg
+  jg Iw8 liU 1w4 BA8 ) AEZDFZBCDGHIJKZABCLUKUIUJHMCNHOJPQZUJRZSBUAZULAUBZRZSUNU
+  IUJUMUPUIUJULUJULUOULUJUITUJUIUDUCUEABDUFUGUKUJUITUH $. $}

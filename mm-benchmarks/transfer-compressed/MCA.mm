@@ -1,31 +1,32 @@
-$c Zw CaQ BAM CcA #Variable ) #ElementVariable #Symbol #Pattern #SetVariable ( $.
-$v ph5 ph4 xX ph1 ph6 kore-element-var-T ph0 ph2 x kore-sort-var-S2 ph3 $.
-$d kore-element-var-T x $.
-$d x kore-sort-var-S2 $.
-$d kore-element-var-T kore-sort-var-S2 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Cg $f #Pattern ph4 $.
-Cw $f #Pattern ph5 $.
-DA $f #Pattern ph6 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-bQ $a Zw ph0 xX ph0 xX $.
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-${ BGs $e Zw ph0 ph3 ph6 xX $.
-   BGw $e Zw ph1 ph4 ph6 xX $.
-   BG0 $e Zw ph2 ph5 ph6 xX $.
-   BG4 $a Zw ( BAM ph0 ph1 ph2 ) ( BAM ph3 ph4 ph5 ) ph6 xX $. $}
-CaM $a #Pattern CaQ $.
-Cb8 $a #Pattern CcA $.
-Hik $f #ElementVariable kore-sort-var-S2 $.
-His $f #ElementVariable kore-element-var-T $.
-Huo $a #Pattern kore-sort-var-S2 $.
-HvA $a #Pattern kore-element-var-T $.
-Lcw $a Zw kore-element-var-T kore-element-var-T CaQ kore-sort-var-S2 $.
-${ MCA $p Zw ( BAM CcA CaQ kore-element-var-T ) ( BAM CcA kore-sort-var-S2 kore-element-var-T ) CaQ kore-sort-var-S2 $=
-  ( Cb8 CaM HvA Huo Jw Afg bQ Lcw BG4 ) CDBEZCAFLDAGZCDMHDMIABJK $. $}
+$c Uw PgE Wgk Tw #Symbol #Variable SwE #SetVariable zw 4w JAQ #ElementVariable IQE rgk #Pattern ) ( $.
+$v CQ Bw lB4 Kw ph0 Cw 2gg GQ x mh4 $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+GA $f #Pattern GQ $.
+Kg $f #ElementVariable Kw $.
+Ug $a #Pattern ( Uw Kw Bw ) $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+PQE $a #Pattern ( PgE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+nAE $a zw IQE $.
+${ NwM $e zw CQ $.
+   OAM $a zw ( Tw Bw CQ ) $. $}
+IwQ $a #Pattern ( JAQ Bw ) $.
+${ $d x ph0 $.
+   jAY $e zw ( Tw GQ ( JAQ Bw ) ) $.
+   jQY $a zw ( Tw GQ ( Uw Kw ( PgE Kw Bw ) ) ) $. $}
+2Qg $f #ElementVariable 2gg $.
+WQk $a #Pattern Wgk $.
+kx4 $f #ElementVariable lB4 $.
+mR4 $f #ElementVariable mh4 $.
+Bx8 $a zw ( Tw IQE ( JAQ Wgk ) ) $.
+Wh8 $a #Pattern 2gg $.
+Xh8 $a #Pattern Kw $.
+JSA $a #Pattern ( 4w ( JAQ lB4 ) ( 4w ( SwE mh4 rgk ) IQE ) ) $.
+${ MCA $p zw ( Tw ( 4w ( JAQ 2gg ) ( 4w ( JAQ lB4 ) ( 4w ( SwE mh4 rgk ) IQE ) ) ) ( Uw Kw ( PgE Kw Wgk ) ) ) $=
+  ( Wh8 IwQ JSA 4g IAE Xh8 WQk PQE Ug nAE OAM Bx8 jQY mAE ) BEFCDGHZIAJKLAMSINO
+  KIAPQR $. $}

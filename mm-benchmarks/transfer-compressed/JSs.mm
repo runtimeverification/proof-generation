@@ -1,30 +1,27 @@
-$c Zw BAM CHs #Variable ) #ElementVariable #Symbol CUE #Pattern #SetVariable ( $.
-$v ph5 ph4 kore-element-var-x0 xX ph1 ph6 ph2 kore-element-var-VE2 ph0 x ph3 $.
-$d kore-element-var-VE2 x $.
-$d x kore-element-var-x0 $.
-$d kore-element-var-VE2 kore-element-var-x0 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Cg $f #Pattern ph4 $.
-Cw $f #Pattern ph5 $.
-DA $f #Pattern ph6 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-bQ $a Zw ph0 xX ph0 xX $.
-${ BGs $e Zw ph0 ph3 ph6 xX $.
-   BGw $e Zw ph1 ph4 ph6 xX $.
-   BG0 $e Zw ph2 ph5 ph6 xX $.
-   BG4 $a Zw ( BAM ph0 ph1 ph2 ) ( BAM ph3 ph4 ph5 ) ph6 xX $. $}
-CHo $a #Pattern CHs $.
-CKw $f #ElementVariable kore-element-var-VE2 $.
-CUA $a #Pattern CUE $.
-Hi0 $f #ElementVariable kore-element-var-x0 $.
-H3g $a #Pattern kore-element-var-x0 $.
-JOw $a #Pattern kore-element-var-VE2 $.
-JRs $a Zw CUE CUE kore-element-var-x0 kore-element-var-VE2 $.
-JSE $a Zw CHs CHs kore-element-var-x0 kore-element-var-VE2 $.
-${ JSs $p Zw ( BAM CUE CHs kore-element-var-x0 ) ( BAM CUE CHs kore-element-var-VE2 ) kore-element-var-x0 kore-element-var-VE2 $=
-  ( CUA CHo H3g JOw Jw JRs JSE bQ BG4 ) CDBEZCDAFLAGZABHABILMJK $. $}
+$c LAQ #Symbol #Variable #SetVariable iA pwk #ElementVariable pgg #Pattern ) ( $.
+$v Ow CQ zBs DQ Ew Bw Kw Cw nR4 EQ Dw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+EA $f #Pattern EQ $.
+Eg $f #Pattern Ew $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+jg $a iA Bw Ow Bw Ow $.
+${ lAQ $e iA Bw DQ Ew Ow $.
+   lQQ $e iA CQ Dw Ew Ow $.
+   lgQ $e iA Cw EQ Ew Ow $.
+   lwQ $a iA ( LAQ Bw CQ Cw ) ( LAQ DQ Dw EQ ) Ew Ow $. $}
+pQg $a #Pattern pgg $.
+pgk $a #Pattern pwk $.
+yxs $f #ElementVariable zBs $.
+nB4 $f #ElementVariable nR4 $.
+6h8 $a #Pattern nR4 $.
+JiE $a #Pattern zBs $.
+NiE $a iA pgg pgg nR4 zBs $.
+Iis $a iA pwk pwk nR4 zBs $.
+${ JSs $p iA ( LAQ pwk pgg nR4 ) ( LAQ pwk pgg zBs ) nR4 zBs $=
+  ( pgk pQg 6h8 JiE SA Iis NiE jg lwQ ) CDBEZCDAFLAGZABHABILMJK $. $}

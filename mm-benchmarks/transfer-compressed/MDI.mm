@@ -1,34 +1,19 @@
-$c Zw BAM CcA #Variable ) #ElementVariable #Symbol #Pattern #SetVariable ( $.
-$v ph5 kore-sort-var-S3 ph4 xX ph1 kore-sort-var-x0 kore-element-var-T ph0 ph6 x ph2 ph3 $.
-$d kore-sort-var-S3 x $.
-$d kore-element-var-T kore-sort-var-S3 $.
-$d kore-sort-var-x0 x $.
-$d kore-sort-var-x0 kore-element-var-T $.
-$d kore-element-var-T x $.
-$d kore-sort-var-x0 kore-sort-var-S3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Cg $f #Pattern ph4 $.
-Cw $f #Pattern ph5 $.
-DA $f #Pattern ph6 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-bQ $a Zw ph0 xX ph0 xX $.
-${ BGs $e Zw ph0 ph3 ph6 xX $.
-   BGw $e Zw ph1 ph4 ph6 xX $.
-   BG0 $e Zw ph2 ph5 ph6 xX $.
-   BG4 $a Zw ( BAM ph0 ph1 ph2 ) ( BAM ph3 ph4 ph5 ) ph6 xX $. $}
-Cb8 $a #Pattern CcA $.
-HKE $f #ElementVariable kore-sort-var-x0 $.
-Hig $f #ElementVariable kore-sort-var-S3 $.
-His $f #ElementVariable kore-element-var-T $.
-Hus $a #Pattern kore-sort-var-S3 $.
-HvA $a #Pattern kore-element-var-T $.
-HwM $a #Pattern kore-sort-var-x0 $.
-H1o $a Zw kore-element-var-T kore-element-var-T kore-sort-var-x0 kore-sort-var-S3 $.
-MDE $a Zw CcA CcA kore-sort-var-x0 kore-sort-var-S3 $.
-${ MDI $p Zw ( BAM CcA kore-sort-var-x0 kore-element-var-T ) ( BAM CcA kore-sort-var-S3 kore-element-var-T ) kore-sort-var-x0 kore-sort-var-S3 $=
-  ( Cb8 HwM HvA Hus Jw MDE bQ H1o BG4 ) DAEZCFZDBGNMBHZABIMOJABCKL $. $}
+$c Wgk #Symbol Tw #Variable #SetVariable zw 4w JAQ #ElementVariable IQE pgg #Pattern ) ( $.
+$v Cw 2gg CQ Bw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+IwQ $a #Pattern ( JAQ Bw ) $.
+pQg $a #Pattern pgg $.
+2Qg $f #ElementVariable 2gg $.
+WQk $a #Pattern Wgk $.
+Wh8 $a #Pattern 2gg $.
+TyQ $a zw ( Tw ( 4w ( 4w ( JAQ 2gg ) IQE ) IQE ) ( JAQ pgg ) ) $.
+YiQ $a zw ( Tw ( 4w ( 4w ( JAQ 2gg ) IQE ) IQE ) ( JAQ Wgk ) ) $.
+${ MDI $p zw ( Tw ( 4w ( 4w ( JAQ 2gg ) IQE ) IQE ) ( 4w ( JAQ Wgk ) ( JAQ pgg ) ) ) $=
+  ( Wh8 IwQ IAE 4g WQk pQg YiQ TyQ wgE ) ABCDEDEFCGCAHAIJ $. $}

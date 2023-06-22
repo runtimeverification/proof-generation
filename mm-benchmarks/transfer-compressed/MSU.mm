@@ -1,60 +1,32 @@
-$c AUo DrI Mg ) ARU #Pattern A6o wg .A rg A-c A4Y Lg A4w #Variable CQo CHI HKc ASI #ElementVariable #Symbol CUE CSA CXQ #SetVariable ( CQM $.
-$v th0 ph1 ph2 kore-element-var-VE2 kore-element-var-VE3 kore-element-var-Val ph0 ptn0 x kore-element-var-VE1 kore-element-var-VE4 $.
-$d kore-element-var-Val kore-element-var-VE4 $.
-$d kore-element-var-VE1 x $.
-$d kore-element-var-VE1 kore-element-var-VE4 $.
-$d kore-element-var-VE3 x $.
-$d kore-element-var-VE2 kore-element-var-Val $.
-$d kore-element-var-VE2 kore-element-var-VE4 $.
-$d kore-element-var-VE2 x $.
-$d kore-element-var-VE3 kore-element-var-Val $.
-$d kore-element-var-VE1 kore-element-var-VE2 $.
-$d kore-element-var-VE1 kore-element-var-VE3 $.
-$d x kore-element-var-VE4 $.
-$d kore-element-var-VE2 kore-element-var-VE3 $.
-$d kore-element-var-VE1 kore-element-var-Val $.
-$d kore-element-var-VE3 kore-element-var-VE4 $.
-$d kore-element-var-Val x $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-Dw $f #Pattern th0 $.
-GA $f #ElementVariable x $.
-MQ $a #Pattern ( Mg x ph0 ) $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ARQ $a #Pattern ( ARU ph0 ph1 ) $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-${ AW0 $e rg ( Lg ph0 ph1 ) $.
-   AW4 $e rg ( Lg ph1 ph2 ) $.
-   AW8 $a rg ( Lg ph0 ph2 ) $. $}
-AXM $a rg .A $.
-${ Aw4 $e rg ph1 $.
-   Aw8 $a rg ( Lg ph0 ph1 ) $. $}
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-${ $d x ph0 $.
-   $d x ph1 $.
-   BpY $e rg ( Lg th0 ( ASI ph1 ph0 ) ) $.
-   Bpc $e rg ( Lg th0 ( A4w AUo ( A4Y ph0 AUo x ( A6o ph0 AUo x ph1 ) ) ) ) $.
-   Bpg $a rg ( Lg th0 ( Mg x ( ARU x ph1 ) ) ) $. $}
-CHE $a #Pattern CHI $.
-CHU $f #Pattern ptn0 $.
-CKw $f #ElementVariable kore-element-var-VE2 $.
-CK0 $f #ElementVariable kore-element-var-VE1 $.
-CK8 $f #ElementVariable kore-element-var-VE3 $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CQk $a #Pattern CQo $.
-CR8 $a #Pattern CSA $.
-CXM $a #Pattern CXQ $.
-DrE $a #Pattern ( DrI ptn0 ) $.
-G4o $f #ElementVariable kore-element-var-Val $.
-HKY $a #Pattern HKc $.
-Hro $a rg ( Lg .A ( ASI ( DrI ( A-c CXQ HKc ) ) CQo ) ) $.
-IHs $a #Pattern kore-element-var-Val $.
-I5I $a #Pattern kore-element-var-VE1 $.
-JOs $a rg ( Lg .A ( A4w AUo ( A4Y CQo AUo kore-element-var-Val ( A6o CQo AUo kore-element-var-Val ( DrI ( A-c CXQ HKc ) ) ) ) ) ) $.
-JOw $a #Pattern kore-element-var-VE2 $.
-MSQ $a #Pattern ( wg ( ASI kore-element-var-VE3 CQM ) ( wg ( ASI kore-element-var-VE4 CUE ) .A ) ) $.
-${ MSU $p rg ( Lg ( wg ( ASI kore-element-var-VE1 CHI ) ( wg ( ASI kore-element-var-VE2 CSA ) ( wg ( ASI kore-element-var-VE3 CQM ) ( wg ( ASI kore-element-var-VE4 CUE ) .A ) ) ) ) ( Mg kore-element-var-Val ( ARU kore-element-var-Val ( DrI ( A-c CXQ HKc ) ) ) ) ) $=
-  ( I5I CHE ASE JOw CR8 MSQ wQ 9w IHs CXM HKY A-Y DrE ARQ MQ AXM Aw8 CQk Hro
-  JOs Bpg AW8 ) BFGHAIJHCDKLLZMENOPQRZSETUHMUAUBUCUIMEUDEUEUFUG $. $}
+$c 0wM ww4 tQM Tw #Symbol #Variable PQk Kw8 #SetVariable BBY zw 4w JAQ #ElementVariable IQE #Pattern ) ( $.
+$v CQ DQ Bw oAg Cw 2gg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+nAE $a zw IQE $.
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+${ NwM $e zw CQ $.
+   OAM $a zw ( Tw Bw CQ ) $. $}
+tAM $a #Pattern ( tQM Bw CQ ) $.
+0gM $a #Pattern ( 0wM Bw CQ Cw DQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+nwg $f #Pattern oAg $.
+2Qg $f #ElementVariable 2gg $.
+PAk $a #Pattern PQk $.
+wg4 $a #Pattern ww4 $.
+Kg8 $a #Pattern ( Kw8 oAg ) $.
+AxY $a #Pattern BBY $.
+Wh8 $a #Pattern 2gg $.
+.h8 $a zw ( Tw ( 4w IQE ( 4w ( JAQ 2gg ) IQE ) ) ( JAQ 2gg ) ) $.
+MCU $a zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( tQM 2gg ( 0wM PQk 2gg BBY ( Kw8 ww4 ) ) ) ) $.
+${ MSU $p zw ( Tw ( 4w IQE ( 4w ( JAQ 2gg ) IQE ) ) ( tQM 2gg ( 0wM PQk 2gg BBY ( Kw8 ww4 ) ) ) ) $=
+  ( IAE Wh8 IwQ 4g PAk AxY wg4 Kg8 0gM tAM .h8 nAE OAM wgE MCU mAE ) BACZDZBEZE
+  ZTRFRGHIJKUASBALUABMNOAPQ $. $}

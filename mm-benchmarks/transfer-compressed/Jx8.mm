@@ -1,23 +1,30 @@
-$c DpI CZ0 BAM CHs #Variable Fdk ) #ElementVariable #Symbol Dt8 #Pattern CIM Dn0 CJY #SetVariable ( $.
-$v kore-element-var-x0 ph1 ph2 ph0 kore-element-var-VE3 ptn0 ptn1 $.
-$d kore-element-var-VE3 kore-element-var-x0 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-BAI $a #Pattern ( BAM ph0 ph1 ph2 ) $.
-CHU $f #Pattern ptn0 $.
-CHo $a #Pattern CHs $.
-CH8 $f #Pattern ptn1 $.
-CII $a #Pattern ( CIM ptn0 ptn1 ) $.
-CJU $a #Pattern CJY $.
-CK8 $f #ElementVariable kore-element-var-VE3 $.
-CZw $a #Pattern CZ0 $.
-Dnw $a #Pattern Dn0 $.
-DpE $a #Pattern ( DpI ptn0 ptn1 ) $.
-Dt4 $a #Pattern ( Dt8 ptn0 ) $.
-Fdg $a #Pattern ( Fdk ptn0 ptn1 ) $.
-Hi0 $f #ElementVariable kore-element-var-x0 $.
-H3g $a #Pattern kore-element-var-x0 $.
-JO0 $a #Pattern kore-element-var-VE3 $.
-${ Jx8 $p #Pattern ( DpI ( Dt8 ( CIM ( BAM CZ0 CHs ( Fdk Dn0 kore-element-var-x0 ) ) CJY ) ) kore-element-var-VE3 ) $=
-  ( CZw CHo Dnw H3g Fdg BAI CJU CII Dt4 JO0 DpE ) CDEBFGHIJKALM $. $}
+$c LAQ IAQ Tw #Symbol #Variable SwE pgg #SetVariable zw 4w JAQ #ElementVariable IQE rgk #Pattern 8hw ) ( $.
+$v CQ qwg Bw oAg Cw sgg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+sQg $f #Pattern sgg $.
+.gg $a zw ( Tw ( 4w ( 4w ( JAQ oAg ) ( JAQ qwg ) ) ( SwE sgg oAg ) ) ( SwE ( LAQ oAg qwg sgg ) qwg ) ) $.
+rQk $a #Pattern rgk $.
+8Rw $a #Pattern 8hw $.
+.x4 $a zw ( Tw IQE ( JAQ pgg ) ) $.
+Bh8 $a zw ( Tw IQE ( JAQ rgk ) ) $.
+GR8 $a zw ( Tw IQE ( SwE ( IAQ rgk 8hw ) rgk ) ) $.
+${ Jx8 $p zw ( Tw IQE ( SwE ( LAQ rgk pgg ( IAQ rgk 8hw ) ) pgg ) ) $=
+  ( IAE rQk IwQ pQg 4g 8Rw HwQ SgE KwQ Bh8 .x4 wgE GR8 .gg mAE ) ABCZDCZEZBFGZB
+  HZEBDSIDHARTAPQJKLMLBDSNO $. $}

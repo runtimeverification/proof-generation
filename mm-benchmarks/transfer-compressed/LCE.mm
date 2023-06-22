@@ -1,21 +1,29 @@
-$c Lg A-c #Variable ) ASI #ElementVariable #Symbol CUE #Pattern Hmg CSA wg .A rg #SetVariable ( $.
-$v ph1 ph0 kore-element-var-VE4 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-LQ $a #Pattern ( Lg ph0 ph1 ) $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-xA $a rg ( Lg ph0 ( Lg ph1 ph0 ) ) $.
-${ xw $e rg ( Lg ph0 ph1 ) $.
-   yA $e rg ph0 $.
-   yQ $a rg ph1 $. $}
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-A-k $a rg ( ASI ( A-c ph0 ph1 ) ph0 ) $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CR8 $a #Pattern CSA $.
-CUA $a #Pattern CUE $.
-Hmc $a #Pattern Hmg $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-${ LCE $p rg ( Lg ( wg ( ASI kore-element-var-VE4 CSA ) .A ) ( ASI ( A-c CUE Hmg ) CUE ) ) $=
-  ( CUA Hmc A-Y ASE JO4 CR8 9w wQ LQ xA A-k yQ ) BCDBEZAFGEHIZNJNOKBCLM $. $}
+$c Tw #Symbol zw JAQ pgg #Pattern ( 0wM LAQ tQM #Variable SwE #SetVariable 4w rwM lAk #ElementVariable IQE ) $.
+$v yhs CQ zBs Bw Kw Cw 2gg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+Kg $f #ElementVariable Kw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+rgM $a #Pattern ( rwM Bw CQ Kw Cw ) $.
+tAM $a #Pattern ( tQM Bw CQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+pQg $a #Pattern pgg $.
+2Qg $f #ElementVariable 2gg $.
+kwk $a #Pattern lAk $.
+yRs $f #ElementVariable yhs $.
+yxs $f #ElementVariable zBs $.
+kh4 $a zw ( Tw ( 4w ( JAQ 2gg ) ( 4w ( SwE zBs lAk ) IQE ) ) ( tQM 2gg ( rwM pgg 2gg yhs ( 0wM pgg 2gg yhs ( LAQ lAk pgg zBs ) ) ) ) ) $.
+Wh8 $a #Pattern 2gg $.
+JiE $a #Pattern zBs $.
+KSE $a zw ( Tw ( 4w ( 4w ( JAQ 2gg ) IQE ) ( 4w ( SwE zBs lAk ) IQE ) ) ( 4w ( JAQ 2gg ) ( 4w ( SwE zBs lAk ) IQE ) ) ) $.
+KiE $a #Pattern ( 4w ( JAQ 2gg ) ( 4w ( SwE zBs lAk ) IQE ) ) $.
+KyE $a #Pattern ( 0wM pgg 2gg yhs ( LAQ lAk pgg zBs ) ) $.
+${ LCE $p zw ( Tw ( 4w ( 4w ( JAQ 2gg ) IQE ) ( 4w ( SwE zBs lAk ) IQE ) ) ( tQM 2gg ( rwM pgg 2gg yhs ( 0wM pgg 2gg yhs ( LAQ lAk pgg zBs ) ) ) ) ) $=
+  ( Wh8 IwQ IAE 4g JiE kwk SgE KiE pQg KyE rgM tAM KSE kh4 mAE ) ADZEFGCHIJFGGA
+  CKSLSABCMBNOACPABCQR $. $}

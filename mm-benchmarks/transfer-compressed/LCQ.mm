@@ -1,21 +1,36 @@
-$c Lg A-c #Variable ) ASI #ElementVariable HmE #Symbol #Pattern CSA wg CXQ .A rg #SetVariable ( $.
-$v ph1 ph0 kore-element-var-VE4 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-LQ $a #Pattern ( Lg ph0 ph1 ) $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-xA $a rg ( Lg ph0 ( Lg ph1 ph0 ) ) $.
-${ xw $e rg ( Lg ph0 ph1 ) $.
-   yA $e rg ph0 $.
-   yQ $a rg ph1 $. $}
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-A-k $a rg ( ASI ( A-c ph0 ph1 ) ph0 ) $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CR8 $a #Pattern CSA $.
-CXM $a #Pattern CXQ $.
-HmA $a #Pattern HmE $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-${ LCQ $p rg ( Lg ( wg ( ASI kore-element-var-VE4 CSA ) .A ) ( ASI ( A-c CXQ HmE ) CXQ ) ) $=
-  ( CXM HmA A-Y ASE JO4 CR8 9w wQ LQ xA A-k yQ ) BCDBEZAFGEHIZNJNOKBCLM $. $}
+$c LAQ IAQ Wgk Tw #Symbol #Variable SwE #SetVariable 5x4 zw 4w YQk JAQ #ElementVariable IQE rgk #Pattern ) ( $.
+$v CQ qwg Bw oAg Cw 2gg sgg 4Ag $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+Tg $a #Pattern ( Tw Bw CQ ) $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+5Q $a zw ( Tw Bw ( Tw CQ Bw ) ) $.
+${ 6A $e zw ( Tw Bw CQ ) $.
+   6Q $e zw Bw $.
+   6g $a zw CQ $. $}
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+IgQ $a zw ( SwE ( IAQ Bw CQ ) Bw ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nwg $f #Pattern oAg $.
+qgg $f #Pattern qwg $.
+sQg $f #Pattern sgg $.
+2Qg $f #ElementVariable 2gg $.
+3wg $f #ElementVariable 4Ag $.
+.gg $a zw ( Tw ( 4w ( 4w ( JAQ oAg ) ( JAQ qwg ) ) ( SwE sgg oAg ) ) ( SwE ( LAQ oAg qwg sgg ) qwg ) ) $.
+WQk $a #Pattern Wgk $.
+rQk $a #Pattern rgk $.
+5h4 $a #Pattern 5x4 $.
+BSQ $a #Pattern ( 4w ( JAQ 2gg ) ( 4w ( SwE 4Ag YQk ) IQE ) ) $.
+JyQ $a zw ( Tw ( 4w ( JAQ 2gg ) ( 4w ( SwE 4Ag YQk ) IQE ) ) ( 4w ( JAQ rgk ) ( JAQ Wgk ) ) ) $.
+${ LCQ $p zw ( Tw ( 4w ( JAQ 2gg ) ( 4w ( SwE 4Ag YQk ) IQE ) ) ( SwE ( LAQ rgk Wgk ( IAQ rgk 5x4 ) ) Wgk ) ) $=
+  ( BSQ rQk IwQ WQk 4g 5h4 HwQ SgE KwQ JyQ Tg 5Q IgQ 6g wgE .gg mAE ) ABCZDEFEG
+  ZDHIZDJZGDFUBKFJTUAUCABLUCTUCMUCTNDHOPQDFUBRS $. $}

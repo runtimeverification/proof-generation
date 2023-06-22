@@ -1,30 +1,29 @@
-$c Zw BAM CHs #Variable ) #ElementVariable #Symbol #Pattern CSA #SetVariable ( $.
-$v ph5 ph4 kore-element-var-x0 xX ph1 ph6 ph2 ph0 x ph3 kore-element-var-VE4 $.
-$d kore-element-var-x0 kore-element-var-VE4 $.
-$d x kore-element-var-x0 $.
-$d x kore-element-var-VE4 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Cg $f #Pattern ph4 $.
-Cw $f #Pattern ph5 $.
-DA $f #Pattern ph6 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-bQ $a Zw ph0 xX ph0 xX $.
-${ BGs $e Zw ph0 ph3 ph6 xX $.
-   BGw $e Zw ph1 ph4 ph6 xX $.
-   BG0 $e Zw ph2 ph5 ph6 xX $.
-   BG4 $a Zw ( BAM ph0 ph1 ph2 ) ( BAM ph3 ph4 ph5 ) ph6 xX $. $}
-CHo $a #Pattern CHs $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CR8 $a #Pattern CSA $.
-Hi0 $f #ElementVariable kore-element-var-x0 $.
-H3g $a #Pattern kore-element-var-x0 $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-JXg $a Zw CHs CHs kore-element-var-x0 kore-element-var-VE4 $.
-LCo $a Zw CSA CSA kore-element-var-x0 kore-element-var-VE4 $.
-${ LC0 $p Zw ( BAM CSA CHs kore-element-var-x0 ) ( BAM CSA CHs kore-element-var-VE4 ) kore-element-var-x0 kore-element-var-VE4 $=
-  ( CR8 CHo H3g JO4 Jw LCo JXg bQ BG4 ) CDBEZCDAFLAGZABHABILMJK $. $}
+$c ewk Tw #Symbol #Variable SwE PQk #SetVariable zw 4w YQk #ElementVariable IQE pgg #Pattern ) ( $.
+$v 4wg CQ 3gg -Bw Bw 5Qg Cw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+nAE $a zw IQE $.
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+${ NwM $e zw CQ $.
+   OAM $a zw ( Tw Bw CQ ) $. $}
+pQg $a #Pattern pgg $.
+3Qg $f #ElementVariable 3gg $.
+4gg $f #ElementVariable 4wg $.
+5Ag $f #ElementVariable 5Qg $.
+PAk $a #Pattern PQk $.
+YAk $a #Pattern YQk $.
+.xw $f #ElementVariable -Bw $.
+XiU $a #Pattern 3gg $.
+XyU $a #Pattern 4wg $.
+yyg $a #Pattern -Bw $.
+2yw $a #Pattern ( 4w ( SwE 5Qg ewk ) ( 4w ( SwE -Bw YQk ) IQE ) ) $.
+4yw $a zw ( Tw ( 4w ( SwE 3gg PQk ) ( 4w ( SwE 4wg pgg ) ( 4w ( SwE 5Qg ewk ) ( 4w ( SwE -Bw YQk ) IQE ) ) ) ) ( SwE -Bw YQk ) ) $.
+${ LC0 $p zw ( Tw ( 4w ( SwE 3gg PQk ) ( 4w ( SwE 4wg pgg ) ( 4w ( SwE 5Qg ewk ) ( 4w ( SwE -Bw YQk ) IQE ) ) ) ) ( 4w ( SwE -Bw YQk ) IQE ) ) $=
+  ( XiU PAk SgE XyU pQg 2yw 4g yyg YAk IAE 4yw nAE OAM wgE ) AEFGBHIGCDJKKZDLMG
+  NABCDOSNPQR $. $}

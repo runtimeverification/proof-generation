@@ -1,26 +1,35 @@
-$c BAM Hn0 ) #Pattern CIM .A DMo rg A-c Lg CHs #Variable CHI ASI #ElementVariable #Symbol CUE CJY #SetVariable ( $.
-$v ph1 ph2 ph0 ptn0 ptn1 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-${ AW0 $e rg ( Lg ph0 ph1 ) $.
-   AW4 $e rg ( Lg ph1 ph2 ) $.
-   AW8 $a rg ( Lg ph0 ph2 ) $. $}
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-BAI $a #Pattern ( BAM ph0 ph1 ph2 ) $.
-CHE $a #Pattern CHI $.
-CHU $f #Pattern ptn0 $.
-CHo $a #Pattern CHs $.
-CH8 $f #Pattern ptn1 $.
-CII $a #Pattern ( CIM ptn0 ptn1 ) $.
-CJU $a #Pattern CJY $.
-CUA $a #Pattern CUE $.
-DMk $a #Pattern ( DMo ptn0 ) $.
-DNM $a rg ( Lg ( ASI ptn0 CHI ) ( ASI ( DMo ptn0 ) CHs ) ) $.
-Hnw $a #Pattern Hn0 $.
-IDQ $a rg ( Lg .A ( ASI ( CIM ( BAM CUE CHs ( A-c CUE Hn0 ) ) CJY ) CHI ) ) $.
-${ IDU $p rg ( Lg .A ( ASI ( DMo ( CIM ( BAM CUE CHs ( A-c CUE Hn0 ) ) CJY ) ) CHs ) ) $=
-  ( 9w CUA CHo Hnw A-Y BAI CJU CII CHE ASE DMk IDQ DNM AW8 ) ABCBDEFGHZIJOKCJLO
-  MN $. $}
+$c rwg dQw LAQ Wgk #Symbol #Variable #SetVariable iA #ElementVariable pgg #Pattern xQg ) ( $.
+$v ngg CQ qwg 3gg Bw Kw oAg Cw nR4 sgg tAg tgg 4Ag $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+Kg $f #ElementVariable Kw $.
+SA $a #Variable Kw $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nQg $f #Variable ngg $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+rgg $a #Pattern ( rwg oAg qwg ) $.
+sQg $f #Pattern sgg $.
+swg $f #Pattern tAg $.
+tQg $f #Pattern tgg $.
+${ uQg $e iA qwg tAg oAg ngg $.
+   ugg $e iA sgg tgg oAg ngg $.
+   uwg $a iA ( rwg qwg sgg ) ( rwg tAg tgg ) oAg ngg $. $}
+xAg $a #Pattern xQg $.
+3Qg $f #ElementVariable 3gg $.
+3wg $f #ElementVariable 4Ag $.
+WQk $a #Pattern Wgk $.
+dAw $a #Pattern ( dQw oAg ) $.
+${ eQw $e iA qwg sgg oAg ngg $.
+   egw $a iA ( dQw qwg ) ( dQw sgg ) oAg ngg $. $}
+nB4 $f #ElementVariable nR4 $.
+6h8 $a #Pattern nR4 $.
+BCQ $a #Pattern 4Ag $.
+XiU $a #Pattern 3gg $.
+qio $a iA 3gg 3gg nR4 4Ag $.
+Byw $a iA ( rwg ( LAQ Wgk pgg nR4 ) xQg ) ( rwg ( LAQ Wgk pgg 4Ag ) xQg ) nR4 4Ag $.
+${ IDU $p iA ( rwg ( dQw ( rwg ( LAQ Wgk pgg nR4 ) xQg ) ) 3gg ) ( rwg ( dQw ( rwg ( LAQ Wgk pgg 4Ag ) xQg ) ) 3gg ) nR4 4Ag $=
+  ( SA 6h8 WQk pQg KwQ xAg rgg dAw XiU BCQ Byw egw qio uwg ) BDZCEZFGSHIJZKALZF
+  GBMHIJZKUARSTUBBCNOABCPQ $. $}

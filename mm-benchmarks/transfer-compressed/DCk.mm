@@ -1,22 +1,36 @@
-$c DB8 #Variable ) kg #ElementVariable #Symbol #Pattern DCE MA #SetVariable ( jA $.
-$v sg0 xX ph1 ph0 ptn0 xX0 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-IA $f #Variable xX $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-${ $d xX ph0 $.
-   jw $e jA xX ph1 $.
-   kA $a jA xX ( MA ph0 ph1 ) $. $}
-${ qg $e jA xX ph0 $.
-   qw $e kg ph1 ph0 $.
-   rA $a jA xX ph1 $. $}
-CHQ $f #Variable xX0 $.
-CHU $f #Pattern ptn0 $.
-DB4 $a #Symbol DB8 $.
-DCA $a #Pattern ( DCE ptn0 ) $.
-DCc $a kg ( DCE ptn0 ) ( MA DB8 ptn0 ) $.
-${ DCg $e jA xX0 ptn0 $.
-   DCk $p jA xX0 ( DCE ptn0 ) $=
-     ( DB4 Kg Lw DCA kA DCc rA ) DEZBFBGAKBACHBIJ $. $}
+$c 2R4 Tw #Symbol DBE zw YQk rgk pgg #Pattern ( LAQ ewk IAQ Wgk #Variable SwE #SetVariable vR4 4w #ElementVariable IQE ) $.
+$v 4wg CQ qwg 3gg -Bw Bw oAg 5Qg Cw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nwg $f #Pattern oAg $.
+qgg $f #Pattern qwg $.
+3Qg $f #ElementVariable 3gg $.
+4gg $f #ElementVariable 4wg $.
+5Ag $f #ElementVariable 5Qg $.
+WQk $a #Pattern Wgk $.
+egk $a #Pattern ewk $.
+rQk $a #Pattern rgk $.
+CxE $a #Pattern ( DBE oAg qwg ) $.
+GBE $a zw ( Tw ( 4w ( SwE oAg Wgk ) ( SwE qwg Wgk ) ) ( SwE ( DBE oAg qwg ) Wgk ) ) $.
+.xw $f #ElementVariable -Bw $.
+vB4 $a #Pattern vR4 $.
+2B4 $a #Pattern 2R4 $.
+XiU $a #Pattern 3gg $.
+XyU $a #Pattern 4wg $.
+zCg $a #Pattern ( 4w ( SwE 5Qg pgg ) ( 4w ( SwE -Bw YQk ) IQE ) ) $.
+Byk $a zw ( Tw ( 4w ( SwE 3gg rgk ) ( 4w ( SwE 4wg ewk ) ( 4w ( SwE 5Qg pgg ) ( 4w ( SwE -Bw YQk ) IQE ) ) ) ) ( SwE ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) Wgk ) ) $.
+CCk $a zw ( Tw ( 4w ( SwE 3gg rgk ) ( 4w ( SwE 4wg ewk ) ( 4w ( SwE 5Qg pgg ) ( 4w ( SwE -Bw YQk ) IQE ) ) ) ) ( SwE ( LAQ ewk Wgk ( IAQ ewk vR4 ) ) Wgk ) ) $.
+${ DCk $p zw ( Tw ( 4w ( SwE 3gg rgk ) ( 4w ( SwE 4wg ewk ) ( 4w ( SwE 5Qg pgg ) ( 4w ( SwE -Bw YQk ) IQE ) ) ) ) ( SwE ( DBE ( LAQ ewk Wgk ( IAQ ewk vR4 ) ) ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) ) Wgk ) ) $=
+  ( XiU rQk SgE XyU egk zCg 4g WQk vB4 HwQ KwQ 2B4 CxE CCk Byk wgE GBE mAE ) AE
+  FGBHIGCDJKKZILIMNOZLGZILIPNOZLGZKUDUFQLGUCUEUGABCDRABCDSTUDUFUAUB $. $}

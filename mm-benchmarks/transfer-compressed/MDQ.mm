@@ -1,27 +1,26 @@
-$c Lg CcA #Variable ) ASI #ElementVariable #Symbol A-s #Pattern wg .A rg #SetVariable ( $.
-$v ph1 ph2 kore-element-var-T ph0 kore-sort-var-R $.
-$d kore-sort-var-R kore-element-var-T $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-AXM $a rg .A $.
-${ AZc $e rg ( Lg ph0 ph1 ) $.
-   AZg $e rg ( Lg ph0 ph2 ) $.
-   AZk $a rg ( Lg ph0 ( wg ph1 ph2 ) ) $. $}
-${ Aw4 $e rg ph1 $.
-   Aw8 $a rg ( Lg ph0 ph1 ) $. $}
-A-o $a #Pattern ( A-s ph0 ) $.
-CKo $f #ElementVariable kore-sort-var-R $.
-Cb8 $a #Pattern CcA $.
-His $f #ElementVariable kore-element-var-T $.
-Huk $a #Pattern kore-sort-var-R $.
-HvA $a #Pattern kore-element-var-T $.
-MCo $a #Pattern ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) $.
-MCs $a rg ( Lg ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) ( A-s kore-sort-var-R ) ) $.
-MCw $a rg ( Lg ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) ( ASI kore-element-var-T CcA ) ) $.
-${ MDQ $p rg ( Lg ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) ( wg ( A-s kore-sort-var-R ) ( wg ( ASI kore-element-var-T CcA ) .A ) ) ) $=
-  ( MCo Huk A-o HvA Cb8 ASE 9w wQ MCs MCw AXM Aw8 AZk ) ABCZADEBFGHZIJABKPQIABL
-  PIMNOO $. $}
+$c rwg 0wM LAQ ewk IAQ #Symbol #Variable 7h4 #SetVariable BA0 ) #ElementVariable mwg pgg xQg #Pattern ( $.
+$v 7Ag CQ qwg DQ Bw oAg Cw 6Ag 2gg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+0gM $a #Pattern ( 0wM Bw CQ Cw DQ ) $.
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+mgg $a #Pattern mwg $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+rgg $a #Pattern ( rwg oAg qwg ) $.
+xAg $a #Pattern xQg $.
+2Qg $f #ElementVariable 2gg $.
+5wg $f #ElementVariable 6Ag $.
+6wg $f #ElementVariable 7Ag $.
+egk $a #Pattern ewk $.
+Aw0 $a #Pattern ( BA0 oAg ) $.
+7R4 $a #Pattern 7h4 $.
+Wh8 $a #Pattern 2gg $.
+-CA $a #Pattern 7Ag $.
+BCE $a #Pattern 6Ag $.
+${ MDQ $p #Pattern ( 0wM mwg 2gg 6Ag ( rwg ( BA0 ( rwg ( LAQ ewk pgg ( IAQ ewk 7h4 ) ) xQg ) ) 7Ag ) ) $=
+  ( mgg Wh8 BCE egk pQg 7R4 HwQ KwQ xAg rgg Aw0 -CA 0gM ) DAEBFGHGIJKLMNCOMP $. $}

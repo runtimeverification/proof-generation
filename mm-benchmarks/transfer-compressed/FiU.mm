@@ -1,35 +1,36 @@
-$c Zw #Variable ) kg #ElementVariable FiA #Symbol #Pattern MA Fh4 #SetVariable ( $.
-$v ph5 sg0 ph4 ptn2 xX ph1 ph2 ph0 ptn0 ptn1 xX0 ph3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Cg $f #Pattern ph4 $.
-Cw $f #Pattern ph5 $.
-IA $f #Variable xX $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-${ dA $e Zw ph1 ph3 ph0 xX $.
-   dQ $e Zw ph2 ph4 ph0 xX $.
-   dg $a Zw ( MA ph1 ph2 ) ( MA ph3 ph4 ) ph0 xX $. $}
-kQ $a kg ph0 ph0 $.
-${ oQ $e Zw ph0 ph1 ph2 xX $.
-   og $e kg ph3 ph0 $.
-   ow $e kg ph4 ph1 $.
-   pA $e kg ph5 ph2 $.
-   pQ $a Zw ph3 ph4 ph5 xX $. $}
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-CHQ $f #Variable xX0 $.
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIU $f #Pattern ptn2 $.
-Fh0 $a #Symbol Fh4 $.
-Fh8 $a #Pattern ( FiA ptn0 ) $.
-FiI $a kg ( FiA ptn1 ) ( MA Fh4 ptn1 ) $.
-FiM $a kg ( FiA ptn2 ) ( MA Fh4 ptn2 ) $.
-${ FiQ $e Zw ptn1 ptn2 ptn0 xX0 $.
-   FiU $p Zw ( FiA ptn1 ) ( FiA ptn2 ) ptn0 xX0 $=
-     ( Fh0 Kg Lw Fh8 Afg dg FiI FiM kQ pQ ) FGZCHPDHBCIDIBABPCPDAPBAJEKCLDMBNO
-     $. $}
+$c 2R4 LAQ ewk 1wk IAQ Wgk Tw #Symbol #Variable SwE #SetVariable zw 4w JAQ #ElementVariable IQE #Pattern ) ( $.
+$v CQ qwg Bw oAg Cw 2gg sgg 4Ag $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+Tg $a #Pattern ( Tw Bw CQ ) $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+5Q $a zw ( Tw Bw ( Tw CQ Bw ) ) $.
+${ 6A $e zw ( Tw Bw CQ ) $.
+   6Q $e zw Bw $.
+   6g $a zw CQ $. $}
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+IgQ $a zw ( SwE ( IAQ Bw CQ ) Bw ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nwg $f #Pattern oAg $.
+qgg $f #Pattern qwg $.
+sQg $f #Pattern sgg $.
+2Qg $f #ElementVariable 2gg $.
+3wg $f #ElementVariable 4Ag $.
+.gg $a zw ( Tw ( 4w ( 4w ( JAQ oAg ) ( JAQ qwg ) ) ( SwE sgg oAg ) ) ( SwE ( LAQ oAg qwg sgg ) qwg ) ) $.
+WQk $a #Pattern Wgk $.
+egk $a #Pattern ewk $.
+2B4 $a #Pattern 2R4 $.
+8SQ $a #Pattern ( 4w ( JAQ 2gg ) ( 4w ( SwE 4Ag 1wk ) IQE ) ) $.
+FSU $a zw ( Tw ( 4w ( JAQ 2gg ) ( 4w ( SwE 4Ag 1wk ) IQE ) ) ( 4w ( JAQ ewk ) ( JAQ Wgk ) ) ) $.
+${ FiU $p zw ( Tw ( 4w ( JAQ 2gg ) ( 4w ( SwE 4Ag 1wk ) IQE ) ) ( SwE ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) Wgk ) ) $=
+  ( 8SQ egk IwQ WQk 4g 2B4 HwQ SgE KwQ FSU Tg 5Q IgQ 6g wgE .gg mAE ) ABCZDEFEG
+  ZDHIZDJZGDFUBKFJTUAUCABLUCTUCMUCTNDHOPQDFUBRS $. $}

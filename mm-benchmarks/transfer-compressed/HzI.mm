@@ -1,34 +1,34 @@
-$c Lg #Variable ) ASI #ElementVariable #Symbol A-s CUE #Pattern wg .A rg #SetVariable ( $.
-$v kore-sort-var-S3 kore-sort-var-R ph1 ph2 kore-element-var-T ph0 kore-sort-var-S2 $.
-$d kore-sort-var-S3 kore-sort-var-S2 $.
-$d kore-sort-var-R kore-element-var-T $.
-$d kore-element-var-T kore-sort-var-S3 $.
-$d kore-sort-var-R kore-sort-var-S3 $.
-$d kore-sort-var-R kore-sort-var-S2 $.
-$d kore-element-var-T kore-sort-var-S2 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-AXM $a rg .A $.
-${ AZc $e rg ( Lg ph0 ph1 ) $.
-   AZg $e rg ( Lg ph0 ph2 ) $.
-   AZk $a rg ( Lg ph0 ( wg ph1 ph2 ) ) $. $}
-${ Aw4 $e rg ph1 $.
-   Aw8 $a rg ( Lg ph0 ph1 ) $. $}
-A-o $a #Pattern ( A-s ph0 ) $.
-CKo $f #ElementVariable kore-sort-var-R $.
-CUA $a #Pattern CUE $.
-Hig $f #ElementVariable kore-sort-var-S3 $.
-Hik $f #ElementVariable kore-sort-var-S2 $.
-His $f #ElementVariable kore-element-var-T $.
-Huk $a #Pattern kore-sort-var-R $.
-Huo $a #Pattern kore-sort-var-S2 $.
-HvA $a #Pattern kore-element-var-T $.
-HyQ $a #Pattern ( wg ( A-s kore-sort-var-S3 ) ( wg ( ASI kore-element-var-T CUE ) .A ) ) $.
-HzE $a rg ( Lg ( wg ( wg ( A-s kore-sort-var-R ) ( wg ( A-s kore-sort-var-S3 ) ( wg ( ASI kore-element-var-T CUE ) .A ) ) ) ( wg ( A-s kore-sort-var-S2 ) .A ) ) ( ASI kore-element-var-T CUE ) ) $.
-${ HzI $p rg ( Lg ( wg ( wg ( A-s kore-sort-var-R ) ( wg ( A-s kore-sort-var-S3 ) ( wg ( ASI kore-element-var-T CUE ) .A ) ) ) ( wg ( A-s kore-sort-var-S2 ) .A ) ) ( wg ( ASI kore-element-var-T CUE ) .A ) ) $=
-  ( Huk A-o HyQ wQ Huo 9w HvA CUA ASE HzE AXM Aw8 AZk ) AEFBDGHCIFJHHZDKLMJABCD
-  NRJOPQ $. $}
+$c 2R4 Tw #Symbol DBE zw JAQ pgg #Pattern ( LAQ ewk IAQ Wgk #Variable SwE #SetVariable vR4 4w #ElementVariable IQE ) $.
+$v CQ qwg Bw oAg Cw 2gg sgg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+sQg $f #Pattern sgg $.
+2Qg $f #ElementVariable 2gg $.
+.gg $a zw ( Tw ( 4w ( 4w ( JAQ oAg ) ( JAQ qwg ) ) ( SwE sgg oAg ) ) ( SwE ( LAQ oAg qwg sgg ) qwg ) ) $.
+WQk $a #Pattern Wgk $.
+egk $a #Pattern ewk $.
+CxE $a #Pattern ( DBE oAg qwg ) $.
+vB4 $a #Pattern vR4 $.
+2B4 $a #Pattern 2R4 $.
+Wh8 $a #Pattern 2gg $.
+byM $a zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( SwE ( DBE ( LAQ ewk Wgk ( IAQ ewk vR4 ) ) ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) ) Wgk ) ) $.
+HjI $a zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( 4w ( JAQ Wgk ) ( JAQ pgg ) ) ) $.
+${ HzI $p zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( SwE ( LAQ Wgk pgg ( DBE ( LAQ ewk Wgk ( IAQ ewk vR4 ) ) ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) ) ) pgg ) ) $=
+  ( Wh8 IwQ IAE 4g WQk pQg egk vB4 HwQ KwQ 2B4 CxE SgE HjI byM wgE .gg mAE ) AB
+  CDEZFCGCEZHFHIJKHFHLJKMZFNZEFGUBKGNTUAUCAOAPQFGUBRS $. $}

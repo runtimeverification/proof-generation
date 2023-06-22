@@ -1,20 +1,32 @@
-$c Zw HlM #Variable ) #ElementVariable #Symbol CUE #Pattern #SetVariable A-c ( $.
-$v ph1 ph0 x kore-element-var-K1 kore-element-var-K0 xX $.
-$d kore-element-var-K0 kore-element-var-K1 $.
-$d kore-element-var-K0 x $.
-$d x kore-element-var-K1 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-CUA $a #Pattern CUE $.
-G7s $f #ElementVariable kore-element-var-K0 $.
-HBo $f #ElementVariable kore-element-var-K1 $.
-HlI $a #Pattern HlM $.
-IM4 $a #Pattern kore-element-var-K1 $.
-${ IS0 $p Zw kore-element-var-K1 kore-element-var-K1 ( A-c CUE HlM ) kore-element-var-K0 $=
-  ( IM4 CUA HlI A-Y Jw Afg ) BCDEFAGH $. $}
+$c ewk Tw #Symbol #Variable SwE PQk #SetVariable zw 4w YQk #ElementVariable IQE mwg pgg #Pattern ) ( $.
+$v 4wg CQ 3gg -Bw Bw 5Qg Cw 4Ag $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+nAE $a zw IQE $.
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+${ NwM $e zw CQ $.
+   OAM $a zw ( Tw Bw CQ ) $. $}
+mgg $a #Pattern mwg $.
+pQg $a #Pattern pgg $.
+3Qg $f #ElementVariable 3gg $.
+3wg $f #ElementVariable 4Ag $.
+4gg $f #ElementVariable 4wg $.
+5Ag $f #ElementVariable 5Qg $.
+PAk $a #Pattern PQk $.
+YAk $a #Pattern YQk $.
+.xw $f #ElementVariable -Bw $.
+BCQ $a #Pattern 4Ag $.
+XiU $a #Pattern 3gg $.
+XyU $a #Pattern 4wg $.
+yyg $a #Pattern -Bw $.
+2yw $a #Pattern ( 4w ( SwE 5Qg ewk ) ( 4w ( SwE -Bw YQk ) IQE ) ) $.
+IC0 $a zw ( Tw ( 4w ( 4w ( SwE 3gg PQk ) ( 4w ( SwE 4wg pgg ) ( 4w ( SwE 5Qg ewk ) ( 4w ( SwE -Bw YQk ) IQE ) ) ) ) ( 4w ( SwE 4Ag mwg ) IQE ) ) ( SwE -Bw YQk ) ) $.
+${ IS0 $p zw ( Tw ( 4w ( 4w ( SwE 3gg PQk ) ( 4w ( SwE 4wg pgg ) ( 4w ( SwE 5Qg ewk ) ( 4w ( SwE -Bw YQk ) IQE ) ) ) ) ( 4w ( SwE 4Ag mwg ) IQE ) ) ( 4w ( SwE -Bw YQk ) IQE ) ) $=
+  ( XiU PAk SgE XyU pQg 2yw 4g BCQ mgg IAE yyg YAk IC0 nAE OAM wgE ) AFGHCIJHDE
+  KLLBMNHOLLZEPQHOABCDERUBOSTUA $. $}

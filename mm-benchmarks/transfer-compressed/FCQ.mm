@@ -1,21 +1,24 @@
-$c FCE #Variable FB8 ) kg #ElementVariable #Symbol #Pattern MA #SetVariable ( $.
-$v sg0 ph1 ph2 ph0 ptn0 ptn1 ptn4 ptn3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-kQ $a kg ph0 ph0 $.
-${ lQ $e kg ph0 ph1 $.
-   lg $e kg ph1 ph2 $.
-   lw $a kg ph0 ph2 $. $}
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIY $f #Pattern ptn3 $.
-CIc $f #Pattern ptn4 $.
-FB4 $a #Symbol FB8 $.
-FCA $a #Pattern ( FCE ptn0 ptn1 ) $.
-FCI $a kg ( FCE ptn0 ptn1 ) ( MA ( MA FB8 ptn0 ) ptn1 ) $.
-${ FCQ $p kg ( FCE ptn3 ptn4 ) ( MA ( MA FB8 ptn3 ) ptn4 ) $=
-  ( FCA FB4 Kg Lw FCI kQ lw ) ABCDEAFBFZJABGJHI $. $}
+$c #Symbol #Variable SwE #SetVariable iA 4w YQk #ElementVariable IQE #Pattern ) ( $.
+$v Ow CQ DQ Bw Kw Cw nR4 3Ag Dw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ KAI $e iA CQ DQ Bw Ow $.
+   KQI $e iA Cw Dw Bw Ow $.
+   KgI $a iA ( 4w CQ Cw ) ( 4w DQ Dw ) Bw Ow $. $}
+2wg $f #ElementVariable 3Ag $.
+YAk $a #Pattern YQk $.
+nB4 $f #ElementVariable nR4 $.
+6h8 $a #Pattern nR4 $.
+ByQ $a #Pattern 3Ag $.
+EiQ $a iA ( SwE nR4 YQk ) ( SwE 3Ag YQk ) nR4 3Ag $.
+EyQ $a iA IQE IQE nR4 3Ag $.
+${ FCQ $p iA ( 4w ( SwE nR4 YQk ) IQE ) ( 4w ( SwE 3Ag YQk ) IQE ) nR4 3Ag $=
+  ( 6h8 YAk SgE IAE ByQ SA EiQ EyQ KgI ) BCZLDEFAGDEFAHABIABJK $. $}

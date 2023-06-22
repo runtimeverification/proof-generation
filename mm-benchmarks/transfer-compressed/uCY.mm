@@ -1,0 +1,19 @@
+$c #Symbol #Variable SwE #SetVariable ) 4w YQk JAQ #ElementVariable IQE #Pattern ( $.
+$v 2gg CQ pxw YBw Bw XRw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+2Qg $f #ElementVariable 2gg $.
+YAk $a #Pattern YQk $.
+XBw $f #ElementVariable XRw $.
+Xxw $f #ElementVariable YBw $.
+phw $f #ElementVariable pxw $.
+Wh8 $a #Pattern 2gg $.
+QCE $a #Pattern XRw $.
+ACM $a #Pattern YBw $.
+sCY $a #Pattern pxw $.
+${ uCY $p #Pattern ( 4w ( JAQ 2gg ) ( 4w ( SwE XRw YQk ) ( 4w ( SwE YBw YQk ) ( 4w ( SwE pxw YQk ) IQE ) ) ) ) $=
+  ( Wh8 IwQ QCE YAk SgE ACM sCY IAE 4g ) AEFBGHICJHIDKHILMMMM $. $}

@@ -1,38 +1,51 @@
-$c BAM Hn0 HMc ) #Pattern CIM wg .A DMo rg A-c Lg HlM CHs #Variable CHI Eh0 ASI #ElementVariable Cbk #Symbol CUE CSA CXQ CJY #SetVariable ( $.
-$v ph1 ph2 ph0 ptn0 ptn1 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-${ AW0 $e rg ( Lg ph0 ph1 ) $.
-   AW4 $e rg ( Lg ph1 ph2 ) $.
-   AW8 $a rg ( Lg ph0 ph2 ) $. $}
-${ AZc $e rg ( Lg ph0 ph1 ) $.
-   AZg $e rg ( Lg ph0 ph2 ) $.
-   AZk $a rg ( Lg ph0 ( wg ph1 ph2 ) ) $. $}
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-BAI $a #Pattern ( BAM ph0 ph1 ph2 ) $.
-CHE $a #Pattern CHI $.
-CHU $f #Pattern ptn0 $.
-CHo $a #Pattern CHs $.
-CH8 $f #Pattern ptn1 $.
-CII $a #Pattern ( CIM ptn0 ptn1 ) $.
-CJI $a rg ( Lg ( wg ( ASI ptn0 CHs ) ( ASI ptn1 CHI ) ) ( ASI ( CIM ptn0 ptn1 ) CHI ) ) $.
-CJU $a #Pattern CJY $.
-CR8 $a #Pattern CSA $.
-CUA $a #Pattern CUE $.
-CXM $a #Pattern CXQ $.
-Cbg $a #Pattern Cbk $.
-DMk $a #Pattern ( DMo ptn0 ) $.
-Ehw $a #Pattern ( Eh0 ptn0 ptn1 ) $.
-HMY $a #Pattern HMc $.
-HlI $a #Pattern HlM $.
-Hnw $a #Pattern Hn0 $.
-IAI $a rg ( Lg .A ( ASI ( CIM ( BAM Cbk CHs ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HMc ) ) ) ) CJY ) CHI ) ) $.
-IDU $a rg ( Lg .A ( ASI ( DMo ( CIM ( BAM CUE CHs ( A-c CUE Hn0 ) ) CJY ) ) CHs ) ) $.
-${ IDY $p rg ( Lg .A ( ASI ( CIM ( DMo ( CIM ( BAM CUE CHs ( A-c CUE Hn0 ) ) CJY ) ) ( CIM ( BAM Cbk CHs ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HMc ) ) ) ) CJY ) ) CHI ) ) $=
-  ( 9w CUA CHo Hnw A-Y BAI CJU CII DMk ASE Cbg HlI CXM CR8 HMY Ehw CHE IDU IAI
-  wQ AZk CJI AW8 ) ABCBDEFGHIZCJZKCBLEMNMOEFPFGHZQJZTUDUFHQJAUEUGRSUAUDUFUBUC
-  $. $}
+$c rwg Ex0 LAQ XBI IAQ Wgk #Symbol #Variable #SetVariable iA #ElementVariable 8wk rgk pgg #Pattern xQg ) ( $.
+$v Ow CQ qwg DQ Bw Cw EQ sgg tAg Dw 4wg ngg xX Ew Kw ph0 oAg nR4 tgg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+EA $f #Pattern EQ $.
+Eg $f #Pattern Ew $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+jg $a iA Bw Ow Bw Ow $.
+${ $d xX ph0 $.
+   IQI $a iA Bw Bw CQ Ow $. $}
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+${ lAQ $e iA Bw DQ Ew Ow $.
+   lQQ $e iA CQ Dw Ew Ow $.
+   lgQ $e iA Cw EQ Ew Ow $.
+   lwQ $a iA ( LAQ Bw CQ Cw ) ( LAQ DQ Dw EQ ) Ew Ow $. $}
+nQg $f #Variable ngg $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+sQg $f #Pattern sgg $.
+swg $f #Pattern tAg $.
+tQg $f #Pattern tgg $.
+${ uQg $e iA qwg tAg oAg ngg $.
+   ugg $e iA sgg tgg oAg ngg $.
+   uwg $a iA ( rwg qwg sgg ) ( rwg tAg tgg ) oAg ngg $. $}
+xAg $a #Pattern xQg $.
+4gg $f #ElementVariable 4wg $.
+WQk $a #Pattern Wgk $.
+rQk $a #Pattern rgk $.
+8gk $a #Pattern 8wk $.
+WxI $a #Pattern ( XBI oAg qwg ) $.
+${ YBI $e iA qwg tAg oAg ngg $.
+   YRI $e iA sgg tgg oAg ngg $.
+   YhI $a iA ( XBI qwg sgg ) ( XBI tAg tgg ) oAg ngg $. $}
+Eh0 $a #Pattern Ex0 $.
+nB4 $f #ElementVariable nR4 $.
+6h8 $a #Pattern nR4 $.
+XyU $a #Pattern 4wg $.
+pCU $a iA 8wk 8wk nR4 4wg $.
+qiU $a iA pgg pgg nR4 4wg $.
+rCU $a iA xQg xQg nR4 4wg $.
+${ IDY $p iA ( rwg ( LAQ 8wk pgg ( XBI nR4 ( LAQ rgk Wgk ( IAQ rgk Ex0 ) ) ) ) xQg ) ( rwg ( LAQ 8wk pgg ( XBI 4wg ( LAQ rgk Wgk ( IAQ rgk Ex0 ) ) ) ) xQg ) nR4 4wg $=
+  ( SA 6h8 8gk pQg rQk WQk Eh0 HwQ KwQ WxI xAg XyU pCU qiU jg IQI YhI lwQ rCU
+  uwg ) ACZBDZEFUDGHGIJKZLZKMEFANZUELZKMEFUFEFUHUDUCABOABPUCUDUDUEUGUEUDUCQUEUD
+  UCRSTABUAUB $. $}

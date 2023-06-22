@@ -1,20 +1,37 @@
-$c Zw HMc #Variable ) #ElementVariable #Symbol #Pattern CXQ #SetVariable A-c ( $.
-$v ph1 kore-element-var-From ph0 x kore-sort-var-R xX $.
-$d kore-element-var-From x $.
-$d kore-element-var-From kore-sort-var-R $.
-$d kore-sort-var-R x $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-CKo $f #ElementVariable kore-sort-var-R $.
-CXM $a #Pattern CXQ $.
-G4s $f #ElementVariable kore-element-var-From $.
-HMY $a #Pattern HMc $.
-Huk $a #Pattern kore-sort-var-R $.
-${ Iy4 $p Zw kore-sort-var-R kore-sort-var-R ( A-c CXQ HMc ) kore-element-var-From $=
-  ( Huk CXM HMY A-Y Jw Afg ) ACDEFBGH $. $}
+$c 0wM LAQ #Symbol #Variable #SetVariable iA 3gk #ElementVariable rgk #Pattern ) ( $.
+$v yhs Fw Ow CQ FQ zBs DQ Ew Bw Kw Cw 2gg nR4 EQ Dw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+EA $f #Pattern EQ $.
+Eg $f #Pattern Ew $.
+FA $f #Pattern FQ $.
+Fg $f #Pattern Fw $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+${ XgQ $e iA Bw Dw Fw Ow $.
+   XwQ $e iA CQ EQ Fw Ow $.
+   YAQ $e iA Cw Ew Fw Ow $.
+   YQQ $e iA DQ FQ Fw Ow $.
+   YgQ $a iA ( 0wM Bw CQ Cw DQ ) ( 0wM Dw EQ Ew FQ ) Fw Ow $. $}
+2Qg $f #ElementVariable 2gg $.
+rQk $a #Pattern rgk $.
+3Qk $a #Pattern 3gk $.
+yRs $f #ElementVariable yhs $.
+yxs $f #ElementVariable zBs $.
+nB4 $f #ElementVariable nR4 $.
+Wh8 $a #Pattern 2gg $.
+6h8 $a #Pattern nR4 $.
+7SA $a #Pattern yhs $.
+JiE $a #Pattern zBs $.
+NSE $a iA 2gg 2gg nR4 zBs $.
+NyE $a iA yhs yhs nR4 zBs $.
+IS4 $a iA 3gk 3gk nR4 zBs $.
+Ii4 $a iA ( LAQ rgk 3gk nR4 ) ( LAQ rgk 3gk zBs ) nR4 zBs $.
+${ Iy4 $p iA ( 0wM 3gk 2gg yhs ( LAQ rgk 3gk nR4 ) ) ( 0wM 3gk 2gg yhs ( LAQ rgk 3gk zBs ) ) nR4 zBs $=
+  ( 3Qk Wh8 7SA rQk 6h8 KwQ JiE SA IS4 NSE NyE Ii4 YgQ ) EAFZBGZHEDIZJERSHECKJT
+  CLCDMACDNBCDOCDPQ $. $}

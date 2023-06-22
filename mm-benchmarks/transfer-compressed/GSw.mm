@@ -1,35 +1,27 @@
-$c Zw #Variable ) kg #ElementVariable #Symbol GSU #Pattern GSc MA #SetVariable ( $.
-$v ph5 sg0 ph4 ptn2 xX ph1 ph2 ph0 ptn0 ptn1 xX0 ph3 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Cg $f #Pattern ph4 $.
-Cw $f #Pattern ph5 $.
-IA $f #Variable xX $.
-Ig $f #Symbol sg0 $.
-Kg $a #Pattern sg0 $.
-Lw $a #Pattern ( MA ph0 ph1 ) $.
-${ dA $e Zw ph1 ph3 ph0 xX $.
-   dQ $e Zw ph2 ph4 ph0 xX $.
-   dg $a Zw ( MA ph1 ph2 ) ( MA ph3 ph4 ) ph0 xX $. $}
-kQ $a kg ph0 ph0 $.
-${ oQ $e Zw ph0 ph1 ph2 xX $.
-   og $e kg ph3 ph0 $.
-   ow $e kg ph4 ph1 $.
-   pA $e kg ph5 ph2 $.
-   pQ $a Zw ph3 ph4 ph5 xX $. $}
-${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-CHQ $f #Variable xX0 $.
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIU $f #Pattern ptn2 $.
-GSQ $a #Symbol GSU $.
-GSY $a #Pattern ( GSc ptn0 ) $.
-GSk $a kg ( GSc ptn1 ) ( MA GSU ptn1 ) $.
-GSo $a kg ( GSc ptn2 ) ( MA GSU ptn2 ) $.
-${ GSs $e Zw ptn1 ptn2 ptn0 xX0 $.
-   GSw $p Zw ( GSc ptn1 ) ( GSc ptn2 ) ptn0 xX0 $=
-     ( GSQ Kg Lw GSY Afg dg GSk GSo kQ pQ ) FGZCHPDHBCIDIBABPCPDAPBAJEKCLDMBNO
-     $. $}
+$c LAQ #Symbol #Variable #SetVariable iA hgk #ElementVariable pgg #Pattern ) ( $.
+$v Ow CQ zBs DQ Ew Bw Kw Cw nR4 EQ Dw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+EA $f #Pattern EQ $.
+Eg $f #Pattern Ew $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+jg $a iA Bw Ow Bw Ow $.
+${ lAQ $e iA Bw DQ Ew Ow $.
+   lQQ $e iA CQ Dw Ew Ow $.
+   lgQ $e iA Cw EQ Ew Ow $.
+   lwQ $a iA ( LAQ Bw CQ Cw ) ( LAQ DQ Dw EQ ) Ew Ow $. $}
+pQg $a #Pattern pgg $.
+hQk $a #Pattern hgk $.
+yxs $f #ElementVariable zBs $.
+nB4 $f #ElementVariable nR4 $.
+6h8 $a #Pattern nR4 $.
+JiE $a #Pattern zBs $.
+NiE $a iA pgg pgg nR4 zBs $.
+Fiw $a iA hgk hgk nR4 zBs $.
+${ GSw $p iA ( LAQ hgk pgg nR4 ) ( LAQ hgk pgg zBs ) nR4 zBs $=
+  ( hQk pQg 6h8 JiE SA Fiw NiE jg lwQ ) CDBEZCDAFLAGZABHABILMJK $. $}

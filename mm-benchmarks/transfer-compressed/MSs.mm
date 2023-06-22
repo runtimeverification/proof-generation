@@ -1,40 +1,15 @@
-$c Lg #Variable CQo CHI ) ASI #ElementVariable #Symbol CUE #Pattern CSA wg .A rg #SetVariable ( CQM $.
-$v ph1 ph2 kore-element-var-VE2 kore-element-var-VE3 ph0 kore-element-var-VE1 kore-element-var-VE0 kore-element-var-VE4 $.
-$d kore-element-var-VE3 kore-element-var-VE0 $.
-$d kore-element-var-VE1 kore-element-var-VE4 $.
-$d kore-element-var-VE2 kore-element-var-VE4 $.
-$d kore-element-var-VE1 kore-element-var-VE2 $.
-$d kore-element-var-VE0 kore-element-var-VE4 $.
-$d kore-element-var-VE1 kore-element-var-VE3 $.
-$d kore-element-var-VE2 kore-element-var-VE3 $.
-$d kore-element-var-VE3 kore-element-var-VE4 $.
-$d kore-element-var-VE2 kore-element-var-VE0 $.
-$d kore-element-var-VE1 kore-element-var-VE0 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-${ AW0 $e rg ( Lg ph0 ph1 ) $.
-   AW4 $e rg ( Lg ph1 ph2 ) $.
-   AW8 $a rg ( Lg ph0 ph2 ) $. $}
-AZE $a rg ( Lg ( wg ph0 ph1 ) ph0 ) $.
-CHE $a #Pattern CHI $.
-CKs $f #ElementVariable kore-element-var-VE0 $.
-CKw $f #ElementVariable kore-element-var-VE2 $.
-CK0 $f #ElementVariable kore-element-var-VE1 $.
-CK8 $f #ElementVariable kore-element-var-VE3 $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CQk $a #Pattern CQo $.
-CR8 $a #Pattern CSA $.
-CUA $a #Pattern CUE $.
-I5I $a #Pattern kore-element-var-VE1 $.
-I5U $a #Pattern kore-element-var-VE0 $.
-JOw $a #Pattern kore-element-var-VE2 $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-MSQ $a #Pattern ( wg ( ASI kore-element-var-VE3 CQM ) ( wg ( ASI kore-element-var-VE4 CUE ) .A ) ) $.
-MSo $a rg ( Lg ( wg ( ASI kore-element-var-VE1 CHI ) ( wg ( ASI kore-element-var-VE2 CSA ) ( wg ( ASI kore-element-var-VE3 CQM ) ( wg ( ASI kore-element-var-VE4 CUE ) .A ) ) ) ) ( ASI kore-element-var-VE4 CUE ) ) $.
-${ MSs $p rg ( Lg ( wg ( wg ( ASI kore-element-var-VE1 CHI ) ( wg ( ASI kore-element-var-VE2 CSA ) ( wg ( ASI kore-element-var-VE3 CQM ) ( wg ( ASI kore-element-var-VE4 CUE ) .A ) ) ) ) ( wg ( ASI kore-element-var-VE0 CQo ) .A ) ) ( ASI kore-element-var-VE4 CUE ) ) $=
-  ( I5I CHE ASE JOw CR8 MSQ wQ I5U CQk 9w JO4 CUA AZE MSo AW8 ) CFGHBIJHDEKLLZA
-  MNHOLZLUAEPQHUAUBRBCDEST $. $}
+$c #Symbol #Variable SwE #SetVariable ) 4w JAQ #ElementVariable IQE mwg #Pattern ( $.
+$v 2gg CQ 4Ag Bw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+mgg $a #Pattern mwg $.
+2Qg $f #ElementVariable 2gg $.
+3wg $f #ElementVariable 4Ag $.
+Wh8 $a #Pattern 2gg $.
+BCQ $a #Pattern 4Ag $.
+${ MSs $p #Pattern ( 4w ( JAQ 2gg ) ( 4w ( SwE 4Ag mwg ) IQE ) ) $=
+  ( Wh8 IwQ BCQ mgg SgE IAE 4g ) ACDBEFGHII $. $}

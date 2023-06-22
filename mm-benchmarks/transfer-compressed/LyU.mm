@@ -1,21 +1,36 @@
-$c Lg A-c #Variable ) ASI #ElementVariable #Symbol CUE #Pattern Hmg wg CXQ .A rg #SetVariable ( $.
-$v ph1 ph0 kore-element-var-VE4 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-LQ $a #Pattern ( Lg ph0 ph1 ) $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-xA $a rg ( Lg ph0 ( Lg ph1 ph0 ) ) $.
-${ xw $e rg ( Lg ph0 ph1 ) $.
-   yA $e rg ph0 $.
-   yQ $a rg ph1 $. $}
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-A-k $a rg ( ASI ( A-c ph0 ph1 ) ph0 ) $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CUA $a #Pattern CUE $.
-CXM $a #Pattern CXQ $.
-Hmc $a #Pattern Hmg $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-${ LyU $p rg ( Lg ( wg ( ASI kore-element-var-VE4 CXQ ) .A ) ( ASI ( A-c CUE Hmg ) CUE ) ) $=
-  ( CUA Hmc A-Y ASE JO4 CXM 9w wQ LQ xA A-k yQ ) BCDBEZAFGEHIZNJNOKBCLM $. $}
+$c ww4 Tw #Symbol wQM zw JAQ #Pattern ( 0wM twM tQM #Variable PQk Kw8 #SetVariable BBY 4w #ElementVariable IQE ) $.
+$v CQ DQ Bw oAg Cw 2gg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+lQE $a zw ( Tw Bw Bw ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+nAE $a zw IQE $.
+ugE $a zw ( Tw ( 4w Bw CQ ) Bw ) $.
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+${ NwM $e zw CQ $.
+   OAM $a zw ( Tw Bw CQ ) $. $}
+tAM $a #Pattern ( tQM Bw CQ ) $.
+uwM $a #Pattern ( twM Bw ) $.
+wAM $a #Pattern ( wQM Bw CQ Cw ) $.
+0gM $a #Pattern ( 0wM Bw CQ Cw DQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+nwg $f #Pattern oAg $.
+2Qg $f #ElementVariable 2gg $.
+PAk $a #Pattern PQk $.
+wg4 $a #Pattern ww4 $.
+Kg8 $a #Pattern ( Kw8 oAg ) $.
+AxY $a #Pattern BBY $.
+Wh8 $a #Pattern 2gg $.
+LSU $a zw ( Tw ( 4w ( JAQ 2gg ) IQE ) ( tQM 2gg ( wQM 2gg ( 0wM PQk 2gg BBY ( Kw8 ww4 ) ) ( twM 2gg ) ) ) ) $.
+${ LyU $p zw ( Tw ( 4w ( 4w ( JAQ 2gg ) IQE ) ( 4w ( 4w ( JAQ 2gg ) IQE ) IQE ) ) ( tQM 2gg ( wQM 2gg ( 0wM PQk 2gg BBY ( Kw8 ww4 ) ) ( twM 2gg ) ) ) ) $=
+  ( Wh8 IwQ IAE 4g PAk AxY wg4 Kg8 0gM uwM wAM tAM ugE lQE mAE nAE OAM wgE LSU
+  ) ABZCZDEZUCDEZEZUCUAUAFUAGHIJUAKLMUEUBDUEUCUBUCUDNUCUBUBUBDNUBOPPUEDQRSATP
+  $. $}

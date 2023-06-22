@@ -1,27 +1,27 @@
-$c Zw #Variable Fdk ) #ElementVariable #Symbol #Pattern Dn0 #SetVariable ( $.
-$v ptn2 kore-element-var-x0 xX kore-element-var-VE2 ph0 x ptn0 ptn1 ptn4 xX0 ptn3 $.
-$d kore-element-var-VE2 x $.
-$d x kore-element-var-x0 $.
-$d kore-element-var-VE2 kore-element-var-x0 $.
-Bg $f #Pattern ph0 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-bQ $a Zw ph0 xX ph0 xX $.
-CHQ $f #Variable xX0 $.
-CHU $f #Pattern ptn0 $.
-CH8 $f #Pattern ptn1 $.
-CIU $f #Pattern ptn2 $.
-CIY $f #Pattern ptn3 $.
-CIc $f #Pattern ptn4 $.
-CKw $f #ElementVariable kore-element-var-VE2 $.
-Dnw $a #Pattern Dn0 $.
-${ Fd0 $e Zw ptn1 ptn3 ptn0 xX0 $.
-   Fd4 $e Zw ptn2 ptn4 ptn0 xX0 $.
-   Fd8 $a Zw ( Fdk ptn1 ptn2 ) ( Fdk ptn3 ptn4 ) ptn0 xX0 $. $}
-Hi0 $f #ElementVariable kore-element-var-x0 $.
-H3g $a #Pattern kore-element-var-x0 $.
-JOw $a #Pattern kore-element-var-VE2 $.
-JyQ $a Zw Dn0 Dn0 kore-element-var-x0 kore-element-var-VE2 $.
-${ JyU $p Zw ( Fdk Dn0 kore-element-var-x0 ) ( Fdk Dn0 kore-element-var-VE2 ) kore-element-var-x0 kore-element-var-VE2 $=
-  ( Jw H3g Dnw JOw JyQ bQ Fd8 ) ACZBDZEKEAFABGKJHI $. $}
+$c LAQ 1wk #Symbol #Variable #SetVariable iA #ElementVariable pgg #Pattern ) ( $.
+$v Ow CQ DQ Ew Bw Kw Cw nR4 EQ Dw 4Ag $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+EA $f #Pattern EQ $.
+Eg $f #Pattern Ew $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+jg $a iA Bw Ow Bw Ow $.
+${ lAQ $e iA Bw DQ Ew Ow $.
+   lQQ $e iA CQ Dw Ew Ow $.
+   lgQ $e iA Cw EQ Ew Ow $.
+   lwQ $a iA ( LAQ Bw CQ Cw ) ( LAQ DQ Dw EQ ) Ew Ow $. $}
+pQg $a #Pattern pgg $.
+3wg $f #ElementVariable 4Ag $.
+1gk $a #Pattern 1wk $.
+nB4 $f #ElementVariable nR4 $.
+6h8 $a #Pattern nR4 $.
+BCQ $a #Pattern 4Ag $.
+nSQ $a iA 1wk 1wk nR4 4Ag $.
+niQ $a iA pgg pgg nR4 4Ag $.
+${ JyU $p iA ( LAQ 1wk pgg nR4 ) ( LAQ 1wk pgg 4Ag ) nR4 4Ag $=
+  ( 1gk pQg 6h8 BCQ SA nSQ niQ jg lwQ ) CDBEZCDAFLAGZABHABILMJK $. $}

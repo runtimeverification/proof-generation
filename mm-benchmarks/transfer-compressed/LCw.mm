@@ -1,27 +1,22 @@
-$c Zw #Variable ) ASI #ElementVariable #Symbol #Pattern CSA wg .A #SetVariable ( $.
-$v ph4 kore-element-var-x0 xX ph1 ph2 ph0 x ph3 kore-element-var-VE4 $.
-$d kore-element-var-x0 kore-element-var-VE4 $.
-$d x kore-element-var-x0 $.
-$d x kore-element-var-VE4 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Cg $f #Pattern ph4 $.
-GA $f #ElementVariable x $.
-IA $f #Variable xX $.
-Jw $a #Variable x $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-${ Af8 $e Zw ph1 ph3 ph0 xX $.
-   AgA $e Zw ph2 ph4 ph0 xX $.
-   AgE $a Zw ( wg ph1 ph2 ) ( wg ph3 ph4 ) ph0 xX $. $}
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CR8 $a #Pattern CSA $.
-Hi0 $f #ElementVariable kore-element-var-x0 $.
-H3g $a #Pattern kore-element-var-x0 $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-JXQ $a Zw .A .A kore-element-var-x0 kore-element-var-VE4 $.
-LCs $a Zw ( ASI kore-element-var-x0 CSA ) ( ASI kore-element-var-VE4 CSA ) kore-element-var-x0 kore-element-var-VE4 $.
-${ LCw $p Zw ( wg ( ASI kore-element-var-x0 CSA ) .A ) ( wg ( ASI kore-element-var-VE4 CSA ) .A ) kore-element-var-x0 kore-element-var-VE4 $=
-  ( H3g CR8 ASE 9w JO4 Jw LCs JXQ AgE ) BCZLDEFAGDEFAHABIABJK $. $}
+$c #Symbol Tw #Variable SwE #SetVariable zw 4w JAQ #ElementVariable IQE mwg #Pattern ) ( $.
+$v Cw 2gg XRw CQ Bw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+lQE $a zw ( Tw Bw Bw ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+ugE $a zw ( Tw ( 4w Bw CQ ) Bw ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+mgg $a #Pattern mwg $.
+2Qg $f #ElementVariable 2gg $.
+XBw $f #ElementVariable XRw $.
+Wh8 $a #Pattern 2gg $.
+QCE $a #Pattern XRw $.
+Kiw $a #Pattern ( 4w ( JAQ 2gg ) ( 4w ( SwE XRw mwg ) IQE ) ) $.
+${ LCw $p zw ( Tw ( 4w ( JAQ 2gg ) ( 4w ( SwE XRw mwg ) IQE ) ) ( JAQ 2gg ) ) $=
+  ( Kiw Wh8 IwQ QCE mgg SgE IAE 4g ugE lQE mAE ) ABCADEZNNBFGHIJKNLM $. $}

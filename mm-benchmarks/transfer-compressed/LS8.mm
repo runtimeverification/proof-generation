@@ -1,193 +1,191 @@
-$c AUo CPw BAM DPE HMc CSc ARU A-s #Pattern Hlo wg #SetVariable CUw EI0 A5g #Variable HKc #ElementVariable #Symbol Hmg CSA ( DrI Duw Hm8 EM0 Zw Mg DQs E1E Hn0 FDE ) HnY A54 Eq0 Dt8 A6o CIM .A rg A-c G2w DpI A44 Lg HlM A4w CHs Hkw Eh0 ASI HmE CUE CXQ CJY HoQ Dr8 $.
-$v z kore-sort-var-R th0 ph1 th1 th2 th3 ph7 ph8 ptn3 ph5 sg0 ph4 ptn2 kore-element-var-x0 xX ph2 kore-sort-var-x0 ph0 ph6 ptn0 x ptn1 ptn4 xX0 ph3 y $.
-$d kore-sort-var-R y $.
-$d y z $.
-$d kore-sort-var-x0 x $.
-$d kore-sort-var-R kore-element-var-x0 $.
-$d y x $.
-$d kore-sort-var-x0 kore-sort-var-R $.
-$d x kore-element-var-x0 $.
-$d z x $.
-$d kore-sort-var-x0 kore-element-var-x0 $.
-$d kore-sort-var-x0 z $.
-$d kore-sort-var-R z $.
-$d y kore-element-var-x0 $.
-$d z kore-element-var-x0 $.
-$d kore-sort-var-x0 y $.
-$d kore-sort-var-R x $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-CQ $f #Pattern ph3 $.
-Cg $f #Pattern ph4 $.
-Cw $f #Pattern ph5 $.
-DA $f #Pattern ph6 $.
-DQ $f #Pattern ph7 $.
-Dg $f #Pattern ph8 $.
-Dw $f #Pattern th0 $.
-EA $f #Pattern th1 $.
-EQ $f #Pattern th2 $.
-Eg $f #Pattern th3 $.
-GA $f #ElementVariable x $.
-GQ $f #ElementVariable y $.
-Gg $f #ElementVariable z $.
-IA $f #Variable xX $.
-Ig $f #Symbol sg0 $.
-Jw $a #Variable x $.
-Kg $a #Pattern sg0 $.
-MQ $a #Pattern ( Mg x ph0 ) $.
-bQ $a Zw ph0 xX ph0 xX $.
-${ cQ $e Zw ph1 ph3 ph0 xX $.
-   cg $e Zw ph2 ph4 ph0 xX $.
-   cw $a Zw ( Lg ph1 ph2 ) ( Lg ph3 ph4 ) ph0 xX $. $}
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-AUk $a #Symbol AUo $.
-${ AW0 $e rg ( Lg ph0 ph1 ) $.
-   AW4 $e rg ( Lg ph1 ph2 ) $.
-   AW8 $a rg ( Lg ph0 ph2 ) $. $}
-AXM $a rg .A $.
-${ AZc $e rg ( Lg ph0 ph1 ) $.
-   AZg $e rg ( Lg ph0 ph2 ) $.
-   AZk $a rg ( Lg ph0 ( wg ph1 ph2 ) ) $. $}
+$c 4B4 Ngk Lwk #Symbol 7h4 DBE 8Q4 zw xwM pgg #Pattern 0Q4 rwg Ex0 0wM xB4 tQM 0h4 Wgk 5xw #Variable SwE PQk #SetVariable iA vR4 4w #ElementVariable IQE qxs mwg xQg 8hw cBQ kBM 2R4 zBA XBI RAk Tw cwE wQM -g4 5x4 .gk rgk ( RQ0 twM LAQ ewk yx4 IAQ 9R4 Hg8 Kw8 OA0 hgk 7Ak 7BI ) $.
+$v Ow CQ qwg DQ Bw Cw EQ sgg tAg Dw ngg FQ xX Ew Kw ph0 oAg GQ nR4 tgg $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+Dg $f #Pattern Dw $.
+EA $f #Pattern EQ $.
+Eg $f #Pattern Ew $.
+FA $f #Pattern FQ $.
+GA $f #Pattern GQ $.
+Kg $f #ElementVariable Kw $.
+Og $f #Variable Ow $.
+SA $a #Variable Kw $.
+Tg $a #Pattern ( Tw Bw CQ ) $.
+jg $a iA Bw Ow Bw Ow $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+5Q $a zw ( Tw Bw ( Tw CQ Bw ) ) $.
+${ 6A $e zw ( Tw Bw CQ ) $.
+   6Q $e zw Bw $.
+   6g $a zw CQ $. $}
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
 ${ $d xX ph0 $.
-   Afg $a Zw ph0 ph0 ph1 xX $. $}
-${ Aw4 $e rg ph1 $.
-   Aw8 $a rg ( Lg ph0 ph1 ) $. $}
-A4s $a #Pattern ( A4w ph0 ph1 ) $.
-A5I $a #Pattern ( A44 ph0 ) $.
-A5c $a #Pattern ( A5g ph0 ph1 ph2 ) $.
-A50 $a #Pattern ( A54 ph0 ph1 ph2 ) $.
-A6k $a #Pattern ( A6o ph0 ph1 ph2 ph3 ) $.
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-A-o $a #Pattern ( A-s ph0 ) $.
-BAI $a #Pattern ( BAM ph0 ph1 ph2 ) $.
-${ BBc $e Zw ph0 ph2 ph4 xX $.
-   BBg $e Zw ph1 ph3 ph4 xX $.
-   BBk $a Zw ( A4w ph0 ph1 ) ( A4w ph2 ph3 ) ph4 xX $. $}
-${ BCE $e Zw ph0 ph3 ph6 xX $.
-   BCI $e Zw ph1 ph4 ph6 xX $.
-   BCM $e Zw ph2 ph5 ph6 xX $.
-   BCQ $a Zw ( A5g ph0 ph1 ph2 ) ( A5g ph3 ph4 ph5 ) ph6 xX $. $}
-${ BCk $e Zw ph0 ph3 ph6 xX $.
-   BCo $e Zw ph1 ph4 ph6 xX $.
-   BCs $e Zw ph2 ph5 ph6 xX $.
-   BCw $a Zw ( A54 ph0 ph1 ph2 ) ( A54 ph3 ph4 ph5 ) ph6 xX $. $}
-${ BDU $e Zw ph0 ph4 ph8 xX $.
-   BDY $e Zw ph1 ph5 ph8 xX $.
-   BDc $e Zw ph2 ph6 ph8 xX $.
-   BDg $e Zw ph3 ph7 ph8 xX $.
-   BDk $a Zw ( A6o ph0 ph1 ph2 ph3 ) ( A6o ph4 ph5 ph6 ph7 ) ph8 xX $. $}
-BmI $a rg ( Mg x ( ARU x AUo ) ) $.
-${ $d z ph0 $.
-   $d z ph1 $.
-   $d z ph2 $.
-   $d z y $.
-   $d z x $.
-   $d z th1 $.
-   $d z th2 $.
-   $d x ph0 $.
-   $d y th0 $.
-   Bms $e rg ( Lg th0 ( Mg x ( ARU x ph0 ) ) ) $.
-   Bmw $e rg ( Lg ( wg th0 th1 ) ph1 ) $.
-   Bm0 $e Zw ( Lg th2 ph2 ) ( Lg th1 ph1 ) ph0 y $.
-   Bm4 $e Zw ( Lg th3 ph3 ) ( Lg th1 ph1 ) z y $.
-   Bm8 $a rg ( Lg ( wg th0 th2 ) ph2 ) $. $}
-${ Boo $e rg ( Lg th0 ( ASI ph1 ph0 ) ) $.
-   Bos $e rg ( Lg th0 ( ASI ph2 ph0 ) ) $.
-   Bow $e rg ( Lg th0 ( A4w AUo ( A6o ph0 AUo ph1 ph2 ) ) ) $.
-   Bo0 $e rg ( Lg th0 ( A4w ph6 ph3 ) ) $.
-   Bo4 $e Zw ( A4w ph6 ph3 ) ph4 ph1 x $.
-   Bo8 $e Zw ( A4w ph7 ph5 ) ph4 ph2 x $.
-   BpA $a rg ( Lg th0 ( A4w ph7 ph5 ) ) $. $}
-CHQ $f #Variable xX0 $.
-CHU $f #Pattern ptn0 $.
-CHo $a #Pattern CHs $.
-CH8 $f #Pattern ptn1 $.
-CII $a #Pattern ( CIM ptn0 ptn1 ) $.
-CIU $f #Pattern ptn2 $.
-CIY $f #Pattern ptn3 $.
-CIc $f #Pattern ptn4 $.
-CJU $a #Pattern CJY $.
-CKo $f #ElementVariable kore-sort-var-R $.
-CPs $a #Pattern CPw $.
-CR8 $a #Pattern CSA $.
-CSY $a #Pattern CSc $.
-CUA $a #Pattern CUE $.
-CUs $a #Pattern CUw $.
-CXM $a #Pattern CXQ $.
-DPA $a #Pattern ( DPE ptn0 ) $.
-DQo $a #Pattern ( DQs ptn0 ptn1 ) $.
-DpE $a #Pattern ( DpI ptn0 ptn1 ) $.
-${ DpY $e Zw ptn1 ptn3 ptn0 xX0 $.
-   Dpc $e Zw ptn2 ptn4 ptn0 xX0 $.
-   Dpg $a Zw ( DpI ptn1 ptn2 ) ( DpI ptn3 ptn4 ) ptn0 xX0 $. $}
-DrE $a #Pattern ( DrI ptn0 ) $.
-Dr4 $a #Pattern ( Dr8 ptn0 ptn1 ) $.
-${ DsM $e Zw ptn1 ptn3 ptn0 xX0 $.
-   DsQ $e Zw ptn2 ptn4 ptn0 xX0 $.
-   DsU $a Zw ( Dr8 ptn1 ptn2 ) ( Dr8 ptn3 ptn4 ) ptn0 xX0 $. $}
-Dt4 $a #Pattern ( Dt8 ptn0 ) $.
-Dus $a #Pattern ( Duw ptn0 ) $.
-${ DvA $e Zw ptn1 ptn2 ptn0 xX0 $.
-   DvE $a Zw ( Duw ptn1 ) ( Duw ptn2 ) ptn0 xX0 $. $}
-EIw $a #Pattern ( EI0 ptn0 ptn1 ) $.
-EMw $a #Pattern ( EM0 ptn0 ptn1 ) $.
-Ehw $a #Pattern ( Eh0 ptn0 ptn1 ) $.
-Eqw $a #Pattern ( Eq0 ptn0 ptn1 ) $.
-Erk $a rg ( Lg ( wg ( ASI ptn0 CSc ) ( ASI ptn1 CSc ) ) ( ASI ( Eq0 ptn0 ptn1 ) CSc ) ) $.
-E1A $a #Pattern ( E1E ptn0 ptn1 ) $.
-FDA $a #Pattern ( FDE ptn0 ptn1 ) $.
-G2s $a #Pattern ( G2w ptn0 ) $.
-HKE $f #ElementVariable kore-sort-var-x0 $.
-HKY $a #Pattern HKc $.
-HMY $a #Pattern HMc $.
-Hi0 $f #ElementVariable kore-element-var-x0 $.
-Hks $a #Pattern Hkw $.
-HlI $a #Pattern HlM $.
-Hlk $a #Pattern Hlo $.
-HmA $a #Pattern HmE $.
-Hmc $a #Pattern Hmg $.
-Hm4 $a #Pattern Hm8 $.
-HnU $a #Pattern HnY $.
-Hnw $a #Pattern Hn0 $.
-HoM $a #Pattern HoQ $.
-HsY $a rg ( Lg .A ( ASI ( FDE ( BAM CUE CHs ( A-c CUE HlM ) ) ( BAM CXQ CHs ( A-c CXQ HKc ) ) ) CSc ) ) $.
-HtM $a rg ( Lg .A ( ASI ( FDE ( BAM CUE CHs ( A-c CUE HoQ ) ) ( BAM CXQ CHs ( A-c CXQ Hlo ) ) ) CSc ) ) $.
-HtY $a rg ( Lg .A ( ASI ( FDE ( BAM CUE CHs ( A-c CUE Hmg ) ) ( BAM CXQ CHs ( A-c CXQ HmE ) ) ) CSc ) ) $.
-Htk $a rg ( Lg .A ( ASI ( FDE ( BAM CUE CHs ( A-c CUE Hkw ) ) ( BAM CXQ CHs ( A-c CXQ HnY ) ) ) CSc ) ) $.
-Ht0 $a rg ( Lg .A ( ASI ( FDE ( BAM CUE CHs ( A-c CUE Hn0 ) ) ( BAM CXQ CHs ( A-c CXQ Hm8 ) ) ) CSc ) ) $.
-Huk $a #Pattern kore-sort-var-R $.
-HwM $a #Pattern kore-sort-var-x0 $.
-H2A $a #Pattern ( ARU x AUo ) $.
-H3I $a rg ( Lg .A ( wg ( A-s AUo ) .A ) ) $.
-H3g $a #Pattern kore-element-var-x0 $.
-H4g $a rg ( Lg ( wg .A ( wg ( A-s kore-sort-var-R ) .A ) ) ( A-s kore-sort-var-R ) ) $.
-H4s $a Zw ( wg ( A-s AUo ) .A ) ( wg ( A-s kore-sort-var-R ) .A ) AUo kore-sort-var-R $.
-H48 $a Zw ( wg ( A-s kore-sort-var-x0 ) .A ) ( wg ( A-s kore-sort-var-R ) .A ) kore-sort-var-x0 kore-sort-var-R $.
-IIA $a Zw CSc CSc AUo kore-sort-var-R $.
-IIQ $a Zw CSc CSc kore-sort-var-x0 kore-sort-var-R $.
-LSw $a rg ( Lg ( wg ( A-s kore-sort-var-R ) .A ) ( A4w kore-sort-var-R ( A6o CSc kore-sort-var-R ( Eq0 ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HlM ) ) ( BAM CXQ CHs ( A-c CXQ HKc ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hkw ) ) ( BAM CXQ CHs ( A-c CXQ HnY ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HoQ ) ) ( BAM CXQ CHs ( A-c CXQ Hlo ) ) ) ( FDE ( BAM CUE CHs ( A-c CUE Hn0 ) ) ( BAM CXQ CHs ( A-c CXQ Hm8 ) ) ) ) ) ) ( FDE ( BAM CUE CHs ( A-c CUE Hmg ) ) ( BAM CXQ CHs ( A-c CXQ HmE ) ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hmg ) ) ( BAM CXQ CHs ( A-c CXQ HmE ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HlM ) ) ( BAM CXQ CHs ( A-c CXQ HKc ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hkw ) ) ( BAM CXQ CHs ( A-c CXQ HnY ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HoQ ) ) ( BAM CXQ CHs ( A-c CXQ Hlo ) ) ) ( FDE ( BAM CUE CHs ( A-c CUE Hn0 ) ) ( BAM CXQ CHs ( A-c CXQ Hm8 ) ) ) ) ) ) ) ) ) ) $.
-LS4 $a rg ( Lg .A ( A4w CPw ( A54 CPw ( A5g CPw ( A5g CPw ( A44 CPw ) ( A44 CPw ) ) ( Dr8 ( DpI ( Dt8 ( CIM ( BAM CXQ CHs ( A-c CXQ HmE ) ) ( CIM ( DPE ( CIM ( BAM CUE CHs ( A-c CUE Hkw ) ) CJY ) ) ( CIM ( DQs ( CIM ( BAM CUw CHs ( G2w ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HKc ) ) ) ) ) CJY ) ( CIM ( BAM CUw CHs ( G2w ( E1E ( E1E ( Eh0 ( A-c CUE Hkw ) ( EM0 ( BAM CUE CSA ( A-c CUE Hkw ) ) ( BAM CUE CSA ( A-c CUE Hmg ) ) ) ) ( Eh0 ( A-c CUE Hn0 ) ( EI0 ( BAM CUE CSA ( A-c CUE Hn0 ) ) ( BAM CUE CSA ( A-c CUE Hmg ) ) ) ) ) ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HMc ) ) ) ) ) ) CJY ) ) CJY ) ) ) ) ( Duw ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HlM ) ) ( BAM CXQ CHs ( A-c CXQ HKc ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hkw ) ) ( BAM CXQ CHs ( A-c CXQ HnY ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HoQ ) ) ( BAM CXQ CHs ( A-c CXQ Hlo ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hn0 ) ) ( BAM CXQ CHs ( A-c CXQ Hm8 ) ) ) ( FDE ( BAM CUE CHs ( A-c CUE Hmg ) ) ( BAM CXQ CHs ( A-c CXQ HmE ) ) ) ) ) ) ) ) ) ( DrI ( A-c CXQ HKc ) ) ) ) ( A5g CPw ( A5g CPw ( A44 CPw ) ( A44 CPw ) ) ( Dr8 ( DpI ( Dt8 ( CIM ( BAM CXQ CHs ( A-c CXQ HmE ) ) ( CIM ( DPE ( CIM ( BAM CUE CHs ( A-c CUE Hkw ) ) CJY ) ) ( CIM ( DQs ( CIM ( BAM CUw CHs ( G2w ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HKc ) ) ) ) ) CJY ) ( CIM ( BAM CUw CHs ( G2w ( E1E ( E1E ( Eh0 ( A-c CUE Hkw ) ( EM0 ( BAM CUE CSA ( A-c CUE Hkw ) ) ( BAM CUE CSA ( A-c CUE Hmg ) ) ) ) ( Eh0 ( A-c CUE Hn0 ) ( EI0 ( BAM CUE CSA ( A-c CUE Hn0 ) ) ( BAM CUE CSA ( A-c CUE Hmg ) ) ) ) ) ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HMc ) ) ) ) ) ) CJY ) ) CJY ) ) ) ) ( Duw ( Eq0 ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HlM ) ) ( BAM CXQ CHs ( A-c CXQ HKc ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hkw ) ) ( BAM CXQ CHs ( A-c CXQ HnY ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HoQ ) ) ( BAM CXQ CHs ( A-c CXQ Hlo ) ) ) ( FDE ( BAM CUE CHs ( A-c CUE Hn0 ) ) ( BAM CXQ CHs ( A-c CXQ Hm8 ) ) ) ) ) ) ( FDE ( BAM CUE CHs ( A-c CUE Hmg ) ) ( BAM CXQ CHs ( A-c CXQ HmE ) ) ) ) ) ) ( DrI ( A-c CXQ HKc ) ) ) ) ) ) ) $.
-${ LS8 $p rg ( Lg .A ( A4w CPw ( A54 CPw ( A5g CPw ( A5g CPw ( A44 CPw ) ( A44 CPw ) ) ( Dr8 ( DpI ( Dt8 ( CIM ( BAM CXQ CHs ( A-c CXQ HmE ) ) ( CIM ( DPE ( CIM ( BAM CUE CHs ( A-c CUE Hkw ) ) CJY ) ) ( CIM ( DQs ( CIM ( BAM CUw CHs ( G2w ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HKc ) ) ) ) ) CJY ) ( CIM ( BAM CUw CHs ( G2w ( E1E ( E1E ( Eh0 ( A-c CUE Hkw ) ( EM0 ( BAM CUE CSA ( A-c CUE Hkw ) ) ( BAM CUE CSA ( A-c CUE Hmg ) ) ) ) ( Eh0 ( A-c CUE Hn0 ) ( EI0 ( BAM CUE CSA ( A-c CUE Hn0 ) ) ( BAM CUE CSA ( A-c CUE Hmg ) ) ) ) ) ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HMc ) ) ) ) ) ) CJY ) ) CJY ) ) ) ) ( Duw ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HlM ) ) ( BAM CXQ CHs ( A-c CXQ HKc ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hkw ) ) ( BAM CXQ CHs ( A-c CXQ HnY ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HoQ ) ) ( BAM CXQ CHs ( A-c CXQ Hlo ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hn0 ) ) ( BAM CXQ CHs ( A-c CXQ Hm8 ) ) ) ( FDE ( BAM CUE CHs ( A-c CUE Hmg ) ) ( BAM CXQ CHs ( A-c CXQ HmE ) ) ) ) ) ) ) ) ) ( DrI ( A-c CXQ HKc ) ) ) ) ( A5g CPw ( A5g CPw ( A44 CPw ) ( A44 CPw ) ) ( Dr8 ( DpI ( Dt8 ( CIM ( BAM CXQ CHs ( A-c CXQ HmE ) ) ( CIM ( DPE ( CIM ( BAM CUE CHs ( A-c CUE Hkw ) ) CJY ) ) ( CIM ( DQs ( CIM ( BAM CUw CHs ( G2w ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HKc ) ) ) ) ) CJY ) ( CIM ( BAM CUw CHs ( G2w ( E1E ( E1E ( Eh0 ( A-c CUE Hkw ) ( EM0 ( BAM CUE CSA ( A-c CUE Hkw ) ) ( BAM CUE CSA ( A-c CUE Hmg ) ) ) ) ( Eh0 ( A-c CUE Hn0 ) ( EI0 ( BAM CUE CSA ( A-c CUE Hn0 ) ) ( BAM CUE CSA ( A-c CUE Hmg ) ) ) ) ) ( Eh0 ( A-c CUE HlM ) ( BAM CXQ CSA ( A-c CXQ HMc ) ) ) ) ) ) CJY ) ) CJY ) ) ) ) ( Duw ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hmg ) ) ( BAM CXQ CHs ( A-c CXQ HmE ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HlM ) ) ( BAM CXQ CHs ( A-c CXQ HKc ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE Hkw ) ) ( BAM CXQ CHs ( A-c CXQ HnY ) ) ) ( Eq0 ( FDE ( BAM CUE CHs ( A-c CUE HoQ ) ) ( BAM CXQ CHs ( A-c CXQ Hlo ) ) ) ( FDE ( BAM CUE CHs ( A-c CUE Hn0 ) ) ( BAM CXQ CHs ( A-c CXQ Hm8 ) ) ) ) ) ) ) ) ) ( DrI ( A-c CXQ HKc ) ) ) ) ) ) ) $=
-  ( CKo CSY CUA CHo A-Y BAI CXM FDA Eqw CPs A5c CII CR8 9w ASE AZk Erk AW8 Afg
-  wQ Hi0 HKE GA HlI HKY Hks HnU HoM Hlk Hnw Hm4 Hmc HmA A5I CJU DPA CUs Ehw G2s
-  EMw EIw E1A HMY DQo Dt4 Dus DpE DrE Dr4 A50 H3g A4s HsY Htk HtM Ht0 HtY Kg MQ
-  AUk A-o A6k AXM Aw8 H3I Huk HwM H2A BmI H4g LSw Jw H4s bQ IIA BDk BBk H48 IIQ
-  cw Bm8 LS4 DvE Dpg DsU BCQ BCw BpA ) BCDCUDEZFGDGUEEZFHZCDCUFEZFZGDGUGEFHZCDC
-  UHEFGDGUIEFHZCDCUJEZFGDGUKEFHZIZIZIZCDCULEZFGDGUMEFZHZIZYCXTIZJJJJUNZYFKZYBXM
-  UOLUPUQDXIGMXJFURUSFUOLUQDXLCMXLFCMYAFZUTURXPCMXPFYHVAURVBXIGMGVCEFURVBUSFUOL
-  VDUOLLLVEZXKXNXOXQYCIIIIVFVGXJVHZVIKZJYGYIYDVFZVGZYJVIZKZVJZJJYKJYGYIUAVKZVFZ
-  VGZYJVIZKZVJZVLJYKJYGYIYEVFZVGZYJVIZKZVJZJJNUANXTBOZYCBOZTYDBONUUHUUINXKBOZXS
-  BOZTUUHNUUJUUKVMNXNBOZXRBOZTUUKNUULUUMVNNXOBOZXQBOZTUUMNUUNUUOVOVPPXOXQQRPXNX
-  RQRPXKXSQRZVQPXTYCQRNUUIUUHTYEBONUUIUUHVQUUPPYCXTQRNNVTVRZWANTZTUUQBUUQYDYEWB
-  ZVLZNNUURNNWCWDWEPUUQAWFZBUVAYDYEWBZVLZUUTUBWGZBUVDYDYEWBZVLZNUVAWAZNTZUURUVD
-  WANTZUCAUBNUCWHUCVSUCWIWDNUVHTZUVHUVCUVJUVGNAWJUVJNWCWDPAWKRUUQUURUUTUVHUVCAW
-  LZAWMUUQUUSUVAUVBUUQUVKUUQUVKWNZBUUQYDYEBUVAYDYEUUQUVKAWOUVLYDUUQUVKSYEUUQUVK
-  SWPWQWTUVDUVIUVFUVHUVCUVKAUBWRUVDUVEUVAUVBUVDUVKUVDUVKWNZBUVDYDYEBUVAYDYEUVDU
-  VKAUBWSUVMYDUVDUVKSYEUVDUVKSWPWQWTXARXBJYPJUUBYDUAWLZJYDUVNSZJYKYOJYKUUAYDUVN
-  UVOYKYDUVNSJYGYNJYGYTYDUVNUVOYGYDUVNSUVNYDYMYJYSYJUVNYDYIYLYIYRYIYDUVNSUVNYDY
-  DYQYDUVNWNXCXDYJYDUVNSXEXFXGWQJUUGJUUBYEUVNJYEUVNSZJYKUUFJYKUUAYEUVNUVPYKYEUV
-  NSJYGUUEJYGYTYEUVNUVPYGYEUVNSUVNYEUUDYJYSYJUVNYEYIUUCYIYRYIYEUVNSUVNYEYEYQYEU
-  VNWNXCXDYJYEUVNSXEXFXGWQXH $. $}
+   IQI $a iA Bw Bw CQ Ow $. $}
+${ NwM $e zw CQ $.
+   OAM $a zw ( Tw Bw CQ ) $. $}
+tAM $a #Pattern ( tQM Bw CQ ) $.
+uwM $a #Pattern ( twM Bw ) $.
+wAM $a #Pattern ( wQM Bw CQ Cw ) $.
+xgM $a #Pattern ( xwM Bw CQ Cw ) $.
+0gM $a #Pattern ( 0wM Bw CQ Cw DQ ) $.
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+KwQ $a #Pattern ( LAQ Bw CQ Cw ) $.
+${ QAQ $e iA Bw Cw Dw Ow $.
+   QQQ $e iA CQ DQ Dw Ow $.
+   QgQ $a iA ( tQM Bw CQ ) ( tQM Cw DQ ) Dw Ow $. $}
+${ SgQ $e iA Bw DQ Ew Ow $.
+   SwQ $e iA CQ Dw Ew Ow $.
+   TAQ $e iA Cw EQ Ew Ow $.
+   TQQ $a iA ( wQM Bw CQ Cw ) ( wQM DQ Dw EQ ) Ew Ow $. $}
+${ UgQ $e iA Bw DQ Ew Ow $.
+   UwQ $e iA CQ Dw Ew Ow $.
+   VAQ $e iA Cw EQ Ew Ow $.
+   VQQ $a iA ( xwM Bw CQ Cw ) ( xwM DQ Dw EQ ) Ew Ow $. $}
+JwU $a zw ( Tw ( 4w ( SwE CQ Bw ) ( SwE Cw Bw ) ) ( SwE ( wQM Bw CQ Cw ) Bw ) ) $.
+LAU $a zw ( SwE ( 0wM Bw CQ Cw DQ ) CQ ) $.
+${ VwU $e zw ( Tw GQ ( tQM Bw Cw ) ) $.
+   WAU $a zw ( Tw GQ ( tQM Bw ( xwM Bw CQ Cw ) ) ) $. $}
+${ sgU $e zw ( Tw GQ ( SwE CQ Bw ) ) $.
+   swU $a zw ( Tw GQ ( tQM Bw ( xwM Bw CQ CQ ) ) ) $. $}
+${ AgY $e zw ( Tw GQ ( SwE CQ Bw ) ) $.
+   AwY $e zw ( Tw GQ ( SwE Cw Bw ) ) $.
+   BAY $e zw ( Tw GQ ( SwE Dw Bw ) ) $.
+   BQY $e zw ( Tw GQ ( tQM Bw ( xwM Bw CQ Cw ) ) ) $.
+   BgY $e zw ( Tw GQ ( tQM Bw ( xwM Bw DQ ( wQM Bw CQ Dw ) ) ) ) $.
+   BwY $a zw ( Tw GQ ( tQM Bw ( xwM Bw DQ ( wQM Bw Cw Dw ) ) ) ) $. $}
+${ swY $e zw ( Tw GQ ( SwE CQ Bw ) ) $.
+   tAY $e zw ( Tw GQ ( SwE Cw Bw ) ) $.
+   tQY $e zw ( Tw GQ ( tQM cwE ( 0wM Bw cwE CQ Cw ) ) ) $.
+   tgY $e zw ( Tw GQ ( tQM Ew DQ ) ) $.
+   twY $e iA ( tQM Ew DQ ) Dw CQ Kw $.
+   uAY $e iA ( tQM FQ EQ ) Dw Cw Kw $.
+   uQY $a zw ( Tw GQ ( tQM FQ EQ ) ) $. $}
+uwY $a zw ( tQM Bw ( 0wM CQ Bw Cw Cw ) ) $.
+mgg $a #Pattern mwg $.
+nQg $f #Variable ngg $.
+nwg $f #Pattern oAg $.
+pQg $a #Pattern pgg $.
+qgg $f #Pattern qwg $.
+rgg $a #Pattern ( rwg oAg qwg ) $.
+sQg $f #Pattern sgg $.
+swg $f #Pattern tAg $.
+tQg $f #Pattern tgg $.
+${ uQg $e iA qwg tAg oAg ngg $.
+   ugg $e iA sgg tgg oAg ngg $.
+   uwg $a iA ( rwg qwg sgg ) ( rwg tAg tgg ) oAg ngg $. $}
+wQg $a zw ( Tw ( 4w ( SwE oAg pgg ) ( SwE qwg mwg ) ) ( SwE ( rwg oAg qwg ) mwg ) ) $.
+xAg $a #Pattern xQg $.
+Lgk $a #Pattern Lwk $.
+NQk $a #Pattern Ngk $.
+PAk $a #Pattern PQk $.
+Qwk $a #Pattern RAk $.
+WQk $a #Pattern Wgk $.
+egk $a #Pattern ewk $.
+hQk $a #Pattern hgk $.
+rQk $a #Pattern rgk $.
+6wk $a #Pattern 7Ak $.
+.Qk $a #Pattern .gk $.
+Nw0 $a #Pattern ( OA0 oAg ) $.
+${ PA0 $e iA qwg sgg oAg ngg $.
+   PQ0 $a iA ( OA0 qwg ) ( OA0 sgg ) oAg ngg $. $}
+QQ0 $a zw ( Tw ( SwE oAg mwg ) ( SwE ( OA0 oAg ) pgg ) ) $.
+RA0 $a #Pattern ( RQ0 oAg qwg ) $.
+UQ0 $a zw ( Tw ( 4w ( SwE oAg mwg ) ( SwE qwg mwg ) ) ( SwE ( RQ0 oAg qwg ) pgg ) ) $.
+0A4 $a #Pattern ( 0Q4 oAg qwg ) $.
+${ 1Q4 $e iA qwg tAg oAg ngg $.
+   1g4 $e iA sgg tgg oAg ngg $.
+   1w4 $a iA ( 0Q4 qwg sgg ) ( 0Q4 tAg tgg ) oAg ngg $. $}
+3Q4 $a zw ( Tw ( 4w ( SwE oAg Lwk ) ( SwE qwg PQk ) ) ( SwE ( 0Q4 oAg qwg ) 7Ak ) ) $.
+8A4 $a #Pattern ( 8Q4 oAg ) $.
+-Q4 $a #Pattern ( -g4 oAg qwg ) $.
+${ Ag8 $e iA qwg tAg oAg ngg $.
+   Aw8 $e iA sgg tgg oAg ngg $.
+   BA8 $a iA ( -g4 qwg sgg ) ( -g4 tAg tgg ) oAg ngg $. $}
+Cg8 $a zw ( Tw ( 4w ( SwE oAg 7Ak ) ( SwE qwg RAk ) ) ( SwE ( -g4 oAg qwg ) Ngk ) ) $.
+HQ8 $a #Pattern ( Hg8 oAg ) $.
+${ Ig8 $e iA qwg sgg oAg ngg $.
+   Iw8 $a iA ( Hg8 qwg ) ( Hg8 sgg ) oAg ngg $. $}
+Jw8 $a zw ( Tw ( SwE oAg mwg ) ( SwE ( Hg8 oAg ) Lwk ) ) $.
+Kg8 $a #Pattern ( Kw8 oAg ) $.
+yxA $a #Pattern ( zBA oAg qwg ) $.
+CxE $a #Pattern ( DBE oAg qwg ) $.
+WxI $a #Pattern ( XBI oAg qwg ) $.
+6xI $a #Pattern ( 7BI oAg qwg ) $.
+jxM $a #Pattern ( kBM oAg qwg ) $.
+bxQ $a #Pattern ( cBQ oAg qwg ) $.
+qhs $a #Pattern ( qxs oAg ) $.
+5hw $a #Pattern 5xw $.
+8Rw $a #Pattern 8hw $.
+Eh0 $a #Pattern Ex0 $.
+nB4 $f #ElementVariable nR4 $.
+vB4 $a #Pattern vR4 $.
+wx4 $a #Pattern xB4 $.
+yh4 $a #Pattern yx4 $.
+0R4 $a #Pattern 0h4 $.
+2B4 $a #Pattern 2R4 $.
+3x4 $a #Pattern 4B4 $.
+5h4 $a #Pattern 5x4 $.
+7R4 $a #Pattern 7h4 $.
+9B4 $a #Pattern 9R4 $.
+.R4 $a zw ( Tw IQE ( SwE ( twM Ngk ) Ngk ) ) $.
+JB8 $a zw ( Tw IQE ( SwE xQg mwg ) ) $.
+Kx8 $a zw ( Tw IQE ( SwE ( 8Q4 ( IAQ rgk 8hw ) ) RAk ) ) $.
+Rh8 $a zw ( Tw IQE ( SwE ( LAQ rgk pgg ( IAQ rgk 0h4 ) ) pgg ) ) $.
+SR8 $a zw ( Tw IQE ( SwE ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) pgg ) ) $.
+VB8 $a zw ( Tw IQE ( SwE ( rwg ( LAQ hgk pgg ( qxs ( XBI ( IAQ ewk xB4 ) ( LAQ rgk Wgk ( IAQ rgk 8hw ) ) ) ) ) xQg ) mwg ) ) $.
+VR8 $a zw ( Tw IQE ( SwE ( rwg ( LAQ hgk pgg ( qxs ( kBM ( kBM ( XBI ( IAQ ewk vR4 ) ( DBE ( LAQ ewk Wgk ( IAQ ewk vR4 ) ) ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) ) ) ( XBI ( IAQ ewk 7h4 ) ( zBA ( LAQ ewk Wgk ( IAQ ewk 7h4 ) ) ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) ) ) ) ( XBI ( IAQ ewk xB4 ) ( LAQ rgk Wgk ( IAQ rgk Ex0 ) ) ) ) ) ) xQg ) mwg ) ) $.
+Vh8 $a zw ( Tw IQE ( SwE ( Kw8 ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk xB4 ) ) ( LAQ rgk pgg ( IAQ rgk 8hw ) ) ) ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk vR4 ) ) ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) ) ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk 9R4 ) ) ( LAQ rgk pgg ( IAQ rgk yx4 ) ) ) ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk 7h4 ) ) ( LAQ rgk pgg ( IAQ rgk 4B4 ) ) ) ( cBQ ( LAQ ewk pgg ( IAQ ewk 2R4 ) ) ( LAQ rgk pgg ( IAQ rgk 0h4 ) ) ) ) ) ) ) ) PQk ) ) $.
+6h8 $a #Pattern nR4 $.
+EyA $a zw ( Tw IQE ( SwE ( LAQ Wgk pgg ( LAQ rgk Wgk ( IAQ rgk 0h4 ) ) ) pgg ) ) $.
+FCA $a zw ( Tw IQE ( SwE ( rwg ( LAQ Wgk pgg ( LAQ rgk Wgk ( IAQ rgk 0h4 ) ) ) xQg ) mwg ) ) $.
+YyA $a zw ( Tw IQE ( SwE ( OA0 ( rwg ( LAQ rgk pgg ( IAQ rgk 0h4 ) ) xQg ) ) pgg ) ) $.
+fyA $a zw ( Tw IQE ( SwE ( LAQ Wgk pgg ( LAQ rgk Wgk ( IAQ rgk 5x4 ) ) ) pgg ) ) $.
+Yi4 $a zw ( Tw IQE ( tQM cwE ( 0wM pgg cwE ( LAQ rgk pgg ( IAQ rgk 0h4 ) ) ( LAQ Wgk pgg ( LAQ rgk Wgk ( IAQ rgk 0h4 ) ) ) ) ) ) $.
+Ki8 $a zw ( Tw IQE ( tQM cwE ( 0wM pgg cwE ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) ( wQM pgg ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) ) ) ) ) $.
+LC8 $a zw ( Tw IQE ( tQM cwE ( 0wM pgg cwE ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) ( LAQ Wgk pgg ( LAQ rgk Wgk ( IAQ rgk 5x4 ) ) ) ) ) ) $.
+${ LS8 $p zw ( Tw IQE ( tQM Ngk ( xwM Ngk ( wQM Ngk ( wQM Ngk ( twM Ngk ) ( twM Ngk ) ) ( -g4 ( 0Q4 ( Hg8 ( rwg ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) ( rwg ( OA0 ( rwg ( LAQ rgk pgg ( IAQ rgk 0h4 ) ) xQg ) ) ( rwg ( RQ0 ( rwg ( LAQ hgk pgg ( qxs ( XBI ( IAQ ewk xB4 ) ( LAQ rgk Wgk ( IAQ rgk 8hw ) ) ) ) ) xQg ) ( rwg ( LAQ hgk pgg ( qxs ( kBM ( kBM ( XBI ( IAQ ewk vR4 ) ( DBE ( LAQ ewk Wgk ( IAQ ewk vR4 ) ) ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) ) ) ( XBI ( IAQ ewk 7h4 ) ( zBA ( LAQ ewk Wgk ( IAQ ewk 7h4 ) ) ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) ) ) ) ( XBI ( IAQ ewk xB4 ) ( LAQ rgk Wgk ( IAQ rgk Ex0 ) ) ) ) ) ) xQg ) ) xQg ) ) ) ) ( Kw8 ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk xB4 ) ) ( LAQ rgk pgg ( IAQ rgk 8hw ) ) ) ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk vR4 ) ) ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) ) ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk 9R4 ) ) ( LAQ rgk pgg ( IAQ rgk yx4 ) ) ) ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk 7h4 ) ) ( LAQ rgk pgg ( IAQ rgk 4B4 ) ) ) ( cBQ ( LAQ ewk pgg ( IAQ ewk 2R4 ) ) ( LAQ rgk pgg ( IAQ rgk 0h4 ) ) ) ) ) ) ) ) ) ( 8Q4 ( IAQ rgk 8hw ) ) ) ) ( wQM Ngk ( 0wM .gk Ngk ( IAQ .gk 5xw ) ( IAQ .gk 5xw ) ) ( -g4 ( 0Q4 ( Hg8 ( rwg ( wQM pgg ( LAQ Wgk pgg ( LAQ rgk Wgk ( IAQ rgk 5x4 ) ) ) ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) ) ( rwg ( OA0 ( rwg ( LAQ Wgk pgg ( LAQ rgk Wgk ( IAQ rgk 0h4 ) ) ) xQg ) ) ( rwg ( RQ0 ( rwg ( LAQ hgk pgg ( qxs ( XBI ( IAQ ewk xB4 ) ( LAQ rgk Wgk ( IAQ rgk 8hw ) ) ) ) ) xQg ) ( rwg ( LAQ hgk pgg ( qxs ( kBM ( kBM ( XBI ( IAQ ewk vR4 ) ( DBE ( LAQ ewk Wgk ( IAQ ewk vR4 ) ) ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) ) ) ( XBI ( IAQ ewk 7h4 ) ( zBA ( LAQ ewk Wgk ( IAQ ewk 7h4 ) ) ( LAQ ewk Wgk ( IAQ ewk 2R4 ) ) ) ) ) ( XBI ( IAQ ewk xB4 ) ( LAQ rgk Wgk ( IAQ rgk Ex0 ) ) ) ) ) ) xQg ) ) xQg ) ) ) ) ( Kw8 ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk xB4 ) ) ( LAQ rgk pgg ( IAQ rgk 8hw ) ) ) ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk vR4 ) ) ( LAQ rgk pgg ( IAQ rgk 5x4 ) ) ) ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk 9R4 ) ) ( LAQ rgk pgg ( IAQ rgk yx4 ) ) ) ( 7BI ( cBQ ( LAQ ewk pgg ( IAQ ewk 7h4 ) ) ( LAQ rgk pgg ( IAQ rgk 4B4 ) ) ) ( cBQ ( LAQ ewk pgg ( IAQ ewk 2R4 ) ) ( LAQ rgk pgg ( IAQ rgk 0h4 ) ) ) ) ) ) ) ) ) ( 8Q4 ( IAQ rgk 8hw ) ) ) ) ) ) ) $=
+  ( NQk wAM HwQ rQk pQg KwQ xAg rgg egk WQk HQ8 IAE SgE wgE mAE mgg IQI uwg TQQ
+  4g nB4 uwM .Qk 5hw 0gM 5h4 0R4 Nw0 hQk wx4 8Rw WxI qhs vB4 2B4 CxE 7R4 yxA Tg
+  jxM Eh0 RA0 bxQ 9B4 yh4 3x4 6xI Kg8 0A4 8A4 -Q4 .R4 JwU 5Q LAU 6g 6wk Qwk Lgk
+  PAk fyA SR8 FCA QQ0 VB8 VR8 UQ0 JB8 wQg Jw8 Vh8 3Q4 Kx8 Cg8 tAM uwY OAM SA jg
+  WAU xgM 6h8 Rh8 EyA Yi4 LC8 Ki8 YyA swU Iw8 1w4 BA8 VQQ QgQ uQY PQ0 BwY ) AAA
+  UBZXRBZUCAUCUDCZXTUEZAXSDEDUFCZFZDEDUGCZFZGHZUHZUIEIUJCZDJDUKCZFULUMFGHZUIEIU
+  NCZIJYKFIJIUOCZFZUPULIUQCZIJYNFYMURULUTYHDJDVACFULUTUMFGHZVBZGHZHZHZKZIEYHFDE
+  YIFVCIEYKFYCVCIEIVDCFDEDVECFVCIEYNFDEDVFCFVCIEYLFYEVCVGVGVGVGVHZVIZYIVJZVKZBZ
+  EJEDJYBFFZYCBZJEDJYDFFZGHZUHZYQHZHZKZUUAVIZUUCVKZLLXRAMZUUPTXSAMZLUUPUUPVLVLN
+  AXRXRVMOZYAAMZLUUSUSUUSLVNUCAXTXTVOVPLUUNVQMZUUCVRMZTUUOAMLUUTUVALUUMVSMZUUAV
+  TMZTUUTLUVBUVCLUULPMZUVBLUUGEMZUUKPMZTUVDLUVEUVFLUUFEMZYCEMZTUVELUVGUVHWAWBNE
+  UUFYCVMOLUUJEMZYQPMZTUVFLUVIUVJLUUIPMUVIWCUUIWDOLYPEMZGPMZTUVJLUVKUVLLYJPMZYO
+  PMZTUVKLUVMUVNWEWFNYJYOWGOWHNYPGWIOZNUUJYQWIONUUGUUKWIOUULWJOWKNUUMUUAWLOWMNU
+  UNUUCWNOAXSYALLAYAWOAUCXTWPWQWTEYEUUHAUUEAXSUUGYRHZKZUUAVIZUUCVKZBZXAZAAUUEAX
+  SUUGUAXBZGHZUHZYQHZHZKZUUAVIZUUCVKZBZXAZWOAUUEAXSUUOBZXAZAALUAXCXDXEEYCUUFAUU
+  EAXSEYCYCBZYRHZKZUUAVIZUUCVKZBZXAZAAUUEAXSEUWBYCBZYRHZKZUUAVIZUUCVKZBZXAZWOUW
+  AAALUAWBWAXFEYCUWNAUUEUUEXAZAAUUEAXSUWBYRHZKZUUAVIZUUCVKZBZXAZWOUWTAALUAWBLUV
+  HUVHTUWNEMLUVHUVHWBWBNEYCYCVMOXGAUUELLUUQUUDAMZTUUEAMLUUQUXOUURLUUBVQMZUVATUX
+  OLUXPUVALYTVSMZUVCTUXPLUXQUVCLYSPMZUXQLUVHYRPMZTUXRLUVHUXSWBLYGEMZUVJTUXSLUXT
+  UVJXHUVONYGYQWIONYCYRWIOYSWJOWKNYTUUAWLOWMNUUBUUCWNONAXSUUDVMOXIAUXHAUXNYCUAW
+  RZAYCUYAQZAUUEUUEAUUEUXMYCUYAUYBUUEYCUYAQZAXSUUDAXSUXLYCUYAUYBXSYCUYAQZUYAYCU
+  UBUUCUXKUUCUYAYCYTUUAUXJUUAUYAYCYSUXIUYAYCYCYRUWBYRYCUYAWSZYRYCUYAQZRXJUUAYCU
+  YAQZXKUUCYCUYAQZXLSXMXNAUWTAUXNUWNUYAAUWNUYAQZAUUEUWSAUUEUXMUWNUYAUYIUUEUWNUY
+  AQAXSUWRAXSUXLUWNUYAUYIXSUWNUYAQUYAUWNUWQUUCUXKUUCUYAUWNUWPUUAUXJUUAUYAUWNUWO
+  UXIUYAUWNUWNYRUWBYRUWNUYAWSYRUWNUYAQRXJUUAUWNUYAQXKUUCUWNUYAQXLSXMXNXOAUWTAUX
+  GYCUYAUYBAUUEUWSAUUEUXFYCUYAUYBUYCAXSUWRAXSUXEYCUYAUYBUYDUYAYCUWQUUCUXDUUCUYA
+  YCUWPUUAUXCUUAUYAYCUWOUXBUYAYCUWNYRUXAYREYCYCEUWBYCYCUYAEYCUYAQUYEYCYCUYAQSUY
+  FRXJUYGXKUYHXLSXMXNAUWAAUXGUUFUYAAUUFUYAQZAUUEUVTAUUEUXFUUFUYAUYJUUEUUFUYAQAX
+  SUVSAXSUXEUUFUYAUYJXSUUFUYAQUYAUUFUVRUUCUXDUUCUYAUUFUVQUUAUXCUUAUYAUUFUVPUXBU
+  YAUUFUUGYRUXAYREUUFYCEUWBYCUUFUYAEUUFUYAQUUFUYAWSYCUUFUYAQSYRUUFUYAQRXJUUAUUF
+  UYAQXKUUCUUFUYAQXLSXMXNXOAUWAAUWKYEUYAAYEUYAQZAUUEUVTAUUEUWJYEUYAUYKUUEYEUYAQ
+  AXSUVSAXSUWIYEUYAUYKXSYEUYAQUYAYEUVRUUCUWHUUCUYAYEUVQUUAUWGUUAUYAYEUVPUWFUYAY
+  EUUGYRUUGUWEUUGYEUYAQUYAYEYGYQUWDYQUYAYEYFUWCUYAYEYEGUWBGYEUYAWSGYEUYAQRXPYQY
+  EUYAQRRXJUUAYEUYAQXKUUCYEUYAQXLSXMXNAUWMAUWKUUHUYAAUUHUYAQZAUUEUWLAUUEUWJUUHU
+  YAUYLUUEUUHUYAQAXSUUOAXSUWIUUHUYAUYLXSUUHUYAQUYAUUHUUNUUCUWHUUCUYAUUHUUMUUAUW
+  GUUAUYAUUHUULUWFUYAUUHUUGUUKUUGUWEUUGUUHUYAQUYAUUHUUJYQUWDYQUYAUUHUUIUWCUYAUU
+  HUUHGUWBGUUHUYAWSGUUHUYAQRXPYQUUHUYAQRRXJUUAUUHUYAQXKUUCUUHUYAQXLSXMXNXOXQ $. $}

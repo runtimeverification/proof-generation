@@ -1,33 +1,15 @@
-$c DpI BAM CHs #Variable ) #ElementVariable FZM Cbk #Symbol Dt8 #Pattern CIM #SetVariable ( $.
-$v kore-element-var-VE5 kore-element-var-x0 ph1 ph2 kore-element-var-VE2 kore-element-var-VE3 ph0 ptn0 ptn1 kore-element-var-VE4 $.
-$d kore-element-var-x0 kore-element-var-VE4 $.
-$d kore-element-var-VE5 kore-element-var-VE4 $.
-$d kore-element-var-VE3 kore-element-var-x0 $.
-$d kore-element-var-VE5 kore-element-var-VE2 $.
-$d kore-element-var-VE2 kore-element-var-VE4 $.
-$d kore-element-var-VE5 kore-element-var-VE3 $.
-$d kore-element-var-VE2 kore-element-var-VE3 $.
-$d kore-element-var-VE3 kore-element-var-VE4 $.
-$d kore-element-var-VE2 kore-element-var-x0 $.
-$d kore-element-var-VE5 kore-element-var-x0 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-BAI $a #Pattern ( BAM ph0 ph1 ph2 ) $.
-CHU $f #Pattern ptn0 $.
-CHo $a #Pattern CHs $.
-CH8 $f #Pattern ptn1 $.
-CII $a #Pattern ( CIM ptn0 ptn1 ) $.
-CKw $f #ElementVariable kore-element-var-VE2 $.
-CK8 $f #ElementVariable kore-element-var-VE3 $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-Cbg $a #Pattern Cbk $.
-DpE $a #Pattern ( DpI ptn0 ptn1 ) $.
-Dt4 $a #Pattern ( Dt8 ptn0 ) $.
-HLA $f #ElementVariable kore-element-var-VE5 $.
-Hi0 $f #ElementVariable kore-element-var-x0 $.
-JOw $a #Pattern kore-element-var-VE2 $.
-JO0 $a #Pattern kore-element-var-VE3 $.
-Ki0 $a #Pattern ( FZM kore-element-var-VE4 kore-element-var-x0 kore-element-var-VE5 ) $.
-${ Ki4 $p #Pattern ( DpI ( Dt8 ( CIM ( BAM Cbk CHs ( FZM kore-element-var-VE4 kore-element-var-x0 kore-element-var-VE5 ) ) kore-element-var-VE2 ) ) kore-element-var-VE3 ) $=
-  ( Cbg CHo Ki0 BAI JOw CII Dt4 JO0 DpE ) FGCDEHIAJKLBMN $. $}
+$c #Symbol Tw #Variable #SetVariable 3gk zw JAQ #ElementVariable IQE #Pattern ) ( $.
+$v CQ Bw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Tg $a #Pattern ( Tw Bw CQ ) $.
+5Q $a zw ( Tw Bw ( Tw CQ Bw ) ) $.
+${ 6A $e zw ( Tw Bw CQ ) $.
+   6Q $e zw Bw $.
+   6g $a zw CQ $. $}
+IAE $a #Pattern IQE $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+3Qk $a #Pattern 3gk $.
+4Qk $a zw ( JAQ 3gk ) $.
+${ Ki4 $p zw ( Tw IQE ( JAQ 3gk ) ) $=
+  ( 3Qk IwQ IAE Tg 5Q 4Qk 6g ) ABZCHDHCEFG $. $}

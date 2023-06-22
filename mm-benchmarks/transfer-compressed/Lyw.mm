@@ -1,26 +1,17 @@
-$c Lg #Variable ) ASI #ElementVariable #Symbol #Pattern wg CXQ .A rg #SetVariable ( $.
-$v ph1 ph2 ph0 kore-element-var-VE4 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-AWw $a rg ( Lg ph0 ph0 ) $.
-${ AW0 $e rg ( Lg ph0 ph1 ) $.
-   AW4 $e rg ( Lg ph1 ph2 ) $.
-   AW8 $a rg ( Lg ph0 ph2 ) $. $}
-AXM $a rg .A $.
-AZE $a rg ( Lg ( wg ph0 ph1 ) ph0 ) $.
-AZI $a rg ( Lg ( wg ph0 ph1 ) ph1 ) $.
-${ AZc $e rg ( Lg ph0 ph1 ) $.
-   AZg $e rg ( Lg ph0 ph2 ) $.
-   AZk $a rg ( Lg ph0 ( wg ph1 ph2 ) ) $. $}
-${ Aw4 $e rg ph1 $.
-   Aw8 $a rg ( Lg ph0 ph1 ) $. $}
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CXM $a #Pattern CXQ $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-${ Lyw $p rg ( Lg ( wg .A ( wg ( ASI kore-element-var-VE4 CXQ ) .A ) ) ( wg ( ASI kore-element-var-VE4 CXQ ) .A ) ) $=
-  ( 9w JO4 CXM ASE wQ AZI AZE AWw AW8 AXM Aw8 AZk ) BACDEZBFZFZNBPONBOGONNNBHNI
-  JJPBKLM $. $}
+$c #Symbol #Variable SwE #SetVariable ) 4w JAQ #ElementVariable IQE mwg #Pattern ( $.
+$v 2gg CQ -Rs Bw XRw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+IwQ $a #Pattern ( JAQ Bw ) $.
+mgg $a #Pattern mwg $.
+2Qg $f #ElementVariable 2gg $.
+-Bs $f #ElementVariable -Rs $.
+XBw $f #ElementVariable XRw $.
+Wh8 $a #Pattern 2gg $.
+QCE $a #Pattern XRw $.
+QyE $a #Pattern -Rs $.
+${ Lyw $p #Pattern ( 4w ( JAQ 2gg ) ( 4w ( SwE -Rs mwg ) ( 4w ( SwE XRw mwg ) IQE ) ) ) $=
+  ( Wh8 IwQ QyE mgg SgE QCE IAE 4g ) ADEBFGHCIGHJKKK $. $}

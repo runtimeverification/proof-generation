@@ -1,20 +1,32 @@
-$c Lg A-c #Variable ) ASI #ElementVariable HmE #Symbol #Pattern wg CXQ .A rg #SetVariable ( $.
-$v ph1 ph0 kore-element-var-VE4 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-LQ $a #Pattern ( Lg ph0 ph1 ) $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-xA $a rg ( Lg ph0 ( Lg ph1 ph0 ) ) $.
-${ xw $e rg ( Lg ph0 ph1 ) $.
-   yA $e rg ph0 $.
-   yQ $a rg ph1 $. $}
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-A-k $a rg ( ASI ( A-c ph0 ph1 ) ph0 ) $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CXM $a #Pattern CXQ $.
-HmA $a #Pattern HmE $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-${ Lyg $p rg ( Lg ( wg ( ASI kore-element-var-VE4 CXQ ) .A ) ( ASI ( A-c CXQ HmE ) CXQ ) ) $=
-  ( CXM HmA A-Y ASE JO4 9w wQ LQ xA A-k yQ ) BCDBEZAFBEGHZMIMNJBCKL $. $}
+$c #Symbol Tw #Variable SwE PQk #SetVariable zw 4w #ElementVariable IQE 8wk #Pattern ) ( $.
+$v 4wg CQ 3gg Bw 5Qg Cw $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+4g $a #Pattern ( 4w Bw CQ ) $.
+IAE $a #Pattern IQE $.
+SgE $a #Pattern ( SwE Bw CQ ) $.
+${ lgE $e zw ( Tw Bw CQ ) $.
+   lwE $e zw ( Tw CQ Cw ) $.
+   mAE $a zw ( Tw Bw Cw ) $. $}
+nAE $a zw IQE $.
+ugE $a zw ( Tw ( 4w Bw CQ ) Bw ) $.
+${ wAE $e zw ( Tw Bw CQ ) $.
+   wQE $e zw ( Tw Bw Cw ) $.
+   wgE $a zw ( Tw Bw ( 4w CQ Cw ) ) $. $}
+${ NwM $e zw CQ $.
+   OAM $a zw ( Tw Bw CQ ) $. $}
+3Qg $f #ElementVariable 3gg $.
+4gg $f #ElementVariable 4wg $.
+5Ag $f #ElementVariable 5Qg $.
+PAk $a #Pattern PQk $.
+8gk $a #Pattern 8wk $.
+XiU $a #Pattern 3gg $.
+XyU $a #Pattern 4wg $.
+YCU $a #Pattern 5Qg $.
+Dyg $a #Pattern ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg 8wk ) IQE ) ) $.
+ESg $a zw ( Tw ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg 8wk ) IQE ) ) ( SwE 4wg PQk ) ) $.
+FCg $a zw ( Tw ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg 8wk ) IQE ) ) ( SwE 5Qg 8wk ) ) $.
+${ Lyg $p zw ( Tw ( 4w ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg 8wk ) IQE ) ) ( 4w ( SwE 3gg 8wk ) IQE ) ) ( 4w ( SwE 4wg PQk ) ( 4w ( SwE 5Qg 8wk ) IQE ) ) ) $=
+  ( Dyg XiU 8gk SgE IAE 4g XyU PAk YCU ugE ESg mAE FCg nAE OAM wgE ) BCDZAEFGHI
+  ZIZBJKGZCLFGZHIUBTUCTUAMZBCNOUBUDHUBTUDUEBCPOUBHQRSS $. $}

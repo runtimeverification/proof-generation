@@ -1,31 +1,22 @@
-$c Hm8 BAM Lg A-c CHs #Variable ) ASI #ElementVariable #Symbol A-s #Pattern wg CXQ .A rg #SetVariable ( $.
-$v ptn2 ph1 ph2 ph0 ptn0 ptn1 kore-element-var-VE4 $.
-Bg $f #Pattern ph0 $.
-Bw $f #Pattern ph1 $.
-CA $f #Pattern ph2 $.
-wQ $a #Pattern ( wg ph0 ph1 ) $.
-9w $a #Pattern .A $.
-ASE $a #Pattern ( ASI ph0 ph1 ) $.
-${ AW0 $e rg ( Lg ph0 ph1 ) $.
-   AW4 $e rg ( Lg ph1 ph2 ) $.
-   AW8 $a rg ( Lg ph0 ph2 ) $. $}
-${ AZc $e rg ( Lg ph0 ph1 ) $.
-   AZg $e rg ( Lg ph0 ph2 ) $.
-   AZk $a rg ( Lg ph0 ( wg ph1 ph2 ) ) $. $}
-A-Y $a #Pattern ( A-c ph0 ph1 ) $.
-A-o $a #Pattern ( A-s ph0 ) $.
-BAI $a #Pattern ( BAM ph0 ph1 ph2 ) $.
-CHU $f #Pattern ptn0 $.
-CHo $a #Pattern CHs $.
-CH8 $f #Pattern ptn1 $.
-CIU $f #Pattern ptn2 $.
-CLA $f #ElementVariable kore-element-var-VE4 $.
-CMA $a rg ( Lg ( wg ( wg ( A-s ptn0 ) ( A-s ptn1 ) ) ( ASI ptn2 ptn0 ) ) ( ASI ( BAM ptn0 ptn1 ptn2 ) ptn1 ) ) $.
-CXM $a #Pattern CXQ $.
-Hm4 $a #Pattern Hm8 $.
-JO4 $a #Pattern kore-element-var-VE4 $.
-Lw8 $a rg ( Lg ( wg ( ASI kore-element-var-VE4 CXQ ) .A ) ( wg ( A-s CXQ ) ( A-s CHs ) ) ) $.
-LyI $a rg ( Lg ( wg ( ASI kore-element-var-VE4 CXQ ) .A ) ( ASI ( A-c CXQ Hm8 ) CXQ ) ) $.
-${ LyM $p rg ( Lg ( wg ( ASI kore-element-var-VE4 CXQ ) .A ) ( ASI ( BAM CXQ CHs ( A-c CXQ Hm8 ) ) CHs ) ) $=
-  ( JO4 CXM ASE 9w wQ A-o CHo Hm4 A-Y BAI Lw8 LyI AZk CMA AW8 ) ABCDEFZCGHGFZCI
-  JZCDZFCHSKHDQRTALAMNCHSOP $. $}
+$c 0wM XBI ewk xB4 IAQ #Symbol #Variable #SetVariable ) #ElementVariable 8wk #Pattern ( $.
+$v yhs CQ qwg DQ Bw oAg Cw 2gg nR4 $.
+Bg $f #Pattern Bw $.
+CA $f #Pattern CQ $.
+Cg $f #Pattern Cw $.
+DA $f #Pattern DQ $.
+0gM $a #Pattern ( 0wM Bw CQ Cw DQ ) $.
+HwQ $a #Pattern ( IAQ Bw CQ ) $.
+nwg $f #Pattern oAg $.
+qgg $f #Pattern qwg $.
+2Qg $f #ElementVariable 2gg $.
+egk $a #Pattern ewk $.
+8gk $a #Pattern 8wk $.
+WxI $a #Pattern ( XBI oAg qwg ) $.
+yRs $f #ElementVariable yhs $.
+nB4 $f #ElementVariable nR4 $.
+wx4 $a #Pattern xB4 $.
+Wh8 $a #Pattern 2gg $.
+6h8 $a #Pattern nR4 $.
+7SA $a #Pattern yhs $.
+${ LyM $p #Pattern ( 0wM 8wk 2gg yhs ( XBI ( IAQ ewk xB4 ) nR4 ) ) $=
+  ( 8gk Wh8 7SA egk wx4 HwQ 6h8 WxI 0gM ) DAEBFGHICJKL $. $}
