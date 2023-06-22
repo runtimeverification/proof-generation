@@ -50,10 +50,12 @@ def statements_get_constants(statements: Iterable[Statement]) -> set[str]:
     return ret
 
 
-def deconstruct_compressed_proof(proof: str) -> tuple[tuple[str, ...], str]:
+def deconstruct_compressed_proof(provable: ProvableStatement) -> tuple[tuple[str, ...], str]:
+    proof = provable.proof
+    assert proof, f'Proof is missing for {provable.label}'
     lemmas_begin = proof.find('(') + 1
     lemmas_end = proof.find(')', lemmas_begin)
-    assert 0 <= lemmas_begin < lemmas_end, 'Can only parse compressed proofs.'
+    assert 0 <= lemmas_begin < lemmas_end, f'Can only parse compressed proofs. {provable.label}'
     return (tuple(proof[lemmas_begin:lemmas_end].split()), proof[lemmas_end + 1 :])
 
 
@@ -65,9 +67,7 @@ def supporting_database_for_provable(
 ) -> Database:
     statements: list[Statement] = []
 
-    proof = provable.proof
-    assert proof, f'Proof is missing for {provable.label}'
-    needed_lemmas, _ = deconstruct_compressed_proof(proof)
+    needed_lemmas, _ = deconstruct_compressed_proof(provable)
 
     needed_constants = set()
     needed_metavariables = set()
@@ -238,10 +238,9 @@ def abbreviate_lemmas(statement: Statement) -> Statement:
         elif isinstance(statement, AxiomaticStatement):
             return AxiomaticStatement(new_label, terms_abbreviate_constructors(statement.terms))
         elif isinstance(statement, ProvableStatement):
-            proof = statement.proof
-            if proof:
+            if statement.proof:
                 lemmas: Iterable[str]
-                lemmas, lemma_applications = deconstruct_compressed_proof(proof)
+                lemmas, lemma_applications = deconstruct_compressed_proof(statement)
                 lemmas = (abbreviate(lemma) for lemma in lemmas)
                 proof = '( {} ) {}'.format(' '.join(lemmas), lemma_applications)
             return ProvableStatement(new_label, terms_abbreviate_constructors(statement.terms), proof=proof)
