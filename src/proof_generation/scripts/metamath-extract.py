@@ -153,7 +153,7 @@ def construct_axiom(
     return Block((*antecedents, AxiomaticStatement(consequent.label, consequent.terms)))
 
 
-def slice_database(input_database: Database) -> Iterator[tuple[str, Database]]:
+def slice_database(input_database: Database, exclude: Iterable[str]) -> Iterator[tuple[str, Database]]:
     """Of the top-level statements, only floating statements are mandatory hypothesis.
     They are thus order sensitive.
     """
@@ -175,10 +175,11 @@ def slice_database(input_database: Database) -> Iterator[tuple[str, Database]]:
             cut_antecedents[axiom_get_label(statement)] = cast('AxiomaticStatement | Block', statement)
         elif isinstance(statement, (ProvableStatement, Block)):
             antecedents, consequent = deconstruct_provable(statement)
-            yield (
-                consequent.label,
-                supporting_database_for_provable(cut_antecedents, global_disjoints, consequent, antecedents),
-            )
+            if not consequent.label in exclude:
+                yield (
+                    consequent.label,
+                    supporting_database_for_provable(cut_antecedents, global_disjoints, consequent, antecedents),
+                )
             cut_antecedents[consequent.label] = construct_axiom(antecedents, consequent)
         else:
             assert 'Unanticipated statement type', type(statement)
@@ -248,29 +249,51 @@ def abbreviate_lemmas(statement: Statement) -> Statement:
             raise RuntimeError(f'Unexpected statement type, {type(statement)}')
 
 
+def collect_theorem_names(database: Database) -> list[str]:
+    ret = []
+
+    def collect(stmt: Statement) -> Statement:
+        nonlocal ret
+        if isinstance(stmt, ProvableStatement):
+            ret.append(stmt.label)
+        return stmt
+
+    database.bottom_up(collect)
+    return ret
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('input', help='Input Metamath file')
-    parser.add_argument('output', help='Output Metamath directory')
-    parser.add_argument('--abbreviate-lemma-names', action=argparse.BooleanOptionalAction)
+    parser.add_argument('input', help='Input Metamath database path')
+    parser.add_argument('output', help='Output directory')
+    parser.add_argument('--exclude', help='Path to metatmath database containing lemmas to exclude')
+    parser.add_argument('--abbreviate-lemma-names', required=False, action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
-    print('Parsing database...', end='')
+    print('Parsing database...', end='', flush=True)
     input_database = load_database(args.input, include_proof=True)
     print(' Done.')
 
     output_dir = Path(args.output)
     output_dir.mkdir()
 
+    exclude: Iterable[str] = []
+    if args.exclude:
+        print('Parsing exclude database...', end='', flush=True)
+        excluded_database = load_database(args.exclude, include_proof=False)
+        print(' Done.')
+        exclude = collect_theorem_names(excluded_database)
+
     if args.abbreviate_lemma_names:
-        print('Abbreviating Lemma names...', end='')
+        print('Abbreviating Lemma names...', end='', flush=True)
         input_database = input_database.bottom_up(abbreviate_lemmas)
         print(' Done.')
+        exclude = [abbreviation_index[lemma] for lemma in exclude if lemma in abbreviation_index]
 
-    for label, slice in slice_database(input_database):
+    for label, slice in slice_database(input_database, exclude=exclude):
         with open(output_dir / (label + '.mm'), 'w') as output_file:
             Encoder.encode(output_file, slice)
-        print(f'Extracted {label}.', end='\x1b[2K\r')
+        print(f'Extracted {label}.', end='\x1b[2K\r', flush=True)
 
 
 if __name__ == '__main__':
