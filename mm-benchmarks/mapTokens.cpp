@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+
 struct TS {
   std::string token;
   unsigned int tv;
@@ -61,7 +62,7 @@ unsigned int truthvalue(bool p[][N], unsigned tk) {
   unsigned int r = 0;
   for (unsigned i = 0; i < N; i++) {
     r = r << 1;
-    r = r | p[tk][N - 1 - i];
+    r = r | p[tk][i];
   }
   return r;
 }
@@ -115,19 +116,16 @@ bool gettokenmapping() {
     }
   }
 
-  std::cout << "\t\t"
-            << "islabeltoken"
-            << "\t"
-            << "ismathsymboltoken"
-            << "\t"
-            << "containsonlyupperorq" << std::endl;
-  for (unsigned i = 0; i < all_tokens_vector.size(); i++) {
-    std::cout << all_tokens_vector[i] << "\t\t\t";
-    for (unsigned j = 0; j < N; j++) {
-      std::cout << result[i][j] << "\t\t\t";
-    }
-    std::cout << std::endl;
-  }
+  //    std::cout << "\t\t" << "islabeltoken"
+  //              << "\t" << "ismathsymboltoken"
+  //              << "\t" << "containsonlyupperorq" << std::endl;
+  //    for (unsigned i = 0; i < all_tokens_vector.size(); i++) {
+  //        std::cout << all_tokens_vector[i] << "\t\t\t";
+  //        for (unsigned j = 0; j < N; j++) {
+  //            std::cout << result[i][j] << "\t\t\t";
+  //        }
+  //        std::cout << std::endl;
+  //    }
 
   tokeninfo.resize(all_tokens_vector.size());
   for (unsigned i = 0; i < all_tokens_vector.size(); i++) {
@@ -135,20 +133,11 @@ bool gettokenmapping() {
     tokeninfo[i].tv = truthvalue(result, i);
   }
 
-  struct {
-    bool operator()(const struct TS &a, const struct TS &b) const {
-      return a.tv < b.tv;
-    }
-  } customLess;
-
-  std::sort(tokeninfo.begin(), tokeninfo.end(), customLess);
-
   for (unsigned i = 0; i < tokeninfo.size(); i++) {
-    tokeninfo[i].mv = i;
+    unsigned tvp = tokeninfo[i].tv & (1 << N) - 1;
+    unsigned cp = i + 1 << N;
+    tokeninfo[i].mv = tvp | cp;
   }
-
-  //    printtokenmapping();
-  //    printmappedwff();
 
   return true;
 }
