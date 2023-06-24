@@ -116,16 +116,16 @@ bool gettokenmapping() {
     }
   }
 
-  //    std::cout << "\t\t" << "islabeltoken"
-  //              << "\t" << "ismathsymboltoken"
-  //              << "\t" << "containsonlyupperorq" << std::endl;
-  //    for (unsigned i = 0; i < all_tokens_vector.size(); i++) {
-  //        std::cout << all_tokens_vector[i] << "\t\t\t";
-  //        for (unsigned j = 0; j < N; j++) {
-  //            std::cout << result[i][j] << "\t\t\t";
-  //        }
-  //        std::cout << std::endl;
-  //    }
+     std::cout << "\t\t" << "islabeltoken"
+               << "\t" << "ismathsymboltoken"
+               << "\t" << "containsonlyupperorq" << std::endl;
+     for (unsigned i = 0; i < all_tokens_vector.size(); i++) {
+         std::cout << all_tokens_vector[i] << "\t\t\t";
+         for (unsigned j = 0; j < N; j++) {
+             std::cout << result[i][j] << "\t\t\t";
+         }
+         std::cout << std::endl;
+     }
 
   tokeninfo.resize(all_tokens_vector.size());
   for (unsigned i = 0; i < all_tokens_vector.size(); i++) {

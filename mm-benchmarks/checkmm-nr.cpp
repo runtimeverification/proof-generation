@@ -2944,13 +2944,21 @@ inline bool ismmws(char const ch) {
 }
 
 // Determine if a token is a label token.
-bool islabeltoken(std::size_t const token) { return token & 1; }
+bool islabeltoken(std::size_t const token) {
+  return token == 46 || token == 70 || token == 78 || token == 86 ||
+         token == 94 || token == 102 || token == 118 || token == 126 ||
+         token == 134 || token == 142 || token == 158 || token == 190 ||
+         token == 198;
+}
 
 // Determine if a token is a math symbol token.
-inline bool ismathsymboltoken(std::size_t const token) { return token & 2; }
+inline bool ismathsymboltoken(std::size_t const token) {
+  return !(token == 8 || token == 48 || token == 56 || token == 104 ||
+           token == 144 || token == 160 || token == 168 || token > 200);
+}
 
 // Determine if a token consists solely of upper-case letters or question marks
-bool containsonlyupperorq(std::size_t token) { return token & 4; }
+bool containsonlyupperorq(std::size_t token) { return token == 179; }
 
 // Construct an Assertion from an Expression. That is, determine the
 // mandatory hypotheses and disjoint variable restrictions.
@@ -3336,7 +3344,7 @@ bool verifycompressedproof(std::size_t label, Assertion const &theorem,
 // Parse $p statement. Return true iff okay.
 bool parsep(std::size_t label) {
   Expression newtheorem;
-  bool const okay(readexpression('p', label, 4, &newtheorem)); // $=
+  bool const okay(readexpression('p', label, 168, &newtheorem)); // $=
   if (!okay) {
     return false;
   }
@@ -3532,7 +3540,7 @@ bool parsef(std::size_t label) {
               << " which is not an active variable" << std::endl;
     return false;
   }
-  if (getfloatinghyp(variable) != 0) {
+  if (getfloatinghyp(variable) != MAX_INT) {
     std::cerr << "The variable " << variable
               << " appears in a second $f statement " << label << std::endl;
     return false;
