@@ -177,7 +177,7 @@ def slice_database(
             cut_antecedents[axiom_get_label(statement)] = cast('AxiomaticStatement | Block', statement)
         elif isinstance(statement, (ProvableStatement, Block)):
             antecedents, consequent = deconstruct_provable(statement)
-            if (include and consequent.label in include) and (consequent.label not in exclude):
+            if (consequent.label in include) and (consequent.label not in exclude):
                 yield (
                     consequent.label,
                     supporting_database_for_provable(cut_antecedents, global_disjoints, consequent, antecedents),
@@ -251,7 +251,7 @@ def abbreviate_lemmas(statement: Statement) -> Statement:
             raise RuntimeError(f'Unexpected statement type, {type(statement)}')
 
 
-def collect_theorem_names(database: Database) -> set[str]:
+def collect_provable_names(database: Database) -> set[str]:
     ret = set()
 
     def collect(stmt: Statement) -> Statement:
@@ -310,17 +310,16 @@ def main() -> None:
         print('Parsing exclude database...', end='', flush=True)
         excluded_database = load_database(args.exclude, include_proof=False)
         print(' Done.')
-        exclude = collect_theorem_names(excluded_database)
+        exclude = collect_provable_names(excluded_database)
 
     deps = dependency_graph(input_database)
-    include: set[str] | None = transitive_closure(deps, ['goal'])
+    include: set[str] = transitive_closure(deps, ['goal'])
 
     if args.abbreviate_lemma_names:
         print('Abbreviating Lemma names...', end='', flush=True)
         input_database = input_database.bottom_up(abbreviate_lemmas)
         exclude = {abbreviation_index[lemma] for lemma in exclude if lemma in abbreviation_index}
-        if include:
-            include = {abbreviation_index[lemma] for lemma in include if lemma in abbreviation_index}
+        include = {abbreviation_index[lemma] for lemma in include if lemma in abbreviation_index}
         print(' Done.')
 
     for label, slice in slice_database(input_database, include=include, exclude=exclude):
