@@ -153,9 +153,7 @@ def construct_axiom(
     return Block((*antecedents, AxiomaticStatement(consequent.label, consequent.terms)))
 
 
-def slice_database(
-    input_database: Database, include: set[str] | None, exclude: set[str]
-) -> Iterator[tuple[str, Database]]:
+def slice_database(input_database: Database, include: set[str], exclude: set[str]) -> Iterator[tuple[str, Database]]:
     """Of the top-level statements, only floating statements are mandatory hypothesis.
     They are thus order sensitive.
     """
