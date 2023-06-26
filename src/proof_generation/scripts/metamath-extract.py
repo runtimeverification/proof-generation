@@ -50,10 +50,12 @@ def statements_get_constants(statements: Iterable[Statement]) -> set[str]:
     return ret
 
 
-def deconstruct_compressed_proof(proof: str) -> tuple[tuple[str, ...], str]:
+def deconstruct_compressed_proof(provable: ProvableStatement) -> tuple[tuple[str, ...], str]:
+    proof = provable.proof
+    assert proof, f'Proof is missing for {provable.label}'
     lemmas_begin = proof.find('(') + 1
     lemmas_end = proof.find(')', lemmas_begin)
-    assert 0 <= lemmas_begin < lemmas_end, 'Can only parse compressed proofs.'
+    assert 0 <= lemmas_begin < lemmas_end, f'Can only parse compressed proofs. {provable.label}'
     return (tuple(proof[lemmas_begin:lemmas_end].split()), proof[lemmas_end + 1 :])
 
 
@@ -65,9 +67,7 @@ def supporting_database_for_provable(
 ) -> Database:
     statements: list[Statement] = []
 
-    proof = provable.proof
-    assert proof, f'Proof is missing for {provable.label}'
-    needed_lemmas, _ = deconstruct_compressed_proof(proof)
+    needed_lemmas, _ = deconstruct_compressed_proof(provable)
 
     needed_constants = set()
     needed_metavariables = set()
@@ -153,7 +153,7 @@ def construct_axiom(
     return Block((*antecedents, AxiomaticStatement(consequent.label, consequent.terms)))
 
 
-def slice_database(input_database: Database) -> Iterator[tuple[str, Database]]:
+def slice_database(input_database: Database, include: set[str], exclude: set[str]) -> Iterator[tuple[str, Database]]:
     """Of the top-level statements, only floating statements are mandatory hypothesis.
     They are thus order sensitive.
     """
@@ -175,10 +175,11 @@ def slice_database(input_database: Database) -> Iterator[tuple[str, Database]]:
             cut_antecedents[axiom_get_label(statement)] = cast('AxiomaticStatement | Block', statement)
         elif isinstance(statement, (ProvableStatement, Block)):
             antecedents, consequent = deconstruct_provable(statement)
-            yield (
-                consequent.label,
-                supporting_database_for_provable(cut_antecedents, global_disjoints, consequent, antecedents),
-            )
+            if (consequent.label in include) and (consequent.label not in exclude):
+                yield (
+                    consequent.label,
+                    supporting_database_for_provable(cut_antecedents, global_disjoints, consequent, antecedents),
+                )
             cut_antecedents[consequent.label] = construct_axiom(antecedents, consequent)
         else:
             assert 'Unanticipated statement type', type(statement)
@@ -214,7 +215,7 @@ def abbreviate(name: str) -> str:
 
 def abbreviate_constructors(term: Term) -> Term:
     if isinstance(term, Metavariable):
-        return term
+        return Metavariable(abbreviate(term.name))
     elif isinstance(term, Application):
         return Application(abbreviate(term.symbol), term.subterms)
     else:
@@ -232,16 +233,15 @@ def abbreviate_lemmas(statement: Statement) -> Statement:
         new_label = abbreviate(statement.label)
 
         if isinstance(statement, FloatingStatement):
-            return FloatingStatement(new_label, statement.terms)
+            return FloatingStatement(new_label, terms_abbreviate_constructors(statement.terms))
         elif isinstance(statement, EssentialStatement):
             return EssentialStatement(new_label, terms_abbreviate_constructors(statement.terms))
         elif isinstance(statement, AxiomaticStatement):
             return AxiomaticStatement(new_label, terms_abbreviate_constructors(statement.terms))
         elif isinstance(statement, ProvableStatement):
-            proof = statement.proof
-            if proof:
+            if statement.proof:
                 lemmas: Iterable[str]
-                lemmas, lemma_applications = deconstruct_compressed_proof(proof)
+                lemmas, lemma_applications = deconstruct_compressed_proof(statement)
                 lemmas = (abbreviate(lemma) for lemma in lemmas)
                 proof = '( {} ) {}'.format(' '.join(lemmas), lemma_applications)
             return ProvableStatement(new_label, terms_abbreviate_constructors(statement.terms), proof=proof)
@@ -249,29 +249,81 @@ def abbreviate_lemmas(statement: Statement) -> Statement:
             raise RuntimeError(f'Unexpected statement type, {type(statement)}')
 
 
+def collect_provable_names(database: Database) -> set[str]:
+    ret = set()
+
+    def collect(stmt: Statement) -> Statement:
+        nonlocal ret
+        if isinstance(stmt, ProvableStatement):
+            ret.add(stmt.label)
+        return stmt
+
+    database.bottom_up(collect)
+    return ret
+
+
+def dependency_graph(database: Database) -> dict[str, tuple[str, ...]]:
+    ret = {}
+
+    def collect(stmt: Statement) -> Statement:
+        nonlocal ret
+        if isinstance(stmt, ProvableStatement):
+            lemmas, _ = deconstruct_compressed_proof(stmt)
+            ret[stmt.label] = lemmas
+        return stmt
+
+    database.bottom_up(collect)
+
+    return ret
+
+
+def transitive_closure(dependency_graph: dict[str, tuple[str, ...]], include: list[str]) -> set[str]:
+    unprocessed_lemmas: list[str] = include
+    ret: set[str] = set()
+    while unprocessed_lemmas:
+        lemma, *unprocessed_lemmas = unprocessed_lemmas
+        if lemma in dependency_graph and lemma not in ret:
+            unprocessed_lemmas += dependency_graph[lemma]
+        ret.add(lemma)
+    return ret
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument('input', help='Input Metamath file')
-    parser.add_argument('output', help='Output Metamath directory')
-    parser.add_argument('--abbreviate-lemma-names', action=argparse.BooleanOptionalAction)
+    parser.add_argument('input', help='Input Metamath database path')
+    parser.add_argument('output', help='Output directory')
+    parser.add_argument('--exclude', help='Path to metatmath database containing lemmas to exclude')
+    parser.add_argument('--abbreviate-lemma-names', required=False, action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
-    print('Parsing database...', end='')
+    print('Parsing database...', end='', flush=True)
     input_database = load_database(args.input, include_proof=True)
     print(' Done.')
 
     output_dir = Path(args.output)
     output_dir.mkdir()
 
+    exclude: set[str] = set()
+    if args.exclude:
+        print('Parsing exclude database...', end='', flush=True)
+        excluded_database = load_database(args.exclude, include_proof=False)
+        print(' Done.')
+        exclude = collect_provable_names(excluded_database)
+
+    deps = dependency_graph(input_database)
+    include: set[str] = transitive_closure(deps, ['goal'])
+
     if args.abbreviate_lemma_names:
-        print('Abbreviating Lemma names...', end='')
+        print('Abbreviating Lemma names...', end='', flush=True)
         input_database = input_database.bottom_up(abbreviate_lemmas)
+        exclude = {abbreviation_index[lemma] for lemma in exclude if lemma in abbreviation_index}
+        include = {abbreviation_index[lemma] for lemma in include if lemma in abbreviation_index}
         print(' Done.')
 
-    for label, slice in slice_database(input_database):
+    for label, slice in slice_database(input_database, include=include, exclude=exclude):
         with open(output_dir / (label + '.mm'), 'w') as output_file:
             Encoder.encode(output_file, slice)
-        print(f'Extracted {label}.', end='\x1b[2K\r')
+        print(f'Extracted {label}.', end='\x1b[2K\r', flush=True)
 
 
 if __name__ == '__main__':
