@@ -1,0 +1,9 @@
+.idea
+.vscode
+build
+cmake-build-debug
+a.out
+checkmm
+checkmm-nr
+checkmm-nr.dSYM
+.DS_Store
