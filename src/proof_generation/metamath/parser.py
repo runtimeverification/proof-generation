@@ -153,7 +153,7 @@ database_parser = Lark(
     syntax,
     start='database',
     parser='lalr',
-    lexer='standard',
+    lexer='basic',
     propagate_positions=True,
 )
 
@@ -161,7 +161,7 @@ statement_parser = Lark(
     syntax,
     start='stmt',
     parser='lalr',
-    lexer='standard',
+    lexer='basic',
     propagate_positions=True,
 )
 
