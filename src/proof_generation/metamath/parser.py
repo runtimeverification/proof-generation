@@ -4,7 +4,7 @@ import os
 import re
 from typing import TYPE_CHECKING
 
-from lark import Lark, Transformer
+from lark import Lark, Token, Transformer
 
 from .ast import (
     Application,
@@ -24,12 +24,10 @@ from .ast import (
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from lark import Token
-
     from .ast import Statement, Term, Terms
 
 
-class ASTTransformer(Transformer[BaseAST]):
+class ASTTransformer(Transformer[Token, BaseAST]):
     def __init__(self, metavariables: Iterable[str] = ()) -> None:
         super().__init__()
         self.metavariables = list(metavariables)

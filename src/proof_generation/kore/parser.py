@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from lark import Lark, Transformer
+from lark import Lark, Token, Transformer
 from lark.visitors import v_args
 
 from .ast import (
@@ -27,7 +27,7 @@ from .ast import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from lark import Token, Tree
+    from lark import Tree
 
     from .ast import Sentence, Sort
 
@@ -39,7 +39,7 @@ def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @v_args(tree=True)
-    def wrapper(self: Transformer[BaseAST[Any]], tree: Tree) -> Any:
+    def wrapper(self: Transformer[Token, BaseAST[Any]], tree: Tree) -> Any:
         node = f(self, tree.children)
         if isinstance(node, BaseAST) and not tree.meta.empty:
             node.set_position(
@@ -53,7 +53,7 @@ def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-class ASTTransformer(Transformer[BaseAST[Any]]):
+class ASTTransformer(Transformer[Token, BaseAST[Any]]):
     def identifier(self, args: list[Token]) -> str:
         assert len(args) == 1
         assert isinstance(args[0].value, str)
