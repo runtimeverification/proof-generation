@@ -2,17 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lark import Lark, Transformer
+from lark import Lark, Token, Transformer
 
 from .ast import AndTactical, AtomicTactical, Options, OrTactical, PlusTactical, StarTactical, Tactical
 
 if TYPE_CHECKING:
     from typing import Any
 
-    from lark import Token
 
-
-class ASTTransformer(Transformer[Tactical]):
+class ASTTransformer(Transformer[Token, Tactical]):
     def token(self, args: list[Token]) -> str:
         assert isinstance(args[0].value, str)
         return args[0].value
