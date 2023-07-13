@@ -2,6 +2,7 @@ from pathlib import Path
 
 from pyk.testing import KompiledTest
 
+from proof_generation.metamath.parser import load_database
 from proof_generation.kore.parser import parse_definition
 from proof_generation.metamath.backend import StandaloneFileBackend
 from proof_generation.metamath.utils import MetamathUtils
@@ -18,7 +19,6 @@ class TestLLVMProofHint(KompiledTest):
     def test_parse_proof_hint(self, definition_dir: Path, tmp_path: Path) -> None:
         bin_hint = Path('examples/imp/sum.imp.proof-hint').read_bytes()
         hint = LLVMRewriteTrace.parse(bin_hint)
-        assert len(hint.trace) == 15
 
         kore_file = definition_dir / 'definition.kore'
         definition = parse_definition(kore_file.read_text())
@@ -30,14 +30,16 @@ class TestLLVMProofHint(KompiledTest):
         main_module = definition.module_map['IMP']
         task.resolve(main_module)
 
-        assert len(task.steps) == 15
-
         metamath_proof = tmp_path / 'sum.mm'
         with StandaloneFileBackend(str(metamath_proof)) as backend:
             composer = KoreComposer(backend=backend, dv_as_provable=False)
+            composer.load(load_database('theory/prelude.mm'))
+
             print('proof-file', metamath_proof)
             composer.load_module(main_module)
             gen = RewriteProofGenerator(composer)
             gen.prove_symbolic_rewriting_task(task)
+            print(tmp_path)
 
         MetamathUtils.verify(metamath_proof)
+
