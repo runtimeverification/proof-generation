@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from lark import Lark, Transformer
+from lark import Lark, Token, Transformer
 from lark.visitors import v_args
 
 from .ast import (
@@ -27,7 +27,7 @@ from .ast import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from lark import Token, Tree
+    from lark import Tree
 
     from .ast import Sentence, Sort
 
@@ -39,7 +39,7 @@ def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @v_args(tree=True)
-    def wrapper(self: Transformer[BaseAST[Any]], tree: Tree) -> Any:
+    def wrapper(self: Transformer[Token, BaseAST[Any]], tree: Tree) -> Any:
         node = f(self, tree.children)
         if isinstance(node, BaseAST) and not tree.meta.empty:
             node.set_position(
@@ -53,26 +53,31 @@ def meta_info(f: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-class ASTTransformer(Transformer[BaseAST[Any]]):
+class ASTTransformer(Transformer[Token, BaseAST[Any]]):
     def identifier(self, args: list[Token]) -> str:
+        assert len(args) == 1
         assert isinstance(args[0].value, str)
         return args[0].value
 
     def symbol_id(self, args: list[Token]) -> str:
+        assert len(args) == 1
         assert isinstance(args[0].value, str)
         return args[0].value
 
     def set_var_id(self, args: list[Token]) -> str:
+        assert len(args) == 1
         assert isinstance(args[0].value, str)
         return args[0].value
 
     def string_literal(self, args: list[Token]) -> str:
+        assert len(args) == 1
         assert isinstance(args[0].value, str)
         literal = args[0].value
         assert literal.startswith('"') and literal.endswith('"')
         return literal[1:-1]
 
     def ml_symbols(self, args: list[Token]) -> str:
+        assert len(args) == 1
         assert isinstance(args[0].value, str)
         return args[0].value
 
@@ -96,6 +101,8 @@ class ASTTransformer(Transformer[BaseAST[Any]]):
         return SortVariable(str(args[0]))
 
     def sort_variables(self, args: list[SortVariable]) -> list[SortVariable]:
+        if args == [None]:
+            return []
         return args
 
     @meta_info
@@ -108,12 +115,16 @@ class ASTTransformer(Transformer[BaseAST[Any]]):
             return SortInstance(sort_id, sort_arguments)
 
     def sorts(self, args: list[Sort]) -> list[Sort]:
+        if args == [None]:
+            return []
         return args
 
     def attribute(self, args: list[Application]) -> Application:
         return args[0]
 
     def attributes(self, args: list[Application]) -> list[Application]:
+        if args == [None]:
+            return []
         return args
 
     @meta_info
@@ -162,6 +173,8 @@ class ASTTransformer(Transformer[BaseAST[Any]]):
         return args[0]
 
     def patterns(self, args: list[Pattern]) -> list[Pattern]:
+        if args == [None]:
+            return []
         return args
 
     @meta_info
@@ -285,7 +298,7 @@ definition_parser = Lark(
     syntax,
     start='definition',
     parser='lalr',
-    lexer='standard',
+    lexer='basic',
     propagate_positions=True,
 )
 
@@ -294,7 +307,7 @@ pattern_parser = Lark(
     syntax,
     start='pattern',
     parser='lalr',
-    lexer='standard',
+    lexer='basic',
     propagate_positions=True,
 )
 
@@ -303,7 +316,7 @@ axiom_parser = Lark(
     syntax,
     start='axiom',
     parser='lalr',
-    lexer='standard',
+    lexer='basic',
     propagate_positions=True,
 )
 
@@ -312,7 +325,7 @@ module_parser = Lark(
     syntax,
     start='module',
     parser='lalr',
-    lexer='standard',
+    lexer='basic',
     propagate_positions=True,
 )
 
