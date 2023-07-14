@@ -2,60 +2,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass
-from enum import IntEnum
 from typing import TYPE_CHECKING, cast
+
+from .instruction import Instruction
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
-
-class Instruction(IntEnum):
-    List = 1
-
-    # Patterns
-    EVar = 2
-    SVar = 3
-    Symbol = 4
-    Implication = 5
-    Application = 6
-    Mu = 7
-    Exists = 8
-
-    # Meta Patterns
-    MetaVar = 9
-    ESubst = 10
-    SSubst = 11
-
-    # Axiom Schemas
-    Prop1 = 12
-    Prop2 = 29  # TODO: Fix numbering
-    Prop3 = 30  # TODO: Fix numbering
-    Quantifier = 13
-    PropagationOr = 14
-    PropagationExists = 15
-    PreFixpoint = 16
-    Existance = 17
-    Singleton = 18
-
-    # Inference rules
-    ModusPonens = 19
-    Generalization = 20
-    Frame = 21
-    Substitution = 22
-    KnasterTarski = 23
-
-    # Meta Incference rules
-    InstantiateSchema = 24
-
-    # Stack Manipulation
-    Pop = 25
-
-    # Memory Manipulation
-    Save = 26
-    Load = 27
-
-    # Journal Manipulation
-    Publish = 28
 
 
 class Pattern:
@@ -285,86 +237,3 @@ def verify(gamma: Iterator[int], proof: Iterator[int]) -> tuple[Stack, Memory, J
     stack = []
     execute_instructions(proof, stack, memory, journal)
     return (stack, memory, journal)
-
-
-# ----------------------------------------------------------------------------
-# --------------------------- Testing Harness --------------------------------
-# ----------------------------------------------------------------------------
-
-
-def test_construct_phi_implies_phi() -> None:
-    # fmt: off
-    proof : list[int] = [
-              int(Instruction.List), 0, # Fresh
-              int(Instruction.List), 0, # Positive
-              int(Instruction.List), 0, # Negative
-              int(Instruction.List), 0, # Context
-              int(Instruction.MetaVar), 0, # Stack: Phi
-              int(Instruction.Save),    # @ 0
-              int(Instruction.Load), 0, # Phi ; Phi
-              int(Instruction.Implication), # Phi -> Phi
-            ]
-    # fmt: on
-    phi = MetaVar(0, (), (), (), ())
-    stack, memory, journal = verify(iter([]), iter(proof[0:10]))
-    assert stack == [phi], stack
-    stack, memory, journal = verify(iter([]), iter(proof))
-    assert stack == [Implication(phi, phi)], stack
-
-
-def test_prove_phi_implies_phi() -> None:
-    # fmt: off
-    proof : list[int] = [
-              int(Instruction.Prop1),               # (p1: phi0 -> (phi1 -> phi0))
-
-              int(Instruction.List), 0,
-              int(Instruction.List), 0,
-              int(Instruction.List), 0,
-              int(Instruction.List), 0,
-              int(Instruction.MetaVar), 1,          # Stack: p1 ; phi1
-              int(Instruction.Save),
-
-              int(Instruction.List), 0,
-              int(Instruction.List), 0,
-              int(Instruction.List), 0,
-              int(Instruction.List), 0,
-              int(Instruction.MetaVar), 0,          # Stack: p1 ; phi1 ; phi0
-              int(Instruction.Save),
-
-              int(Instruction.InstantiateSchema),   # Stack: (p2: phi0 -> (phi0 -> phi0))
-
-              int(Instruction.Prop1),               # Stack: p2 ; p1
-              int(Instruction.Load), 0,
-              int(Instruction.Load), 1,
-              int(Instruction.Load), 1,
-              int(Instruction.Implication),         # Stack: p2 ; p1 ; phi1; phi0 -> phi0
-              int(Instruction.Save),
-
-              int(Instruction.InstantiateSchema),   # Stack: p2 ; (p3: phi0 -> (phi0 -> phi0) -> phi0)
-
-              int(Instruction.Prop2),
-              int(Instruction.Load), 0,
-              int(Instruction.Load), 2,
-              int(Instruction.InstantiateSchema),
-              int(Instruction.List), 0,
-              int(Instruction.List), 0,
-              int(Instruction.List), 0,
-              int(Instruction.List), 0,
-              int(Instruction.MetaVar), 2,
-              int(Instruction.Load), 1,
-              int(Instruction.InstantiateSchema),
-
-
-              int(Instruction.ModusPonens),
-              int(Instruction.ModusPonens),         # Stack: phi0 -> phi0
-
-              int(Instruction.Publish),
-            ]
-    # fmt: on
-    phi0 = MetaVar(0, (), (), (), ())
-    stack, memory, journal = verify(iter([]), iter(proof[0:55]))
-    assert stack == [Proved(Implication(phi0, phi0))], stack
-
-
-test_construct_phi_implies_phi()
-test_prove_phi_implies_phi()
