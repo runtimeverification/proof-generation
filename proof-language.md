@@ -346,14 +346,31 @@ Verification
 
 The verifier takes two inputs[^1]:
 
-1.  `theory` A file with instructions to construct patterns corresponding to the
-    theory $\Gamma$. This is public.
+1.  `theory` A file with instructions to construct patterns
+    and place them on the stack to represent the theory $\Gamma$.
+    This is public.
+
+    All patterns on the stack after running this file are considered axioms.
+    Before verification of the proof, these are moved to the first free memory locations (That is, after the notation).
+
+    All patterns placed in memory using the `Save` instruction may be used as notation.
+    Note that these patterns are not considered proved, and can only be used to buildother patterns.
+
+    TODO: We should review this. Do we want a specific instruction for publishing notation?
+
 2.  `lemmas`: A file with instructions to construct patterns corresponding the
-    lemmas previously proved in other proof files. An aggregation curcuit will
+    lemmas previously proved in other proof files. An aggregation circuit will
     need to check that the theory used by that proof is a subset of the theory
     for the corrent proof.
-3.  `proof`: A file with instructions to construct proofs about the theory. This
-    file is private, and should be rolled-up by ZK.
+
+    All patterns on the stack after running this file are considered proved lemmas.
+
+    TODO: Should we allow notation from these as well?
+    If we do, composing proofs may get difficult---notation may accumulate
+    forcing the checker to use a lot more memory than needed.
+
+3.  `proof`: A file with instructions to construct proofs about the theory.
+    This file is private, and should be rolled-up by ZK.
 
 The verifier consumes the theory file. The stack should now only include `Pattern` terms.
 These are moved into the initial entries of the memory, as `Proof` terms.
@@ -370,13 +387,6 @@ Composition
 ===========
 
 We may compose proofs together, by allowing proofs to reuse results contained in another proofs journal.
-A subset of the contents of the journal of one proof
-may be included in the input file of the other **so long as **
+A subset of the contents of the journal of a proof $p$ may be included as the input lemmas of another proof $q$,
+**so long as** the gamma of $p$ is subset of gamma of $q$.
 
-Notation and Lemmas
-===================
-
-Lemmas are represented as meta-theorems---theorems that use metavariables.
-Through the `Save` instruction its proof can be reused multiple times and with different instantiations of metavaraibles.
-
-Notation is handled using set variables the `Substitution` proof rule.
