@@ -217,6 +217,10 @@ def execute_instructions(proof: Iterator[int], stack: Stack, memory: Memory, jou
                 index = next(proof)
                 stack.append(memory[index])
 
+            case Instruction.Publish:
+                assert isinstance(stack[-1], Proved)
+                journal.append(stack[-1])
+
             case _:
                 raise AssertionError('Unknown Instruction: %s' % instr)
 
