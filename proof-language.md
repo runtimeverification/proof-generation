@@ -203,16 +203,15 @@ class PropagationOr(Proof):
 ```
 
 
-### Meta Inference rule
+### Meta Variable Instantiation
 
-Using a single rule of meta inference, we may instantiate metavariables.
-Note that we do not need to instantiate metavariables immediately.
+Using a single rule of meta inference, we may instantiate metatheorems.
 This allows us to prove theorem schemas, such as $\phi \limplies \phi$.
 
 ```python
 class InstantiateSchema(Proof):
     subproof : Proof
-    metavar: MetaVar
+    metavar_id: uint32
     instantiation: Pattern
 
     def well_formed():
@@ -223,6 +222,24 @@ class InstantiateSchema(Proof):
     def conclusion():
         return subproof.meta_substitute(metavar, instantiation)
 ```
+
+We may also use metavariables to represent notation.
+
+```python
+class InstantiateNotation(Pattern):
+    notation: Pattern
+    metavar_id: uint32
+    instantiation: Pattern
+
+    def well_formed():
+        # Fails if the instantiation does not meet the
+        # disjoint/positive/freshness/application ctx
+        # criterea of the metavar.
+
+    def conclusion():
+        return notation.meta_substitute(metavar, instantiation)
+```
+
 
 ### Ordinary inference
 
@@ -291,8 +308,11 @@ Otherwise, execution aborts, and verification fails.
 
 * Meta inference
 
-    `InstantiateSchema`
-    : Consume a `Proof`, `MetaVar` and `Pattern` off the stack, and push the instantiated proof term to the stack.
+    `InstantiateSchema <metavar_id:uint32>`
+    : Consume a `Proof` and `Pattern` off the stack, and push the instantiated proof term to the stack.
+
+    `InstantiateNotation <metavar_id:uint32>`
+    : Consume two `Pattern`s off the stack, and push the instantiated proof term to the stack.
 
 *   Inference rules
 
