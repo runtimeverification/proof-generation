@@ -14,7 +14,7 @@ def debug(msg: str) -> None:
 
 
 def run_command(command: list[str], **kwargs: Any) -> subprocess.Popen:
-    command_str = ' '.join([shlex.quote(frag) for frag in command])
+    command_str = shlex.join(command)
     debug(f"{ANSI.in_gray('+ ' + command_str)}")
     return subprocess.Popen(command, **kwargs)
 

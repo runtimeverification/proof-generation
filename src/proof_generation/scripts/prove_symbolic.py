@@ -14,7 +14,7 @@ from ..utils.ansi import ANSI
 
 
 def run_command(command: list[str], **kwargs: Any) -> subprocess.Popen:
-    command_str = ' '.join([shlex.quote(frag) for frag in command])
+    command_str = shlex.join(command)
     print(f"{ANSI.in_gray('+ ' + command_str)}", file=sys.stderr)
     return subprocess.Popen(command, **kwargs)
 
