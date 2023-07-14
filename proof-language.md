@@ -51,9 +51,9 @@ memory**.
 ## Goals:
 
 -   No upfront parsing cost.
--   Easily verifiable using ZK
+-   Easily verifiable using ZK.
 -   Low memory usage.
--   Composability
+-   Composability.
 
 
 ## Non-goals:
@@ -91,7 +91,7 @@ abstract class Pattern(Term):
         # MetaVars are introduced later.
     ...
 
-abstract class Proof:
+abstract class Proof(Term):
     abstract def conclusion:
         ...
 ```
@@ -106,28 +106,28 @@ and a representation for various "meta" patterns.
 ### Standard patterns
 
 ```python
-class Symbol(Pattern)
+class Symbol(Pattern):
     name: uint32
 
-class SVar(Pattern)
+class SVar(Pattern):
     name: uint32
 
-class EVar(Pattern)
+class EVar(Pattern):
     name: uint32
 
-class Implication(Pattern)
+class Implication(Pattern):
     left: Pattern
     right: Pattern
 
-class Application(Pattern)
+class Application(Pattern):
     left: Pattern
     right: Pattern
 
-class Exists(Pattern)
+class Exists(Pattern):
     var: EVar
     subpattern : Pattern
 
-class Mu(Pattern)
+class Mu(Pattern):
     var: SVar
     subpattern : Pattern
 
@@ -142,7 +142,7 @@ Meta-patterns allow us to represent axiom- and theorem-schemas through the use
 of metavariables:
 
 ```python
-class MetaVar : Pattern
+class MetaVar(Pattern):
     name: uint32
 
     # Meta-requirements that must be satisfied by any instantiation.
@@ -158,12 +158,12 @@ These may also be used by the well-formedness checks for `Proof`s.
 We also need to represent substitutions applied to `MetaVar`s.
 
 ```python
-class ESubst : Pattern
+class ESubst(Pattern):
     pattern: MetaVar
     var: EVar
     plug: Pattern
 
-class SSubst : Pattern 
+class SSubst(Pattern):
     pattern: MetaVar
     var: SVar
     plug: Pattern
@@ -179,19 +179,19 @@ Axiom schemas are `Proof`s that do not need any input arguments.
 They may use `MetaVar`s to represent their schematic nature.
 
 ```python
-class Lukaseiwicz : Proof
+class Lukaseiwicz(Proof):
     def conclusion():
         phi1 = MetaVar('phi1')
         return Implication(Implication(Implication(MetaVar(phi1) , ...)...)...)
 
-class Quantifier : Proof
+class Quantifier(Proof):
     def conclusion():
         x = EVar('#x')
         y = EVar('#y')
         phi = MetaVar('phi', fresh=[y])
         return Implication(ESubst(phi, x, y), Exists(x, phi))
 
-class PropagationOr : Proof
+class PropagationOr(Proof):
     def conclusion():
         hole = EVar('#hole')
         C = MetaVar(application_context=(EVar('#hole'),))
@@ -210,7 +210,7 @@ Note that we do not need to instantiate metavariables immediately.
 This allows us to prove theorem schemas, such as $\phi \limplies \phi$.
 
 ```python
-class InstantiateSchema : Proof
+class InstantiateSchema(Proof):
     subproof : Proof
     metavar: MetaVar
     instantiation: Pattern
@@ -227,14 +227,17 @@ class InstantiateSchema : Proof
 ### Ordinary inference
 
 ```python
-class ModusPonens: Proof
+class ModusPonens(Proof):
     premise_left: Implication
     premise_right: Pattern
 
     def conclusion():
         return premise_left.right
 
-class Generalization: Proof
+    def well_formed():
+        assert premise_right == premise_left.left
+
+class Generalization(Proof):
     premise: Implication
 
     def phi1():
@@ -246,7 +249,7 @@ class Generalization: Proof
         return Implication(ESubst(MetaVar(phi), EVar(x), EVar(y)), Exists(EVar(x), MetaVar(phi)))
 
     def well_formed():
-        EVar(x) is fresh in phi1()
+        assert EVar(x) is fresh in phi1()
 ...
 ```
 
