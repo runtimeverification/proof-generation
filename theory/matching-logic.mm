@@ -345,7 +345,7 @@ $)
 $( Proof System Part 1 (7 rules) $)
 $( FOL Reasoning $)
 
-mer $a |- ( \imp ( \imp ( \imp ( \imp ( \imp ph0 ph1 ) ( \imp ( \not ph2 ) ( \not ph3 ) ) ) ph2 ) ph4 ) ( \imp ( \imp ph4 ph0 ) ( \imp ph3 ph0 ) ) ) $.
+mer $a |- ( \imp ( \imp ( \imp ( \imp ( \imp ( \imp ph0 ph1 ) ( \imp ( \imp ( \not ph2 ) ( \not ph3 ) ) ph2 ) ) ph4 ) ( \imp ( \imp ph4 ph0 ) ( \imp ph3 ph0 ) ) ) ( \imp ( \imp ph4 ph0 ) ( \imp ph3 ph0 ) ) ) ) $.
 
 $( To be replaced by lemmas $)
 proof-rule-prop-1 $a |- ( \imp ph0 ( \imp ph1 ph0 ) ) $.

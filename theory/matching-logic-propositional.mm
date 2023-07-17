@@ -1368,15 +1368,9 @@ $(
     ch -> ph2
     th -> ph3
     ta -> ph4
+    Just to try out postfix translation and applying mer, does not work right now for some reason
 $)
-
-$( Step 3 of Meredith's proof of Lukasiewicz axioms from his sole axiom.
-    (The step numbers refer to Meredith's original paper.)  (Contributed by
-    NM, 14-Dec-2002.)  (Proof modification is discouraged.)
-    (New usage is discouraged.) $)
-merlem1 $p |- ( ( ( ph2 \imp ( \not ph0 \imp ph1 ) ) \imp ph4 ) \imp ( ph0 \imp ph4 ) ) $= ? $.
-
-mer-test $p |- ( \imp ( \imp ( \imp ( \imp ( \imp ( \not ph0 ) ph1 ) ( \imp ( \not ( \imp ( \not ph4 ) ( \not ph2 ) ) ) ( \not ( \not ( \not ( \imp ( \not ph0 ) ph1 ) ) ) ) ) ) ( \imp ( \not ph4 ) ( \not ph2 ) ) ) ph4 ) ( \imp ( \imp ph4 ( \not ph0 ) ) ( \not ( \not ( \imp ( \not ph0 ) ph1 ) ) ) ( \not ph0 ) ) ) $= ? $.
+mer-test $p |- ( \imp ( \imp ( \imp ( \imp ( \imp ( \imp ph2 ph2 ) ( \imp ( \imp ( \not ( \not ( \not ph0 ) ) ) ( \not ph0 ) ) ( \not ( \not ph0 ) ) ) ) ( \imp ( \not ( \not ph0 ) ) ( \not ( \not ph0 ) ) ) ) ph1 ) ( \imp ( \imp ph1 ph2 ) ( \imp ph0 ph2 ) ) ) ) $= ? $.
 
 prop-test $p |- ( \imp ( \not ( ( \not ph0 ) \imp ph1 ) ) ph0 ) $= ? $.
 
