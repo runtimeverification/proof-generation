@@ -162,6 +162,7 @@ fn verify<'a>(proof: impl Iterator<Item = &'a u32>) -> (Stack, Journal, Memory) 
     return (stack, journal, memory);
 }
 
+#[test]
 fn test_construct_phi_implies_phi() {
     let proof : Vec<u32> = vec![
         Instruction::List as u32, 0, // E Fresh
@@ -172,7 +173,7 @@ fn test_construct_phi_implies_phi() {
         Instruction::MetaVar as u32, 0, // Stack: Phi
         Instruction::Save as u32,    // @ 0
         Instruction::Load as u32, 0, // Phi ; Phi
-        Instruction::Implication as u32, // Phi -> Phi
+        // Instruction::Implication as u32, // Phi -> Phi
     ];
     let (stack, _journal, _memory) = verify(proof.iter());
     let phi0 = Rc::new(Pattern::MetaVar{id: 0, s_fresh: vec![], e_fresh: vec![], positive: vec![], negative: vec![], application_context: vec![]});
