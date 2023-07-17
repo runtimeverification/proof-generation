@@ -31,6 +31,8 @@ jobs:
         uses: Gr1N/setup-poetry@v8
       - name: 'Run unit tests'
         run: make cov-unit
+      - name: 'Run rust tests'
+        run: cargo test
 
   integration-tests:
     needs: code-quality-checks
