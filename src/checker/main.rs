@@ -140,6 +140,57 @@ fn execute_instructions<'a>(
     mut proof: impl Iterator<Item = &'a u32>,
     stack: &mut Stack, memory: &mut Memory, journal: &mut Journal)
 {
+    let phi0 = Rc::new(Pattern::MetaVar {
+        id: 0,
+        e_fresh: vec![],
+        s_fresh: vec![],
+        positive: vec![],
+        negative: vec![],
+        application_context: vec![]
+    });
+    let phi1 = Rc::new(Pattern::MetaVar {
+        id: 1,
+        e_fresh: vec![],
+        s_fresh: vec![],
+        positive: vec![],
+        negative: vec![],
+        application_context: vec![]
+    });
+    let phi2 = Rc::new(Pattern::MetaVar {
+        id: 2,
+        e_fresh: vec![],
+        s_fresh: vec![],
+        positive: vec![],
+        negative: vec![],
+        application_context: vec![]
+    });
+
+    let prop1 = Rc::new(Pattern::Implication {
+        left: Rc::clone(&phi0),
+        right: Rc::new(Pattern::Implication {
+            left: Rc::clone(&phi1),
+            right: Rc::clone(&phi0)
+        })
+    });
+
+    let prop2 = Rc::new(Pattern::Implication {
+        left: Rc::new(Pattern::Implication {
+            left: Rc::clone(&phi0),
+            right: Rc::new(Pattern::Implication {
+                left: Rc::clone(&phi1),
+                right: Rc::clone(&phi2)
+            })
+        }),
+        right: Rc::new(Pattern::Implication {
+            left: Rc::new(
+                Pattern::Implication { left: Rc::clone(&phi0), right: Rc::clone(&phi1) }
+            ),
+            right: Rc::new(
+                Pattern::Implication { left: Rc::clone(&phi0), right: Rc::clone(&phi2) }
+            )
+        })
+    });
+
     while let Some(instr_u32) = proof.next() {
         match Instruction::from(*instr_u32) {
             Instruction::List => {
@@ -178,78 +229,10 @@ fn execute_instructions<'a>(
                 }
             }
             Instruction::Prop1 => {
-                let phi0 = Rc::new(Pattern::MetaVar {
-                    id: 0,
-                    e_fresh: vec![],
-                    s_fresh: vec![],
-                    positive: vec![],
-                    negative: vec![],
-                    application_context: vec![]
-                });
-                let phi1 = Rc::new(Pattern::MetaVar {
-                    id: 1,
-                    e_fresh: vec![],
-                    s_fresh: vec![],
-                    positive: vec![],
-                    negative: vec![],
-                    application_context: vec![]
-                });
-
-                let prop1 = Pattern::Implication {
-                    left: Rc::clone(&phi0),
-                    right: Rc::new(Pattern::Implication {
-                        left: Rc::clone(&phi1),
-                        right: Rc::clone(&phi0)
-                    })
-                };
-
-                stack.push(Term::Proved(Rc::new(prop1)));
+                stack.push(Term::Proved(Rc::clone(&prop1)));
             }
             Instruction::Prop2 => {
-                let phi0 = Rc::new(Pattern::MetaVar {
-                    id: 0,
-                    e_fresh: vec![],
-                    s_fresh: vec![],
-                    positive: vec![],
-                    negative: vec![],
-                    application_context: vec![]
-                });
-                let phi1 = Rc::new(Pattern::MetaVar {
-                    id: 1,
-                    e_fresh: vec![],
-                    s_fresh: vec![],
-                    positive: vec![],
-                    negative: vec![],
-                    application_context: vec![]
-                });
-                let phi2 = Rc::new(Pattern::MetaVar {
-                    id: 2,
-                    e_fresh: vec![],
-                    s_fresh: vec![],
-                    positive: vec![],
-                    negative: vec![],
-                    application_context: vec![]
-                });
-
-                let prop2 = Pattern::Implication {
-                    left: Rc::new(Pattern::Implication {
-                        left: Rc::clone(&phi0),
-                        right: Rc::new(Pattern::Implication {
-                            left: Rc::clone(&phi1),
-                            right: Rc::clone(&phi2)
-                        })
-                    }),
-                    right: Rc::new(Pattern::Implication {
-                        left: Rc::new(
-                            Pattern::Implication { left: Rc::clone(&phi0), right: Rc::clone(&phi1) }
-                        ),
-                        right: Rc::new(
-                            Pattern::Implication { left: Rc::clone(&phi0), right: Rc::clone(&phi2) }
-                        )
-                    })
-                };
-
-                stack.push(Term::Proved(Rc::new(prop2)));
+                stack.push(Term::Proved(Rc::clone(&prop2)));
             }
             Instruction::ModusPonens => {
                 match pop_stack_proved(stack).as_ref() {
@@ -354,8 +337,11 @@ fn test_phi_implies_phi() {
         Instruction::ModusPonens as u32,         // Stack: phi0 -> phi0
     ];
     let (stack, _journal, _memory) = verify(proof.iter());
-
-    println!("{}, {:?}", stack.len(), stack[0]);
+    let phi0 = Rc::new(Pattern::MetaVar{id: 0, s_fresh: vec![], e_fresh: vec![], positive: vec![], negative: vec![], application_context: vec![]});
+    assert_eq!(stack, vec![Term::Proved(Rc::new(Pattern::Implication{
+        left: Rc::clone(&phi0),
+        right: Rc::clone(&phi0)
+    }))])
 }
 
 fn main() {
