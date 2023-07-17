@@ -244,7 +244,7 @@ fn execute_instructions<'a>(
                             Pattern::Implication { left: Rc::clone(&phi0), right: Rc::clone(&phi1) }
                         ),
                         right: Rc::new(
-                            Pattern::Implication { left: Rc::clone(&phi0), right: Rc::clone(&phi1) }
+                            Pattern::Implication { left: Rc::clone(&phi0), right: Rc::clone(&phi2) }
                         )
                     })
                 };
@@ -314,7 +314,7 @@ fn test_phi_implies_phi() {
         Instruction::List as u32, 0,
         Instruction::List as u32, 0,
         Instruction::MetaVar as u32, 1,          // Stack: p1 ; phi1
-        Instruction::Save as u32,
+        Instruction::Save as u32,                // phi1 save at 0
 
         Instruction::List as u32, 0,
         Instruction::List as u32, 0,
@@ -322,25 +322,40 @@ fn test_phi_implies_phi() {
         Instruction::List as u32, 0,
         Instruction::List as u32, 0,
         Instruction::MetaVar as u32, 0,          // Stack: p1 ; phi1 ; phi0
-        Instruction::Save as u32,
+        Instruction::Save as u32,                // phi0 save at 1
 
         Instruction::InstantiateSchema as u32,   // Stack: (p2: phi0 -> (phi0 -> phi0))
 
         Instruction::Prop1 as u32,               // Stack: p2 ; p1
-        Instruction::Load as u32, 0,
-        Instruction::Load as u32, 1,
-        Instruction::Load as u32, 1,
+        Instruction::Load as u32, 0,             // Stack: p2 ; p1 ; phi1
+        Instruction::Load as u32, 1,             // Stack: p2 ; p1 ; phi0
+        Instruction::Load as u32, 1,             // Stack: p2 ; p1 ; phi0 ; phi0
         Instruction::Implication as u32,         // Stack: p2 ; p1 ; phi1; phi0 -> phi0
 
-        Instruction::Save as u32,
+        Instruction::Save as u32,                // phi0 -> phi0 save at 3
 
         Instruction::InstantiateSchema as u32,   // Stack: p2 ; (p3: phi0 -> (phi0 -> phi0) -> phi0)
 
+        Instruction::Prop2 as u32,               // Stack: p2 ; p3; (p4: (phi0 -> (phi1 -> phi2)) -> ((phi0 -> phi1) -> (phi0 -> phi2))
+        Instruction::Load as u32, 0,
+        Instruction::Load as u32, 2,
+        Instruction::InstantiateSchema as u32,
 
+        Instruction::List as u32, 0,
+        Instruction::List as u32, 0,
+        Instruction::List as u32, 0,
+        Instruction::List as u32, 0,
+        Instruction::List as u32, 0,
+        Instruction::MetaVar as u32, 2,
+        Instruction::Load as u32, 1,
+        Instruction::InstantiateSchema as u32,
+
+        Instruction::ModusPonens as u32,
+        Instruction::ModusPonens as u32,         // Stack: phi0 -> phi0
     ];
     let (stack, _journal, _memory) = verify(proof.iter());
 
-    println!("{}, {:?}", stack.len(), stack[1]);
+    println!("{}, {:?}", stack.len(), stack[0]);
 }
 
 fn main() {
