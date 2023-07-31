@@ -1,0 +1,7 @@
+perceptron.mm .. 1256 s
+svm5.mm .. 1188 s
+transfer.mm .. 371 s
+log.txt .. 8 s
+perceptron.mm .. 1222 s
+svm5.mm .. 1151 s
+transfer.mm .. 363 s

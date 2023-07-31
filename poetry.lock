@@ -436,14 +436,14 @@ plugins = ["setuptools"]
 requirements-deprecated-finder = ["pip-api", "pipreqs"]
 
 [[package]]
-name = "lark-parser"
-version = "0.12.0"
+name = "lark"
+version = "1.1.5"
 description = "a modern parsing library"
 optional = false
 python-versions = "*"
 files = [
-    {file = "lark-parser-0.12.0.tar.gz", hash = "sha256:15967db1f1214013dca65b1180745047b9be457d73da224fcda3d9dd4e96a138"},
-    {file = "lark_parser-0.12.0-py2.py3-none-any.whl", hash = "sha256:0eaf30cb5ba787fe404d73a7d6e61df97b21d5a63ac26c5008c78a494373c675"},
+    {file = "lark-1.1.5-py3-none-any.whl", hash = "sha256:8476f9903e93fbde4f6c327f74d79e9b4bd0ed9294c5dfa3164ab8c581b5de2a"},
+    {file = "lark-1.1.5.tar.gz", hash = "sha256:4b534eae1f9af5b4ea000bea95776350befe1981658eea3820a01c37e504bb4d"},
 ]
 
 [package.extras]
@@ -689,17 +689,17 @@ test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 
 [[package]]
 name = "pybind11"
-version = "2.10.4"
+version = "2.11.0"
 description = "Seamless operability between C++11 and Python"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "pybind11-2.10.4-py3-none-any.whl", hash = "sha256:ec9be0c45061c829648d7e8c98a7d041768b768c934acd15196e0f1943d9a818"},
-    {file = "pybind11-2.10.4.tar.gz", hash = "sha256:0bb621d3c45a049aa5923debb87c5c0e2668227905c55ebe8af722608d8ed927"},
+    {file = "pybind11-2.11.0-py3-none-any.whl", hash = "sha256:307443ea89b73ce88f68fa48687d160c036622a54bc2a25aae9d5ea792bef268"},
+    {file = "pybind11-2.11.0.tar.gz", hash = "sha256:03006fb261379ed19cb0171a9cc6238d64da8a31b3f5e754cb276d4615449217"},
 ]
 
 [package.extras]
-global = ["pybind11-global (==2.10.4)"]
+global = ["pybind11-global (==2.11.0)"]
 
 [[package]]
 name = "pycodestyle"
@@ -716,7 +716,7 @@ files = [
 name = "pyflakes"
 version = "3.0.1"
 description = "passive checker of Python programs"
-optional = false
+optional = false 
 python-versions = ">=3.6"
 files = [
     {file = "pyflakes-3.0.1-py2.py3-none-any.whl", hash = "sha256:ec55bf7fe21fff7f1ad2f7da62363d749e2a470500eab1b555334b67aa1ef8cf"},
@@ -1077,4 +1077,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "8131371270d07c528a389b3d8c33b331afdd6e167203cbb571c645dece025fb8"
+content-hash = "c8b0d8a28e6d1119ad74f05a1a46847cbca31626b6c05e5864e09aee942c01ac"
