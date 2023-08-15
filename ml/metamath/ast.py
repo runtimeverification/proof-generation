@@ -52,6 +52,10 @@ class BaseAST:
     def __str__(self) -> str:
         return Encoder.encode_string(self, omit_proof=True)
 
+    def dsl(self) -> str:
+        return DSLEncoder.encode_string(self)
+
+
     def __repr__(self) -> str:
         return str(self)
 
@@ -262,6 +266,40 @@ class Database(BaseAST):
     def visit(self, visitor: MetamathVisitor[ResultT]) -> ResultT:
         return visitor.proxy_visit_database(self)  # type: ignore
 
+
+class DSLEncoder(Printer, Visitor[BaseAST, None]):
+    @staticmethod
+    def encode(output: TextIO, ast: BaseAST, *args: Any, **kwargs: Any) -> None:
+        encoder = DSLEncoder(output, *args, **kwargs)
+        encoder.visit(ast)
+        encoder.flush()
+
+    @staticmethod
+    def encode_string(ast: BaseAST, *args: Any, **kwargs: Any) -> str:
+        stream = StringIO()
+        DSLEncoder.encode(stream, ast, *args, **kwargs)
+        return stream.getvalue()
+
+    def postvisit_metavariable(self, metavar: Metavariable) -> None:
+        self.write(metavar.name)
+
+    def postvisit_application(self, application: Application) -> None:
+        if len(application.subterms) == 0:
+            self.write(self.mmsymbol_to_dsl(application.symbol))
+        else:
+            self.write(self.mmsymbol_to_dsl(application.symbol))
+            self.write("(")
+            for (i, subterm) in enumerate(application.subterms):
+                assert isinstance(subterm, Term), "not a term: {}".format(subterm)
+                self.visit(subterm)
+                if i + 1 != len(application.subterms):
+                    self.write(", ")
+            self.write(")")
+
+    def mmsymbol_to_dsl(self, mmsym: str) -> str:
+        match mmsym:
+            case '\\bot': return 'self.bot()'
+            case '\\imp': return 'self.implies'
 
 class Encoder(Printer, Visitor[BaseAST, None]):
     """

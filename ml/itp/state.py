@@ -405,8 +405,8 @@ class ProofState:
         if self.get_goal_dependencies(goal):
             print(indent_str*indent, end='')
         print(')', end='')
-        substitution = {k: str(tactic.schematic_substitution.get(v.name)) for k, v in tactic.metavars_substitution.items() if tactic.schematic_substitution.get(v.name)}
-        print('\t#', substitution)
+        metavar_subst = {k: self.resolve_schematic_variables(v).dsl() for k, v in tactic.metavars_substitution.items()}
+        print('.instantiate(', metavar_subst, ')')
 
 
 
