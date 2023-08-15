@@ -287,6 +287,12 @@ class InteractiveState:
         else:
             print(proof_text)
 
+
+    @BuiltinCommand.add("dsl", help_message="Output proof as DSL")
+    def command_dsl(self, output_file: Optional[str] = None) -> None:
+        init_goal = self.proof_state.get_goal_by_id(0)
+        self.proof_state.print_in_dsl(init_goal)
+
     @BuiltinCommand.add("proof-uncompressed", help_message="once all goals are resolved, print the uncompressed proof")
     def command_proof_uncompressed(self, output_file: Optional[str] = None) -> None:
         proof = self.proof_state.gen_proof()

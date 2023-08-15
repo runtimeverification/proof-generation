@@ -117,6 +117,7 @@ class ApplyTactic(Tactic):
 
         # assign schematic variables
         state.assign_schematic_variables(schematic_substitution)
+        self.schematic_substitution = schematic_substitution
 
         # get the final top goal statement
         top_goal_statement = top_goal_statement.substitute(schematic_substitution)

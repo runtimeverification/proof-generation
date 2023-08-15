@@ -391,6 +391,25 @@ class ProofState:
 
         return tactic.resolve(self, subproofs)
 
+    def print_in_dsl(self, goal: Goal, trace: List[int] = [], indent: int = 0) -> None:
+        indent_str = '    '
+
+        assert (goal.goal_id not in trace), f"proof of goal {goal.statement} depends on itself"
+        assert goal.goal_id in self.goal_resolver, "goal not resolved yet"
+        tactic = self.goal_resolver[goal.goal_id]
+        print(indent_str*indent + tactic.theorem.statement.label + '(', end='')
+        if self.get_goal_dependencies(goal):
+            print('\n', end='')
+        for dep in self.get_goal_dependencies(goal):
+            self.print_in_dsl(dep, trace + [goal.goal_id], indent + 1)
+        if self.get_goal_dependencies(goal):
+            print(indent_str*indent, end='')
+        print(')', end='')
+        substitution = {k: str(tactic.schematic_substitution.get(v.name)) for k, v in tactic.metavars_substitution.items() if tactic.schematic_substitution.get(v.name)}
+        print('\t#', substitution)
+
+
+
     def gen_proof(self) -> Proof:
         """
         Generate the proof for the initial goal
