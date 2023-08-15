@@ -394,10 +394,17 @@ class ProofState:
     def print_in_dsl(self, goal: Goal, trace: List[int] = [], indent: int = 0) -> None:
         indent_str = '    '
 
+        def rename_theorem(theorem: str) -> str:
+            match theorem:
+                case 'proof-rule-mp': return 'self.modus_ponens'
+                case 'proof-rule-prop-1': return 'self.prop1'
+                case 'proof-rule-prop-2': return 'self.prop2'
+                case _: return theorem
+
         assert (goal.goal_id not in trace), f"proof of goal {goal.statement} depends on itself"
         assert goal.goal_id in self.goal_resolver, "goal not resolved yet"
         tactic = self.goal_resolver[goal.goal_id]
-        print(indent_str*indent + tactic.theorem.statement.label + '(', end='')
+        print(indent_str*indent + rename_theorem(tactic.theorem.statement.label) + '(', end='')
         if self.get_goal_dependencies(goal):
             print('\n', end='')
         for dep in self.get_goal_dependencies(goal):
