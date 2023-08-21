@@ -401,6 +401,12 @@ class ProofState:
                 case 'proof-rule-prop-2': return 'self.prop2'
                 case _: return theorem
 
+        def mv_to_int(metavar: str) -> str:
+            if metavar.startswith('ph'):
+                return int(metavar[2:])
+            else:
+                raise AssertionError(f'Non-ph variable: {metavar}')
+
         assert (goal.goal_id not in trace), f"proof of goal {goal.statement} depends on itself"
         assert goal.goal_id in self.goal_resolver, "goal not resolved yet"
         tactic = self.goal_resolver[goal.goal_id]
@@ -409,10 +415,11 @@ class ProofState:
             print('\n', end='')
         for dep in self.get_goal_dependencies(goal):
             self.print_in_dsl(dep, trace + [goal.goal_id], indent + 1)
+            print(',', end='')
         if self.get_goal_dependencies(goal):
             print(indent_str*indent, end='')
         print(')', end='')
-        metavar_subst = {k: self.resolve_schematic_variables(v).dsl() for k, v in tactic.metavars_substitution.items()}
+        metavar_subst = {mv_to_int(k): self.resolve_schematic_variables(v).dsl() for k, v in tactic.metavars_substitution.items()}
         print('.instantiate(', metavar_subst, ')')
 
 

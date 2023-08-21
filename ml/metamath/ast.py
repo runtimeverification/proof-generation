@@ -55,7 +55,6 @@ class BaseAST:
     def dsl(self) -> str:
         return DSLEncoder.encode_string(self)
 
-
     def __repr__(self) -> str:
         return str(self)
 
@@ -281,7 +280,14 @@ class DSLEncoder(Printer, Visitor[BaseAST, None]):
         return stream.getvalue()
 
     def postvisit_metavariable(self, metavar: Metavariable) -> None:
-        self.write(metavar.name)
+        match metavar.name:
+            case 'ph0': return self.write('self.phi0()')
+            case 'ph1': return self.write('self.phi1()')
+            case _ if metavar.name.startswith('ph'):
+                return self.write(f'self.metavar({metavar.name[2:]})')
+            case _:
+                self.write(metavar.name)
+        return
 
     def postvisit_application(self, application: Application) -> None:
         if len(application.subterms) == 0:
