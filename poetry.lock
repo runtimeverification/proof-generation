@@ -734,7 +734,7 @@ plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pyk"
-version = "0.1.446"
+version = "0.1.447"
 description = ""
 optional = false
 python-versions = "^3.10"
@@ -754,8 +754,8 @@ tomli = "^2.0.1"
 [package.source]
 type = "git"
 url = "https://github.com/runtimeverification/pyk.git"
-reference = "v0.1.446"
-resolved_reference = "89b7f4bd0f8a9d8ec8755d9a48cca57c5c709107"
+reference = "v0.1.447"
+resolved_reference = "abed8298b54de758d33494d1b802a8869c728554"
 
 [[package]]
 name = "pyperclip"
@@ -857,13 +857,13 @@ testing = ["filelock"]
 
 [[package]]
 name = "pyupgrade"
-version = "3.11.0"
+version = "3.11.1"
 description = "A tool to automatically upgrade syntax for newer versions."
 optional = false
 python-versions = ">=3.8.1"
 files = [
-    {file = "pyupgrade-3.11.0-py2.py3-none-any.whl", hash = "sha256:7bd8b83bc1a61b3a4c8fea5e16313b7b29e5cdf1be6184f8c6c467557e9cfab3"},
-    {file = "pyupgrade-3.11.0.tar.gz", hash = "sha256:1d0bf0dbadf179ff8952d92d52759a5984526597a055d1626884397c46f94003"},
+    {file = "pyupgrade-3.11.1-py2.py3-none-any.whl", hash = "sha256:6e9dd362394b3068123e06ca268de5845d41e2bb29f387b38323cc1009fb3100"},
+    {file = "pyupgrade-3.11.1.tar.gz", hash = "sha256:3e6c7689d2f3ae418c6a60ee981477fe9130eccaed3e33dac6c21274cf7d45f4"},
 ]
 
 [package.dependencies]
@@ -1082,4 +1082,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "2a0e030be2cffa49311c3a36d423a1d6555047fabe99c3388f9dd927bfb64a83"
+content-hash = "389ab3f6dc2eb207f953cda4f07fa331fc14515fa7ba8612f4cc682d3c95ed97"
