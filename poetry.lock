@@ -427,13 +427,13 @@ requirements-deprecated-finder = ["pip-api", "pipreqs"]
 
 [[package]]
 name = "lark"
-version = "1.1.7"
+version = "1.1.8"
 description = "a modern parsing library"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "lark-1.1.7-py3-none-any.whl", hash = "sha256:9e5dc5bbf93fa1840083707285262514a0ef8a6613874af7ea1cec60468d6e92"},
-    {file = "lark-1.1.7.tar.gz", hash = "sha256:be7437bf1f37ab08b355f29ff2571d77d777113d0a8c4352b0c513dced6c5a1e"},
+    {file = "lark-1.1.8-py3-none-any.whl", hash = "sha256:7d2c221a66a8165f3f81aacb958d26033d40d972fdb70213ab0a2e0627e29c86"},
+    {file = "lark-1.1.8.tar.gz", hash = "sha256:7ef424db57f59c1ffd6f0d4c2b705119927f566b68c0fe1942dddcc0e44391a5"},
 ]
 
 [package.extras]
@@ -732,7 +732,7 @@ plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pyk"
-version = "0.1.476"
+version = "0.1.477"
 description = ""
 optional = false
 python-versions = "^3.10"
@@ -752,8 +752,8 @@ tomli = "^2.0.1"
 [package.source]
 type = "git"
 url = "https://github.com/runtimeverification/pyk.git"
-reference = "v0.1.476"
-resolved_reference = "305dc613aefecb3d86c1fa52d1944b8413299d63"
+reference = "v0.1.477"
+resolved_reference = "e25de317a5797517e5b6fea6f26c42474a9cab27"
 
 [[package]]
 name = "pyperclip"
@@ -1080,4 +1080,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "c862c31a31b7c98e47b67d7ea20bcbba7dd7fceda6d7cbcf0a87ecceae6d557c"
+content-hash = "e3995235a9fe97ce2fcdd9f350cbdf449cf44c8e9affca1ff1379379420578ee"
