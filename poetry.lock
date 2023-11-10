@@ -730,7 +730,7 @@ plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pyk"
-version = "0.1.494"
+version = "0.1.495"
 description = ""
 optional = false
 python-versions = "^3.10"
@@ -750,8 +750,8 @@ tomli = "^2.0.1"
 [package.source]
 type = "git"
 url = "https://github.com/runtimeverification/pyk.git"
-reference = "v0.1.494"
-resolved_reference = "edc297774f4ce99d44788aee7a0f6cee044aaf73"
+reference = "v0.1.495"
+resolved_reference = "6a54f056a54b076d47b86606995aded8a5694c06"
 
 [[package]]
 name = "pyperclip"
@@ -1055,6 +1055,7 @@ files = [
     {file = "z3-solver-4.12.2.0.tar.gz", hash = "sha256:65ab47a0a8ef0bfb80db0670775beb11b32c3c0ae4b35943e44121f4af7ef411"},
     {file = "z3_solver-4.12.2.0-py2.py3-none-macosx_10_16_x86_64.whl", hash = "sha256:127b7c3fcadd61415320ef1b469c22464d3270d25a63c9eb5ee31a0859910826"},
     {file = "z3_solver-4.12.2.0-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:f605de84f87cff04de8339a6d007c80167606a4e6904d6ace8208b066f22f4be"},
+    {file = "z3_solver-4.12.2.0-py2.py3-none-manylinux2014_aarch64.whl", hash = "sha256:4d252abdeab222f241d273df012f96fb8e5754a60734508c85c791ac5096bdf5"},
     {file = "z3_solver-4.12.2.0-py2.py3-none-manylinux2014_x86_64.whl", hash = "sha256:03921d3021cb6e5dbeaeb94634132a5fbf5403748aa21774efac4047e633af1e"},
     {file = "z3_solver-4.12.2.0-py2.py3-none-win32.whl", hash = "sha256:ea1688e64aada67ec720e2f148c5c41fece2870c55a2901dda36f6b4bb9aec7e"},
     {file = "z3_solver-4.12.2.0-py2.py3-none-win_amd64.whl", hash = "sha256:553af6a989d8943d9a556c4f83ea54b2afc8b4fd58230e97fcc526dc3f97249a"},
@@ -1078,4 +1079,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "17db0ea5dc3d2d209f229deb12d5d6d765e4b3ef33a251521a008c2aec189a4f"
+content-hash = "141783bbac12a4c6c996c0cb098d616271ee728b16d3eead11db1ed72d19fb5e"
