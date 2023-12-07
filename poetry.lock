@@ -732,7 +732,7 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pyk"
-version = "0.1.533"
+version = "0.1.534"
 description = ""
 optional = false
 python-versions = "^3.10"
@@ -753,8 +753,8 @@ xdg-base-dirs = "^6.0.1"
 [package.source]
 type = "git"
 url = "https://github.com/runtimeverification/pyk.git"
-reference = "v0.1.533"
-resolved_reference = "e29f8cd30c0779e42db8873a5f8d9170030aaee4"
+reference = "v0.1.534"
+resolved_reference = "3d24ec6c377d33b0466729ceeccb5541f732c8f1"
 
 [[package]]
 name = "pyperclip"
@@ -1061,17 +1061,17 @@ files = [
 
 [[package]]
 name = "z3-solver"
-version = "4.12.3.0"
+version = "4.12.4.0"
 description = "an efficient SMT solver library"
 optional = false
 python-versions = "*"
 files = [
-    {file = "z3-solver-4.12.3.0.tar.gz", hash = "sha256:b6719daf9676711a8f1c708af0ea185578b0f22a3cb9bf9a55735e21691dc38d"},
-    {file = "z3_solver-4.12.3.0-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:f31450028c5ed7f337d4fe8a3f5918e6c52fc645f01ac9516668077385fd0237"},
-    {file = "z3_solver-4.12.3.0-py2.py3-none-macosx_11_7_x86_64.whl", hash = "sha256:afa4febf1176c07762b6bae74f8c35e1266bb10f7b2ce427bd230b3c124b971b"},
-    {file = "z3_solver-4.12.3.0-py2.py3-none-manylinux2014_x86_64.whl", hash = "sha256:ce6d387d609fb640fea38a6e5010212682e76be3e414ebe81b12b4e5a43cf97d"},
-    {file = "z3_solver-4.12.3.0-py2.py3-none-win32.whl", hash = "sha256:a54c6cae758fd04070571fa4cfccf5f34dbae56ed0d361571a005ee5ff4b7af9"},
-    {file = "z3_solver-4.12.3.0-py2.py3-none-win_amd64.whl", hash = "sha256:5d5ce27b01f6b579d5d08adf2db9d869a744c53485d19b33b5f018bb75aa7059"},
+    {file = "z3-solver-4.12.4.0.tar.gz", hash = "sha256:f692c87437be8d585ebca124355cd6488d60331289f6bbebbde65cd497205128"},
+    {file = "z3_solver-4.12.4.0-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:956daa69d3c7017f704c64d11c9ed880e06f177923e9af695a03034fc0e2e36d"},
+    {file = "z3_solver-4.12.4.0-py2.py3-none-macosx_11_7_x86_64.whl", hash = "sha256:6ffffdb41d714b6683cd87d8cf7eaa0e94eb40a6d5eca3636cb90a95d4e6760e"},
+    {file = "z3_solver-4.12.4.0-py2.py3-none-manylinux2014_x86_64.whl", hash = "sha256:03ce2639eced8a4d4bd432ebab15a6b1cb36119ba6a2854c01768ee2cd596c37"},
+    {file = "z3_solver-4.12.4.0-py2.py3-none-win32.whl", hash = "sha256:50011e915e97c4d262a010ea0403081b2af71c8474b27c53185407beb30b6ac7"},
+    {file = "z3_solver-4.12.4.0-py2.py3-none-win_amd64.whl", hash = "sha256:fbd7faea88bd32e6ba362913d1108d0bcb298df57154538a9bb2684757c35d0b"},
 ]
 
 [[package]]
@@ -1092,4 +1092,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "ef75866c4e58df713fd25fd3a389f8e23d652a9f9acdf4bbf214416cf6ccdb9b"
+content-hash = "55a0cfde271e9f659cb3b01440ecb9b9f8af39c90711ef0bc98b270320666c03"
