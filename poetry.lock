@@ -429,13 +429,13 @@ colors = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "lark"
-version = "1.1.8"
+version = "1.1.9"
 description = "a modern parsing library"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "lark-1.1.8-py3-none-any.whl", hash = "sha256:7d2c221a66a8165f3f81aacb958d26033d40d972fdb70213ab0a2e0627e29c86"},
-    {file = "lark-1.1.8.tar.gz", hash = "sha256:7ef424db57f59c1ffd6f0d4c2b705119927f566b68c0fe1942dddcc0e44391a5"},
+    {file = "lark-1.1.9-py3-none-any.whl", hash = "sha256:a0dd3a87289f8ccbb325901e4222e723e7d745dbfc1803eaf5f3d2ace19cf2db"},
+    {file = "lark-1.1.9.tar.gz", hash = "sha256:15fa5236490824c2c4aba0e22d2d6d823575dcaf4cdd1848e34b6ad836240fba"},
 ]
 
 [package.extras]
@@ -734,7 +734,7 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pyk"
-version = "0.1.567"
+version = "0.1.568"
 description = ""
 optional = false
 python-versions = "^3.10"
@@ -755,8 +755,8 @@ xdg-base-dirs = "^6.0.1"
 [package.source]
 type = "git"
 url = "https://github.com/runtimeverification/pyk.git"
-reference = "v0.1.567"
-resolved_reference = "a1fdcdd8bf19a02f6601d950cae597258a0359d6"
+reference = "v0.1.568"
+resolved_reference = "addf0d49e0496bdff2fdb6fdb468395777a5a367"
 
 [[package]]
 name = "pyperclip"
@@ -1094,4 +1094,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3d6d496e4ee267dfae409a6e946d6c750a453fc62909befd2ac2902170947711"
+content-hash = "820d7d0c3a7b887794f5696a8245709d065a617b3063d802cad17dfc6bf450d3"
